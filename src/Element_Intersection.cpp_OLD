@@ -1,0 +1,133 @@
+#include "Element_Intersection.h"
+
+using namespace SpatialIndex;
+
+using namespace std;
+
+using namespace Fluidity;
+
+InstrumentedRegion::InstrumentedRegion()
+{
+  cout << "InstrumentedRegion::InstrumentedRegion()1" << endl;
+  predicateCount = 0;
+}
+
+InstrumentedRegion::InstrumentedRegion(const double* pLow, const double* pHigh, size_t dimension)
+{
+  cout << "InstrumentedRegion::InstrumentedRegion()2" << endl;
+  predicateCount = 0;
+}
+
+InstrumentedRegion::InstrumentedRegion(const Point& low, const Point& high)
+{
+  cout << "InstrumentedRegion::InstrumentedRegion()3" << endl;
+  predicateCount = 0;
+}
+
+InstrumentedRegion::InstrumentedRegion(const Region& in)
+{
+  cout << "InstrumentedRegion::InstrumentedRegion()4" << endl;
+  predicateCount = 0;
+}
+
+bool InstrumentedRegion::intersectsRegion(const Region& in) 
+{
+  cout << "InstrumentedRegion::intersectsRegion()1" << endl;
+  predicateCount++;
+  return ((Region*)this)->intersectsRegion(in);
+}
+
+bool InstrumentedRegion::containsRegion(const Region& in)
+{
+  cout << "InstrumentedRegion::containsRegion()1" << endl;
+  predicateCount++;
+  return ((Region*)this)->containsRegion(in);
+}
+
+bool InstrumentedRegion::touchesRegion(const Region& in)
+{
+  cout << "InstrumentedRegion::touchesRegion()1" << endl;
+  predicateCount++;
+  return ((Region*)this)->touchesRegion(in);
+}
+
+int InstrumentedRegion::getPredicateCount(void) const
+{
+  cout << "InstrumentedRegion::getPredicateCount()1" << endl;
+  return predicateCount;
+}
+
+ElementIntersector::ElementIntersector()
+{
+  cout << "ElementIntersector::ElementIntersector()1" << endl;
+
+  positionsA = NULL;
+  positionsB = NULL;
+  
+  loc = 0;
+
+  return;
+}
+
+ElementIntersector::~ElementIntersector()
+{
+  cout << "ElementIntersector::~ElementIntersector()1" << endl;
+
+  if(this->positionsA)
+  {
+    free(this->positionsA);
+    this->positionsA = NULL;
+  }
+  if(this->positionsB)
+  {
+    free(this->positionsB);
+    this->positionsB = NULL;
+  }
+
+  return;
+}
+
+unsigned int ElementIntersector::GetExactness() const
+{
+  cout << "ElementIntersector::GetExactness()1" << endl;
+
+  return exactness;
+}
+
+void ElementIntersector::SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
+{
+  cout << "ElementIntersector::SetInput()1" << endl;
+
+  assert(positionsA);
+  assert(positionsB);
+
+  this->dim = dim;
+  this->loc = loc;
+
+  assert(dim >= 0);
+  assert(loc >= 0);
+
+  if(this->positionsA)
+  {
+    free(this->positionsA);
+    this->positionsA = NULL;
+  }
+  this->positionsA = (double*)malloc(loc * dim * sizeof(double));
+  assert(this->positionsA);
+  memcpy(this->positionsA, positionsA, loc * dim * sizeof(double));
+  
+  if(this->positionsB)
+  {
+    free(this->positionsB);
+    this->positionsB = NULL;
+  }
+  this->positionsB = (double*)malloc(loc * dim * sizeof(double));
+  assert(positionsB);
+  memcpy(this->positionsB, positionsB, loc * dim * sizeof(double));
+  
+  this->loc = loc;
+  
+  return;
+}
+
+

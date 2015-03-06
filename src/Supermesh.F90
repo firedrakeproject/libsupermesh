@@ -1,0 +1,93 @@
+#include "fdebug.h"
+
+module libsupermesh_construction
+  use libsupermesh_fields_data_types
+!  use fields_allocates			! IAKOVOS commented out
+  use libsupermesh_fields_base
+!  use sparse_tools			! IAKOVOS commented out
+  use libsupermesh_futils
+!  use metric_tools			! IAKOVOS commented out
+  use libsupermesh_linked_lists
+!  use unify_meshes_module		! IAKOVOS commented out
+  use libsupermesh_transform_elements
+  use libsupermesh_global_parameters, only : real_4, real_8
+!  use tetrahedron_intersection_module	! IAKOVOS commented out
+  implicit none
+  
+  interface libsupermesh_cintersector_set_input
+    module procedure libsupermesh_intersector_set_input_sp
+  
+    subroutine libsupermesh_cintersector_set_input(nodes_A, nodes_B, ndim, loc)
+      use libsupermesh_global_parameters, only : real_8
+      implicit none
+      real(kind = real_8), dimension(ndim, loc), intent(in) :: nodes_A, nodes_B
+      integer, intent(in) :: ndim, loc
+    end subroutine libsupermesh_cintersector_set_input
+  end interface libsupermesh_cintersector_set_input
+  
+  ! I hope this is big enough ...
+  real, dimension(1024) :: nodes_tmp
+  logical :: intersector_exactness = .false.
+
+  public :: libsupermesh_intersect_elements
+
+  private
+ 
+  contains
+  
+  subroutine libsupermesh_intersector_set_input_sp(nodes_A, nodes_B, ndim, loc)
+    real(kind = real_4), dimension(ndim, loc), intent(in) :: nodes_A
+    real(kind = real_4), dimension(ndim, loc), intent(in) :: nodes_B
+    integer, intent(in) :: ndim
+    integer, intent(in) :: loc
+    
+    call libsupermesh_cintersector_set_input(real(nodes_A, kind = real_8), real(nodes_B, kind = real_8), ndim, loc)
+  
+  end subroutine libsupermesh_intersector_set_input_sp
+  
+  function libsupermesh_intersect_elements(positions_A, ele_A, posB, shape) result(intersection)
+    type(vector_field), intent(in) :: positions_A
+    integer, intent(in) :: ele_A
+    type(vector_field) :: intersection
+    type(mesh_type) :: intersection_mesh
+    type(element_type), intent(in) :: shape
+    real, dimension(:, :), intent(in) :: posB
+
+    integer :: dim, loc
+    integer :: nonods, totele
+    integer :: i
+
+    dim = positions_A%dim
+#ifdef DDEBUG
+    select case(dim)
+      case(2)
+        assert(shape%loc == 3)
+      case(3)
+        assert(shape%loc == 4)
+    end select
+#endif
+
+    loc = ele_loc(positions_A, ele_A)
+
+    call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, dim, loc)
+    call libsupermesh_cintersector_drive
+    call libsupermesh_cintersector_query(nonods, totele)
+!    call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")	! ToDo 1
+    intersection_mesh%continuity = -1
+!    call allocate(intersection, dim, intersection_mesh, "IntersectionCoordinates")	! ToDo 1
+    if (nonods > 0) then
+#ifdef DDEBUG
+      intersection_mesh%ndglno = -1
+#endif
+      call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, nodes_tmp, intersection_mesh%ndglno)
+
+      do i = 1, dim
+        intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
+      end do
+    end if
+
+!    call deallocate(intersection_mesh)							! ToDo 1
+
+  end function libsupermesh_intersect_elements
+  
+end module libsupermesh_construction

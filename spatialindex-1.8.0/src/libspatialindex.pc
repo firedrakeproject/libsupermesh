@@ -1,0 +1,12 @@
+prefix=/home/ipanourg/fluidity_git/tmp/modified_src/fluidity/spatialindex-1.8.0/..
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libspatialindex 
+Description: Generic C/C++ library for spatial indexing
+Requires: 
+Version: 1.8.0
+Libs: -L${exec_prefix}/lib -L/home/ipanourg/fluidity_git/fluidity/lib -L/home/ipanourg/fluidity_git/fluidity/lib64  
+Cflags: -I${includedir}/spatialindex -Wall -Wno-long-long -pedantic -L/home/ipanourg/fluidity_git/fluidity/lib -L/home/ipanourg/fluidity_git/fluidity/lib64  -I/home/ipanourg/fluidity_git/fluidity/include -D_GNU_SOURCE
+

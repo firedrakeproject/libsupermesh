@@ -1,0 +1,15 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+includedir=@CMAKE_INSTALL_PREFIX@/include
+libdir=@CMAKE_INSTALL_PREFIX@/lib
+ccompiler=@CMAKE_CXX_COMPILER_ID@
+####ccompiler=@CMAKE_CXX_COMPILER_NAME@
+fcompiler=@Fortran_COMPILER_NAME@
+
+Name: SuperMesh
+Description: Parallel supermeshing for multimesh modelling library
+Version: @SuperMesh_VERSION_MAJOR@.@SuperMesh_VERSION_MINOR@.@SuperMesh_VERSION_MINOR_CHANGE@
+Cflags: -I@CMAKE_INSTALL_PREFIX@/include
+Libs: -L@CMAKE_INSTALL_PREFIX@lib @CMAKE_INSTALL_PREFIX@/lib/libSuperMesh.a
+###Libs.private: @CMAKE_INSTALL_PREFIX@/lib/libSuperMesh.a
+
