@@ -42,8 +42,9 @@ use libsupermesh_halos_base
 !use halos_repair		! IAKOVOS commented out
 use libsupermesh_quicksort
 use libsupermesh_parallel_tools
-!use vector_tools		! IAKOVOS commented out
+use libsupermesh_vector_tools
 !use memory_diagnostics		! IAKOVOS commented out
+use libsupermesh_shape_functions
 implicit none
 
   private
@@ -76,10 +77,10 @@ implicit none
 
     old_shape = in_mesh%shape
 
-!    shape = make_element_shape(vertices=old_shape%numbering%vertices, dim=old_shape%dim, degree=0, quad=old_shape%quadrature)		! ToDo 1
-!    new_mesh = make_mesh(model=in_mesh, shape=shape, continuity=-1)									! ToDo 1
+    shape = make_element_shape(vertices=old_shape%numbering%vertices, dim=old_shape%dim, degree=0, quad=old_shape%quadrature)
+    new_mesh = make_mesh(model=in_mesh, shape=shape, continuity=-1)
     new_mesh%name=name
-!    call deallocate(shape)														! ToDo 1
+    call deallocate(shape)
     
   end function piecewise_constant_mesh
   

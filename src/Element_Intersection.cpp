@@ -879,14 +879,14 @@ ElementIntersectionFinder elementIntersectionFinder;
 
 extern "C"
 {
-  int cIntersectorGetDimension()
+  int cLibSuperMeshIntersectorGetDimension()
   {
     assert(elementIntersector);
     
     return elementIntersector->GetDim();
   }
 
-  void cIntersectorSetDimension(const int* dim)
+  void cLibSuperMeshIntersectorSetDimension(const int* dim)
   {
     if(elementIntersector)
     {
@@ -924,7 +924,7 @@ extern "C"
     return;
   }
 
-  void cIntersectorSetExactness(const int* exact)
+  void cLibSuperMeshIntersectorSetExactness(const int* exact)
   {
     /*Sets the exactness (whether we're using cgal or not)
     exact = 0 means inexact (not using cgal)
@@ -994,7 +994,7 @@ extern "C"
     return;
   }
 
-  void cIntersectorSetInput(double* positionsA, double* positionsB, const int* dim, const int* loc)
+  void cLibSuperMeshIntersectorSetInput(double* positionsA, double* positionsB, const int* dim, const int* loc)
   {
     assert(elementIntersector);
     assert(*dim >= 0);
@@ -1005,7 +1005,7 @@ extern "C"
     return;
   }
 
-  void cIntersectorDrive()
+  void cLibSuperMeshIntersectorDrive()
   {
     assert(elementIntersector);
   
@@ -1014,7 +1014,7 @@ extern "C"
     return;
   }
   
-  void cIntersectorQuery(int* nnodes, int* nelms)
+  void cLibSuperMeshIntersectorQuery(int* nnodes, int* nelms)
   {
     assert(elementIntersector);
   
@@ -1023,7 +1023,7 @@ extern "C"
     return;
   }
   
-  void cIntersectorGetOutput(const int* nnodes, const int* nelms, const int* dim, const int* loc, double* positions, int* enlist)
+  void cLibSuperMeshIntersectorGetOutput(const int* nnodes, const int* nelms, const int* dim, const int* loc, double* positions, int* enlist)
   {
     assert(elementIntersector);
   
@@ -1057,14 +1057,14 @@ extern "C"
     return;
   }
 
-  void cIntersectionFinderReset(int* ntests)
+  void cLibSuperMeshIntersectionFinderReset(int* ntests)
   {
     *ntests = elementIntersectionFinder.Reset();
     
     return;
   }
 
-  void cIntersectionFinderSetInput(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements)
+  void cLibSuperMeshIntersectionFinderSetInput(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements)
   {
     assert(*dim >= 0);
     assert(*loc >= 0);
@@ -1076,7 +1076,7 @@ extern "C"
     return;
   }
 
-  void cIntersectionFinderFind(const double* positions, const int* dim, const int* loc)
+  void cLibSuperMeshIntersectionFinderFind(const double* positions, const int* dim, const int* loc)
   {
     assert(*dim >= 0);
     assert(*loc >= 0);
@@ -1086,14 +1086,14 @@ extern "C"
     return;
   }
 
-  void cIntersectionFinderQueryOutput(int* nelms)
+  void cLibSuperMeshIntersectionFinderQueryOutput(int* nelms)
   {
     elementIntersectionFinder.QueryOutput(*nelms);
     
     return;
   }
 
-  void cIntersectionFinderGetOutput(int* id, const int* index)
+  void cLibSuperMeshIntersectionFinderGetOutput(int* id, const int* index)
   {
     elementIntersectionFinder.GetOutput(*id, *index);
     

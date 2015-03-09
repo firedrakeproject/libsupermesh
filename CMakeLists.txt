@@ -91,3 +91,13 @@ add_library (SuperMesh STATIC ${CPP_SRCFILES} ${FORTRAN_SRCFILES})
 
 install (TARGETS SuperMesh DESTINATION lib)
 install (FILES "${PROJECT_BINARY_DIR}/SuperMesh.pc" DESTINATION $ENV{PKG_CONFIG_PATH})
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_elements.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_vector_tools.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_data_types.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_base.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_allocates.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_manipulation.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_transform_elements.mod" DESTINATION include)
+
+

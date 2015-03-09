@@ -30,7 +30,7 @@ module libsupermesh_fields_data_types
   use libsupermesh_global_parameters, only:FIELD_NAME_LEN, current_debug_level, OPTION_PATH_LEN, PYTHON_FUNC_LEN
   use libsupermesh_picker_data_types        
    ! IAKOVOS used for type(picker_ptr), pointer :: picker => null()
-!  use shape_functions		! IAKOVOS commented out
+  use libsupermesh_shape_functions
   use libsupermesh_sparse_tools
 !  use spud			! IAKOVOS commented out
   use libsupermesh_reference_counting        ! IAKOVOS used for type(refcount_type), pointer :: refcount=>null()

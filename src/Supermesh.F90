@@ -2,7 +2,7 @@
 
 module libsupermesh_construction
   use libsupermesh_fields_data_types
-!  use fields_allocates			! IAKOVOS commented out
+  use libsupermesh_fields_allocates
   use libsupermesh_fields_base
 !  use sparse_tools			! IAKOVOS commented out
   use libsupermesh_futils
@@ -72,9 +72,9 @@ module libsupermesh_construction
     call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, dim, loc)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
-!    call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")	! ToDo 1
+    call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
     intersection_mesh%continuity = -1
-!    call allocate(intersection, dim, intersection_mesh, "IntersectionCoordinates")	! ToDo 1
+    call allocate(intersection, dim, intersection_mesh, "IntersectionCoordinates")
     if (nonods > 0) then
 #ifdef DDEBUG
       intersection_mesh%ndglno = -1
@@ -86,7 +86,7 @@ module libsupermesh_construction
       end do
     end if
 
-!    call deallocate(intersection_mesh)							! ToDo 1
+    call deallocate(intersection_mesh)
 
   end function libsupermesh_intersect_elements
   

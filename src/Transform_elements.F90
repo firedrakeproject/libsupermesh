@@ -29,11 +29,11 @@
 module libsupermesh_transform_elements
   ! Module to calculate element transformations from local to physical
   ! coordinates.
-!  use quadrature			! IAKOVOS commented out
+  use libsupermesh_quadrature
   use libsupermesh_elements
-!  use vector_tools			! IAKOVOS commented out
+  use libsupermesh_vector_tools
   use libsupermesh_parallel_tools, only: abort_if_in_parallel_region
-!  use fields_base			! IAKOVOS commented out
+  use libsupermesh_fields_base
 !  use cv_faces, only: cv_faces_type	! IAKOVOS commented out
 !  use eventcounter			! IAKOVOS commented out
 !  use memory_diagnostics		! IAKOVOS commented out

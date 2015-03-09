@@ -362,41 +362,41 @@ extern LibSupermesh::ElementIntersectionFinder elementIntersectionFinder;
 
 extern "C"
 {
-#define cIntersectorGetDimension F77_FUNC(cintersector_get_dimension, CINTERSECTOR_GET_DIMENSION)
-  int cIntersectorGetDimension();
+#define cLibSuperMeshIntersectorGetDimension F77_FUNC(cintersector_get_dimension, CINTERSECTOR_GET_DIMENSION)
+  int cLibSuperMeshIntersectorGetDimension();
 
-#define cIntersectorSetDimension F77_FUNC(cintersector_set_dimension, CINTERSECTOR_SET_DIMENSION)
-  void cIntersectorSetDimension(const int* dim);
+#define cLibSuperMeshIntersectorSetDimension F77_FUNC(cintersector_set_dimension, CINTERSECTOR_SET_DIMENSION)
+  void cLibSuperMeshIntersectorSetDimension(const int* dim);
 
-#define cIntersectorSetExactness F77_FUNC(cintersector_set_exactness, CINTERSECTOR_SET_EXACTNESS)
-  void cIntersectorSetExactness(const int* exact);
+#define cLibSuperMeshIntersectorSetExactness F77_FUNC(cintersector_set_exactness, CINTERSECTOR_SET_EXACTNESS)
+  void cLibSuperMeshIntersectorSetExactness(const int* exact);
 
-#define cIntersectorSetInput F77_FUNC(cintersector_set_input, CINTERSECTOR_SET_INPUT)
-  void cIntersectorSetInput(double* positionsA, double* positionsB, const int* dim, const int* loc);
+#define cLibSuperMeshIntersectorSetInput F77_FUNC(cintersector_set_input, CINTERSECTOR_SET_INPUT)
+  void cLibSuperMeshIntersectorSetInput(double* positionsA, double* positionsB, const int* dim, const int* loc);
 
-#define cIntersectorDrive F77_FUNC(cintersector_drive, CINTERSECTOR_DRIVE)
-  void cIntersectorDrive();
+#define cLibSuperMeshIntersectorDrive F77_FUNC(cintersector_drive, CINTERSECTOR_DRIVE)
+  void cLibSuperMeshIntersectorDrive();
   
-#define cIntersectorQuery F77_FUNC(cintersector_query, CINTERSECTOR_QUERY)
-  void cIntersectorQuery(int* nnodes, int* nelms);
+#define cLibSuperMeshIntersectorQuery F77_FUNC(cintersector_query, CINTERSECTOR_QUERY)
+  void cLibSuperMeshIntersectorQuery(int* nnodes, int* nelms);
   
-#define cIntersectorGetOutput F77_FUNC(cintersector_get_output, CINTERSECTOR_GET_OUTPUT)
-  void cIntersectorGetOutput(const int* nnodes, const int* nelms, const int* dim, const int* loc, double* positions, int* enlist);
+#define cLibSuperMeshIntersectorGetOutput F77_FUNC(cintersector_get_output, CINTERSECTOR_GET_OUTPUT)
+  void cLibSuperMeshIntersectorGetOutput(const int* nnodes, const int* nelms, const int* dim, const int* loc, double* positions, int* enlist);
 
-#define cIntersectionFinderReset F77_FUNC(cintersection_finder_reset, CINTERSECTION_FINDER_RESET)
-  void cIntersectionFinderReset(int* ntests);
+#define cLibSuperMeshIntersectionFinderReset F77_FUNC(cintersection_finder_reset, CINTERSECTION_FINDER_RESET)
+  void cLibSuperMeshIntersectionFinderReset(int* ntests);
 
-#define cIntersectionFinderSetInput F77_FUNC(cintersection_finder_set_input, CINTSERSECTION_FINDER_SET_INPUT)
-  void cIntersectionFinderSetInput(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
+#define cLibSuperMeshIntersectionFinderSetInput F77_FUNC(cintersection_finder_set_input, CINTSERSECTION_FINDER_SET_INPUT)
+  void cLibSuperMeshIntersectionFinderSetInput(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
 
-#define cIntersectionFinderFind F77_FUNC(cintersection_finder_find, CINTSERSECTION_FINDER_FIND)
-  void cIntersectionFinderFind(const double* positions, const int* dim, const int* loc);  
+#define cLibSuperMeshIntersectionFinderFind F77_FUNC(cintersection_finder_find, CINTSERSECTION_FINDER_FIND)
+  void cLibSuperMeshIntersectionFinderFind(const double* positions, const int* dim, const int* loc);  
 
-#define cIntersectionFinderQueryOutput F77_FUNC(cintersection_finder_query_output, CINTSERSECTION_FINDER_QUERY_OUTPUT)
-  void cIntersectionFinderQueryOutput(int* nelms);
+#define cLibSuperMeshIntersectionFinderQueryOutput F77_FUNC(cintersection_finder_query_output, CINTSERSECTION_FINDER_QUERY_OUTPUT)
+  void cLibSuperMeshIntersectionFinderQueryOutput(int* nelms);
 
-#define cIntersectionFinderGetOutput F77_FUNC(cintersection_finder_get_output, CINTSERSECTION_FINDER_GET_OUTPUT)
-  void cIntersectionFinderGetOutput(int* id, const int* index);
+#define cLibSuperMeshIntersectionFinderGetOutput F77_FUNC(cintersection_finder_get_output, CINTSERSECTION_FINDER_GET_OUTPUT)
+  void cLibSuperMeshIntersectionFinderGetOutput(int* id, const int* index);
 }
 
 #endif
