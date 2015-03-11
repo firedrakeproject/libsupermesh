@@ -478,7 +478,7 @@ contains
     if (present(stat)) then
        stat=lstat
     elseif (lstat/=0) then
-!       FLAbort("Failed to deallocate polynomial")			! ToDo
+       FLAbort("Failed to deallocate polynomial")
     end if
 
   end subroutine deallocate_polynomial

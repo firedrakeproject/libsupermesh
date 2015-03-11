@@ -697,7 +697,7 @@ contains
           sparsity%COLM(PTR) = Current%ID
           IF(Current%ID==-1) THEN
              ewrite(-1,*) "ERROR: POSINM() seriously unhappy with node",IROW
-!             FLAbort("Mesh contains nodes that are not associated with any elements.")		! ToDo
+             FLAbort("Mesh contains nodes that are not associated with any elements.")
           END IF
 
           PTR = PTR + 1
@@ -757,7 +757,7 @@ contains
     else if (present(nnz)) then
        lentries=sum(nnz)
     else
-!       FLAbort("In allocate_csr_sparsity need to provide either entries or nnz argument")	! ToDo
+       FLAbort("In allocate_csr_sparsity need to provide either entries or nnz argument")
     end if
 
     sparsity%name = name
@@ -786,7 +786,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to allocate sparsity.")		! ToDo
+          FLAbort("Failed to allocate sparsity.")
        end if
     end if
 
@@ -870,14 +870,14 @@ contains
 #endif
 
     case default
-!       FLAbort("Unknown matrix data type.")			! ToDo
+       FLAbort("Unknown matrix data type.")
     end select
 
     if (present(stat)) then
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to allocate matrix.")		! ToDo
+          FLAbort("Failed to allocate matrix.")
        end if
     end if
 
@@ -928,7 +928,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to deallocate matrix.")		! ToDo
+          FLAbort("Failed to deallocate matrix.")
        end if
     end if
 
@@ -982,7 +982,7 @@ contains
     end if
     
     if (.not. associated(matrix%ksp)) then
-!      FLAbort("Attempt made to deallocate a non-allocated or damaged CSR matrix.")	! ToDo
+      FLAbort("Attempt made to deallocate a non-allocated or damaged CSR matrix.")
     end if
     
     if (matrix%ksp/=PETSC_NULL_OBJECT) then
@@ -993,7 +993,7 @@ contains
           stat=lstat
           return
         end if
-!        FLAbort("Error from KSPDestroy in deallocate_csr_matrix.")		! ToDo
+        FLAbort("Error from KSPDestroy in deallocate_csr_matrix.")
       end if
     end if
     deallocate(matrix%ksp)
@@ -1002,7 +1002,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to deallocate matrix.")			! ToDo
+          FLAbort("Failed to deallocate matrix.")
        end if
     end if
     
@@ -1037,7 +1037,7 @@ contains
     matrix%name = lname
     
     if(present_and_true(diagonal).and.(blocks(1)/=blocks(2))) then
-!      FLAbort("Attempt made to allocate a non-square diagonal block_csr_matrix!")	! ToDo
+      FLAbort("Attempt made to allocate a non-square diagonal block_csr_matrix!")
     end if
     matrix%diagonal = present_and_true(diagonal)
     matrix%equal_diagonal_blocks = present_and_true(equal_diagonal_blocks)
@@ -1123,7 +1123,7 @@ contains
     else
        if (lstat/=0) then
           
-!          FLAbort("Failed to allocate matrix.")		! ToDo
+          FLAbort("Failed to allocate matrix.")
        end if
     end if
 
@@ -1189,7 +1189,7 @@ contains
     end if
     
     if (.not. associated(matrix%ksp)) then
-!      FLAbort("Attempt made to deallocate a non-allocated or damaged CSR matrix.")	! ToDo
+      FLAbort("Attempt made to deallocate a non-allocated or damaged CSR matrix.")
     end if
     if (matrix%ksp/=PETSC_NULL_OBJECT) then
       call KSPDestroy(matrix%ksp, lstat)
@@ -1199,7 +1199,7 @@ contains
           stat=lstat
           return
         end if
-!        FLAbort("Error from KSPDestroy in deallocate_csr_matrix.")		! ToDo
+        FLAbort("Error from KSPDestroy in deallocate_csr_matrix.")
       end if
     end if
     deallocate(matrix%ksp)
@@ -1243,7 +1243,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to deallocate matrix.")			! ToDo
+          FLAbort("Failed to deallocate matrix.")
        end if
     end if
 
@@ -1289,7 +1289,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to allocate matrix.")		! ToDo
+          FLAbort("Failed to allocate matrix.")
        end if
     end if    
 
@@ -1320,7 +1320,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to deallocate matrix.")		! ToDo
+          FLAbort("Failed to deallocate matrix.")
        end if
     end if    
 
@@ -1366,7 +1366,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to allocate matrix.")		! ToDo
+          FLAbort("Failed to allocate matrix.")
        end if
     end if    
 
@@ -1396,7 +1396,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to deallocate matrix.")			! ToDo
+          FLAbort("Failed to deallocate matrix.")
        end if
     end if    
 
@@ -1411,7 +1411,7 @@ contains
     integer, intent(in) :: block_i, block_j
 
     if(matrix%diagonal.and.(block_i/=block_j)) then
-!      FLAbort("Attempting to extract an off-diagonal block from a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to extract an off-diagonal block from a diagonal block_csr_matrix.")
     end if
 
     block_out%clone=.true.
@@ -1486,7 +1486,7 @@ contains
        matrix%external_val=.true.
        lstat=0
     else
-!       FLAbort("Either val or ival must be provided to wrap_matrix.")		! ToDo
+       FLAbort("Either val or ival must be provided to wrap_matrix.")
     end if
 
     ! always allocate to make sure all references see the same %ksp
@@ -1501,7 +1501,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to wrap matrix.")				! ToDo
+          FLAbort("Failed to wrap matrix.")
        end if
     end if
 
@@ -1584,7 +1584,7 @@ contains
        stat=lstat
     else
        if (lstat/=0) then
-!          FLAbort("Failed to wrap matrix.")			! ToDo
+          FLAbort("Failed to wrap matrix.")
        end if
     end if
 
@@ -1596,7 +1596,7 @@ contains
     type(csr_matrix), intent(inout) :: matrix
 
     if (matrix%clone .and. matrix%external_val) then
-!      FLAbort("Can't unclone this matrix as it is using externally stored values.")		! ToDo
+      FLAbort("Can't unclone this matrix as it is using externally stored values.")
     end if
     matrix%clone=.false.
     
@@ -1612,7 +1612,7 @@ contains
     if (.not.associated(matrix%val)) then
        allocate(matrix%val(matrix%blocks(1), matrix%blocks(2)))
     else if (.not. matrix%external_val) then
-!      FLAbort("Can't attach block of data as value memory has been allocated internally.")	! ToDo
+      FLAbort("Can't attach block of data as value memory has been allocated internally.")
     end if
 
     matrix%val(blocki,blockj)%ptr=>val
@@ -2010,7 +2010,7 @@ contains
     real, dimension(:), pointer :: block_csr_row_val_ptr
     
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to retrieve values in an-off diagonal block of a diagonal block_csr_matrix!")	! ToDo
+      FLAbort("Attempting to retrieve values in an-off diagonal block of a diagonal block_csr_matrix!")
     end if
 
     block_csr_row_val_ptr=> &
@@ -2035,7 +2035,7 @@ contains
     integer, dimension(:), pointer :: block_csr_row_ival_ptr
 
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to retrieve values in an off-diagonal block of a diagonal block_csr_matrix!")	! ToDo
+      FLAbort("Attempting to retrieve values in an off-diagonal block of a diagonal block_csr_matrix!")
     end if
 
     block_csr_row_ival_ptr=> &
@@ -2100,7 +2100,7 @@ contains
     
     if (.not. can_have_inactive(matrix)) then
       ewrite(1,*) "Matrix: ", trim(matrix%name)
-!      FLAbort("This matrix cannot have inactive rows set.")		! ToDo
+      FLAbort("This matrix cannot have inactive rows set.")
     end if
     
     if (.not. has_inactive(matrix)) then
@@ -2649,13 +2649,13 @@ contains
 
     if (associated(matrix%val)) then
        if(mpos==0) then
-!          FLAbort("Attempting to set value in matrix outside sparsity pattern.")	! ToDo
+          FLAbort("Attempting to set value in matrix outside sparsity pattern.")
        end if
        matrix%val(mpos)=matrix%val(mpos)+val
     else if (associated(matrix%ival)) then
        matrix%ival(mpos)=matrix%ival(mpos)+val
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")		! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine csr_addto
@@ -2678,7 +2678,7 @@ contains
     else if (associated(matrix%ival)) then
        matrix%ival(mpos)=matrix%ival(mpos)+val
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")		! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine csr_iaddto
@@ -2718,7 +2718,7 @@ contains
     integer :: mpos
 
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
     
     mpos = pos(matrix, i, j, save_pos=save_pos)
@@ -2731,7 +2731,7 @@ contains
        matrix%ival(blocki, blockj)%ptr(mpos)&
             =matrix%ival(blocki, blockj)%ptr(mpos)+val
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine block_csr_addto
@@ -2748,7 +2748,7 @@ contains
     logical, dimension(size(i), size(j)) :: l_mask
 
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
 
     if(present(mask)) then
@@ -2832,7 +2832,7 @@ contains
     integer row, col
       
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
   
     if (mblock%clone .or. matrix%clone) then
@@ -2881,7 +2881,7 @@ contains
     integer row, col
       
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
 
     if (associated(matrix%sparsity%findrm, mblock%sparsity%findrm) .and. &
@@ -2946,10 +2946,10 @@ contains
     do i=1, size(blocki)
        do j=1, size(blockj)
           if(matrixB%diagonal.and.(i/=j)) then
-!            FLAbort("Attempting to retrive an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+            FLAbort("Attempting to retrive an off-diagonal block of a diagonal block_csr_matrix.")
           end if
           if(matrixA%diagonal.and.(blocki(i)/=blockj(j))) then
-!            FLAbort("Attempting to set values in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+            FLAbort("Attempting to set values in an off-diagonal block of a diagonal block_csr_matrix.")
           end if
 
           blockij=block(matrixB, i, j)
@@ -3159,7 +3159,7 @@ contains
          matrix%ival(mpos)=matrix%ival(mpos)+val
        end if
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine csr_addto_diag
@@ -3191,7 +3191,7 @@ contains
     integer :: mpos
 
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
 
     if(associated(matrix%sparsity%centrm)) then
@@ -3217,7 +3217,7 @@ contains
                 =matrix%ival(blocki, blockj)%ptr(mpos)+val
        end if
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine block_csr_addto_diag
@@ -3233,7 +3233,7 @@ contains
     integer :: iloc
     
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
     
     do iloc=1,size(i)
@@ -3260,7 +3260,7 @@ contains
     else if (associated(matrix%ival)) then
        matrix%ival(mpos)=val
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine csr_set
@@ -3292,7 +3292,7 @@ contains
        else if (associated(out_matrix%ival)) then
           out_matrix%ival=in_matrix%ival
        else
-!          FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+          FLAbort("Attempting to set value in a matrix with no value space.")
        end if
     else
        ewrite(-1,*) 'Warning, not same sparsity'
@@ -3353,7 +3353,7 @@ contains
           assert(associated(in_matrix%ival(blocki,blockj)%ptr))
           out_matrix%ival=in_matrix%ival(blocki,blockj)%ptr
        else
-!          FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+          FLAbort("Attempting to set value in a matrix with no value space.")
        end if
     else
        ewrite(-1,*) 'Warning, not same sparsity'
@@ -3434,7 +3434,7 @@ contains
     else if (associated(matrix%ival)) then
        matrix%ival(mpos)=val
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine csr_iset
@@ -3449,7 +3449,7 @@ contains
     integer :: iloc, jloc
     
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
 
     do iloc=1,size(i)
@@ -3470,7 +3470,7 @@ contains
     integer :: mpos
     
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to set value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
 
     mpos = pos(matrix,i,j,save_pos=save_pos)
@@ -3484,7 +3484,7 @@ contains
     else if (associated(matrix%ival)) then
        matrix%ival(blocki,blockj)%ptr(mpos)=val
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine block_csr_set
@@ -3512,7 +3512,7 @@ contains
     else if (associated(matrix%ival)) then
        matrix%ival(mpos)=val
     else
-!       FLAbort("Attempting to set value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to set value in a matrix with no value space.")
     end if
 
   end subroutine csr_set_diag
@@ -3544,7 +3544,7 @@ contains
        end if
 
     else
-!       FLAbort("Attempting to extract value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to extract value in a matrix with no value space.")
     end if
 
   end function csr_val
@@ -3577,7 +3577,7 @@ contains
        end if
 
     else
-!       FLAbort("Attempting to extract value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to extract value in a matrix with no value space.")
     end if
 
   end function csr_ival
@@ -3592,7 +3592,7 @@ contains
     integer :: mpos
     
     if(matrix%diagonal.and.(blocki/=blockj)) then
-!      FLAbort("Attempting to retrieve value in an off-diagonal block of a diagonal block_csr_matrix.")	! ToDo
+      FLAbort("Attempting to retrieve value in an off-diagonal block of a diagonal block_csr_matrix.")
     end if
 
     mpos=pos(matrix,i,j,save_pos=save_pos)
@@ -3613,7 +3613,7 @@ contains
        end if
 
     else
-!       FLAbort("Attempting to extract value in a matrix with no value space.")	! ToDo
+       FLAbort("Attempting to extract value in a matrix with no value space.")
     end if
 
   end function block_csr_val
@@ -3880,8 +3880,8 @@ contains
     !locals
     integer :: i
 
-!    if(size(m,1).ne.size(mv)) FLAbort('Bad vector size out.')	! ToDo
-!    if(size(m,2).ne.size(v)) FLAbort('Bad vector size in.')	! ToDo
+    if(size(m,1).ne.size(mv)) FLAbort('Bad vector size out.')
+    if(size(m,2).ne.size(v)) FLAbort('Bad vector size in.')
 
     mv = 0.
 
@@ -3957,8 +3957,8 @@ contains
     !locals
     integer :: i
 
-!    if(size(m,2).ne.size(mv)) FLAbort('Bad vector size out.')	! ToDo
-!    if(size(m,1).ne.size(v)) FLAbort('Bad vector size in.')	! ToDo
+    if(size(m,2).ne.size(mv)) FLAbort('Bad vector size out.')
+    if(size(m,1).ne.size(v)) FLAbort('Bad vector size in.')
 
     mv = 0.
 
@@ -4137,7 +4137,7 @@ contains
        allocate( vec(size(matrix2,1)) )
        allocate( m2tvec(size(matrix2,2)) )
        if(size(matrix1,2).ne.size(matrix2,2)) then
-!          FLAbort('Cannot perform multiplication when matrix sizes differ.')	! ToDo
+          FLAbort('Cannot perform multiplication when matrix sizes differ.')
        end if
        allocate( m1m2tvec(size(matrix1,1)) )
        allocate( productvec(size(matrix1,1)) )
@@ -4157,7 +4157,7 @@ contains
           ewrite(2,*) size(matrix1,1), size(matrix1,2)
           ewrite(2,*) size(matrix2,1), size(matrix2,2)
           ewrite(2,*) size(product,1), size(product,2)
-!          FLAbort('Matmul_t error.')					! ToDo
+          FLAbort('Matmul_t error.')
        end if
     end if
 
@@ -4184,7 +4184,7 @@ contains
 
     assert(size(matrix1,2)==size(matrix2,2))
     if(.not.matrix1%sparsity%sorted_rows.or..not.matrix2%sparsity%sorted_rows) then
-!      FLAbort("csr_matmul_T assumes sorted rows.")	! ToDo
+      FLAbort("csr_matmul_T assumes sorted rows.")
     end if
 
     if(.not.present(model)) then
@@ -4274,7 +4274,7 @@ contains
 
     assert(size(matrix1,2)==size(matrix2,2))
     if(.not.matrix1%sparsity%sorted_rows.or..not.matrix2%sparsity%sorted_rows) then
-!      FLAbort("csr_matmul_T assumes sorted rows.")			! ToDo
+      FLAbort("csr_matmul_T assumes sorted rows.")
     end if
     
     call zero(product)
@@ -4672,14 +4672,14 @@ contains
     integer row, j, col
    
     if (present_and_true(symmetric_sparsity) .and. .not. A%sparsity%sorted_rows) then
-!      FLAbort("csr_tranpose on symmetric sparsities works only with sorted_rows.")	! ToDo
+      FLAbort("csr_tranpose on symmetric sparsities works only with sorted_rows.")
     end if
 
 #ifdef DDEBUG 
     ! Check that the supplied sparsity is indeed symmetric  
     if (present_and_true(symmetric_sparsity)) then
       if (.not. is_symmetric(A%sparsity)) then
-!         FLAbort("The symmetric flag is supplied, but the sparsity is not symmetric.")		! ToDo
+         FLAbort("The symmetric flag is supplied, but the sparsity is not symmetric.")
       end if
     end if
 #endif
@@ -4707,7 +4707,7 @@ contains
            assert(AT%sparsity%colm(AT%sparsity%findrm(col)+rowlen(col))==row)
            rowlen(col)=rowlen(col)+1
          else if (present_and_true(symmetric_sparsity)) then
-!           FLAbort("Found a zero entry in the colm of the given sparsity which is currently not supported if the symmetric flag.")	! ToDo
+           FLAbort("Found a zero entry in the colm of the given sparsity which is currently not supported if the symmetric flag.")
          end if
       end do
     end do
@@ -4727,7 +4727,7 @@ contains
     if (associated(sparsity%refcount)) then
       if (sparsity%refcount%count>1) then
         ewrite(-1,*) "For health and safety reasons sparsities should not"
-!        FLAbort("be sorted after they are referenced.")			! ToDo
+        FLAbort("be sorted after they are referenced.")
       end if
     end if
     
@@ -4815,7 +4815,7 @@ contains
     logical have_diag
     
     if(.not.sparsityA%sorted_rows.or..not.sparsityB%sorted_rows) then
-!      FLAbort("sparsity_merge assumes sorted rows.")			! ToDo
+      FLAbort("sparsity_merge assumes sorted rows.")
     end if
     
     assert( size(sparsityA,1)==size(sparsityB,1) )
@@ -5169,7 +5169,7 @@ contains
         ewrite(-1,*) trim(line)
         ewrite(-1,*) "MatrixMarket file not in 'matrix coordinate", &
                       & "real general' format."
-!        FLAbort("MatrixMarket file cannot be generated.")			! ToDo
+        FLAbort("MatrixMarket file cannot be generated.")
       end if
       
       i=i+len_trim(headerword(j))

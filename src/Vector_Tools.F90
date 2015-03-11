@@ -445,7 +445,7 @@ contains
         stat = info
       else
         ewrite(-1, *) "For matrix: ", transpose(M)
-!        FLAbort("eigendecomposition_symmetric failed")			! ToDo
+        FLAbort("eigendecomposition_symmetric failed")
       end if
     end if
 
@@ -583,7 +583,7 @@ contains
     case(3)
        det_out = det_3(mat)
     case default
-!       FLAbort("Determinant not implemented for this dimension")		! ToDo
+       FLAbort("Determinant not implemented for this dimension")
     end select
     
   end function det

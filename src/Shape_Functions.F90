@@ -157,7 +157,7 @@ contains
           stat=1
           return
        else
-!          FLAbort('Element numbering unavailable.')		! ToDo
+          FLAbort('Element numbering unavailable.')
        end if
     end if
 
@@ -180,7 +180,7 @@ contains
           coords=dim
        end if
     case default
-!       FLAbort('Illegal element family.')			! ToDo
+       FLAbort('Illegal element family.')
     end select
 
     if (present(quad_s)) then
@@ -194,7 +194,7 @@ contains
                ele_num%faces, quad_s%ngi,coords,.true.)
           surface_count=ele_num%edges
        case default
-!          FLAbort("Unsupported dimension count.  Can only generate surface shape functions for elements that exist in 2 or 3 dimensions.")	! ToDo
+          FLAbort("Unsupported dimension count.  Can only generate surface shape functions for elements that exist in 2 or 3 dimensions.")
        end select
     else
        call allocate(shape, ele_num, quad%ngi)
@@ -257,7 +257,7 @@ contains
 
           case default
 
-!             FLAbort('An unsupported element type has been selected.')			! ToDo
+             FLAbort('An unsupported element type has been selected.')
 
           end select
 
@@ -274,7 +274,7 @@ contains
           shape%n = ieee_value(0.0,ieee_quiet_nan)
           shape%dn = ieee_value(0.0,ieee_quiet_nan)
           if(present(quad_s)) then
-!             FLAbort('Shouldn''t be happening')				! Todo
+             FLAbort('Shouldn''t be happening')
           end if
        else
           ! Loop over all the quadrature points.

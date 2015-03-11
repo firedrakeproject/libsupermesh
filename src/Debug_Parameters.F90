@@ -26,7 +26,7 @@
 !    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !    USA
 
-module fldebug_parameters
+module libsupermesh_fldebug_parameters
   !!< Debug specific global parameters
 
   implicit none
@@ -39,4 +39,4 @@ module fldebug_parameters
   !! These defaults are an assumption which may not be true on all platforms.
   integer, save :: debug_error_unit=0, debug_log_unit=6
 
-end module fldebug_parameters
+end module libsupermesh_fldebug_parameters

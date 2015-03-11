@@ -28,7 +28,7 @@
 
     call abort_if_in_parallel_region
     if (.not.associated(object%refcount)) then
-!       FLAbort ("Attempt to incref csr_matrix "//trim(object%name)//" which has no references")	! ToDo
+       FLAbort ("Attempt to incref csr_matrix "//trim(object%name)//" which has no references")
     end if
        
     ! Reference count already exists, just increment it.
@@ -59,7 +59,7 @@
           ewrite(0,'(a, i0)') "Reference count of &
                &csr_matrix "//trim(object%name)//&
                " is ", object%refcount%count
-!          FLAbort("that should never happen.")				! ToDo
+          FLAbort("that should never happen.")
        end if
 
        object%refcount%prev%next=>object%refcount%next

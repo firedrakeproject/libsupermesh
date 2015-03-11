@@ -10,8 +10,8 @@ get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # gfortran
-  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # ifort (untested)
   set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
@@ -56,7 +56,7 @@ configure_file (
 SET(_WARNING_COMPILE_FLAGS "-Wall")
 
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${_WARNING_COMPILE_FLAGS}" )
-SET( CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${_WARNING_COMPILE_FLAGS}" )
+SET( CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
 SET( CMAKE_Fortran_FLAGS_RELEASE  "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
 SET( CMAKE_Fortran_FLAGS_DEBUG  "${CMAKE_Fortran_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS}" )
 
@@ -82,11 +82,11 @@ include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include")
 # Create a library called "SuperMesh" which includes the source file "Element_Intersection.cpp".
 # The extension is already found. Any number of sources could be listed here.
 #add_library (SuperMesh STATIC ${PROJECT_SOURCE_DIR}/src/Element_Intersection.cpp ${PROJECT_SOURCE_DIR}/src/Intersection_finder.F90 ${PROJECT_SOURCE_DIR}/src/Linked_Lists.F90)
-FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
 FILE(GLOB CPP_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
 #SET( many_srcs "${PROJECT_SOURCE_DIR}/src/Supermesh.F90")
 
-add_library (SuperMesh STATIC ${CPP_SRCFILES} ${FORTRAN_SRCFILES})
+add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES})
 
 
 install (TARGETS SuperMesh DESTINATION lib)

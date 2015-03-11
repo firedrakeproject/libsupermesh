@@ -30,7 +30,7 @@
 module libsupermesh_fldebug
   !!< This module allows pure fortran programs to use the fdebug.h headers.
 
-  use fldebug_parameters
+  use libsupermesh_fldebug_parameters
   
   implicit none
 
@@ -57,7 +57,7 @@ contains
   function debug_level()
     ! Simply return the current debug level. This makes the debug level
     ! effectively global.
-    use fldebug_parameters
+    use libsupermesh_fldebug_parameters
     implicit none  
     integer :: debug_level
     

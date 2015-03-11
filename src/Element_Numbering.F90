@@ -298,7 +298,7 @@ contains
     case (ELEMENT_TRACE)
 
        if(dimension /= 2) then
-!          FLAbort('Trace elements only currently coded for 2D')	! ToDo
+          FLAbort('Trace elements only currently coded for 2D')
        end if
        select case (vertices)
        case (3)
@@ -306,7 +306,7 @@ contains
        case (4)
           ele_num=>quad_numbering_trace(degree)
        case default
-!          FLAbort('Vertex count not supported for trace elements')	! ToDo
+          FLAbort('Vertex count not supported for trace elements')
        end select
     case (ELEMENT_BUBBLE)
 
@@ -374,7 +374,7 @@ contains
 
     case default
        
-!       FLAbort('Attempt to select an illegal element type.')	! ToDo
+       FLAbort('Attempt to select an illegal element type.')
 
     end select
        
@@ -561,7 +561,7 @@ contains
        ! Sanity test
        if (te(i+1)+1/=cnt) then
           ewrite(-1,*) 'degree, nodes, cnt = ', i, te(i+1)+1, cnt
-!          FLAbort("Counting error")	! ToDo
+          FLAbort("Counting error")
        end if
        
        ! Number faces.
@@ -729,7 +729,7 @@ contains
        ! Sanity test
        if (tr(i+1)+1/=cnt) then
           ewrite(-1,*) 'degree, nodes, cnt = ', i, tr(i+1)+1, cnt
-!          FLAbort("Counting error")	! ToDo
+          FLAbort("Counting error")
        end if
        
        ! Number edges.
@@ -1083,7 +1083,7 @@ contains
      ! Sanity test
      if (cnt/=3) then
         ewrite(-1,*) 'Counting error', 1, 3, cnt
-!        FLAbort("Counting error.")	! ToDo
+        FLAbort("Counting error.")
      end if
      
      ! Number edges.
@@ -1366,7 +1366,7 @@ contains
           stat=1
           return
        else
-!          FLAbort("Node is not part of an element in vertex_num.")	! ToDo
+          FLAbort("Node is not part of an element in vertex_num.")
        end if
     end if
 
@@ -1386,9 +1386,9 @@ contains
          l=0
          l(svertex_num)=ele_num%degree*(ele_num%dimension+1)
        case(ELEMENT_TRACE)
-!         FLAbort("Trace elements do not have well defined vertices")	! ToDo
+         FLAbort("Trace elements do not have well defined vertices")
        case default
-!         FLAbort("Unknown element type")				! ToDo
+         FLAbort("Unknown element type")
        end select
 
        ! Look up the node number of the vertex.
@@ -1475,7 +1475,7 @@ contains
         
       case default
 
-!         FLAbort('Unknown element shape.')				! ToDo
+         FLAbort('Unknown element shape.')
 
       end select
 
@@ -1494,15 +1494,15 @@ contains
          
       case default
 
-!         FLAbort('Unknown element shape.')				! ToDo
+         FLAbort('Unknown element shape.')
 
       end select
 
     case (ELEMENT_TRACE)
-!       FLAbort("Trace elements do not have well-defined vertices")	! ToDo
+       FLAbort("Trace elements do not have well-defined vertices")
        
     case default
-!      FLAbort("Unknown element type")					! ToDo
+      FLAbort("Unknown element type")
     end select
     
   end function ele_num_local_vertices
@@ -1637,7 +1637,7 @@ contains
        end if
        
     case default
-!       FLAbort("Unknown element family.")				! ToDo
+       FLAbort("Unknown element family.")
     end select
     
   end function numbering_boundary_numbering
@@ -1701,7 +1701,7 @@ contains
           stat=1
           return
        else
-!          FLAbort("Nodes are not part of element in edge_num_int.")		! ToDo
+          FLAbort("Nodes are not part of element in edge_num_int.")
        end if
     end if
     
@@ -1785,7 +1785,7 @@ contains
           end do
             
           if (j==0) then
-!            FLAbort("The same node appears more than once in edge_local_num.")		! ToDo
+            FLAbort("The same node appears more than once in edge_local_num.")
           end if
             
           ! instead of between 0 and 1, between 0 and degree
@@ -1804,7 +1804,7 @@ contains
           end if
           
       case default
-!          FLAbort("Unknown element family.")					! ToDo
+          FLAbort("Unknown element family.")
       end select
 
     case (ELEMENT_BUBBLE)
@@ -1831,7 +1831,7 @@ contains
           end do number_loop_b
           
       case default
-!          FLAbort("Unknown element family.")				! ToDo
+          FLAbort("Unknown element family.")
       end select
 
    case (ELEMENT_TRACE)
@@ -1880,12 +1880,12 @@ contains
          !       3
          sum2face = (/0,0,3,1,0,2,4/)
          if(sum(nodes)>7) then
-!            FLAbort('bad vertex numbers')			! ToDo
+            FLAbort('bad vertex numbers')
          end if
          !first local coordinate is face number
          l(1) = sum2face(sum(nodes))
          if(l(1)==0) then
-!            FLAbort('bad vertex numbers')			! ToDo
+            FLAbort('bad vertex numbers')
          end if
 
          if (nodes(2)>nodes(1)) then
@@ -1912,11 +1912,11 @@ contains
          end do trace_number_loop1
          assert(cnt==size(edge_local_num))
       case default
-!         FLAbort("Unknown element family.")			! ToDo
+         FLAbort("Unknown element family.")
       end select
       
    case default
-!      FLAbort("Unknown element type")				! ToDo
+      FLAbort("Unknown element type")
    end select
 
   end function edge_local_num
@@ -1977,7 +1977,7 @@ contains
           stat=1
           return
        else
-!          FLAbort("Nodes are not part of an element in face_num_int.")		! ToDo
+          FLAbort("Nodes are not part of an element in face_num_int.")
        end if
     end if
 
@@ -2097,7 +2097,7 @@ contains
           end do
             
           if (j12==0 .or. j13==0) then
-!            FLAbort("The same node appears more than once in edge_local_num.")		! ToDo
+            FLAbort("The same node appears more than once in edge_local_num.")
           end if
             
           ! Now find the nodes on the face by walking through the count
@@ -2134,7 +2134,7 @@ contains
           
       case default
         
-!          FLAbort("Unknown element family.")				! ToDo
+          FLAbort("Unknown element family.")
           
       end select
     case (ELEMENT_BUBBLE)
@@ -2171,11 +2171,11 @@ contains
 
       case default
         
-!          FLAbort("Unknown element family.")			! ToDo
+          FLAbort("Unknown element family.")
           
       end select
     case default
-!      FLAbort("Unknown element type.")				! ToDo
+      FLAbort("Unknown element type.")
     end select
       
   end function face_local_num_int
@@ -2267,11 +2267,11 @@ contains
     cc=(/ 0, 0, 0 /)
     
     if (ele_num%family/=FAMILY_SIMPLEX) then
-!      FLAbort("ele_local_num currently only works for simplices")		! ToDo
+      FLAbort("ele_local_num currently only works for simplices")
     end if
     
     if (ele_num%type==ELEMENT_TRACE) then
-!       FLAbort("ele_local_num doesn't know about trace elements yet")		! ToDo
+       FLAbort("ele_local_num doesn't know about trace elements yet")
     end if
 
     do i=1, ele_num%nodes
@@ -2329,7 +2329,7 @@ contains
           
        case default
           
-!          FLAbort('Unknown element family.')				! ToDo
+          FLAbort('Unknown element family.')
 
        end select
        
@@ -2341,12 +2341,12 @@ contains
           if (ele_num%degree>0) then
              coords=real(ele_num%number2count(:,n))/real(ele_num%degree*(ele_num%dimension+1))
           else
-!             FLAbort('Illegal element degree')				! ToDo
+             FLAbort('Illegal element degree')
           end if
 
        case default
           
-!          FLAbort('Unknown element family.')				! ToDo
+          FLAbort('Unknown element family.')
 
        end select
 
@@ -2378,17 +2378,17 @@ contains
              coords(n) = 0.0
           end if
        case (FAMILY_CUBE)
-!          FLAbort('I *thought* this wasn''t needed.')			! ToDo
+          FLAbort('I *thought* this wasn''t needed.')
 
        case default
           
-!          FLAbort('Unknown element family.')				! ToDo
+          FLAbort('Unknown element family.')
 
        end select
 
     case default
 
-!       FLAbort('Illegal element type.')				! ToDo
+       FLAbort('Illegal element type.')
 
     end select
 

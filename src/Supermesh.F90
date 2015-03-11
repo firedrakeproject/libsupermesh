@@ -4,7 +4,7 @@ module libsupermesh_construction
   use libsupermesh_fields_data_types
   use libsupermesh_fields_allocates
   use libsupermesh_fields_base
-!  use sparse_tools			! IAKOVOS commented out
+  use libsupermesh_sparse_tools
   use libsupermesh_futils
 !  use metric_tools			! IAKOVOS commented out
   use libsupermesh_linked_lists
@@ -12,6 +12,7 @@ module libsupermesh_construction
   use libsupermesh_transform_elements
   use libsupermesh_global_parameters, only : real_4, real_8
 !  use tetrahedron_intersection_module	! IAKOVOS commented out
+  use libsupermesh_tet_intersection_module
   implicit none
   
   interface libsupermesh_cintersector_set_input

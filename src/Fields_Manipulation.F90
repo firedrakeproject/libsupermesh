@@ -228,7 +228,7 @@ implicit none
        end do
     case default
        ! someone could implement in_field type python
-!       FLAbort("Illegal in_field field type in set()")			! ToDo
+       FLAbort("Illegal in_field field type in set()")
     end select
 
   end subroutine set_vector_field_field
@@ -250,7 +250,7 @@ implicit none
        (in_field_new%field_type==FIELD_TYPE_CONSTANT .and. &
         in_field_old%field_type==FIELD_TYPE_CONSTANT))) then
        ewrite(-1,*) "Incompatible field types in set()"
-!        FLAbort("Evilness");						! ToDo
+        FLAbort("Evilness");
     end if
 #endif
     assert(in_field_new%dim==out_field%dim)
@@ -267,7 +267,7 @@ implicit none
       end do
     case default
        ! someone could implement in_field type python
-!       FLAbort("Illegal in_field field type in set()")			! ToDo
+       FLAbort("Illegal in_field field type in set()")
     end select
 
   end subroutine set_vector_field_theta
@@ -291,7 +291,7 @@ implicit none
        out_field%val(dim,:)=in_field%val(1)
     case default
        ! someone could implement in_field type python
-!       FLAbort("Illegal in_field field type in set()")			! ToDo
+       FLAbort("Illegal in_field field type in set()")
     end select
 
   end subroutine set_vector_field_field_dim
@@ -315,7 +315,7 @@ implicit none
        out_field%val(dim,:)=in_field%val(dim,1)
     case default
        ! someone could implement in_field type python
-!       FLAbort("Illegal in_field field type in set()")			! ToDo
+       FLAbort("Illegal in_field field type in set()")
     end select
 
   end subroutine set_vector_field_vfield_dim

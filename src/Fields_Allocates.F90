@@ -298,12 +298,12 @@ contains
         field%py_func = py_func
       else
         if (stat /= 0) then
-!          FLAbort("Field specified as FIELD_TYPE_PYTHON, but no func passed!")		! ToDo
+          FLAbort("Field specified as FIELD_TYPE_PYTHON, but no func passed!")
         end if
       end if
 
       if (.not. present(py_positions)) then
-!        FLAbort("Field specified as FIELD_TYPE_PYTHON but no positions field passed!")	! ToDo
+        FLAbort("Field specified as FIELD_TYPE_PYTHON but no positions field passed!")
       end if
       field%py_positions => py_positions
       field%py_dim = py_positions%dim
@@ -584,7 +584,7 @@ contains
     ! You can't have a CG degree 0 mesh!
     if(mesh%shape%degree==0.and.mesh%continuity>=0.and.mesh%shape&
          &%numbering%type/=ELEMENT_TRACE) then
-!      FLExit("For a P0 mesh, the 'mesh_continuity' must be Discontinuous.")		! ToDo
+      FLExit("For a P0 mesh, the 'mesh_continuity' must be Discontinuous.")
     end if
 
     if (present(name)) then
@@ -601,7 +601,7 @@ contains
     if (mesh%continuity>=0) then
        ! Make a continuous field.
        if (model%continuity<0) then
-!          FLExit("Unable to derive a continuous mesh from a discontinuous mesh")	! ToDo
+          FLExit("Unable to derive a continuous mesh from a discontinuous mesh")
        end if
 
        allocate(ndglno(mesh%shape%numbering%vertices*model%elements), &
@@ -726,7 +726,7 @@ contains
        case(FAMILY_CUBE)
           n_faces = 2*mesh%shape%dim
        case default
-!          FLExit('Element family not supported for trace elements')		! ToDo
+          FLExit('Element family not supported for trace elements')
        end select
        allocate(mesh%ndglno(mesh%elements*n_faces*mesh%faces%shape%loc))
        call make_global_numbering_trace(mesh)

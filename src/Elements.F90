@@ -182,7 +182,7 @@ contains
     if (present(stat)) then
        stat=lstat
     else if (lstat/=0) then
-!       FLAbort("Unable to deallocate element.")		! ToDo
+       FLAbort("Unable to deallocate element.")
     end if
 
   end subroutine deallocate_element
@@ -202,7 +202,7 @@ contains
     if (present(stat)) then
        stat=lstat
     else if (lstat/=0) then
-!       FLAbort("Unable to deallocate constraints.")		! ToDo
+       FLAbort("Unable to deallocate constraints.")
     end if
 
   end subroutine deallocate_constraints

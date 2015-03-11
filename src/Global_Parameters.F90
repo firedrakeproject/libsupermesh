@@ -42,7 +42,7 @@ module libsupermesh_global_parameters
   
   ! Debug specific paramaters are contained in fldebug_parameters
   ! (to resolve build dependencies)
-  use fldebug_parameters
+  use libsupermesh_fldebug_parameters
   use iso_c_binding
   
   implicit none

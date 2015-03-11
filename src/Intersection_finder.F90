@@ -3,7 +3,7 @@
 
 module libsupermesh_intersection_finder_module
 
-!use quadrature			! IAKOVOS commented out
+use libsupermesh_quadrature
 use libsupermesh_elements
 use libsupermesh_fields_base
 use libsupermesh_fields_data_types
@@ -13,7 +13,7 @@ use libsupermesh_linked_lists
 !use parallel_fields		! IAKOVOS commented out
 use libsupermesh_parallel_tools
 !use supermesh_construction	! IAKOVOS commented out
-!use transform_elements		! IAKOVOS commented out
+use libsupermesh_transform_elements
 use libsupermesh_data_structures
 use libsupermesh_sparse_tools
 
@@ -175,7 +175,7 @@ contains
 #ifdef COUNT_INTERSECTION_TESTS
     tests = intersection_tests_count
 #else
-!    FLAbort("Counting of intersection tests is not available")		! ToDo
+    FLAbort("Counting of intersection tests is not available")
     ! To keep the compiler quiet
     tests = 0
 #endif
@@ -188,7 +188,7 @@ contains
 #ifdef COUNT_INTERSECTION_TESTS
     intersection_tests_count = 0
 #else
-!    FLAbort("Counting of intersection tests is not available")		! ToDo
+    FLAbort("Counting of intersection tests is not available")
 #endif
 
   end subroutine reset_intersection_tests_counter
@@ -648,7 +648,7 @@ contains
     end do
 
     if (map%length == 0) then
-!      FLAbort("Should never get here -- it has to intersect /something/!")	! ToDo
+      FLAbort("Should never get here -- it has to intersect /something/!")
     end if
   end function brute_force_search
 

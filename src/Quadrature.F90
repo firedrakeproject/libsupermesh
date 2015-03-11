@@ -34,7 +34,7 @@ module libsupermesh_quadrature
   use libsupermesh_reference_counting
 !  use wandzura_quadrature		! IAKOVOS commented out
 !  use grundmann_moeller_quadrature	! IAKOVOS commented out
-!  use vector_tools			! IAKOVOS commented out
+  use libsupermesh_vector_tools
   implicit none
 
   private
@@ -89,7 +89,7 @@ contains
     if (present(stat)) then
        stat=lstat
     else if (lstat/=0) then
-!       FLAbort("Error deallocating quad")		! ToDo
+       FLAbort("Error deallocating quad")
     end if
 
   end subroutine deallocate_quad

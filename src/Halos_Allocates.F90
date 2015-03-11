@@ -100,17 +100,17 @@ contains
 
       if(present(nprocs)) then
         if(nprocs /= lnprocs) then
-!          FLAbort("Inconsistent communicator and nprocs supplied when allocating a halo")	! ToDo
+          FLAbort("Inconsistent communicator and nprocs supplied when allocating a halo")
         end if
       end if
 #else
-!      FLAbort("Cannot assign a communicator to a halo without MPI support")			! ToDo
+      FLAbort("Cannot assign a communicator to a halo without MPI support")
 #endif
     else if(present(nprocs)) then
       halo%nprocs = nprocs
       lnprocs = nprocs
     else
-!      FLAbort("Either a communicator or nprocs must be supplied when allocating a halo")	! ToDo
+      FLAbort("Either a communicator or nprocs must be supplied when allocating a halo")
     end if
 
     assert(lnprocs >= 0)
