@@ -41,11 +41,45 @@ module libsupermesh_parallel_tools
   private
 
   public :: abort_if_in_parallel_region
-  public :: getnprocs, MPI_COMM_FEMTOOLS
+  public :: getnprocs, getprocno, &
+       isparallel, &
+       MPI_COMM_FEMTOOLS_LIB
   
-  integer(c_int), bind(c) :: MPI_COMM_FEMTOOLS = MPI_COMM_WORLD
+  integer(c_int), bind(c) :: MPI_COMM_FEMTOOLS_LIB = MPI_COMM_WORLD
   
 contains
+
+  function getprocno(communicator) result(procno)
+    !!< This is a convenience routine which returns the MPI rank
+    !!< number + 1 when MPI is being used and 1 otherwise.
+  
+    integer, optional, intent(in) :: communicator
+
+    integer :: procno
+#ifdef HAVE_MPI
+    integer :: ierr, lcommunicator
+    logical :: initialized
+    
+    call MPI_Initialized(initialized, ierr)
+    if(initialized) then
+       if(present(communicator)) then
+          lcommunicator = communicator
+       else
+          lcommunicator = MPI_COMM_FEMTOOLS_LIB
+       end if
+       
+       assert(valid_communicator(lcommunicator))
+       call MPI_Comm_Rank(lcommunicator, procno, ierr)
+       assert(ierr == MPI_SUCCESS)
+       procno = procno + 1
+    else
+       procno = 1
+    end if
+#else
+    procno = 1
+#endif
+
+  end function getprocno
 
   ! Abort run if we're in an OMP parallel region
   ! Call this routine at the start of functions that are known not to
@@ -64,7 +98,7 @@ contains
   
   function getnprocs(communicator) result(nprocs)
     !!< This is a convience routine which returns the number of processes
-    !!< in a communicator (default MPI_COMM_FEMTOOLS) when MPI is being used and 1
+    !!< in a communicator (default MPI_COMM_FEMTOOLS_LIB) when MPI is being used and 1
     !!< otherwise.
     
     integer, optional, intent(in) :: communicator
@@ -81,7 +115,7 @@ contains
           assert(valid_communicator(communicator))
           lcommunicator = communicator
        else
-          lcommunicator = MPI_COMM_FEMTOOLS
+          lcommunicator = MPI_COMM_FEMTOOLS_LIB
        end if
        
        assert(valid_communicator(lcommunicator))
@@ -95,5 +129,12 @@ contains
 #endif
 
   end function getnprocs
+  
+  logical function isparallel()
+    !!< Return true if we are running in parallel, and false otherwise.
+  
+    isparallel = (getnprocs()>1)
+    
+  end function isparallel
 
 end module libsupermesh_parallel_tools

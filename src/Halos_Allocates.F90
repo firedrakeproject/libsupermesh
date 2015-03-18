@@ -86,7 +86,7 @@ contains
     integer :: i, lnprocs
 
 #ifdef HAVE_MPI
-    halo%communicator = MPI_COMM_FEMTOOLS
+    halo%communicator = MPI_COMM_FEMTOOLS_LIB
 #else
     halo%communicator = -1
 #endif  

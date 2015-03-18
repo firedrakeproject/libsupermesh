@@ -26,19 +26,27 @@
 !    USA
 #include "fdebug.h"
 module libsupermesh_fields_allocates
-use libsupermesh_elements
-use libsupermesh_fields_data_types
+use libsupermesh_elements, only : element_type
+use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
+                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
+                    scalar_field_lib => scalar_field, &
+                    vector_field_lib => vector_field, &
+                    tensor_field_lib => tensor_field, &
+  scalar_boundary_condition_lib => scalar_boundary_condition, &
+  vector_boundary_condition_lib => vector_boundary_condition, &
+  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
+  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
 use libsupermesh_fields_base
 use libsupermesh_shape_functions, only: make_element_shape
 use libsupermesh_global_parameters, only: PYTHON_FUNC_LEN, empty_path, empty_name, &
      topology_mesh_name, NUM_COLOURINGS
 use libsupermesh_halo_data_types
 use libsupermesh_halos_allocates
-!use halos_repair		! IAKOVOS commented out
+use libsupermesh_halos_repair
 !use pickers_deallocates	! IAKOVOS commented out
-!use adjacency_lists		! IAKOVOS commented out
-!use global_numbering, only: make_global_numbering, make_global_numbering_dg,&
-!     &make_global_numbering_trace	! IAKOVOS commented out
+use libsupermesh_adjacency_lists
+use libsupermesh_global_numbering, only: make_global_numbering, make_global_numbering_dg,&
+      make_global_numbering_trace
 !use memory_diagnostics		! IAKOVOS commented out
 use libsupermesh_ieee_arithmetic
 use libsupermesh_data_structures
@@ -51,8 +59,8 @@ implicit none
 ! IAKOVOS commented out
 !  public :: allocate, deallocate, incref, decref, has_references, add_faces, &
 !     & deallocate_faces, zero
-  public :: allocate, deallocate, incref, decref, has_references, &
-    & zero
+  public :: allocate, deallocate, incref, decref, has_references, add_faces, &
+    & deallocate_faces, zero
 ! IAKOVOS commented out
 !  public :: make_element_shape, make_mesh, make_mesh_periodic, make_submesh, &
 !    & create_surface_mesh, make_fake_mesh_linearnonconforming
@@ -65,7 +73,9 @@ implicit none
 !  public :: add_lists, extract_lists, add_nnlist, extract_nnlist, add_nelist, &
 !    & extract_nelist, add_eelist, extract_eelist, remove_lists, remove_nnlist, &
 !    & remove_nelist, remove_eelist, extract_elements, remove_boundary_conditions
-  public :: extract_eelist, remove_lists
+  public :: add_lists, add_nelist, &
+       extract_nelist, add_eelist, extract_eelist, remove_lists, remove_nnlist, &
+       remove_nelist, remove_eelist
 
   interface allocate
 ! IAKOVOS commented out
@@ -92,22 +102,29 @@ implicit none
           zero_scalar_field_nodes, zero_vector_field_nodes, zero_tensor_field_nodes
   end interface
 
-! IAKOVOS commented out
-!  interface deallocate_faces
-!     module procedure deallocate_mesh_faces
-!  end interface
+  interface deallocate_faces
+     module procedure deallocate_mesh_faces
+  end interface
 
 ! IAKOVOS commented out
 !  interface add_lists
 !    module procedure add_lists_mesh, add_lists_scalar, add_lists_vector, &
 !      & add_lists_tensor
 !  end interface add_lists
+  interface add_lists
+    module procedure add_lists_mesh
+  end interface add_lists
+
 
 ! IAKOVOS commented out
 !  interface extract_lists
 !    module procedure extract_lists_mesh, extract_lists_scalar, &
 !      & extract_lists_vector, extract_lists_tensor
 !  end interface extract_lists
+  interface extract_lists
+    module procedure extract_lists_mesh
+  end interface extract_lists
+
  
 ! IAKOVOS commented out
 !  interface add_nnlist
@@ -121,23 +138,20 @@ implicit none
 !      & extract_nnlist_vector, extract_nnlist_tensor
 !  end interface extract_nnlist
 
-! IAKOVOS commented out
-!  interface add_nelist
-!    module procedure add_nelist_mesh, add_nelist_scalar, add_nelist_vector, &
-!      & add_nelist_tensor
-!  end interface add_nelist
+  interface add_nelist
+    module procedure add_nelist_mesh, add_nelist_scalar, add_nelist_vector, &
+      & add_nelist_tensor
+  end interface add_nelist
  
-! IAKOVOS commented out
-!  interface extract_nelist
-!    module procedure extract_nelist_mesh, extract_nelist_scalar, &
-!      & extract_nelist_vector, extract_nelist_tensor
-!  end interface extract_nelist
+  interface extract_nelist
+    module procedure extract_nelist_mesh, extract_nelist_scalar, &
+      & extract_nelist_vector, extract_nelist_tensor
+  end interface extract_nelist
  
-! IAKOVOS commented out
-!  interface add_eelist
-!    module procedure add_eelist_mesh, add_eelist_scalar, add_eelist_vector, &
-!      & add_eelist_tensor
-!  end interface add_eelist
+  interface add_eelist
+    module procedure add_eelist_mesh, add_eelist_scalar, add_eelist_vector, &
+      & add_eelist_tensor
+  end interface add_eelist
 
 ! IAKOVOS commented out
   interface extract_eelist
@@ -150,20 +164,17 @@ implicit none
     module procedure remove_lists_mesh
   end interface remove_lists
   
-  ! IAKOVOS commented out
-!  interface remove_nnlist
-!    module procedure remove_nnlist_mesh
-!  end interface remove_nnlist
+  interface remove_nnlist
+    module procedure remove_nnlist_mesh
+  end interface remove_nnlist
   
-! IAKOVOS commented out
-!  interface remove_nelist
-!    module procedure remove_nelist_mesh
-!  end interface remove_nelist
+  interface remove_nelist
+    module procedure remove_nelist_mesh
+  end interface remove_nelist
   
-  ! IAKOVOS commented out
-!  interface remove_eelist
-!    module procedure remove_eelist_mesh
-!  end interface remove_eelist
+  interface remove_eelist
+    module procedure remove_eelist_mesh
+  end interface remove_eelist
  
 ! IAKOVOS commented out
 !  interface remove_boundary_conditions
@@ -179,7 +190,7 @@ implicit none
 contains
 
   subroutine allocate_mesh(mesh, nodes, elements, shape, name)
-    type(mesh_type), intent(out) :: mesh
+    type(libsupermesh_mesh_type), intent(out) :: mesh
     integer, intent(in) :: nodes, elements
     type(element_type), target, intent(in) :: shape
     character(len=*), intent(in), optional :: name
@@ -243,13 +254,13 @@ contains
   end subroutine allocate_mesh
 
   subroutine allocate_scalar_field(field, mesh, name, field_type, py_func, py_positions)
-    type(scalar_field), intent(out) :: field
-    type(mesh_type), intent(in), target :: mesh
+    type(scalar_field_lib), intent(out) :: field
+    type(libsupermesh_mesh_type), intent(in), target :: mesh
     character(len=*), intent(in),optional :: name
     integer, intent(in), optional :: field_type
 
     character(len=*), intent(in), optional ::  py_func
-    type(vector_field), intent(in), optional, target :: py_positions
+    type(vector_field_lib), intent(in), optional, target :: py_positions
 
     integer :: lfield_type
     integer :: stat
@@ -340,9 +351,9 @@ contains
   end subroutine allocate_scalar_field
 
   subroutine allocate_vector_field(field, dim, mesh, name, field_type)
-    type(vector_field), intent(out) :: field
+    type(vector_field_lib), intent(out) :: field
     integer, intent(in) :: dim
-    type(mesh_type), intent(in), target :: mesh
+    type(libsupermesh_mesh_type), intent(in), target :: mesh
     character(len=*), intent(in), optional :: name
     integer, intent(in), optional :: field_type
     integer :: n_count
@@ -402,7 +413,7 @@ contains
 !  subroutine allocate_tensor_field(field, mesh, name, field_type, dim)
   
   subroutine deallocate_subdomain_mesh(mesh)
-    type(mesh_type) :: mesh
+    type(libsupermesh_mesh_type) :: mesh
 
     if (.not.associated(mesh%subdomain_mesh)) return
 
@@ -413,13 +424,62 @@ contains
 
   end subroutine deallocate_subdomain_mesh
 
-! IAKOVOS commented out
-!  subroutine deallocate_mesh_faces(mesh)
+  subroutine deallocate_mesh_faces(mesh)
+    type(libsupermesh_mesh_type) :: mesh
+
+    if (.not.associated(mesh%faces)) return
+
+    call deallocate(mesh%faces%face_list)
+
+#ifdef HAVE_MEMORY_STATS
+    call register_deallocation("mesh_type", "integer", &
+         size(mesh%faces%face_lno), name=mesh%name)
+#endif
+    deallocate(mesh%faces%face_lno)
+    
+#ifdef HAVE_MEMORY_STATS
+    call register_deallocation("mesh_type", "integer", &
+         size(mesh%faces%face_element_list), &
+         name=mesh%name)
+#endif
+    deallocate(mesh%faces%face_element_list)
+
+    call deallocate(mesh%faces%shape%quadrature)
+    call deallocate(mesh%faces%shape)
+    deallocate(mesh%faces%shape)
+    
+    call deallocate(mesh%faces%surface_mesh)
+    
+#ifdef HAVE_MEMORY_STATS
+    call register_deallocation("mesh_type", "integer", &
+         size(mesh%faces%surface_node_list), name=trim(mesh%name)//" surface_nodes")
+#endif
+    deallocate(mesh%faces%surface_node_list)
+    
+#ifdef HAVE_MEMORY_STATS
+    call register_deallocation("mesh_type", "integer", &
+         size(mesh%faces%boundary_ids), &
+         name=trim(mesh%name)//" boundary_ids")
+#endif
+    deallocate(mesh%faces%boundary_ids)
+
+    if (associated(mesh%faces%coplanar_ids)) then
+      deallocate(mesh%faces%coplanar_ids)
+    end if
+    
+    if (associated(mesh%faces%dg_surface_mesh)) then
+      call deallocate(mesh%faces%dg_surface_mesh)
+      deallocate(mesh%faces%dg_surface_mesh)
+    end if
+    
+    deallocate(mesh%faces)
+    
+  end subroutine deallocate_mesh_faces
 
   subroutine deallocate_mesh(mesh)
     !!< Deallocate the components of mesh. Shape functions are not
     !!< deallocated here.
-    type(mesh_type), intent(inout) :: mesh
+    type(libsupermesh_mesh_type), intent(inout) :: mesh
     integer :: i
     call decref(mesh)
     if (has_references(mesh)) then
@@ -514,7 +574,7 @@ contains
   
   function wrap_mesh(ndglno, shape, name) result (mesh)
     !!< Return a mesh wrapped around the information provided.
-    type(mesh_type) :: mesh
+    type(libsupermesh_mesh_type) :: mesh
 
     integer, dimension(:), target, intent(in) :: ndglno
     type(element_type), target, intent(in) :: shape
@@ -549,9 +609,9 @@ contains
   function make_mesh (model, shape, continuity, name) &
        result (mesh)
     !!< Produce a mesh based on an old mesh but with a different shape and/or continuity.
-    type(mesh_type) :: mesh
+    type(libsupermesh_mesh_type) :: mesh
 
-    type(mesh_type), intent(in) :: model
+    type(libsupermesh_mesh_type), intent(in) :: model
     type(element_type), target, intent(in), optional :: shape
     integer, intent(in), optional :: continuity
     character(len=*), intent(in), optional :: name
@@ -741,13 +801,307 @@ contains
 
   end function make_mesh
 
-  ! IAKOVOS commented out
-!  subroutine add_faces(mesh, model, sndgln, sngi, boundary_ids, &
-!    periodic_face_map, element_owner, incomplete_surface_mesh, stat)
+  subroutine add_faces(mesh, model, sndgln, sngi, boundary_ids, &
+    periodic_face_map, element_owner, incomplete_surface_mesh, stat)
+    !!< Subroutine to add a faces component to mesh. Since mesh may be 
+    !!< discontinuous, a continuous model mesh must
+    !!< be provided. To avoid duplicate computations, and ensure 
+    !!< consistent numbering one should first call add_faces on the model
+    !!< mesh. If no model is provided, the mesh must be continuous.
+    !!< WARNING: after the model mesh is deallocated the faces component
+    !!< of 'mesh' also becomes invalid!
+    type(libsupermesh_mesh_type), target :: mesh
+    !!< model is only changed when periodic_face_map is provided (see below)
+    !!< not using intent(inout) - which is allowed as we only change pointed to values
+    type(libsupermesh_mesh_type), optional, target, intent(in) :: model
+    !! surface mesh (ndglno using the same node numbering as in 'mesh')
+    !! if present the N elements in this mesh will correspond to the first
+    !! N faces of the new faces component.
+    !! LEGACY: Any other faces found to be on the boundary of the domain are 
+    !! inserted after that. So that with M=surface_element_count(mesh) (where M>=N)
+    !! the first 1:M faces form a complete surface mesh of the domain. This
+    !! is legacy functionality that only works in serial. 
+    !! A warning will therefore be issued.
+    !! This legacy behaviour can be switched off with 
+    !! incomplete_surface_mesh=.true. (see below)
+    integer, dimension(:), intent(in), optional:: sndgln
+    !! number of quadrature points for the faces mesh (if not present the
+    !! degree of 'mesh' is maintained):
+    integer, intent(in), optional:: sngi
+    !! A list of ids marking different parts of the surface mesh
+    !! so that boundary conditions can be associated with it.
+    integer, dimension(:), intent(in), optional :: boundary_ids
+    !! if supplied the mesh is periodic and the model non-periodic
+    !! this list must contain the pairs of faces, on the periodic boundary, 
+    !! that are now between two elements. This is needed to update the face_list
+    !! Additionaly the face local node numbering of the *model* mesh is updated
+    !! be consistent with that of the periodic face local node numbering.
+    type(integer_hash_table), intent(in), optional :: periodic_face_map
+    !! This list gives the element owning each face in sndgln. This needs
+    !! to be provided when sndgln contains internal faces and both copies
+    !! are included, as we need to decide which of the two adjacent elements 
+    !! the facet belongs to (used in reading in periodic meshes which include 
+    !! the periodic facets in the surface mesh with a different surface id on 
+    !! either side of the periodic boundary). If no element_owner information
+    !! is provided, internal facets in sndgln are assumed to only appear once
+    !! and a copy will be made, its boundary id will be copied as well. This 
+    !! means afterwards the surface_element_count() will be higher than the 
+    !! number of facets provided in sndgln.
+    integer, dimension(:), intent(in), optional :: element_owner
+    !! See comments above sndgln
+    logical, intent(in), optional :: incomplete_surface_mesh
+    integer, intent(out), optional :: stat
 
-  ! IAKOVOS commented out
-!  subroutine add_faces_face_list(mesh, sndgln, boundary_ids, &
-!    element_owner, incomplete_surface_mesh)
+    type(integer_hash_table):: lperiodic_face_map
+    type(libsupermesh_mesh_type), pointer :: lmodel
+    type(element_type), pointer :: element
+    type(quadrature_type) :: quad_face
+    integer, dimension(:), pointer :: faces, neigh, model_ele_glno, model_ele_glno2
+    integer, dimension(1:mesh%shape%numbering%vertices) :: vertices, &
+         ele_boundary, ele_boundary2 ! these last two are actually smaller    
+    integer :: face_count, ele, j, snloc, m, n, p, face2
+
+! IAKOVOS commented out
+    FLAbort("add_faces: Code Commented out")
+
+  end subroutine add_faces
+
+  subroutine add_faces_face_list(mesh, sndgln, boundary_ids, &
+    element_owner, incomplete_surface_mesh)
+    !!< Subroutine to calculate the face_list and face_element_list of the 
+    !!< faces component of a 'model mesh'. This should be the linear continuous 
+    !!< mesh that may serve as a 'model' for other meshes.
+    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    !! surface mesh (ndglno using the same node numbering as in 'mesh')
+    !! if present the N elements in this mesh will correspond to the first
+    !! N faces of the new faces component.
+    integer, dimension(:), target, intent(in), optional:: sndgln
+    integer, dimension(:), target, intent(in), optional:: boundary_ids
+    integer, dimension(:), intent(in), optional :: element_owner
+    logical, intent(in), optional :: incomplete_surface_mesh
+
+    type(integer_hash_table):: internal_facet_map
+    type(element_type), pointer :: mesh_shape
+    type(element_type) :: face_shape
+    logical:: surface_elements_added
+    ! listen very carefully, I shall say this only once:
+    logical, save :: warning_given=.false. 
+    integer, dimension(:), pointer :: faces, neigh, snodes
+    integer, dimension(2) :: common_elements
+    integer :: snloc, stotel
+    integer :: bdry_count, ele, sele, sele2, neighbour_ele, j, no_found
+    integer :: no_faces
+    type(csr_sparsity) :: sparsity
+    type(csr_sparsity) :: nelist
+    
+    assert(continuity(mesh)>=0)
+
+    mesh_shape=>ele_shape(mesh, 1)
+
+    ! Calculate the node-to-element list.
+    ! Calculate the element adjacency list.
+    call extract_lists(mesh, nelist = nelist, eelist = sparsity)
+
+    call allocate(mesh%faces%face_list, sparsity, type=CSR_INTEGER, &
+        name=trim(mesh%name)//"FaceList")
+    call zero(mesh%faces%face_list)
+
+    no_faces=size(mesh%faces%face_list%sparsity%colm)
+    allocate(mesh%faces%face_element_list(no_faces))
+#ifdef HAVE_MEMORY_STATS
+    call register_allocation("mesh_type", "integer", no_faces, &
+         trim(mesh%name)//" face_element_list")
+#endif
+
+    mesh%faces%has_discontinuous_internal_boundaries = present(element_owner)
+
+    call allocate(internal_facet_map)
+    
+    snloc=face_vertices(mesh_shape)
+    if (present(sndgln)) then
+      
+      stotel=size(sndgln)/snloc ! number of provided surface elements
+      ! we might add some more when duplicating internal facets
+      bdry_count=stotel
+      
+      do sele=1, stotel
+        
+        ! find the elements adjacent to this surface element
+        snodes => sndgln( (sele-1)*snloc+1:sele*snloc )
+        call FindCommonElements(common_elements, no_found, nelist, &
+          nodes=snodes )
+          
+        if (no_found==1) then
+          ! we have found the adjacent element
+          ele=common_elements(1)
+          if (present(element_owner)) then
+            if (element_owner(sele)/=ele) then
+              ewrite(0,*) "Surface element: ", sele
+              ewrite(0,*) "Provided element owner: ", element_owner(sele)
+              ewrite(0,*) "Found adjacent element: ", ele
+              FLExit("Provided element ownership information is incorrect")
+            end if
+          end if
+          call register_external_surface_element(mesh, sele, ele, snodes)
+        else if (no_found==2 .and. present(element_owner)) then
+          ! internal facet with element ownership infomation provided
+          ! so we assume both of the coinciding internal facets are
+          ! present in the provided surface mesh and register only
+          ! one of them here
+          ele = element_owner(sele)
+          if (ele==common_elements(1)) then
+            neighbour_ele = common_elements(2)
+          else if (ele==common_elements(2)) then
+            neighbour_ele = common_elements(1)
+          else
+            ewrite(0,*) "Surface element: ", sele
+            ewrite(0,*) "Provided element owner: ", ele
+            ewrite(0,*) "Found adjacent elements: ", common_elements
+            FLExit("Provided element owner ship information is incorrect")
+          end if
+          call register_internal_surface_element(mesh, sele, ele, neighbour_ele)
+        else if (no_found==2) then
+          ! internal facet but not element ownership information:
+          ! we assume this facet only occurs once and we register both
+          ! copies at once
+
+          ! first one using the current surface element number:
+          call register_internal_surface_element(mesh, sele, common_elements(1), common_elements(2))
+
+          ! for the second one we create a new facet number at the end of the provided number surface
+          ! elements:
+          bdry_count = bdry_count+1
+          call register_internal_surface_element(mesh, bdry_count, common_elements(2), common_elements(1))
+          ! store this pair so we can later copy the boundary id of the first (sele) to the second one (bdry_count)
+          call insert(internal_facet_map, sele, bdry_count)
+
+        else if (no_found==0) then
+          ewrite(0,*) "Current surface element: ", sele
+          ewrite(0,*) "With nodes: ", snodes
+          FLExit("Surface element does not exist in the mesh")
+        else
+          ! no_found>2 apparently
+          ! this might happen when calling add_faces on meshes with non-trivial toplogy such
+          ! as calling add_faces on the surface_mesh - we can't really deal with that
+          ewrite(0,*) "Current surface element: ", sele
+          ewrite(0,*) "With nodes: ", snodes
+          FLExit("Surface element (facet) adjacent to more than two elements!")
+        end if
+        
+      end do
+        
+      
+    else
+    
+      stotel=0 ! number of facets provided in sndgln
+      bdry_count=0 ! number of facets including the doubling of interior facets
+      
+    end if
+            
+    if (.not. (IsParallel() .or. present_and_true(incomplete_surface_mesh))) then
+      ! register the rest of the boundaries
+      ! remaining exterior boundaries first, thus completing the surface mesh
+      ! This does not work in parallel and is therefore discouraged
+      
+      surface_elements_added=.false.
+      do ele=1, size(mesh%faces%face_list,1)
+        
+         neigh=>row_m_ptr(mesh%faces%face_list, ele)
+         faces=>row_ival_ptr(mesh%faces%face_list, ele)
+         
+         do j=1,size(neigh)
+      
+            if (neigh(j)==0) then
+              
+              bdry_count=bdry_count+1
+              faces(j)=bdry_count
+              neigh(j)=-j ! negative number indicates exterior boundary
+              
+              surface_elements_added=.true.
+              
+            end if
+         end do
+         
+      end do
+
+      if (surface_elements_added .and. key_count(internal_facet_map)>0) then
+        ewrite(0,*) "It appears this mesh has internal boundaries."
+        ewrite(0,*) "In this case all external boundaries need to be marked with a surface id."
+        FLExit("Incomplete surface mesh")
+      else if (surface_elements_added .and. .not. warning_given) then
+        ewrite(0,*) "WARNING: an incomplete surface mesh has been provided."
+        ewrite(0,*) "This will not work in parallel."
+        ewrite(0,*) "All parts of the domain boundary need to be marked with a (physical) surface id."
+        warning_given=.true.
+      end if
+
+      if (surface_elements_added) then
+        stotel = bdry_count
+      end if
+
+    end if
+      
+    ! the size of this array will be the way to store the n/o
+    ! exterior boundaries (returned by surface_element_count())
+    allocate(mesh%faces%boundary_ids(1:bdry_count))
+#ifdef HAVE_MEMORY_STATS
+    call register_allocation("mesh_type", "integer", bdry_count, &
+         trim(mesh%name)//" boundary_ids")
+#endif
+
+    mesh%faces%unique_surface_element_count = stotel
+    ewrite(2,*) "Number of surface elements: ", bdry_count
+    ewrite(2,*) "Number of unique surface elements: ", stotel
+
+    mesh%faces%boundary_ids=0
+    ! copy in supplied boundary ids
+    if (present(boundary_ids)) then
+      if (.not. present(sndgln)) then
+        FLAbort("Boundary ids can only be supplied to add_faces with associated surface mesh")
+      else if (size(boundary_ids) /= size(sndgln)/snloc) then
+        FLAbort("Must supply boundary_ids array for the same number of elements as the surface mesh sndgln")
+      end if
+      mesh%faces%boundary_ids(1:size(boundary_ids))=boundary_ids
+
+      do j=1, key_count(internal_facet_map)
+        call fetch_pair(internal_facet_map, j, sele, sele2)
+        mesh%faces%boundary_ids(sele2) = boundary_ids(sele)
+      end do
+    end if
+
+    ! register the rest of the boundaries (the interior ones):
+    do ele=1, size(mesh%faces%face_list,1)
+       neigh=>row_m_ptr(mesh%faces%face_list, ele)
+       faces=>row_ival_ptr(mesh%faces%face_list, ele)
+       
+       do j=1,size(neigh)
+          if (neigh(j)>0 .and. faces(j)==0) then
+            bdry_count=bdry_count+1
+            faces(j)=bdry_count
+          else if (neigh(j)==0) then
+            ! left over exterior faces:
+            bdry_count=bdry_count+1
+            faces(j)=bdry_count
+            neigh(j)=-j ! negative number indicates exterior boundary
+            
+          end if
+       end do
+       
+       ! Record the element number of each face.
+       ! (all faces should have an index now):
+       mesh%faces%face_element_list(faces)=ele
+       
+    end do 
+    
+    ! Sanity checks that we have found all the faces.
+    assert(bdry_count==size(mesh%faces%face_list%sparsity%colm))
+    assert(.not.any(mesh%faces%face_list%sparsity%colm==0))
+    assert(.not.any(mesh%faces%face_list%ival==0))
+
+    call deallocate(internal_facet_map)
+    
+  end subroutine add_faces_face_list
+
 
 ! IAKOVOS commented out
 !  subroutine register_internal_surface_element(mesh, sele, ele, neighbour_ele)
@@ -759,9 +1113,84 @@ contains
 !  subroutine add_faces_face_list_periodic_from_non_periodic_model( &
 !     mesh, model, periodic_face_map)
     
-  ! IAKOVOS commented out
-!  subroutine add_faces_face_list_non_periodic_from_periodic_model( &
-!     mesh, model, periodic_face_map, stat)
+  subroutine add_faces_face_list_non_periodic_from_periodic_model( &
+     mesh, model, periodic_face_map, stat)
+     ! computes the face_list of a non-periodic mesh by copying it from
+     ! a periodic model mesh and changing the periodic faces
+     ! to external
+     type(libsupermesh_mesh_type), intent(inout):: mesh
+     type(libsupermesh_mesh_type), intent(in):: model
+     ! we return a list of periodic face pairs, as these need their local node numbering fixed later
+     type(integer_hash_table), intent(out):: periodic_face_map
+     integer, intent(out), optional :: stat
+       
+     type(csr_sparsity):: face_list_sparsity
+     integer, dimension(:), pointer:: neigh, ele1_nodes, ele2_nodes
+     integer:: face, face2, ele1, ele2, lface1, lface2
+     
+     ewrite(1,*) "In add_faces_face_list_non_periodic_from_periodic_model"
+
+     if (present(stat)) then
+       stat = 0
+     end if
+     
+     ! we need to fix the face_list so we have to have a separate copy
+     call allocate(face_list_sparsity, element_count(model), &
+       element_count(model), entries(model%faces%face_list), &
+       name=trim(mesh%name)//"EEList")
+     face_list_sparsity%colm=model%faces%face_list%sparsity%colm
+     face_list_sparsity%findrm=model%faces%face_list%sparsity%findrm
+     
+     call allocate(mesh%faces%face_list, face_list_sparsity, &
+       type=CSR_INTEGER, name=trim(mesh%name)//"FaceList")
+     mesh%faces%face_list%ival=model%faces%face_list%ival
+     call deallocate(face_list_sparsity)
+
+     call allocate(periodic_face_map)
+     
+     ! now fix the face list - by searching for internal faces in the
+     ! model mesh, these are the periodic faces that now need to be removed
+     do face = 1, surface_element_count(model)
+        ele1 = face_ele(model, face)
+        neigh => row_m_ptr(mesh%faces%face_list, ele1)
+        lface1 = local_face_number(model, face)
+        ele2 = neigh(lface1)
+        if (ele2>0) then
+          ! we've found an internal face in the surface mesh
+          
+          ! check that the connection has disappeared
+          face2 = ele_face(model, ele2, ele1)
+          lface2 = local_face_number(model, face2)
+          ele1_nodes => ele_nodes(mesh, ele1)
+          ele2_nodes => ele_nodes(mesh, ele2)
+          if (SetContains( &
+             ele1_nodes(boundary_numbering(ele_shape(mesh, ele1), lface1)), &
+             ele2_nodes(boundary_numbering(ele_shape(mesh, ele2), lface2)))) then
+             ! apparently these faces are still connected
+             ! (not currently supported)
+             if (present(stat)) then
+               stat = 1
+             else
+               ewrite(-1,*) "Face: ", face, "; element: ", ele1
+               ewrite(-1,*) "face_global_nodes(mesh, face): ", ele1_nodes(boundary_numbering(ele_shape(mesh, ele1), lface1))
+               ewrite(-1,*) "Opposing face: ", face2, "; element: ", ele2
+               ewrite(-1,*) "face_global_nodes(mesh, face2): ", ele2_nodes(boundary_numbering(ele_shape(mesh, ele2), lface2))
+               FLAbort("Left-over internal faces in removing periodic bcs.")
+             end if
+         end if
+          
+          ! we're cool
+          neigh(lface1)=-lface1
+          ! might as well fix the other side while we're at it
+          neigh => row_m_ptr(mesh%faces%face_list, ele2)
+          neigh(lface2)=-lface2
+          ! we store these as their face local node numbering needs to be "fixed" later
+          call insert(periodic_face_map, face, face2)
+        end if
+        
+     end do
+
+  end subroutine add_faces_face_list_non_periodic_from_periodic_model
     
 ! IAKOVOS commented out
 !  subroutine fix_periodic_face_orientation(nonperiodic, periodic, periodic_face_map)
@@ -770,13 +1199,13 @@ contains
     mesh, surface_elements, name)
   !! Creates a surface mesh consisting of the surface elements
   !! specified by surface_element_list  
-  type(mesh_type), intent(out):: surface_mesh
+  type(libsupermesh_mesh_type), intent(out):: surface_mesh
   !! Returns a pointer to a list containing the global node number
   !! of the nodes on this surface mesh, can be used for surface node
   !! to global node numbering conversion.
   integer, dimension(:), pointer:: surface_nodes
   !! mesh to take surface from (should have %faces component)
-  type(mesh_type), intent(in):: mesh
+  type(libsupermesh_mesh_type), intent(in):: mesh
   !! which surface elements to select
   !! (if not provided all surface elements are included)
   integer, dimension(:), optional, target,intent(in):: surface_elements
@@ -879,8 +1308,20 @@ contains
   ! IAKOVOS commented out
 !  function extract_elements(positions, elements) result(subpos)
   
-  ! IAKOVOS commented out
-!  subroutine add_lists_mesh(mesh, nnlist, nelist, eelist)
+  subroutine add_lists_mesh(mesh, nnlist, nelist, eelist)
+    !!< Add requested adjacency lists to the adjacency cache for the supplied mesh
+    
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    logical, optional, intent(in) :: nnlist, nelist, eelist
+        
+    type(csr_sparsity), pointer :: lnnlist, lnelist, leelist
+    
+    logical :: ladd_nnlist, ladd_nelist, ladd_eelist
+    
+! IAKOVOS commented out
+  FLAbort("add_lists_mesh: Code Commented out")
+    
+  end subroutine add_lists_mesh
   
 ! IAKOVOS commented out
 !  subroutine add_lists_scalar(field, nnlist, nelist, eelist)
@@ -891,8 +1332,34 @@ contains
 ! IAKOVOS commented out
 !  subroutine add_lists_tensor(field, nnlist, nelist, eelist)
 
-  ! IAKOVOS commented out
-!  subroutine extract_lists_mesh(mesh, nnlist, nelist, eelist)
+  subroutine extract_lists_mesh(mesh, nnlist, nelist, eelist)
+    !!< Extract adjacancy lists (generating if necessary) from the
+    !!< adjacency cache for the supplied mesh
+    
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(csr_sparsity), optional, intent(out) :: nnlist
+    type(csr_sparsity), optional, intent(out) :: nelist
+    type(csr_sparsity), optional, intent(out) :: eelist
+    
+    call add_lists(mesh, nnlist = present(nnlist), nelist = present(nelist), eelist = present(eelist))
+    assert(associated(mesh%adj_lists))
+    if(present(nnlist)) then
+      assert(associated(mesh%adj_lists%nnlist))
+      nnlist = mesh%adj_lists%nnlist
+      assert(has_references(nnlist))
+    end if
+    if(present(nelist)) then
+      assert(associated(mesh%adj_lists%nelist))
+      nelist = mesh%adj_lists%nelist
+      assert(has_references(nelist))
+    end if
+    if(present(eelist)) then
+      assert(associated(mesh%adj_lists%eelist))
+      eelist = mesh%adj_lists%eelist
+      assert(has_references(eelist))
+    end if
+    
+  end subroutine extract_lists_mesh
   
   ! IAKOVOS commented out
 !  subroutine extract_lists_scalar(field, nnlist, nelist, eelist)
@@ -927,47 +1394,161 @@ contains
   ! IAKOVOS commented out
 !  function extract_nnlist_tensor(field) result(nnlist)
 
-  ! IAKOVOS commented out
-!  subroutine add_nelist_mesh(mesh)
- 
-  ! IAKOVOS commented out
-!  subroutine add_nelist_scalar(field)
- 
-  ! IAKOVOS commented out
-!  subroutine add_nelist_vector(field)
+  subroutine add_nelist_mesh(mesh)
+    !!< Add the node-element list to the adjacency cache for the supplied mesh
   
-  ! IAKOVOS commented out
-!  subroutine add_nelist_tensor(field)
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    
+    type(csr_sparsity), pointer :: nelist
+    
+    assert(associated(mesh%adj_lists))
+    if(.not. associated(mesh%adj_lists%nelist)) then
+      ewrite(2, *) "Adding node-element list to mesh " // trim(mesh%name)
+      allocate(nelist)
+      mesh%adj_lists%nelist => nelist
+      call makelists(mesh, nelist = nelist)
+#ifdef DDEBUG
+    else
+      assert(has_references(mesh%adj_lists%nelist))
+#endif
+    end if
+    
+  end subroutine add_nelist_mesh
   
-  ! IAKOVOS commented out
-!  function extract_nelist_mesh(mesh) result(nelist)
- 
-  ! IAKOVOS commented out
-!  function extract_nelist_scalar(field) result(nelist)
- 
-  ! IAKOVOS commented out
-!  function extract_nelist_vector(field) result(nelist)
+  subroutine add_nelist_scalar(field)
+    !!< Add the node-element list to the adjacency cache for the supplied field
+    
+    type(scalar_field_lib), intent(in) :: field
+    
+    call add_nelist(field%mesh)
   
-  ! IAKOVOS commented out
-!  function extract_nelist_tensor(field) result(nelist)
+  end subroutine add_nelist_scalar
+  
+  subroutine add_nelist_vector(field)
+    !!< Add the node-element list to the adjacency cache for the supplied field
+    
+    type(vector_field_lib), intent(in) :: field
+    
+    call add_nelist(field%mesh)
+  
+  end subroutine add_nelist_vector
+  
+  subroutine add_nelist_tensor(field)
+    !!< Add the node-element list to the adjacency cache for the supplied field
+    
+    type(tensor_field_lib), intent(in) :: field
+    
+    call add_nelist(field%mesh)
+  
+  end subroutine add_nelist_tensor
+  
+  function extract_nelist_mesh(mesh) result(nelist)
+    !!< Extract the node-element list (generating if necessary) from the
+    !!< adjacency cache for the supplied mesh
+  
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    
+    type(csr_sparsity), pointer :: nelist
+    
+    call add_nelist(mesh)
+    nelist => mesh%adj_lists%nelist
+    assert(has_references(nelist))
+    
+  end function extract_nelist_mesh
+  
+  function extract_nelist_scalar(field) result(nelist)
+    !!< Extract the node-element list (generating if necessary) from the
+    !!< adjacency cache for the supplied field
+    
+    type(scalar_field_lib), intent(in) :: field
+    
+    type(csr_sparsity), pointer :: nelist
+    
+    nelist => extract_nelist(field%mesh)
+    
+  end function extract_nelist_scalar
+  
+  function extract_nelist_vector(field) result(nelist)
+    !!< Extract the node-element list (generating if necessary) from the
+    !!< adjacency cache for the supplied field
+    
+    type(vector_field_lib), intent(in) :: field
+    
+    type(csr_sparsity), pointer :: nelist
+    
+    nelist => extract_nelist(field%mesh)
+    
+  end function extract_nelist_vector
+  
+  function extract_nelist_tensor(field) result(nelist)
+    !!< Extract the node-element list (generating if necessary) from the
+    !!< adjacency cache for the supplied field
+    
+    type(tensor_field_lib), intent(in) :: field
+    
+    type(csr_sparsity), pointer :: nelist
+    
+    nelist => extract_nelist(field%mesh)
+    
+  end function extract_nelist_tensor
 
-  ! IAKOVOS commented out
-!  subroutine add_eelist_mesh(mesh)
-
-  ! IAKOVOS commented out
-!  subroutine add_eelist_scalar(field)
+  subroutine add_eelist_mesh(mesh)
+    !!< Add the element-element list to the adjacency cache for the supplied mesh
   
-  ! IAKOVOS commented out
-!  subroutine add_eelist_vector(field)
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    
+    type(csr_sparsity), pointer :: eelist, nelist
+    
+    assert(associated(mesh%adj_lists))
+    if(.not. associated(mesh%adj_lists%eelist)) then    
+      ewrite(2, *) "Adding element-element list to mesh " // trim(mesh%name)
+      allocate(eelist)
+      mesh%adj_lists%eelist => eelist
+      ! We need the nelist to generate the eelist, so extract it from the cache
+      ! (generating if necessary)
+      nelist => extract_nelist(mesh)
+      ewrite(1, *) "Using the new makeeelist"
+      call makeeelist(eelist, mesh, nelist)
+#ifdef DDEBUG
+    else
+      assert(has_references(mesh%adj_lists%eelist))
+#endif
+    end if
+    
+  end subroutine add_eelist_mesh
   
-  ! IAKOVOS commented out
-!  subroutine add_eelist_tensor(field)
+  subroutine add_eelist_scalar(field)
+    !!< Add the element-element list to the adjacency cache for the supplied field
+    
+    type(scalar_field_lib), intent(in) :: field
+    
+    call add_eelist(field%mesh)
+  
+  end subroutine add_eelist_scalar
+  
+  subroutine add_eelist_vector(field)
+    !!< Add the element-element list to the adjacency cache for the supplied field
+    
+    type(vector_field_lib), intent(in) :: field
+    
+    call add_eelist(field%mesh)
+  
+  end subroutine add_eelist_vector
+  
+  subroutine add_eelist_tensor(field)
+    !!< Add the element-element list to the adjacency cache for the supplied field
+    
+    type(tensor_field_lib), intent(in) :: field
+    
+    call add_eelist(field%mesh)
+  
+  end subroutine add_eelist_tensor
 
   function extract_eelist_mesh(mesh) result(eelist)
     !!< Extract the element-element list (generating if necessary) from the
     !!< adjacency cache for the supplied mesh
   
-    type(mesh_type), intent(in) :: mesh
+    type(libsupermesh_mesh_type), intent(in) :: mesh
     
     type(csr_sparsity), pointer :: eelist
     
@@ -984,7 +1565,7 @@ contains
     !!< Extract the element-element list (generating if necessary) from the
     !!< adjacency cache for the supplied field
     
-    type(vector_field), intent(in) :: field
+    type(vector_field_lib), intent(in) :: field
     
     type(csr_sparsity), pointer :: eelist
     
@@ -999,7 +1580,7 @@ contains
     !!< Remove the adjecency lists from the adjacency cache for the supplied
     !!< mesh
   
-    type(mesh_type), intent(inout) :: mesh
+    type(libsupermesh_mesh_type), intent(inout) :: mesh
     
     call remove_nnlist(mesh)
     call remove_nelist(mesh)
@@ -1007,18 +1588,54 @@ contains
   
   end subroutine remove_lists_mesh
   
-  ! IAKOVOS commented out
-!  subroutine remove_nnlist_mesh(mesh)
+  subroutine remove_nnlist_mesh(mesh)
+    !!< Remove the node-node list from the adjacency cache for the supplied mesh
+    
+    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    
+    assert(associated(mesh%adj_lists))
+    if(associated(mesh%adj_lists%nnlist)) then
+      ewrite(2, *) "Removing node-node list from mesh " // trim(mesh%name)
+      call deallocate(mesh%adj_lists%nnlist)
+      deallocate(mesh%adj_lists%nnlist)
+      nullify(mesh%adj_lists%nnlist)
+    end if
+    
+  end subroutine remove_nnlist_mesh
+  
+  subroutine remove_nelist_mesh(mesh)
+    !!< Remove the node-element list from the adjacency cache for the supplied mesh
+    
+    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    
+    assert(associated(mesh%adj_lists))
+    if(associated(mesh%adj_lists%nelist)) then
+      ewrite(2, *) "Removing node-element list from mesh " // trim(mesh%name)
+      call deallocate(mesh%adj_lists%nelist)
+      deallocate(mesh%adj_lists%nelist)
+      nullify(mesh%adj_lists%nelist)
+    end if
+    
+  end subroutine remove_nelist_mesh
 
-  ! IAKOVOS commented out
-!  subroutine remove_nelist_mesh(mesh)
-
-  ! IAKOVOS commented out
-!  subroutine remove_eelist_mesh(mesh)
+  subroutine remove_eelist_mesh(mesh)
+    !!< Remove the element-element list from the adjacency cache for the supplied mesh
+    
+    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    
+    assert(associated(mesh%adj_lists))
+    if(associated(mesh%adj_lists%eelist)) then
+      ewrite(2, *) "Removing element-element list from mesh " // trim(mesh%name)
+      call deallocate(mesh%adj_lists%eelist)
+      deallocate(mesh%adj_lists%eelist)
+      nullify(mesh%adj_lists%eelist)
+    end if
+    
+  end subroutine remove_eelist_mesh
   
   subroutine zero_scalar(field)
     !!< Set all entries in the field provided to 0.0
-    type(scalar_field), intent(inout) :: field
+    type(scalar_field_lib), intent(inout) :: field
 #ifdef _OPENMP
     integer :: i
 #endif
@@ -1040,7 +1657,7 @@ contains
 
   subroutine zero_vector(field)
     !!< Set all entries in the field provided to 0.0
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
 
 #ifdef _OPENMP
     integer :: i
@@ -1063,7 +1680,7 @@ contains
 
   subroutine zero_vector_dim(field, dim)
     !!< Set all entries in dimension dim of the field provided to 0.0
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     integer, intent(in) :: dim
 
 #ifdef _OPENMP
@@ -1087,7 +1704,7 @@ contains
 
   subroutine zero_tensor(field)
     !!< Set all entries in the field provided to 0.0
-    type(tensor_field), intent(inout) :: field
+    type(tensor_field_lib), intent(inout) :: field
 
 #ifdef _OPENMP
     integer :: j
@@ -1110,7 +1727,7 @@ contains
 
   subroutine zero_tensor_dim_dim(field, dim1, dim2)
     !!< Set all entries in the component indicated of field to 0.0
-    type(tensor_field), intent(inout) :: field
+    type(tensor_field_lib), intent(inout) :: field
     integer, intent(in) :: dim1, dim2
 
 #ifdef _OPENMP
@@ -1135,7 +1752,7 @@ contains
   subroutine zero_scalar_field_nodes(field, node_numbers)
     !!< Zeroes the scalar field at the specified node_numbers
     !!< Does not work for constant fields
-    type(scalar_field), intent(inout) :: field
+    type(scalar_field_lib), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
 
     assert(field%field_type==FIELD_TYPE_NORMAL)
@@ -1147,7 +1764,7 @@ contains
   subroutine zero_vector_field_nodes(field, node_numbers)
     !!< Zeroes the vector field at the specified nodes
     !!< Does not work for constant fields
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
     integer :: i
 
@@ -1162,7 +1779,7 @@ contains
   subroutine zero_tensor_field_nodes(field, node_numbers)
     !!< Zeroes the tensor field at the specified nodes
     !!< Does not work for constant fields
-    type(tensor_field), intent(inout) :: field
+    type(tensor_field_lib), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
 
     assert(field%field_type==FIELD_TYPE_NORMAL)

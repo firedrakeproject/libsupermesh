@@ -1,11 +1,20 @@
 #include "fdebug.h"
 
 module libsupermesh_construction
-  use libsupermesh_fields_data_types
+  use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
+                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
+                    scalar_field_lib => scalar_field, &
+                    vector_field_lib => vector_field, &
+                    tensor_field_lib => tensor_field, &
+  scalar_boundary_condition_lib => scalar_boundary_condition, &
+  vector_boundary_condition_lib => vector_boundary_condition, &
+  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
+  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
   use libsupermesh_fields_allocates
   use libsupermesh_fields_base
-  use libsupermesh_sparse_tools
-  use libsupermesh_futils
+  use libsupermesh_sparse_tools, wrap_lib => wrap
+  use libsupermesh_futils, real_format_lib => real_format, &
+        real_format_len_lib => real_format_len
 !  use metric_tools			! IAKOVOS commented out
   use libsupermesh_linked_lists
 !  use unify_meshes_module		! IAKOVOS commented out
@@ -28,7 +37,6 @@ module libsupermesh_construction
   
   ! I hope this is big enough ...
   real, dimension(1024) :: nodes_tmp
-  logical :: intersector_exactness = .false.
 
   public :: libsupermesh_intersect_elements
 
@@ -47,10 +55,10 @@ module libsupermesh_construction
   end subroutine libsupermesh_intersector_set_input_sp
   
   function libsupermesh_intersect_elements(positions_A, ele_A, posB, shape) result(intersection)
-    type(vector_field), intent(in) :: positions_A
+    type(vector_field_lib), intent(in) :: positions_A
     integer, intent(in) :: ele_A
-    type(vector_field) :: intersection
-    type(mesh_type) :: intersection_mesh
+    type(vector_field_lib) :: intersection
+    type(libsupermesh_mesh_type) :: intersection_mesh
     type(element_type), intent(in) :: shape
     real, dimension(:, :), intent(in) :: posB
 

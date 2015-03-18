@@ -5,7 +5,15 @@ module libsupermesh_tet_intersection_module
 
   use libsupermesh_elements
   use libsupermesh_vector_tools
-  use libsupermesh_fields_data_types
+  use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
+                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
+                    scalar_field_lib => scalar_field, &
+                    vector_field_lib => vector_field, &
+                    tensor_field_lib => tensor_field, &
+  scalar_boundary_condition_lib => scalar_boundary_condition, &
+  vector_boundary_condition_lib => vector_boundary_condition, &
+  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
+  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
   use libsupermesh_fields_base
   use libsupermesh_fields_allocates
   use libsupermesh_fields_manipulation
@@ -26,7 +34,7 @@ module libsupermesh_tet_intersection_module
 
   type(libsupermesh_tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array, libsupermesh_tet_array_tmp
   integer :: libsupermesh_tet_cnt = 0, libsupermesh_tet_cnt_tmp = 0
-  type(mesh_type), save :: libsupermesh_intersection_mesh
+  type(libsupermesh_mesh_type), save :: libsupermesh_intersection_mesh
   logical, save :: libsupermesh_mesh_allocated = .false.
 
 ! IAKOVOS commented out
@@ -50,9 +58,9 @@ module libsupermesh_tet_intersection_module
     type(libsupermesh_tet_type), intent(in) :: tetA
     type(libsupermesh_plane_type), dimension(:), intent(in) :: planesB
     type(element_type), intent(in) :: shape
-    type(vector_field), intent(inout) :: output
-    type(vector_field), intent(out), optional :: surface_positions
-    type(scalar_field), intent(out), optional :: surface_colours
+    type(vector_field_lib), intent(inout) :: output
+    type(vector_field_lib), intent(out), optional :: surface_positions
+    type(scalar_field_lib), intent(out), optional :: surface_colours
     type(element_type), intent(in), optional :: surface_shape
     integer :: ele
     integer, intent(out) :: stat
@@ -62,7 +70,7 @@ module libsupermesh_tet_intersection_module
     real, dimension(3) :: vec_tmp
     integer, dimension(3) :: idx_tmp
     integer :: surface_eles, colour_tmp
-    type(mesh_type) :: surface_mesh, pwc_surface_mesh
+    type(libsupermesh_mesh_type) :: surface_mesh, pwc_surface_mesh
 
     if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
       assert(present(surface_positions))
@@ -90,7 +98,7 @@ module libsupermesh_tet_intersection_module
       libsupermesh_tet_cnt_tmp = 0
 
       do j=1,libsupermesh_tet_cnt
-        call clip(planesB(i), libsupermesh_tet_array(j))
+        call libsupermesh_clip(planesB(i), libsupermesh_tet_array(j))
       end do
 
       if (i /= size(planesB)) then
@@ -174,6 +182,212 @@ module libsupermesh_tet_intersection_module
 
   end subroutine libsupermesh_intersect_tets_dt
   
+  subroutine libsupermesh_clip(plane, tet)
+  ! Clip tet against the plane
+  ! and append any output to tet_array_tmp.
+    type(libsupermesh_plane_type), intent(in) :: plane
+    type(libsupermesh_tet_type), intent(in) :: tet
+
+    real, dimension(4) :: dists
+    integer :: neg_cnt, pos_cnt, zer_cnt
+    integer, dimension(4) :: neg_idx, pos_idx, zer_idx
+    integer :: i
+
+    real :: invdiff, w0, w1
+    type(libsupermesh_tet_type) :: tet_tmp
+
+    ! Negative == inside
+    ! Positive == outside
+
+    neg_cnt = 0
+    pos_cnt = 0
+    zer_cnt = 0
+
+    dists = libsupermesh_distances_to_plane(plane, tet)
+    do i=1,4
+      if (abs(dists(i)) < epsilon(0.0)) then
+        zer_cnt = zer_cnt + 1
+        zer_idx(zer_cnt) = i
+      else if (dists(i) < 0.0) then
+        neg_cnt = neg_cnt + 1
+        neg_idx(neg_cnt) = i
+      else if (dists(i) > 0.0) then
+        pos_cnt = pos_cnt + 1
+        pos_idx(pos_cnt) = i
+      end if
+    end do
+
+    if (neg_cnt == 0) then
+      ! tet is completely on positive side of plane, full clip
+      return
+    end if
+
+    if (pos_cnt == 0) then
+      ! tet is completely on negative side of plane, no clip
+      libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+      libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp) = tet
+      return
+    end if
+
+    ! The tet is split by the plane, so we have more work to do.
+
+    select case(pos_cnt)
+    case(3)
+      ! +++-
+      libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+      libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp) = tet
+      do i=1,pos_cnt
+        invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+        w0 = -dists(neg_idx(1)) * invdiff
+        w1 =  dists(pos_idx(i)) * invdiff
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(i)) = &
+           w0 * libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(i)) + &
+           w1 * libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, neg_idx(1))
+      end do
+      ! The colours will have been inherited already; we just need to zero
+      ! the one corresponding to the plane cut
+      libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(libsupermesh_face_no(pos_idx(1), pos_idx(2), pos_idx(3))) = 0
+    case(2)
+      select case(neg_cnt)
+      case(2)
+        ! ++--
+        do i=1,pos_cnt
+          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          w0 = -dists(neg_idx(1)) * invdiff
+          w1 =  dists(pos_idx(i)) * invdiff
+          tet_tmp%V(:, i) = w0 * tet%V(:, pos_idx(i)) + w1 * tet%V(:, neg_idx(1))
+        end do
+        do i=1,neg_cnt
+          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
+          w0 = -dists(neg_idx(2)) * invdiff
+          w1 =  dists(pos_idx(i)) * invdiff
+          tet_tmp%V(:, i+2) = w0 * tet%V(:, pos_idx(i)) + w1 * tet%V(:, neg_idx(2))
+        end do
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp) = tet
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(1)) = tet_tmp%V(:, 3)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(2)) = tet_tmp%V(:, 2)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(neg_idx(1)) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(neg_idx(2)) = 0
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 1) = tet%V(:, neg_idx(2))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(1) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 2) = tet_tmp%V(:, 4)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(2) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 3) = tet_tmp%V(:, 3)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(3) = tet%colours(pos_idx(1))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 2)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(1))
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 1) = tet%V(:, neg_idx(1))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(1) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 2) = tet_tmp%V(:, 1)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(2) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 3) = tet_tmp%V(:, 2)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(3) = tet%colours(pos_idx(2))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 3)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(2))
+      case(1)
+        ! ++-0
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp) = tet
+        do i=1,pos_cnt
+          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          w0 = -dists(neg_idx(1)) * invdiff
+          w1 =  dists(pos_idx(i)) * invdiff
+          libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(i)) = &
+             w0 * libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(i)) + &
+             w1 * libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, neg_idx(1))
+        end do
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(neg_idx(1)) = 0
+      end select
+    case(1)
+      select case(neg_cnt)
+      case(3)
+        ! +---
+        do i=1,neg_cnt
+          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          w0 = -dists(neg_idx(i)) * invdiff
+          w1 =  dists(pos_idx(1)) * invdiff
+          tet_tmp%V(:, i) = w0 * tet%V(:, pos_idx(1)) + w1 * tet%V(:, neg_idx(i))
+        end do
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp) = tet
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(1)) = tet_tmp%V(:, 1)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(neg_idx(1)) = 0
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 1) = tet_tmp%V(:, 1)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(1) = tet%colours(neg_idx(1))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 2) = tet%V(:, neg_idx(2))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(2) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 3) = tet%V(:, neg_idx(3))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(3) = tet%colours(neg_idx(3))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 2)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(4) = 0
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 1) = tet%V(:, neg_idx(3))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(1) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 2) = tet_tmp%V(:, 2)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(2) = tet%colours(neg_idx(2))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 3) = tet_tmp%V(:, 3)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(3) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 1)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(1))
+      case(2)
+        ! +--0
+        do i=1,neg_cnt
+          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          w0 = -dists(neg_idx(i)) * invdiff
+          w1 =  dists(pos_idx(1)) * invdiff
+          tet_tmp%V(:, i) = w0 * tet%V(:, pos_idx(1)) + w1 * tet%V(:, neg_idx(i))
+        end do
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp) = tet
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(1)) = tet_tmp%V(:, 1)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(neg_idx(1)) = 0
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 1) = tet_tmp%V(:, 2)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(1) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 2) = tet%V(:, zer_idx(1))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(2) = tet%colours(zer_idx(1))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 3) = tet%V(:, neg_idx(2))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(3) = 0
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 1)
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(1))
+      case(1)
+        ! +-00
+        invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
+        w0 = -dists(neg_idx(1)) * invdiff
+        w1 =  dists(pos_idx(1)) * invdiff
+
+        libsupermesh_tet_cnt_tmp = libsupermesh_tet_cnt_tmp + 1
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp) = tet
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%V(:, pos_idx(1)) = w0 * tet%V(:, pos_idx(1)) + w1 * tet%V(:, neg_idx(1))
+        libsupermesh_tet_array_tmp(libsupermesh_tet_cnt_tmp)%colours(neg_idx(1)) = 0
+      end select
+    end select
+
+  end subroutine libsupermesh_clip
+  
+  pure function libsupermesh_distances_to_plane(plane, tet) result(dists)
+    type(libsupermesh_plane_type), intent(in) :: plane
+    type(libsupermesh_tet_type), intent(in) :: tet
+    real, dimension(4) :: dists
+    integer :: i
+
+    forall(i=1:4)
+      dists(i) = dot_product(plane%normal, tet%V(:, i)) - plane%c
+    end forall
+  end function libsupermesh_distances_to_plane
+  
   pure function libsupermesh_tet_volume(tet) result(vol)
     type(libsupermesh_tet_type), intent(in) :: tet
     real :: vol
@@ -189,5 +403,16 @@ module libsupermesh_tet_intersection_module
 
     vol = dot_product(vecA, cross) / 6.0
   end function libsupermesh_tet_volume
+  
+  function libsupermesh_face_no(i, j, k) result(face)
+    ! Given three local node numbers, what is the face that they share?
+    integer, intent(in) :: i, j, k
+    integer :: face
+
+    do face=1,4
+      if (face /= i .and. face /= j .and. face /= k) return
+    end do
+
+  end function libsupermesh_face_no
 
 end module libsupermesh_tet_intersection_module

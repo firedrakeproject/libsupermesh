@@ -30,16 +30,24 @@ use libsupermesh_elements
 !use element_set		! IAKOVOS commented out
 !use embed_python		! IAKOVOS commented out
 use libsupermesh_data_structures
-use libsupermesh_fields_data_types
+use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
+                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
+                    scalar_field_lib => scalar_field, &
+                    vector_field_lib => vector_field, &
+                    tensor_field_lib => tensor_field, &
+  scalar_boundary_condition_lib => scalar_boundary_condition, &
+  vector_boundary_condition_lib => vector_boundary_condition, &
+  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
+  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
 use libsupermesh_fields_base
 use libsupermesh_fields_allocates
 use libsupermesh_halo_data_types
 use libsupermesh_halos_allocates
 use libsupermesh_halos_base
 !use halos_debug		! IAKOVOS commented out
-!use halos_numbering		! IAKOVOS commented out
+use libsupermesh_halos_numbering
 !use halos_ownership		! IAKOVOS commented out
-!use halos_repair		! IAKOVOS commented out
+use libsupermesh_halos_repair
 use libsupermesh_quicksort
 use libsupermesh_parallel_tools
 use libsupermesh_vector_tools
@@ -70,8 +78,8 @@ implicit none
     !!< allocated on the mesh that's topologically the same
     !!< but has piecewise constant basis functions.
     !!< This is for the definition of elementwise quantities.
-    type(mesh_type), intent(in) :: in_mesh
-    type(mesh_type) :: new_mesh
+    type(libsupermesh_mesh_type), intent(in) :: in_mesh
+    type(libsupermesh_mesh_type) :: new_mesh
     type(element_type) :: shape, old_shape
     character(len=*), intent(in) :: name
 
@@ -87,7 +95,7 @@ implicit none
   subroutine set_vector_field_node(field, node, val)
     !!< Set the vector field at the specified node
     !!< Does not work for constant fields
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     integer, intent(in) :: node
     real, intent(in), dimension(:) :: val
     integer :: i
@@ -103,7 +111,7 @@ implicit none
   subroutine set_vector_field_node_dim(field, dim, node, val)
     !!< Set the vector field at the specified node
     !!< Does not work for constant fields
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     integer, intent(in) :: node
     real, intent(in) :: val
     integer, intent(in):: dim
@@ -118,7 +126,7 @@ implicit none
   subroutine set_vector_field_nodes(field, node_numbers, val)
     !!< Set the vector field at the specified nodes
     !!< Does not work for constant fields
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
     !! values to set ( dimension x #nodes)
     real, intent(in), dimension(:,:) :: val
@@ -135,7 +143,7 @@ implicit none
   subroutine set_vector_field_nodes_dim(field, dim, node_numbers, val)
     !!< Set the vector field at the specified nodes
     !!< Does not work for constant fields
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
     !! values to set
     real, intent(in), dimension(:) :: val
@@ -151,7 +159,7 @@ implicit none
   subroutine set_vector_field(field, val)
     !!< Set the vector field with a constant value
     !!< Works for constant and space varying fields.
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     real, intent(in), dimension(:) :: val
     integer :: i
 
@@ -166,7 +174,7 @@ implicit none
   subroutine set_vector_field_dim(field, dim, val)
     !!< Set the vector field with a constant value
     !!< Works for constant and space varying fields.
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     real, intent(in):: val
     integer, intent(in):: dim
 
@@ -179,7 +187,7 @@ implicit none
 
   subroutine set_vector_field_arr(field, val)
     !!< Set the vector field with an array for all nodes at once
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     real, intent(in), dimension(:, :) :: val
     integer :: i
 
@@ -193,7 +201,7 @@ implicit none
 
   subroutine set_vector_field_arr_dim(field, dim, val)
     !!< Set the vector field with an array for all nodes at once
-    type(vector_field), intent(inout) :: field
+    type(vector_field_lib), intent(inout) :: field
     real, intent(in), dimension(:) :: val
     integer, intent(in):: dim
     
@@ -207,8 +215,8 @@ implicit none
   subroutine set_vector_field_field(out_field, in_field )
     !!< Set in_field to out_field. This will only work if the fields have
     !!< the same mesh.
-    type(vector_field), intent(inout) :: out_field
-    type(vector_field), intent(in) :: in_field
+    type(vector_field_lib), intent(inout) :: out_field
+    type(vector_field_lib), intent(in) :: in_field
     
     integer :: dim
 
@@ -236,8 +244,8 @@ implicit none
   subroutine set_vector_field_theta(out_field, in_field_new, in_field_old, theta)
     !!< Set theta*in_field_new + (1.-theta)*in_field_old to out_field. This will only work if the fields have
     !!< the same mesh.
-    type(vector_field), intent(inout) :: out_field
-    type(vector_field), intent(in) :: in_field_new, in_field_old
+    type(vector_field_lib), intent(inout) :: out_field
+    type(vector_field_lib), intent(in) :: in_field_new, in_field_old
     real, intent(in) :: theta
     
     integer :: dim
@@ -275,8 +283,8 @@ implicit none
   subroutine set_vector_field_field_dim(out_field, dim, in_field)
     !!< Set in_field to out_field. This will only work if the fields have
     !!< the same mesh.
-    type(vector_field), intent(inout) :: out_field
-    type(scalar_field), intent(in) :: in_field
+    type(vector_field_lib), intent(inout) :: out_field
+    type(scalar_field_lib), intent(in) :: in_field
     integer, intent(in):: dim
 
     assert(mesh_compatible(out_field%mesh, in_field%mesh))
@@ -299,8 +307,8 @@ implicit none
   subroutine set_vector_field_vfield_dim(out_field, dim, in_field)
     !!< Set in_field to out_field. This will only work if the fields have
     !!< the same mesh.
-    type(vector_field), intent(inout) :: out_field
-    type(vector_field), intent(in) :: in_field
+    type(vector_field_lib), intent(inout) :: out_field
+    type(vector_field_lib), intent(in) :: in_field
     integer, intent(in):: dim
 
     assert(mesh_compatible(out_field%mesh, in_field%mesh))
@@ -323,7 +331,7 @@ implicit none
   subroutine set_scalar_field_node(field, node_number, val)
     !!< Set the scalar field at the specified node
     !!< Does not work for constant fields
-    type(scalar_field), intent(inout) :: field
+    type(scalar_field_lib), intent(inout) :: field
     integer, intent(in) :: node_number
     real, intent(in) :: val
 

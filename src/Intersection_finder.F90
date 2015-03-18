@@ -6,7 +6,15 @@ module libsupermesh_intersection_finder_module
 use libsupermesh_quadrature
 use libsupermesh_elements
 use libsupermesh_fields_base
-use libsupermesh_fields_data_types
+use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
+                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
+                    scalar_field_lib => scalar_field, &
+                    vector_field_lib => vector_field, &
+                    tensor_field_lib => tensor_field, &
+  scalar_boundary_condition_lib => scalar_boundary_condition, &
+  vector_boundary_condition_lib => vector_boundary_condition, &
+  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
+  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
 use libsupermesh_fields_allocates
 !use adjacency_lists		! IAKOVOS commented out
 use libsupermesh_linked_lists
@@ -15,7 +23,7 @@ use libsupermesh_parallel_tools
 !use supermesh_construction	! IAKOVOS commented out
 use libsupermesh_transform_elements
 use libsupermesh_data_structures
-use libsupermesh_sparse_tools
+use libsupermesh_sparse_tools, wrap_lib => wrap
 
 implicit none
 
@@ -197,7 +205,7 @@ contains
     !!< A simple wrapper to select an intersection finder
     
     ! The positions and meshes of A and B
-    type(vector_field), intent(in), target :: positionsA, positionsB
+    type(vector_field_lib), intent(in), target :: positionsA, positionsB
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(ele_count(positionsA)) :: map_AB
     
@@ -239,7 +247,7 @@ contains
     !!< Return whether the supplied coordinate field is connected. Uses a simple
     !!< element advancing front.
     
-    type(vector_field), intent(in) :: positions
+    type(vector_field_lib), intent(in) :: positions
     
     logical :: connected
     
@@ -290,7 +298,7 @@ contains
     !!< Return a list of seeds for the advancing front intersection finder - one
     !!< seed per connected sub-domain.
     
-    type(vector_field), intent(in) :: positions
+    type(vector_field_lib), intent(in) :: positions
     
     type(ilist) :: seeds
     
@@ -369,7 +377,7 @@ contains
 
   function libsupermesh_advancing_front_intersection_finder(positionsA, positionsB, seed) result(map_AB)
     ! The positions and meshes of A and B
-    type(vector_field), intent(in), target :: positionsA, positionsB
+    type(vector_field_lib), intent(in), target :: positionsA, positionsB
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(ele_count(positionsA)) :: map_AB
     integer, optional, intent(in) :: seed
@@ -382,7 +390,7 @@ contains
     type(integer_set) :: seen_elements
 
     integer :: ele_A
-    type(mesh_type), pointer :: mesh_A, mesh_B
+    type(libsupermesh_mesh_type), pointer :: mesh_A, mesh_B
     integer :: i, neighbour
     real, dimension(ele_count(positionsB), positionsB%dim, 2) :: bboxes_B
     integer, dimension(:), pointer :: neigh_A
@@ -455,7 +463,7 @@ contains
     contains
       function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)
         real, dimension(:, :), intent(in) :: posA
-        type(vector_field), intent(in), target :: positionsB
+        type(vector_field_lib), intent(in), target :: positionsB
         type(ilist), intent(inout) :: clues
         real, dimension(:, :, :), intent(in) :: bboxes_B
         type(csr_sparsity), intent(in) :: eelist_B
@@ -464,7 +472,7 @@ contains
         integer, dimension(:), pointer :: neigh_B
         integer :: i, possible, neighbour, j
         logical :: intersects
-        type(mesh_type), pointer :: mesh_B
+        type(libsupermesh_mesh_type), pointer :: mesh_B
         real, dimension(size(posA, 1), 2) :: bboxA
         integer :: ele_B
         type(integer_set) :: in_list
@@ -535,7 +543,7 @@ contains
     !!< linear algorithm.
   
     ! The positions and meshes of A and B
-    type(vector_field), intent(in), target :: positions_a, positions_b
+    type(vector_field_lib), intent(in), target :: positions_a, positions_b
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(ele_count(positions_a)) :: map_ab
     
@@ -556,7 +564,7 @@ contains
   end function brute_force_intersection_finder
   
   subroutine rtree_intersection_finder_set_input(old_positions)
-    type(vector_field), intent(in) :: old_positions
+    type(vector_field_lib), intent(in) :: old_positions
     real, dimension(node_count(old_positions) * old_positions%dim) :: tmp_positions
     integer :: node, dim
     
@@ -575,7 +583,7 @@ contains
   end subroutine rtree_intersection_finder_set_input
 
   subroutine rtree_intersection_finder_find(new_positions, ele_B)
-    type(vector_field), intent(in) :: new_positions
+    type(vector_field_lib), intent(in) :: new_positions
     integer, intent(in) :: ele_B
 
     integer :: dim, loc
@@ -592,7 +600,7 @@ contains
     !!< testing *only*. For practical applications, use the linear algorithm.
     
     ! The positions and meshes of A and B
-    type(vector_field), intent(in), target :: positions_a, positions_b
+    type(vector_field_lib), intent(in), target :: positions_a, positions_b
     integer, intent(out), optional :: npredicates
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(ele_count(positions_a)) :: map_ab
@@ -622,7 +630,7 @@ contains
 !  subroutine verify_map(mesh_field_a, mesh_field_b, map_ab, map_ab_reference)
 
   subroutine compute_bboxes(positionsB, bboxes_B)
-    type(vector_field), intent(in) :: positionsB
+    type(vector_field_lib), intent(in) :: positionsB
     real, dimension(:, :, :), intent(out) :: bboxes_B
     integer :: ele_B
 
@@ -633,7 +641,7 @@ contains
 
   function brute_force_search(posA, positionsB, bboxes_B) result(map)
     real, dimension(:, :), intent(in) :: posA
-    type(vector_field), intent(in) :: positionsB
+    type(vector_field_lib), intent(in) :: positionsB
     real, dimension(:, :, :), intent(in) :: bboxes_B
     type(ilist) :: map
     integer :: ele_B

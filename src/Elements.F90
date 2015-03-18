@@ -28,7 +28,7 @@
 #include "fdebug.h"
 module libsupermesh_elements
   !!< This module provides derived types for finite elements and associated functions.
-  use libsupermesh_element_numbering
+  use libsupermesh_element_numbering, vertex_num_lib => vertex_num
   use libsupermesh_quadrature
   use libsupermesh_FLDebug
   use libsupermesh_polynomials
@@ -108,6 +108,11 @@ module libsupermesh_elements
   integer, parameter :: CONSTRAINT_NONE =0, CONSTRAINT_BDFM = 1,&
        & CONSTRAINT_RT = 2, CONSTRAINT_BDM = 3
        
+  interface allocate
+     module procedure allocate_element, allocate_element_with_surface
+     module procedure allocate_constraints_type
+  end interface
+  
   interface deallocate
      module procedure deallocate_element
      module procedure deallocate_constraints
@@ -117,6 +122,10 @@ module libsupermesh_elements
      module procedure element_local_coords
   end interface
 
+  interface boundary_numbering
+     module procedure element_boundary_numbering
+  end interface
+  
   interface eval_shape
     module procedure eval_shape_node, eval_shape_all_nodes
   end interface
@@ -128,6 +137,146 @@ module libsupermesh_elements
 #include "Reference_count_interface_element_type.F90"
   
 contains
+
+  subroutine allocate_element(element, ele_num, ngi, type, stat)
+    !!< Allocate memory for an element_type. 
+    type(element_type), intent(inout) :: element
+    !! Number of quadrature points
+    integer, intent(in) :: ngi    
+    !! Element numbering
+    type(ele_numbering_type), intent(in) :: ele_num
+    !! Stat returns zero for success and nonzero otherwise.
+    integer, intent(in), optional :: type
+    integer, intent(out), optional :: stat
+    !
+    integer :: lstat, coords, ltype
+
+    if(present(type)) then
+       ltype = type
+    else
+       ltype = ele_num%type
+    end if
+
+    select case(ele_num%family)
+    case (FAMILY_SIMPLEX)
+       coords=ele_num%dimension+1
+    case (FAMILY_CUBE)
+       if(ele_num%type==ELEMENT_TRACE .and. ele_num%dimension==2) then
+          !For trace elements the local coordinate is face number
+          !then the local coordinates on the face
+          !For quads, the face is an interval element which has
+          !two local coordinates.
+          coords=3
+       else
+          coords=ele_num%dimension
+       end if
+    case default
+       FLAbort('Illegal element family.')
+    end select
+
+    select case(ltype)
+    case(ELEMENT_LAGRANGIAN, ELEMENT_NONCONFORMING, &
+         &ELEMENT_BUBBLE, ELEMENT_TRACE)
+
+       allocate(element%n(ele_num%nodes,ngi),&
+            &element%dn(ele_num%nodes,ngi,ele_num%dimension), &
+            &element%spoly(coords,ele_num%nodes), &
+            &element%dspoly(coords,ele_num%nodes), stat=lstat)
+
+    case(ELEMENT_CONTROLVOLUME_SURFACE)
+
+       allocate(element%n(ele_num%nodes,ngi),&
+            &element%dn(ele_num%nodes,ngi,ele_num%dimension-1), &
+            stat=lstat)
+
+      element%spoly=>null()
+      element%dspoly=>null()
+
+    case(ELEMENT_CONTROLVOLUMEBDY_SURFACE)
+
+      allocate(element%n(ele_num%nodes,ngi),&
+           &element%dn(ele_num%nodes,ngi,ele_num%dimension), &
+          stat=lstat)
+
+      element%spoly=>null()
+      element%dspoly=>null()
+
+    case default
+
+      FLAbort("Attempt to select an illegal element type.")
+
+    end select
+
+    element%loc=ele_num%nodes
+    element%ngi=ngi
+    element%dim=ele_num%dimension
+
+
+    nullify(element%refcount) ! Hack for gfortran component initialisation
+    !                         bug.
+    call addref(element)
+    
+    nullify(element%n_s)
+    nullify(element%dn_s)
+
+    if (present(stat)) then
+       stat=lstat
+    else if (lstat/=0) then
+       FLAbort("Unable to allocate element.")
+    end if
+
+  end subroutine allocate_element
+
+  subroutine allocate_element_with_surface(element, dim, loc,&
+       ngi,faces, ngi_s, coords,surface_present,type, stat)
+    !!< Allocate memory for an element_type. 
+    type(element_type), intent(inout) :: element
+    !! Dim is the dimension of the element, loc is number of nodes, ngi is
+    !! number of gauss points. 
+    integer, intent(in) :: dim,loc,ngi,faces,ngi_s    
+    !! Number of local coordinates.
+    integer, intent(in) :: coords
+    logical, intent(in) :: surface_present
+    !! Stat returns zero for success and nonzero otherwise.
+    integer, intent(in), optional :: type
+    integer, intent(out), optional :: stat
+
+    integer :: lstat
+
+    allocate(element%n(loc,ngi),element%dn(loc,ngi,dim), &
+         element%n_s(loc,ngi_s,faces),element%dn_s(loc,ngi_s,faces,dim),&
+         element%spoly(coords,loc), element%dspoly(coords,loc), stat=lstat)
+    
+    element%loc=loc
+    element%ngi=ngi
+    element%dim=dim
+
+    if (present(stat)) then
+       stat=lstat
+    else if (lstat/=0) then
+       FLAbort("Unable to allocate element.")
+    end if
+    
+    nullify(element%refcount) ! Hack for gfortran component initialisation
+    !                         bug.
+    call addref(element)
+
+  end subroutine allocate_element_with_surface
+
+  subroutine allocate_constraints_type(constraint, element, type, stat)
+    !!< Allocate memory for a constraints type
+    type(element_type), intent(in) :: element
+    type(constraints_type), intent(inout) :: constraint
+    integer, intent(in) :: type !type of constraint
+    !! Stat returns zero for success and nonzero otherwise.
+    integer, intent(out), optional :: stat
+    !
+    integer :: lstat
+
+! IAKOVOS commented out
+    FLAbort("allocate_constraints_type: Code Commented out")
+
+  end subroutine allocate_constraints_type
 
   subroutine deallocate_element(element, stat)
     type(element_type), intent(inout) :: element
@@ -218,6 +367,19 @@ contains
     coords=local_coords(n, element%numbering)
 
   end function element_local_coords
+
+  function element_boundary_numbering(element, boundary)
+    !!< A wrapper function which allows boundary_numbering to be called on
+    !!< an element instead of on an element_numbering.
+    integer, intent(in) :: boundary
+    type(element_type), intent(in) :: element
+    integer, dimension(boundary_num_length(element%numbering, .false.)) ::&
+         & element_boundary_numbering 
+    
+    element_boundary_numbering=boundary_numbering(element%numbering,&
+         & boundary)
+
+  end function element_boundary_numbering
 
   pure function eval_shape_node(shape, node,  l) result(eval_shape)
     ! Evaluate the shape function for node node local coordinates l

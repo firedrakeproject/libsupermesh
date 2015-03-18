@@ -50,7 +50,8 @@ module libsupermesh_polynomials
   !!< operand of each operation must be a polynomial and not a vector acting
   !!< as a polynomial or the module won't know to do polynomial operations.
   !!<
-  use libsupermesh_futils
+  use libsupermesh_futils, real_format_lib => real_format, &
+        real_format_len_lib => real_format_len
   use libsupermesh_FLDebug
   
   implicit none

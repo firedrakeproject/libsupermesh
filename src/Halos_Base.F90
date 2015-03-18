@@ -734,7 +734,7 @@ contains
     logical :: serial
     
 #ifdef HAVE_MPI
-    serial = getnprocs(communicator = MPI_COMM_FEMTOOLS) == 1
+    serial = getnprocs(communicator = MPI_COMM_FEMTOOLS_LIB) == 1
 #else
     serial = .true.
 #endif

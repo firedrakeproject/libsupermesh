@@ -29,7 +29,8 @@
 
 module libsupermesh_halo_data_types
 
-  use libsupermesh_futils
+  use libsupermesh_futils, real_format_lib => real_format, &
+        real_format_len_lib => real_format_len
   use libsupermesh_global_parameters, only : FIELD_NAME_LEN
   use libsupermesh_mpi_interfaces
   use libsupermesh_reference_counting

@@ -31,13 +31,21 @@ module libsupermesh_fields_base
   !!< connectivity with them.
   use libsupermesh_shape_functions, only: element_type
 !  use tensors					! IAKOVOS commented out
-  use libsupermesh_fields_data_types
+  use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
+                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
+                    scalar_field_lib => scalar_field, &
+                    vector_field_lib => vector_field, &
+                    tensor_field_lib => tensor_field, &
+  scalar_boundary_condition_lib => scalar_boundary_condition, &
+  vector_boundary_condition_lib => vector_boundary_condition, &
+  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
+  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
   use libsupermesh_reference_counting
   use libsupermesh_global_parameters, only: FIELD_NAME_LEN, current_debug_level, current_time
   use libsupermesh_elements
-  use libsupermesh_element_numbering
+  use libsupermesh_element_numbering, vertex_num_lib => vertex_num
 !  use embed_python				! IAKOVOS commented out
-  use libsupermesh_sparse_tools
+  use libsupermesh_sparse_tools, wrap_lib => wrap
   use libsupermesh_vector_tools, only: solve, invert, norm2, cross_product
   implicit none
   
@@ -46,10 +54,41 @@ module libsupermesh_fields_base
           & ele_nodes_mesh
   end interface
   
+  interface face_local_nodes
+!     module procedure face_local_nodes_mesh,face_local_nodes_scalar,&
+!          & face_local_nodes_vector, face_local_nodes_tensor
+     module procedure face_local_nodes_mesh
+  end interface
+  
   interface face_global_nodes
 !     module procedure face_global_nodes_mesh, face_global_nodes_vector,&
 !          & face_global_nodes_scalar, face_global_nodes_tensor
       module procedure face_global_nodes_mesh
+  end interface
+  
+  interface ele_neigh
+!     module procedure ele_neigh_mesh, ele_neigh_scalar, ele_neigh_vector, &
+!          & ele_neigh_tensor, ele_neigh_i_mesh, ele_neigh_i_scalar, &
+!          & ele_neigh_i_vector, ele_neigh_i_tensor
+     module procedure ele_neigh_mesh
+  end interface
+  
+  interface ele_faces
+!     module procedure ele_faces_mesh, ele_faces_vector, ele_faces_scalar, &
+!          & ele_faces_tensor
+    module procedure ele_faces_mesh
+  end interface
+  
+  interface ele_face
+!     module procedure ele_face_mesh, ele_face_scalar, ele_face_vector,&
+!          & ele_face_tensor
+     module procedure ele_face_mesh
+  end interface
+  
+  interface ele_shape
+!     module procedure ele_shape_scalar, ele_shape_vector, ele_shape_tensor,&
+!          & ele_shape_mesh 
+     module procedure ele_shape_mesh
   end interface
   
   interface face_loc
@@ -87,9 +126,25 @@ module libsupermesh_fields_base
           & ele_loc_mesh
   end interface
   
+  interface face_vertices
+!     module procedure face_vertices_scalar, face_vertices_vector, face_vertices_tensor,&
+!          & face_vertices_mesh, face_vertices_shape
+    module procedure face_vertices_mesh, face_vertices_shape
+  end interface
+  
   interface ele_val
      module procedure ele_val_scalar, ele_val_vector, ele_val_vector_dim,&
           & ele_val_tensor, ele_val_tensor_dim_dim
+  end interface
+  
+  interface has_discontinuous_internal_boundaries
+     module procedure mesh_has_discontinuous_internal_boundaries
+  end interface has_discontinuous_internal_boundaries
+
+  interface element_count
+!     module procedure element_count_scalar, element_count_vector,&
+!          & element_count_tensor, element_count_mesh
+     module procedure element_count_mesh
   end interface
   
   interface ele_count
@@ -109,6 +164,12 @@ module libsupermesh_fields_base
     module procedure local_coords_mesh
   end interface
   
+  interface local_face_number
+!     module procedure local_face_number_mesh, local_face_number_scalar, &
+!          & local_face_number_vector, local_face_number_tensor
+    module procedure local_face_number_mesh
+  end interface local_face_number
+  
   interface node_val
 !     module procedure node_val_scalar, node_val_vector, node_val_tensor, &
 !          & node_val_scalar_v, node_val_vector_v, node_val_vector_dim_v,&
@@ -126,7 +187,7 @@ contains
   pure function mesh_dim_mesh(mesh) result (mesh_dim)
     ! Return the dimensionality of the mesh.
     integer :: mesh_dim
-    type(mesh_type), intent(in) :: mesh
+    type(libsupermesh_mesh_type), intent(in) :: mesh
     
     mesh_dim=mesh%shape%dim
 
@@ -135,7 +196,7 @@ contains
   function mesh_connectivity(mesh) result (ndglno)
     !!< Assuming that the input mesh is at least C0, return the connectivity
     !!< of the mesh.
-    type(mesh_type), intent(in) :: mesh
+    type(libsupermesh_mesh_type), intent(in) :: mesh
     integer, dimension(mesh%elements*mesh%shape%numbering%vertices) ::&
          & ndglno
 
@@ -171,7 +232,7 @@ contains
   function local_coords_mesh(mesh, ele, node, stat) result(local_coord)
     !!< returns the local node number within a given element ele of the global
     !!< node number node
-    type(mesh_type), intent(in) :: mesh
+    type(libsupermesh_mesh_type), intent(in) :: mesh
     integer, intent(in) :: ele, node
     integer, intent(inout), optional :: stat
     integer :: local_coord
@@ -198,10 +259,48 @@ contains
     
   end function local_coords_mesh
   
+  function ele_faces_mesh(mesh, ele_number) result (ele_faces)
+    !!< Return a pointer to a vector containing the face numbers of the
+    !!< faces adjacent to ele_number.
+    integer, dimension(:), pointer :: ele_faces
+    type(libsupermesh_mesh_type),intent(in) :: mesh
+    integer, intent(in) :: ele_number
+
+    ele_faces =>row_ival_ptr(mesh%faces%face_list, ele_number)
+  
+  end function ele_faces_mesh
+  
+  function ele_neigh_mesh(mesh, ele_number) result (ele_neigh)
+    !!< Return a pointer to a vector containing the element numbers of the
+    !!< elements adjacent to ele_number.
+    integer, dimension(:), pointer :: ele_neigh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
+    integer, intent(in) :: ele_number
+
+    ele_neigh=>row_m_ptr(mesh%faces%face_list, ele_number)
+  
+  end function ele_neigh_mesh
+  
+  pure function mesh_has_discontinuous_internal_boundaries(mesh)
+    !!< Return whether the mesh has discontinuous boundaries
+    !!< These are internal boundaries where the surface id are 
+    !!< allowed to be discontinuous (the pair of adjacent 
+    !!< internal facets can have two different ids).
+    logical :: mesh_has_discontinuous_internal_boundaries
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    
+    if (associated(mesh%faces)) then
+      mesh_has_discontinuous_internal_boundaries = mesh%faces%has_discontinuous_internal_boundaries
+    else
+      mesh_has_discontinuous_internal_boundaries = .false.
+    end if
+  
+  end function mesh_has_discontinuous_internal_boundaries
+  
   pure function face_loc_mesh(mesh, face_number) result (face_loc)
     ! Return the number of nodes of face face_number.
     integer :: face_loc
-    type(mesh_type),intent(in) :: mesh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
     integer, intent(in) :: face_number
     
     face_loc=mesh%faces%shape%loc
@@ -211,7 +310,7 @@ contains
   elemental function face_ele_mesh(mesh, face_number) result (face_ele)
     ! Return the index of the element of which face is a part.
     integer :: face_ele
-    type(mesh_type), intent(in) :: mesh
+    type(libsupermesh_mesh_type), intent(in) :: mesh
     integer, intent(in) :: face_number
 
     face_ele=mesh%faces%face_element_list(face_number)
@@ -222,11 +321,11 @@ contains
     ! Return a pointer to a vector containing the local node numbers of
     ! facet face_number in mesh.
     integer, dimension(:), pointer :: face_nodes
-    type(mesh_type),intent(in) :: mesh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
     integer, intent(in) :: face_number
     
     ! This just reduces notational clutter.
-    type(mesh_faces), pointer :: faces
+    type(mesh_faces_lib), pointer :: faces
 
     faces=>mesh%faces
 
@@ -238,7 +337,7 @@ contains
   pure function surface_element_count_mesh(mesh) result (element_count)
     ! Return the number of surface elements in a mesh.
     integer :: element_count
-    type(mesh_type),intent(in) :: mesh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
 
     if (associated(mesh%faces)) then
       element_count=size(mesh%faces%boundary_ids)
@@ -251,7 +350,7 @@ contains
   function face_global_nodes_mesh(mesh, face_number) result (face_nodes)
     !!< Return a vector containing the global node numbers of
     !!< facet face_number in mesh.
-    type(mesh_type),intent(in) :: mesh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
     integer, intent(in) :: face_number
     integer, dimension(face_loc(mesh, face_number)) :: face_nodes 
     
@@ -264,12 +363,32 @@ contains
     face_nodes=ele(face_local_nodes_mesh(mesh, face_number))
     
   end function face_global_nodes_mesh
+  
+  function ele_shape_mesh(mesh, ele_number) result (ele_shape)
+    ! Return a pointer to the shape of element ele_number.
+    type(element_type), pointer :: ele_shape
+    type(libsupermesh_mesh_type),intent(in), target :: mesh
+    integer, intent(in) :: ele_number
+    
+    ele_shape=>mesh%shape
+    
+  end function ele_shape_mesh
+  
+  function ele_face_mesh(mesh, ele_number1, ele_number2) result (ele_face)
+    ! Return the face in ele1 adjacent to ele2. 
+    integer ele_face
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    integer, intent(in) :: ele_number1, ele_number2
+
+    ele_face=ival(mesh%faces%face_list, ele_number1, ele_number2)
+    
+  end function ele_face_mesh
 
   function ele_nodes_mesh(mesh, ele_number) result (ele_nodes)
     ! Return a pointer to a vector containing the global node numbers of
     ! element ele_number in mesh.
     integer, dimension(:), pointer :: ele_nodes
-    type(mesh_type),intent(in) :: mesh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
     integer, intent(in) :: ele_number
 
     ele_nodes=>mesh%ndglno(mesh%shape%loc*(ele_number-1)+1:&
@@ -281,7 +400,7 @@ contains
     ! Return a pointer to a vector containing the global node numbers of
     ! element ele_number in field.
     integer, dimension(:), pointer :: ele_nodes
-    type(scalar_field),intent(in) :: field
+    type(scalar_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_nodes=>ele_nodes_mesh(field%mesh, ele_number)
@@ -292,7 +411,7 @@ contains
     ! Return a pointer to a vector containing the global node numbers of
     ! element ele_number in field.
     integer, dimension(:), pointer :: ele_nodes
-    type(vector_field),intent(in) :: field
+    type(vector_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_nodes=>ele_nodes_mesh(field%mesh, ele_number)
@@ -303,7 +422,7 @@ contains
     ! Return a pointer to a tensor containing the global node numbers of
     ! element ele_number in field.
     integer, dimension(:), pointer :: ele_nodes
-    type(tensor_field),intent(in) :: field
+    type(tensor_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_nodes=>ele_nodes_mesh(field%mesh, ele_number)
@@ -313,7 +432,7 @@ contains
   pure function ele_loc_mesh(mesh, ele_number) result (ele_loc)
     ! Return the number of nodes of element ele_number.
     integer :: ele_loc
-    type(mesh_type),intent(in) :: mesh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
     integer, intent(in) :: ele_number
     
     ele_loc=mesh%shape%loc
@@ -323,7 +442,7 @@ contains
   pure function ele_loc_scalar(field, ele_number) result (ele_loc)
     ! Return the number of nodes of element ele_number.
     integer :: ele_loc
-    type(scalar_field),intent(in) :: field
+    type(scalar_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
     
     ele_loc=field%mesh%shape%loc
@@ -333,7 +452,7 @@ contains
   pure function ele_loc_vector(field, ele_number) result (ele_loc)
     ! Return the number of nodes of element ele_number.
     integer :: ele_loc
-    type(vector_field),intent(in) :: field
+    type(vector_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
     
     ele_loc=field%mesh%shape%loc
@@ -343,17 +462,46 @@ contains
   pure function ele_loc_tensor(field, ele_number) result (ele_loc)
     ! Return the number of nodes of element ele_number.
     integer :: ele_loc
-    type(tensor_field),intent(in) :: field
+    type(tensor_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
     
     ele_loc=field%mesh%shape%loc
     
   end function ele_loc_tensor
   
+  pure function face_vertices_mesh(mesh, face_number) result (face_vertices)
+    ! Return the number of vertices of face face_number.
+    integer :: face_vertices
+    type(libsupermesh_mesh_type),intent(in) :: mesh
+    integer, intent(in) :: face_number
+    
+    face_vertices=mesh%faces%shape%quadrature%vertices
+
+  end function face_vertices_mesh
+  
+  function face_vertices_shape(shape) result(vert)
+    type(element_type), intent(in) :: shape
+    integer :: vert
+
+    select case(shape%numbering%type)
+    case(ELEMENT_LAGRANGIAN, ELEMENT_BUBBLE, ELEMENT_TRACE)
+      select case(shape%numbering%family)
+      case (FAMILY_SIMPLEX)
+        vert = shape%dim
+      case (FAMILY_CUBE)
+        vert = 2**(shape%dim-1)
+      case default
+        FLAbort("Unknown element family.")
+      end select
+    case default
+      FLAbort("Unknown element type.")
+    end select
+    
+  end function face_vertices_shape
   
   function ele_val_scalar(field, ele_number) result (ele_val_out)
     ! Return the values of field at the nodes of ele_number.
-    type(scalar_field),intent(in) :: field
+    type(scalar_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%mesh%shape%loc) :: ele_val_out
     integer :: i
@@ -394,7 +542,7 @@ contains
 
   function ele_val_vector(field, ele_number) result (ele_val)
     ! Return the values of field at the nodes of ele_number.
-    type(vector_field),intent(in) :: field
+    type(vector_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%dim, field%mesh%shape%loc) :: ele_val
 
@@ -418,7 +566,7 @@ contains
 
   function ele_val_vector_dim(field, dim, ele_number) result (ele_val)
     ! Return the values of dimension dim of field at the nodes of ele_number.
-    type(vector_field),intent(in) :: field
+    type(vector_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%mesh%shape%loc) :: ele_val
     integer, intent(in) :: dim
@@ -434,7 +582,7 @@ contains
 
   function ele_val_tensor(field, ele_number) result (ele_val)
     ! Return the values of field at the nodes of ele_number.
-    type(tensor_field),intent(in) :: field
+    type(tensor_field_lib),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%dim(1), field%dim(2), field%mesh%shape%loc) :: ele_val
 
@@ -455,7 +603,7 @@ contains
 
   function ele_val_tensor_dim_dim(field, dim1, dim2, ele_number) result (ele_val)
     ! Return the values of field at the nodes of ele_number.
-    type(tensor_field),intent(in) :: field
+    type(tensor_field_lib),intent(in) :: field
     integer, intent(in) :: dim1, dim2
     integer, intent(in) :: ele_number
     real, dimension(field%mesh%shape%loc) :: ele_val
@@ -656,7 +804,7 @@ contains
     !! where X is a tuple containing the position of a point and t is the
     !! time. The result must be a float. 
     character(len=*), intent(in) :: func
-    type(vector_field), intent(in) :: vfield
+    type(vector_field_lib), intent(in) :: vfield
     real, intent(in) :: time
 
     integer :: dim
@@ -673,11 +821,44 @@ contains
     
   end subroutine set_values_from_python_vector_field
 
+  function local_face_number_mesh(mesh, global_face_number, stat) result (local_face_number)
+    ! Return the local face number of the given global face number in element ele_number
+    integer :: local_face_number
+    type(libsupermesh_mesh_type), intent(in) :: mesh
+    integer, intent(in) :: global_face_number
+    integer, intent(inout), optional :: stat
+    
+    integer :: ele_number, i
+    integer, dimension(:), pointer :: element_faces
+    
+    local_face_number = 0
+    
+    ele_number = face_ele(mesh, global_face_number)
+    
+    element_faces => ele_faces(mesh, ele_number)
+    do i = 1, size(element_faces)
+      if(element_faces(i) == global_face_number) then
+        local_face_number = i
+        exit
+      end if
+    end do
+    
+    if(local_face_number==0) then
+      if(present(stat)) then
+        stat = 1
+      else
+        FLAbort("Failed to find local face number.")
+      end if
+    else
+      if(present(stat)) stat = 0
+    end if
+    
+  end function local_face_number_mesh
   
   pure function element_count_scalar(field) result (element_count)
     ! Return the number of elements in a field.
     integer :: element_count
-    type(scalar_field),intent(in) :: field
+    type(scalar_field_lib),intent(in) :: field
 
     element_count=field%mesh%elements
 
@@ -686,7 +867,7 @@ contains
   pure function element_count_vector(field) result (element_count)
     ! Return the number of elements in a field.
     integer :: element_count
-    type(vector_field),intent(in) :: field
+    type(vector_field_lib),intent(in) :: field
 
     element_count=field%mesh%elements
 
@@ -695,7 +876,7 @@ contains
   pure function element_count_tensor(field) result (element_count)
     ! Return the number of elements in a field.
     integer :: element_count
-    type(tensor_field),intent(in) :: field
+    type(tensor_field_lib),intent(in) :: field
 
     element_count=field%mesh%elements
 
@@ -704,7 +885,7 @@ contains
   pure function element_count_mesh(mesh) result (element_count)
     ! Return the number of nodes in a mesh.
     integer :: element_count
-    type(mesh_type),intent(in) :: mesh
+    type(libsupermesh_mesh_type),intent(in) :: mesh
 
     element_count=mesh%elements
 
@@ -713,7 +894,7 @@ contains
   pure function node_count_mesh(mesh) result (node_count)
     ! Return the number of nodes in a mesh.
     integer :: node_count
-    type(mesh_type), intent(in) :: mesh
+    type(libsupermesh_mesh_type), intent(in) :: mesh
 
     node_count=mesh%nodes
 
@@ -722,7 +903,7 @@ contains
   pure function node_count_scalar(field) result (node_count)
     ! Return the number of nodes in a field.
     integer :: node_count
-    type(scalar_field),intent(in) :: field
+    type(scalar_field_lib),intent(in) :: field
 
     node_count=node_count_mesh(field%mesh)
 
@@ -731,7 +912,7 @@ contains
   pure function node_count_vector(field) result (node_count)
     ! Return the number of nodes in a field.
     integer :: node_count
-    type(vector_field),intent(in) :: field
+    type(vector_field_lib),intent(in) :: field
 
     node_count=node_count_mesh(field%mesh)
 
@@ -740,7 +921,7 @@ contains
   pure function node_count_tensor(field) result (node_count)
     ! Return the number of nodes in a field.
     integer :: node_count
-    type(tensor_field),intent(in) :: field
+    type(tensor_field_lib),intent(in) :: field
 
     node_count=node_count_mesh(field%mesh)
 
@@ -748,7 +929,7 @@ contains
   
   pure function node_val_vector(field, node_number) result (val)
     ! Return the value of field at node node_number
-    type(vector_field),intent(in) :: field
+    type(vector_field_lib),intent(in) :: field
     integer, intent(in) :: node_number
     real, dimension(field%dim) :: val
 
@@ -770,7 +951,7 @@ contains
   function has_faces_mesh(mesh) result (has_faces)
     ! Check whether the faces component of mesh has been calculated.
     logical :: has_faces
-    type(mesh_type), intent(in) :: mesh
+    type(libsupermesh_mesh_type), intent(in) :: mesh
 
     has_faces=associated(mesh%faces)
 

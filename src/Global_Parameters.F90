@@ -168,14 +168,14 @@ module libsupermesh_global_parameters
 
   contains
 
-  function get_surface_radius() bind(c)
+  function get_surface_radius_lib() bind(c)
     !C-inter-operable subroutine for making the value of surface_radius availabe
     ! to C functions.
     implicit none
 
-    real(kind=c_double) :: get_surface_radius
+    real(kind=c_double) :: get_surface_radius_lib
 
-    get_surface_radius = real(surface_radius, kind=c_double)
-  end function get_surface_radius
+    get_surface_radius_lib = real(surface_radius, kind=c_double)
+  end function get_surface_radius_lib
 
 end module libsupermesh_global_parameters

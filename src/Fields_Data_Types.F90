@@ -28,25 +28,22 @@
 module libsupermesh_fields_data_types
 
   use libsupermesh_global_parameters, only:FIELD_NAME_LEN, current_debug_level, OPTION_PATH_LEN, PYTHON_FUNC_LEN
-  use libsupermesh_picker_data_types        
-   ! IAKOVOS used for type(picker_ptr), pointer :: picker => null()
+  use libsupermesh_picker_data_types   ! IAKOVOS used for type(picker_ptr), pointer :: picker => null()
   use libsupermesh_shape_functions
-  use libsupermesh_sparse_tools
+  use libsupermesh_sparse_tools, wrap_lib => wrap
 !  use spud			! IAKOVOS commented out
-  use libsupermesh_reference_counting
-  ! IAKOVOS used for type(refcount_type), pointer :: refcount=>null()
+  use libsupermesh_reference_counting  ! IAKOVOS used for type(refcount_type), pointer :: refcount=>null()
   use libsupermesh_halo_data_types
   use libsupermesh_data_structures, only : integer_set_vector
-  use libsupermesh_elements
+  use libsupermesh_elements, only : element_type
   implicit none
 
   private
   public adjacency_cache, &
-     mesh_type, mesh_faces, mesh_subdomain_mesh, scalar_field, vector_field, tensor_field, &
+     libsupermesh_mesh_type, mesh_faces, mesh_subdomain_mesh, scalar_field, vector_field, tensor_field, &
      
      scalar_boundary_condition, vector_boundary_condition, &
      scalar_boundary_conditions_ptr, vector_boundary_conditions_ptr
-
 
   !! Types of different halo associated with a field:
   integer, public, parameter :: HALO_TYPES=2
@@ -59,7 +56,7 @@ module libsupermesh_fields_data_types
     type(csr_sparsity), pointer :: eelist => null()
   end type adjacency_cache
   
-  type mesh_type
+  type libsupermesh_mesh_type
      !!< Mesh information for (among other things) fields.
      integer, dimension(:), pointer :: ndglno
      !! Flag for whether ndglno is allocated
@@ -100,7 +97,7 @@ module libsupermesh_fields_data_types
      !! (does not tell you how periodic it is... i.e. true if
      !! any surface is periodic)
      logical :: periodic=.false.
-  end type mesh_type
+  end type libsupermesh_mesh_type
 
   type mesh_faces
      !!< Type encoding face information for a mesh.
@@ -111,7 +108,7 @@ module libsupermesh_fields_data_types
      integer, dimension(:), pointer :: face_lno
      !! A mesh consisting of all faces on the surface of the domain,
      !! it uses its own internal surface node numbering:
-     type(mesh_type) surface_mesh
+     type(libsupermesh_mesh_type) surface_mesh
      !! A list of the nodes on the surface, thus forming a map between
      !! internal surface node numbering and global node numbering:
      integer, dimension(:), pointer :: surface_node_list
@@ -123,7 +120,7 @@ module libsupermesh_fields_data_types
      !! list of ids to identify coplanar patches of the surface:
      integer, dimension(:), pointer :: coplanar_ids => null()
      !! a DG version of the surface mesh, useful for storing bc values
-     type(mesh_type), pointer:: dg_surface_mesh => null()
+     type(libsupermesh_mesh_type), pointer:: dg_surface_mesh => null()
      !! A logical indicating if this mesh has a discontinuous internal boundary
      !! This means that the pairs of internal facets are allowed to have two different
      !! surface ids. When writing out this mesh both facets are written out and
@@ -172,7 +169,7 @@ module libsupermesh_fields_data_types
 #else
      character(len=OPTION_PATH_LEN) :: option_path
 #endif
-     type(mesh_type) :: mesh
+     type(libsupermesh_mesh_type) :: mesh
      !! Reference count for field
      type(refcount_type), pointer :: refcount=>null()
      !! Indicator for whether this is an alias to another field.
@@ -185,7 +182,6 @@ module libsupermesh_fields_data_types
      integer :: py_dim
      type(element_type), pointer :: py_positions_shape => null()
   end type scalar_field
-  
   
   type vector_field
      !! dim x nonods vector values
@@ -204,7 +200,7 @@ module libsupermesh_fields_data_types
 #else
      character(len=OPTION_PATH_LEN) :: option_path
 #endif
-     type(mesh_type) :: mesh
+     type(libsupermesh_mesh_type) :: mesh
      !! Reference count for field
      type(refcount_type), pointer :: refcount=>null()
      !! Indicator for whether this is an alias to another field.
@@ -229,7 +225,7 @@ module libsupermesh_fields_data_types
 #else
      character(len=OPTION_PATH_LEN) :: option_path
 #endif
-     type(mesh_type) :: mesh
+     type(libsupermesh_mesh_type) :: mesh
      !! Reference count for field
      type(refcount_type), pointer :: refcount=>null()
      !! Indicator for whether this is an alias to another field.
@@ -246,7 +242,7 @@ module libsupermesh_fields_data_types
      !! list of surface nodes to which boundary condition is applied:
      integer, dimension(:), pointer:: surface_node_list => null()
      !! mesh consisting of these elements and nodes only:
-     type(mesh_type), pointer :: surface_mesh
+     type(libsupermesh_mesh_type), pointer :: surface_mesh
      !! surface fields on this mesh containing b.c. values
      type(scalar_field), dimension(:), pointer :: surface_fields => null()
      !! path to options in the options tree
@@ -269,7 +265,7 @@ module libsupermesh_fields_data_types
      !! list of surface nodes to which boundary condition is applied:
      integer, dimension(:), pointer:: surface_node_list => null()
      !! mesh consisting of these elements and nodes only:
-     type(mesh_type), pointer :: surface_mesh
+     type(libsupermesh_mesh_type), pointer :: surface_mesh
      !! surface fields on this mesh containing b.c. values
      type(vector_field), dimension(:), pointer :: surface_fields => null()
      !! scalar surface fields on this mesh containing b.c. values

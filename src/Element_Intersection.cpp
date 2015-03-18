@@ -873,30 +873,30 @@ void WmElementIntersector3D::GetOutput(double*& positions, int*& enlist) const
   return;
 }
 
-ElementIntersector* elementIntersector = NULL;
+ElementIntersector* elementIntersector_LibSuperMesh = NULL;
 
-ElementIntersectionFinder elementIntersectionFinder;
+ElementIntersectionFinder elementIntersectionFinder_LibSuperMesh;
 
 extern "C"
 {
   int cLibSuperMeshIntersectorGetDimension()
   {
-    assert(elementIntersector);
+    assert(elementIntersector_LibSuperMesh);
     
-    return elementIntersector->GetDim();
+    return elementIntersector_LibSuperMesh->GetDim();
   }
 
   void cLibSuperMeshIntersectorSetDimension(const int* dim)
   {
-    if(elementIntersector)
+    if(elementIntersector_LibSuperMesh)
     {
-      if((int) elementIntersector->GetDim() == *dim)
+      if((int) elementIntersector_LibSuperMesh->GetDim() == *dim)
       {
         return;
       }
     
-      delete elementIntersector;
-      elementIntersector = NULL;
+      delete elementIntersector_LibSuperMesh;
+      elementIntersector_LibSuperMesh = NULL;
     }
     
     ElementIntersector1D* intersector_1;
@@ -906,15 +906,15 @@ extern "C"
     {
       case 1:
         intersector_1 = new ElementIntersector1D();
-        elementIntersector = (ElementIntersector*)intersector_1;
+        elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_1;
         break;
       case 2:
         intersector_2 = new ElementIntersector2D();
-        elementIntersector = (ElementIntersector*)intersector_2;
+        elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_2;
         break;
       case 3:
         intersector_3 = new WmElementIntersector3D();
-        elementIntersector = (ElementIntersector*)intersector_3;
+        elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_3;
         break;
       default:
         cerr << "Invalid element intersector dimension" << endl;
@@ -932,15 +932,15 @@ extern "C"
 
     int dim;
     
-    assert(elementIntersector);
-    dim = elementIntersector->GetDim();
-    if((int) elementIntersector->GetExactness() == *exact)
+    assert(elementIntersector_LibSuperMesh);
+    dim = elementIntersector_LibSuperMesh->GetDim();
+    if((int) elementIntersector_LibSuperMesh->GetExactness() == *exact)
     {
       return;
     }
     else
     {
-      delete elementIntersector;
+      delete elementIntersector_LibSuperMesh;
     }
     
     ElementIntersector1D* intersector_1_inexact;
@@ -955,7 +955,7 @@ extern "C"
         if (*exact == 0)
         {
           intersector_1_inexact = new ElementIntersector1D();
-          elementIntersector = (ElementIntersector*)intersector_1_inexact;
+          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_1_inexact;
         }
         else{
           cerr << "Exact intersector not available in 1D" << endl;
@@ -966,24 +966,24 @@ extern "C"
         if (*exact == 0)
         {
           intersector_2_inexact = new ElementIntersector2D();
-          elementIntersector = (ElementIntersector*)intersector_2_inexact;
+          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_2_inexact;
         }
         else
         {
           intersector_2_exact = new ElementIntersectorCGAL2D();
-          elementIntersector = (ElementIntersector*)intersector_2_exact;
+          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_2_exact;
         }
         break;
       case 3:
         if (*exact == 0)
         {
           intersector_3_inexact = new WmElementIntersector3D();
-          elementIntersector = (ElementIntersector*)intersector_3_inexact;
+          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_3_inexact;
         }
         else
         {
           intersector_3_exact = new ElementIntersectorCGAL3D();
-          elementIntersector = (ElementIntersector*)intersector_3_exact;
+          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_3_exact;
         }
         break;
       default:
@@ -996,43 +996,43 @@ extern "C"
 
   void cLibSuperMeshIntersectorSetInput(double* positionsA, double* positionsB, const int* dim, const int* loc)
   {
-    assert(elementIntersector);
+    assert(elementIntersector_LibSuperMesh);
     assert(*dim >= 0);
     assert(*loc >= 0);
     
-    elementIntersector->SetInput(positionsA, positionsB, *dim, *loc);
+    elementIntersector_LibSuperMesh->SetInput(positionsA, positionsB, *dim, *loc);
     
     return;
   }
 
   void cLibSuperMeshIntersectorDrive()
   {
-    assert(elementIntersector);
+    assert(elementIntersector_LibSuperMesh);
   
-    elementIntersector->Intersect();
+    elementIntersector_LibSuperMesh->Intersect();
     
     return;
   }
   
   void cLibSuperMeshIntersectorQuery(int* nnodes, int* nelms)
   {
-    assert(elementIntersector);
+    assert(elementIntersector_LibSuperMesh);
   
-    elementIntersector->QueryOutput(*nnodes, *nelms);
+    elementIntersector_LibSuperMesh->QueryOutput(*nnodes, *nelms);
     
     return;
   }
   
   void cLibSuperMeshIntersectorGetOutput(const int* nnodes, const int* nelms, const int* dim, const int* loc, double* positions, int* enlist)
   {
-    assert(elementIntersector);
+    assert(elementIntersector_LibSuperMesh);
   
 #ifdef DDEBUG
     int nnodesQuery, nelmsQuery;  
-    elementIntersector->QueryOutput(nnodesQuery, nelmsQuery);
+    elementIntersector_LibSuperMesh->QueryOutput(nnodesQuery, nelmsQuery);
     assert(*nnodes == nnodesQuery);
     assert(*nelms == nelmsQuery);
-    switch(elementIntersector->GetDim())
+    switch(elementIntersector_LibSuperMesh->GetDim())
     {
       case 1:
         assert(*dim == 1);
@@ -1052,7 +1052,7 @@ extern "C"
     }
 #endif
 
-    elementIntersector->GetOutput(positions, enlist);
+    elementIntersector_LibSuperMesh->GetOutput(positions, enlist);
   
     return;
   }

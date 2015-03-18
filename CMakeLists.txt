@@ -98,5 +98,9 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_base.mod" DESTINATION 
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_allocates.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_manipulation.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_transform_elements.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_linked_lists.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_futils.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_element_numbering.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_construction.mod" DESTINATION include)
 
 
