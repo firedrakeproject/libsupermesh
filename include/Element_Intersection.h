@@ -356,9 +356,9 @@ namespace LibSupermesh
   };
 }
 
-extern LibSupermesh::ElementIntersector* elementIntersector;
+extern LibSupermesh::ElementIntersector* elementIntersector_LibSuperMesh;
 
-extern LibSupermesh::ElementIntersectionFinder elementIntersectionFinder;
+extern LibSupermesh::ElementIntersectionFinder elementIntersectionFinder_LibSuperMesh;
 
 extern "C"
 {

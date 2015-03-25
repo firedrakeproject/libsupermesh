@@ -265,6 +265,7 @@ int ElementIntersectionFinder::Reset()
 void ElementIntersectionFinder::SetInput(const double*& positions, const int& nnodes, const int& dim,
                                          const int*& enlist, const int& nelements, const int& loc)
 {
+  
   assert(positions);
   assert(enlist);
   assert(nnodes >= 0);
@@ -273,7 +274,6 @@ void ElementIntersectionFinder::SetInput(const double*& positions, const int& nn
   assert(loc >= 0);
 
   Reset();
-  
   this->dim = dim;
   this->loc = loc;
 
@@ -1059,7 +1059,7 @@ extern "C"
 
   void cLibSuperMeshIntersectionFinderReset(int* ntests)
   {
-    *ntests = elementIntersectionFinder.Reset();
+    *ntests = elementIntersectionFinder_LibSuperMesh.Reset();
     
     return;
   }
@@ -1071,7 +1071,7 @@ extern "C"
     assert(*nnodes >= 0);
     assert(*nelements >= 0);
  
-    elementIntersectionFinder.SetInput(positions, *nnodes, *dim, enlist, *nelements, *loc);
+    elementIntersectionFinder_LibSuperMesh.SetInput(positions, *nnodes, *dim, enlist, *nelements, *loc);
     
     return;
   }
@@ -1081,21 +1081,21 @@ extern "C"
     assert(*dim >= 0);
     assert(*loc >= 0);
     
-    elementIntersectionFinder.SetTestElement(positions, *dim, *loc);
+    elementIntersectionFinder_LibSuperMesh.SetTestElement(positions, *dim, *loc);
     
     return;
   }
 
   void cLibSuperMeshIntersectionFinderQueryOutput(int* nelms)
   {
-    elementIntersectionFinder.QueryOutput(*nelms);
+    elementIntersectionFinder_LibSuperMesh.QueryOutput(*nelms);
     
     return;
   }
 
   void cLibSuperMeshIntersectionFinderGetOutput(int* id, const int* index)
   {
-    elementIntersectionFinder.GetOutput(*id, *index);
+    elementIntersectionFinder_LibSuperMesh.GetOutput(*id, *index);
     
     return;
   }

@@ -19,13 +19,11 @@ module libsupermesh_tet_intersection_module
   use libsupermesh_fields_manipulation
   use libsupermesh_transform_elements
   implicit none
-
   
   type libsupermesh_tet_type
     real, dimension(3, 4) :: V ! vertices of the tet
     integer, dimension(4) :: colours = -1 ! surface colours
   end type libsupermesh_tet_type
-
   
   type libsupermesh_plane_type
     real, dimension(3) :: normal
@@ -39,10 +37,14 @@ module libsupermesh_tet_intersection_module
 
 ! IAKOVOS commented out
 !  public :: tet_type, plane_type, intersect_tets, get_planes, finalise_tet_intersector
-  public :: libsupermesh_intersect_tets
+  public :: libsupermesh_tet_type, libsupermesh_plane_type, libsupermesh_intersect_tets, get_planes
 
   interface libsupermesh_intersect_tets
     module procedure libsupermesh_intersect_tets_dt
+  end interface
+  
+  interface get_planes
+    module procedure get_planes_tet, get_planes_hex
   end interface
 
   contains
@@ -376,6 +378,84 @@ module libsupermesh_tet_intersection_module
     end select
 
   end subroutine libsupermesh_clip
+  
+  pure function get_planes_tet(tet) result(plane)
+    type(libsupermesh_tet_type), intent(in) :: tet
+    type(libsupermesh_plane_type), dimension(4) :: plane
+
+    real, dimension(3) :: edge10, edge20, edge30, edge21, edge31
+    real :: det
+    integer :: i
+
+    edge10 = tet%V(:, 2) - tet%V(:, 1);
+    edge20 = tet%V(:, 3) - tet%V(:, 1);
+    edge30 = tet%V(:, 4) - tet%V(:, 1);
+    edge21 = tet%V(:, 3) - tet%V(:, 2);
+    edge31 = tet%V(:, 4) - tet%V(:, 2);
+
+    plane(1)%normal = unit_cross(edge20, edge10)
+    plane(2)%normal = unit_cross(edge10, edge30)
+    plane(3)%normal = unit_cross(edge30, edge20)
+    plane(4)%normal = unit_cross(edge21, edge31)
+
+    det = dot_product(edge10, plane(4)%normal)
+    if (det < 0) then
+      do i=1,4
+        plane(i)%normal = -plane(i)%normal
+      end do
+    end if
+
+    ! And calibrate what is the zero of this plane by dotting with
+    ! a point we know to be on it
+    do i=1,4
+      plane(i)%c = dot_product(tet%V(:, i), plane(i)%normal)
+    end do
+
+  end function get_planes_tet
+
+  function get_planes_hex(positions, ele) result(plane)
+    type(vector_field_lib), intent(in) :: positions
+    integer, intent(in) :: ele
+    type(libsupermesh_plane_type), dimension(6) :: plane
+    integer, dimension(:), pointer :: faces
+    integer :: i, face
+    integer, dimension(4) :: fnodes
+    real, dimension(positions%dim, face_ngi(positions, ele)) :: normals
+
+    ! This could be done much more efficiently by exploiting
+    ! more information about how we number faces and such on a hex
+
+    assert(positions%mesh%shape%numbering%family == FAMILY_CUBE)
+    assert(positions%mesh%faces%shape%numbering%family == FAMILY_CUBE)
+    assert(positions%mesh%shape%degree == 1)
+    assert(has_faces(positions%mesh))
+
+    faces => ele_faces(positions, ele)
+    assert(size(faces) == 6)
+
+    do i=1,size(faces)
+      face = faces(i)
+      fnodes = face_global_nodes(positions, face)
+
+      call transform_facet_to_physical(positions, face, normal=normals)
+      plane(i)%normal = normals(:, 1)
+
+      ! Now we calibrate the constant (setting the 'zero level' of the plane, as it were)
+      ! with a node we know is on the face
+      plane(i)%c = dot_product(plane(i)%normal, node_val(positions, fnodes(1)))
+
+    end do
+  end function get_planes_hex
+  
+  pure function unit_cross(vecA, vecB) result(cross)
+    real, dimension(3), intent(in) :: vecA, vecB
+    real, dimension(3) :: cross
+    cross(1) = vecA(2) * vecB(3) - vecA(3) * vecB(2)
+    cross(2) = vecA(3) * vecB(1) - vecA(1) * vecB(3)
+    cross(3) = vecA(1) * vecB(2) - vecA(2) * vecB(1)
+
+    cross = cross / norm2(cross)
+  end function unit_cross
   
   pure function libsupermesh_distances_to_plane(plane, tet) result(dists)
     type(libsupermesh_plane_type), intent(in) :: plane

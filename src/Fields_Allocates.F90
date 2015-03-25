@@ -93,7 +93,7 @@ implicit none
 !          & deallocate_vector_field, deallocate_tensor_field, &
 !          & deallocate_scalar_boundary_condition, &
 !          & deallocate_vector_boundary_condition
-     module procedure deallocate_mesh
+     module procedure deallocate_mesh, deallocate_vector_field
   end interface
 
   interface zero
@@ -204,6 +204,7 @@ contains
     mesh%elements=elements
 
     mesh%shape=shape
+!    write(*,*) "Test1, dim:", shape%dim
     call incref(shape)
     
     if (present(name)) then
@@ -546,8 +547,45 @@ contains
 ! IAKOVOS commented out
 !  subroutine remove_boundary_conditions_scalar(field)
  
-! IAKOVOS commented out
-!  recursive subroutine deallocate_vector_field(field)
+  recursive subroutine deallocate_vector_field(field)
+    !!< Deallocate the storage associated with the field values. Deallocate
+    !!< is called on the mesh which will delete one reference to it and
+    !!< deallocate it if the count drops to zero.
+    type(vector_field_lib), intent(inout) :: field
+    
+    call decref(field)
+    if (has_references(field)) then
+       ! There are still references to this field so we don't deallocate.
+       return
+    end if
+
+    if (.not.field%wrapped) then
+      select case(field%field_type)
+      case(FIELD_TYPE_NORMAL,FIELD_TYPE_CONSTANT)
+#ifdef DDEBUG
+        field%val = ieee_value(0.0, ieee_quiet_nan)
+#endif          
+#ifdef HAVE_MEMORY_STATS
+           call register_deallocation("vector_field", "real", &
+                size(field%val), name=field%name)
+#endif  
+        deallocate(field%val)
+      case(FIELD_TYPE_DEFERRED)
+        FLAbort("You were supposed to allocate the deferred field later!")
+      end select
+    end if
+
+    call deallocate(field%mesh)
+
+!    call remove_boundary_conditions(field)
+!    deallocate(field%bc)
+!    
+!    assert(associated(field%picker))
+!    call remove_picker(field)
+!    deallocate(field%picker)
+!    nullify(field%picker)
+    
+  end subroutine deallocate_vector_field
  
 ! IAKOVOS commented out
 !  subroutine remove_boundary_conditions_vector(field)
@@ -942,7 +980,8 @@ contains
               FLExit("Provided element ownership information is incorrect")
             end if
           end if
-          call register_external_surface_element(mesh, sele, ele, snodes)
+          FLAbort("add_faces_face_list: Code Commented out 1.")
+!          call register_external_surface_element(mesh, sele, ele, snodes)
         else if (no_found==2 .and. present(element_owner)) then
           ! internal facet with element ownership infomation provided
           ! so we assume both of the coinciding internal facets are
@@ -959,19 +998,22 @@ contains
             ewrite(0,*) "Found adjacent elements: ", common_elements
             FLExit("Provided element owner ship information is incorrect")
           end if
-          call register_internal_surface_element(mesh, sele, ele, neighbour_ele)
+          FLAbort("add_faces_face_list: Code Commented out 2.")
+!          call register_internal_surface_element(mesh, sele, ele, neighbour_ele)
         else if (no_found==2) then
           ! internal facet but not element ownership information:
           ! we assume this facet only occurs once and we register both
           ! copies at once
 
           ! first one using the current surface element number:
-          call register_internal_surface_element(mesh, sele, common_elements(1), common_elements(2))
+          FLAbort("add_faces_face_list: Code Commented out 3.")
+!          call register_internal_surface_element(mesh, sele, common_elements(1), common_elements(2))
 
           ! for the second one we create a new facet number at the end of the provided number surface
           ! elements:
           bdry_count = bdry_count+1
-          call register_internal_surface_element(mesh, bdry_count, common_elements(2), common_elements(1))
+          FLAbort("add_faces_face_list: Code Commented out 4.")
+!          call register_internal_surface_element(mesh, bdry_count, common_elements(2), common_elements(1))
           ! store this pair so we can later copy the boundary id of the first (sele) to the second one (bdry_count)
           call insert(internal_facet_map, sele, bdry_count)
 

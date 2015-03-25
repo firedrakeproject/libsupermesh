@@ -2,16 +2,33 @@
 # refer to the root source directory of the project as ${SUPERMESH_SOURCE_DIR} and
 # to the root binary directory of the project as ${SUPERMESH_BINARY_DIR}.
 cmake_minimum_required (VERSION 2.8)
-project (SUPERMESH)
+project (SUPERMESH C CXX Fortran)
 enable_language (Fortran)
+
+find_package(MPI REQUIRED)
+find_package(Threads)
+
+include_directories(${MPI_INCLUDE_PATH})
+
+# make sure that the default is a RELEASE
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
+      "Choose the type of build, options are: None Debug Release."
+      FORCE)
+endif (NOT CMAKE_BUILD_TYPE)
 
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
 if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   # gfortran
-  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
+#  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
+#  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
+
+
+#  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-fno-f2c -O0 -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # ifort (untested)
   set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
@@ -59,7 +76,6 @@ SET( CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE}
 SET( CMAKE_Fortran_FLAGS_RELEASE  "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
 SET( CMAKE_Fortran_FLAGS_DEBUG  "${CMAKE_Fortran_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS}" )
 
-
 # should we use our own LIBRARY?
 option (USE_MYLIB 
         "Use library implementation" OFF) 
@@ -87,6 +103,25 @@ FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
 
 add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES})
 
+if(UNIX AND NOT APPLE)
+    target_link_libraries(SuperMesh rt)
+endif()
+
+if(MPI_COMPILE_FLAGS)
+  set_target_properties(SuperMesh PROPERTIES
+    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+endif()
+
+if(MPI_LINK_FLAGS)
+  set_target_properties(SuperMesh PROPERTIES
+    LINK_FLAGS "${MPI_LINK_FLAGS}")
+endif()
+
+if(CMAKE_THREAD_LIBS_INIT)
+  set_target_properties(SuperMesh PROPERTIES
+    LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
+  target_link_libraries (SuperMesh ${CMAKE_THREAD_LIBS_INIT})
+endif()
 
 install (TARGETS SuperMesh DESTINATION lib)
 install (FILES "${PROJECT_BINARY_DIR}/SuperMesh.pc" DESTINATION $ENV{PKG_CONFIG_PATH})
@@ -102,5 +137,7 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_linked_lists.mod" DESTINATION
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_futils.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_element_numbering.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_construction.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_quadrature.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_shape_functions.mod" DESTINATION include)
 
 

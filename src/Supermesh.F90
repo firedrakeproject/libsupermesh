@@ -35,10 +35,28 @@ module libsupermesh_construction
     end subroutine libsupermesh_cintersector_set_input
   end interface libsupermesh_cintersector_set_input
   
+  
+  interface libsupermesh_intersector_set_dimension
+    subroutine libsupermesh_cintersector_set_dimension(ndim)
+      implicit none
+      integer, intent(in) :: ndim
+    end subroutine libsupermesh_cintersector_set_dimension
+  end interface libsupermesh_intersector_set_dimension
+  
+  interface 
+    subroutine libsupermesh_cintersector_set_exactness(exact)
+      implicit none
+      integer, intent(in) :: exact
+    end subroutine libsupermesh_cintersector_set_exactness
+  end interface
+  
   ! I hope this is big enough ...
   real, dimension(1024) :: nodes_tmp
+  logical :: libsupermesh_intersector_exactness = .false.
 
-  public :: libsupermesh_intersect_elements
+  public :: libsupermesh_intersect_elements, libsupermesh_intersector_set_dimension, &
+                  libsupermesh_intersector_set_exactness
+  public :: libsupermesh_intersector_exactness
 
   private
  
@@ -61,7 +79,7 @@ module libsupermesh_construction
     type(libsupermesh_mesh_type) :: intersection_mesh
     type(element_type), intent(in) :: shape
     real, dimension(:, :), intent(in) :: posB
-
+  
     integer :: dim, loc
     integer :: nonods, totele
     integer :: i
@@ -81,6 +99,8 @@ module libsupermesh_construction
     call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, dim, loc)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
+!    write(*,*) "libsupermesh_intersect_elements:",    &!IAKOVOS remove
+!       "nonods:",nonods,", totele:",totele,"."
     call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
     intersection_mesh%continuity = -1
     call allocate(intersection, dim, intersection_mesh, "IntersectionCoordinates")
@@ -98,5 +118,19 @@ module libsupermesh_construction
     call deallocate(intersection_mesh)
 
   end function libsupermesh_intersect_elements
+  
+  subroutine libsupermesh_intersector_set_exactness(exactness)
+    logical, intent(in) :: exactness
+    integer :: exact
+
+    if (exactness) then
+      exact = 1
+    else
+      exact = 0
+    end if
+    libsupermesh_intersector_exactness = exactness
+
+    call libsupermesh_cintersector_set_exactness(exact)
+  end subroutine libsupermesh_intersector_set_exactness
   
 end module libsupermesh_construction
