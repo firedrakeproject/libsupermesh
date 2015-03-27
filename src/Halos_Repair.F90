@@ -64,7 +64,7 @@ contains
     
     type(halo_type), intent(inout) :: node_halo
     type(halo_type), intent(in) :: element_halo
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
 
     integer :: p, nprocs, n
     integer, dimension(:), allocatable ::  global_numbers, order

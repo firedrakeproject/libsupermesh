@@ -723,7 +723,7 @@ END SUBROUTINE NODELE
 
   subroutine MakeLists_Mesh(mesh, NEList, NNList, EEList)
     !!< Use the new mesh type.
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     type(csr_sparsity), intent(out), optional :: NEList, NNList, EEList
 
     type(csr_sparsity) lNEList
@@ -797,7 +797,7 @@ END SUBROUTINE NODELE
   !!< Element-Element list. 
   
     type(csr_sparsity), intent(out):: EEList
-    type(libsupermesh_mesh_type), intent(in):: mesh
+    type(mesh_type), intent(in):: mesh
     type(csr_sparsity), intent(in):: NEList
 
     integer, dimension(:), pointer:: cols

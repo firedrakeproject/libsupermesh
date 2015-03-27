@@ -76,7 +76,7 @@ module libsupermesh_construction
     type(vector_field_lib), intent(in) :: positions_A
     integer, intent(in) :: ele_A
     type(vector_field_lib) :: intersection
-    type(libsupermesh_mesh_type) :: intersection_mesh
+    type(mesh_type) :: intersection_mesh
     type(element_type), intent(in) :: shape
     real, dimension(:, :), intent(in) :: posB
   

@@ -78,8 +78,8 @@ implicit none
     !!< allocated on the mesh that's topologically the same
     !!< but has piecewise constant basis functions.
     !!< This is for the definition of elementwise quantities.
-    type(libsupermesh_mesh_type), intent(in) :: in_mesh
-    type(libsupermesh_mesh_type) :: new_mesh
+    type(mesh_type), intent(in) :: in_mesh
+    type(mesh_type) :: new_mesh
     type(element_type) :: shape, old_shape
     character(len=*), intent(in) :: name
 

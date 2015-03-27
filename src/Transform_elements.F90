@@ -33,8 +33,7 @@ module libsupermesh_transform_elements
   use libsupermesh_elements
   use libsupermesh_vector_tools
   use libsupermesh_parallel_tools, only: abort_if_in_parallel_region
-  use libsupermesh_fields_base, vector_field => vector_field_lib, &
-                         & mesh_type => libsupermesh_mesh_type
+  use libsupermesh_fields_base, vector_field => vector_field_lib
 !  use cv_faces, only: cv_faces_type	! IAKOVOS commented out
   use libsupermesh_eventcounter
 !  use memory_diagnostics		! IAKOVOS commented out

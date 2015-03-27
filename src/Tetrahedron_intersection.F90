@@ -32,7 +32,7 @@ module libsupermesh_tet_intersection_module
 
   type(libsupermesh_tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array, libsupermesh_tet_array_tmp
   integer :: libsupermesh_tet_cnt = 0, libsupermesh_tet_cnt_tmp = 0
-  type(libsupermesh_mesh_type), save :: libsupermesh_intersection_mesh
+  type(mesh_type), save :: libsupermesh_intersection_mesh
   logical, save :: libsupermesh_mesh_allocated = .false.
 
 ! IAKOVOS commented out
@@ -72,7 +72,7 @@ module libsupermesh_tet_intersection_module
     real, dimension(3) :: vec_tmp
     integer, dimension(3) :: idx_tmp
     integer :: surface_eles, colour_tmp
-    type(libsupermesh_mesh_type) :: surface_mesh, pwc_surface_mesh
+    type(mesh_type) :: surface_mesh, pwc_surface_mesh
 
     if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
       assert(present(surface_positions))

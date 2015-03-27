@@ -390,7 +390,7 @@ contains
     type(integer_set) :: seen_elements
 
     integer :: ele_A
-    type(libsupermesh_mesh_type), pointer :: mesh_A, mesh_B
+    type(mesh_type), pointer :: mesh_A, mesh_B
     integer :: i, neighbour
     real, dimension(ele_count(positionsB), positionsB%dim, 2) :: bboxes_B
     integer, dimension(:), pointer :: neigh_A
@@ -472,7 +472,7 @@ contains
         integer, dimension(:), pointer :: neigh_B
         integer :: i, possible, neighbour, j
         logical :: intersects
-        type(libsupermesh_mesh_type), pointer :: mesh_B
+        type(mesh_type), pointer :: mesh_B
         real, dimension(size(posA, 1), 2) :: bboxA
         integer :: ele_B
         type(integer_set) :: in_list

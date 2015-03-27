@@ -2,7 +2,7 @@
     !!< Increment the reference count of object creating a new reference
     !!< counter if needed.
     use libsupermesh_parallel_tools, only: abort_if_in_parallel_region
-    type(libsupermesh_mesh_type), intent(inout), target :: object
+    type(mesh_type), intent(inout), target :: object
     integer, save :: id = 0
 
     call abort_if_in_parallel_region
@@ -22,7 +22,7 @@
     !!< Increment the reference count of object. If there are no references
     !!< then error.
     use libsupermesh_parallel_tools, only: abort_if_in_parallel_region
-    type(libsupermesh_mesh_type), intent(in), target :: object
+    type(mesh_type), intent(in), target :: object
     integer, pointer :: ptr !! Dummy pointer to evade compilers which
     !! don't understand the rules for intent.
 
@@ -42,7 +42,7 @@
     !!< to 0 deallocate the refcount as a hint to the calling routine that
     !!< the object can safely be deallocated.
     use libsupermesh_parallel_tools, only: abort_if_in_parallel_region
-    type(libsupermesh_mesh_type), intent(inout) :: object
+    type(mesh_type), intent(inout) :: object
 
     call abort_if_in_parallel_region
     if (.not.associated(object%refcount)) then
@@ -75,7 +75,7 @@
 
   pure function has_references_mesh_type(object) result (has_references)
     !!< Return true if there are any references to object
-    type(libsupermesh_mesh_type), intent(in) :: object
+    type(mesh_type), intent(in) :: object
     logical :: has_references
     
     has_references=associated(object%refcount)

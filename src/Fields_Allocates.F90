@@ -190,7 +190,7 @@ implicit none
 contains
 
   subroutine allocate_mesh(mesh, nodes, elements, shape, name)
-    type(libsupermesh_mesh_type), intent(out) :: mesh
+    type(mesh_type), intent(out) :: mesh
     integer, intent(in) :: nodes, elements
     type(element_type), target, intent(in) :: shape
     character(len=*), intent(in), optional :: name
@@ -256,7 +256,7 @@ contains
 
   subroutine allocate_scalar_field(field, mesh, name, field_type, py_func, py_positions)
     type(scalar_field_lib), intent(out) :: field
-    type(libsupermesh_mesh_type), intent(in), target :: mesh
+    type(mesh_type), intent(in), target :: mesh
     character(len=*), intent(in),optional :: name
     integer, intent(in), optional :: field_type
 
@@ -354,7 +354,7 @@ contains
   subroutine allocate_vector_field(field, dim, mesh, name, field_type)
     type(vector_field_lib), intent(out) :: field
     integer, intent(in) :: dim
-    type(libsupermesh_mesh_type), intent(in), target :: mesh
+    type(mesh_type), intent(in), target :: mesh
     character(len=*), intent(in), optional :: name
     integer, intent(in), optional :: field_type
     integer :: n_count
@@ -414,7 +414,7 @@ contains
 !  subroutine allocate_tensor_field(field, mesh, name, field_type, dim)
   
   subroutine deallocate_subdomain_mesh(mesh)
-    type(libsupermesh_mesh_type) :: mesh
+    type(mesh_type) :: mesh
 
     if (.not.associated(mesh%subdomain_mesh)) return
 
@@ -426,7 +426,7 @@ contains
   end subroutine deallocate_subdomain_mesh
 
   subroutine deallocate_mesh_faces(mesh)
-    type(libsupermesh_mesh_type) :: mesh
+    type(mesh_type) :: mesh
 
     if (.not.associated(mesh%faces)) return
 
@@ -480,7 +480,7 @@ contains
   subroutine deallocate_mesh(mesh)
     !!< Deallocate the components of mesh. Shape functions are not
     !!< deallocated here.
-    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    type(mesh_type), intent(inout) :: mesh
     integer :: i
     call decref(mesh)
     if (has_references(mesh)) then
@@ -612,7 +612,7 @@ contains
   
   function wrap_mesh(ndglno, shape, name) result (mesh)
     !!< Return a mesh wrapped around the information provided.
-    type(libsupermesh_mesh_type) :: mesh
+    type(mesh_type) :: mesh
 
     integer, dimension(:), target, intent(in) :: ndglno
     type(element_type), target, intent(in) :: shape
@@ -647,9 +647,9 @@ contains
   function make_mesh (model, shape, continuity, name) &
        result (mesh)
     !!< Produce a mesh based on an old mesh but with a different shape and/or continuity.
-    type(libsupermesh_mesh_type) :: mesh
+    type(mesh_type) :: mesh
 
-    type(libsupermesh_mesh_type), intent(in) :: model
+    type(mesh_type), intent(in) :: model
     type(element_type), target, intent(in), optional :: shape
     integer, intent(in), optional :: continuity
     character(len=*), intent(in), optional :: name
@@ -848,10 +848,10 @@ contains
     !!< mesh. If no model is provided, the mesh must be continuous.
     !!< WARNING: after the model mesh is deallocated the faces component
     !!< of 'mesh' also becomes invalid!
-    type(libsupermesh_mesh_type), target :: mesh
+    type(mesh_type), target :: mesh
     !!< model is only changed when periodic_face_map is provided (see below)
     !!< not using intent(inout) - which is allowed as we only change pointed to values
-    type(libsupermesh_mesh_type), optional, target, intent(in) :: model
+    type(mesh_type), optional, target, intent(in) :: model
     !! surface mesh (ndglno using the same node numbering as in 'mesh')
     !! if present the N elements in this mesh will correspond to the first
     !! N faces of the new faces component.
@@ -891,7 +891,7 @@ contains
     integer, intent(out), optional :: stat
 
     type(integer_hash_table):: lperiodic_face_map
-    type(libsupermesh_mesh_type), pointer :: lmodel
+    type(mesh_type), pointer :: lmodel
     type(element_type), pointer :: element
     type(quadrature_type) :: quad_face
     integer, dimension(:), pointer :: faces, neigh, model_ele_glno, model_ele_glno2
@@ -909,7 +909,7 @@ contains
     !!< Subroutine to calculate the face_list and face_element_list of the 
     !!< faces component of a 'model mesh'. This should be the linear continuous 
     !!< mesh that may serve as a 'model' for other meshes.
-    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    type(mesh_type), intent(inout) :: mesh
     !! surface mesh (ndglno using the same node numbering as in 'mesh')
     !! if present the N elements in this mesh will correspond to the first
     !! N faces of the new faces component.
@@ -1160,8 +1160,8 @@ contains
      ! computes the face_list of a non-periodic mesh by copying it from
      ! a periodic model mesh and changing the periodic faces
      ! to external
-     type(libsupermesh_mesh_type), intent(inout):: mesh
-     type(libsupermesh_mesh_type), intent(in):: model
+     type(mesh_type), intent(inout):: mesh
+     type(mesh_type), intent(in):: model
      ! we return a list of periodic face pairs, as these need their local node numbering fixed later
      type(integer_hash_table), intent(out):: periodic_face_map
      integer, intent(out), optional :: stat
@@ -1241,13 +1241,13 @@ contains
     mesh, surface_elements, name)
   !! Creates a surface mesh consisting of the surface elements
   !! specified by surface_element_list  
-  type(libsupermesh_mesh_type), intent(out):: surface_mesh
+  type(mesh_type), intent(out):: surface_mesh
   !! Returns a pointer to a list containing the global node number
   !! of the nodes on this surface mesh, can be used for surface node
   !! to global node numbering conversion.
   integer, dimension(:), pointer:: surface_nodes
   !! mesh to take surface from (should have %faces component)
-  type(libsupermesh_mesh_type), intent(in):: mesh
+  type(mesh_type), intent(in):: mesh
   !! which surface elements to select
   !! (if not provided all surface elements are included)
   integer, dimension(:), optional, target,intent(in):: surface_elements
@@ -1353,7 +1353,7 @@ contains
   subroutine add_lists_mesh(mesh, nnlist, nelist, eelist)
     !!< Add requested adjacency lists to the adjacency cache for the supplied mesh
     
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     logical, optional, intent(in) :: nnlist, nelist, eelist
         
     type(csr_sparsity), pointer :: lnnlist, lnelist, leelist
@@ -1378,7 +1378,7 @@ contains
     !!< Extract adjacancy lists (generating if necessary) from the
     !!< adjacency cache for the supplied mesh
     
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     type(csr_sparsity), optional, intent(out) :: nnlist
     type(csr_sparsity), optional, intent(out) :: nelist
     type(csr_sparsity), optional, intent(out) :: eelist
@@ -1439,7 +1439,7 @@ contains
   subroutine add_nelist_mesh(mesh)
     !!< Add the node-element list to the adjacency cache for the supplied mesh
   
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     
     type(csr_sparsity), pointer :: nelist
     
@@ -1488,7 +1488,7 @@ contains
     !!< Extract the node-element list (generating if necessary) from the
     !!< adjacency cache for the supplied mesh
   
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     
     type(csr_sparsity), pointer :: nelist
     
@@ -1537,7 +1537,7 @@ contains
   subroutine add_eelist_mesh(mesh)
     !!< Add the element-element list to the adjacency cache for the supplied mesh
   
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     
     type(csr_sparsity), pointer :: eelist, nelist
     
@@ -1590,7 +1590,7 @@ contains
     !!< Extract the element-element list (generating if necessary) from the
     !!< adjacency cache for the supplied mesh
   
-    type(libsupermesh_mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
     
     type(csr_sparsity), pointer :: eelist
     
@@ -1622,7 +1622,7 @@ contains
     !!< Remove the adjecency lists from the adjacency cache for the supplied
     !!< mesh
   
-    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    type(mesh_type), intent(inout) :: mesh
     
     call remove_nnlist(mesh)
     call remove_nelist(mesh)
@@ -1633,7 +1633,7 @@ contains
   subroutine remove_nnlist_mesh(mesh)
     !!< Remove the node-node list from the adjacency cache for the supplied mesh
     
-    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    type(mesh_type), intent(inout) :: mesh
     
     assert(associated(mesh%adj_lists))
     if(associated(mesh%adj_lists%nnlist)) then
@@ -1648,7 +1648,7 @@ contains
   subroutine remove_nelist_mesh(mesh)
     !!< Remove the node-element list from the adjacency cache for the supplied mesh
     
-    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    type(mesh_type), intent(inout) :: mesh
     
     assert(associated(mesh%adj_lists))
     if(associated(mesh%adj_lists%nelist)) then
@@ -1663,7 +1663,7 @@ contains
   subroutine remove_eelist_mesh(mesh)
     !!< Remove the element-element list from the adjacency cache for the supplied mesh
     
-    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    type(mesh_type), intent(inout) :: mesh
     
     assert(associated(mesh%adj_lists))
     if(associated(mesh%adj_lists%eelist)) then

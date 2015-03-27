@@ -12,7 +12,7 @@ include_directories(${MPI_INCLUDE_PATH})
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
+  set (CMAKE_BUILD_TYPE DEBUG CACHE STRING
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -26,9 +26,8 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
 #  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
 
 
-#  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-fno-f2c -O0 -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3    -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "                   -fno-f2c -O0 -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
 elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # ifort (untested)
   set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
@@ -74,7 +73,7 @@ SET(_WARNING_COMPILE_FLAGS "-Wall")
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${_WARNING_COMPILE_FLAGS}" )
 SET( CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
 SET( CMAKE_Fortran_FLAGS_RELEASE  "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
-SET( CMAKE_Fortran_FLAGS_DEBUG  "${CMAKE_Fortran_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS}" )
+SET( CMAKE_Fortran_FLAGS_DEBUG    "${CMAKE_Fortran_FLAGS_DEBUG}   ${_WARNING_COMPILE_FLAGS}" )
 
 # should we use our own LIBRARY?
 option (USE_MYLIB 

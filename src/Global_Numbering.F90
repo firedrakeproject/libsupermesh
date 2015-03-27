@@ -83,7 +83,7 @@ contains
     ! Construct a global node numbering for a trace mesh
     !
     ! Note that this code is broken for mixed element meshes.
-    type(libsupermesh_mesh_type), intent(inout) :: mesh
+    type(mesh_type), intent(inout) :: mesh
     !
     integer :: ele, totele, ni, ele_2, current_global_index
     integer, pointer, dimension(:) :: neigh
