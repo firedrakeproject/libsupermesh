@@ -16,11 +16,11 @@ use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
   scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
   vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
 use libsupermesh_fields_allocates
-!use adjacency_lists		! IAKOVOS commented out
+use libsupermesh_adjacency_lists
 use libsupermesh_linked_lists
 !use parallel_fields		! IAKOVOS commented out
 use libsupermesh_parallel_tools
-!use supermesh_construction	! IAKOVOS commented out
+use libsupermesh_construction
 use libsupermesh_transform_elements
 use libsupermesh_data_structures
 use libsupermesh_sparse_tools, wrap_lib => wrap
@@ -398,7 +398,7 @@ contains
 
     type(ilist) :: clues
 
-    ewrite(1, *) "In advancing_front_intersection_finder"
+    ewrite(1, *) "In libsupermesh_advancing_front_intersection_finder"
       
     mesh_A => positionsA%mesh
     mesh_B => positionsB%mesh
@@ -458,7 +458,7 @@ contains
     call deallocate(processed_neighbour)
     call deallocate(seen_elements)
 
-    ewrite(1, *) "Exiting advancing_front_intersection_finder"
+    ewrite(1, *) "Exiting libsupermesh_advancing_front_intersection_finder"
 
     contains
       function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)

@@ -139,5 +139,7 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_element_numbering.mod" DESTIN
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_construction.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_quadrature.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_shape_functions.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder_module.mod" DESTINATION include)
+
 
 
