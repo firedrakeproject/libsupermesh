@@ -35,7 +35,7 @@ module libsupermesh_fldebug_parameters
   ! Parameters controlling diagnostic output.
   !------------------------------------------------------------------------
 
-  integer, save :: current_debug_level=1, global_debug_level=1
+  integer, save :: current_debug_level=-1, global_debug_level=-1
   !! These defaults are an assumption which may not be true on all platforms.
   integer, save :: debug_error_unit=0, debug_log_unit=6
 

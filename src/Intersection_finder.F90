@@ -607,7 +607,7 @@ contains
     
     integer :: i, j, id, nelms, ntests
 
-    ewrite(1, *) "In rtree_intersection_finder"
+    ewrite(1, *) "In libsupermesh_rtree_intersection_finder"
     
     call rtree_intersection_finder_set_input(positions_b)
     do i = 1, ele_count(positions_a)
@@ -622,7 +622,7 @@ contains
 
     if (present(npredicates)) npredicates = ntests
     
-    ewrite(1, *) "Exiting rtree_intersection_finder"
+    ewrite(1, *) "Exiting libsupermesh_rtree_intersection_finder"
     
   end function libsupermesh_rtree_intersection_finder
   
