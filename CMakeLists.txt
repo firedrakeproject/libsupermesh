@@ -5,10 +5,15 @@ cmake_minimum_required (VERSION 2.8)
 project (SUPERMESH C CXX Fortran)
 enable_language (Fortran)
 
+SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
+
+FIND_PACKAGE(PETSc REQUIRED)
 find_package(MPI REQUIRED)
 find_package(Threads)
 
 include_directories(${MPI_INCLUDE_PATH})
+INCLUDE_DIRECTORIES(${PETSC_INCLUDES})
+ADD_DEFINITIONS(${PETSC_DEFINITIONS})
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
