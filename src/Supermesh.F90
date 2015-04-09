@@ -72,21 +72,22 @@ module libsupermesh_construction
   
   end subroutine libsupermesh_intersector_set_input_sp
   
-  function libsupermesh_intersect_elements(positions_A, ele_A, posB, shape) result(intersection)
-    type(vector_field_lib), intent(in) :: positions_A
-    integer, intent(in) :: ele_A
+  function libsupermesh_intersect_elements(positions_A, ele_A, posB, shape, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno) result(intersection)
+    real, intent(in), dimension(ndimA, fieldMeshShapeLocA) :: positions_A
+    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
+    integer, intent(in) :: ele_A, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA
     type(vector_field_lib) :: intersection
     type(mesh_type) :: intersection_mesh
     type(element_type), intent(in) :: shape
     real, dimension(:, :), intent(in) :: posB
   
-    integer :: dim, loc
+    integer :: dim
     integer :: nonods, totele
     integer :: i
 
-    dim = positions_A%dim
+!    dim = positions_A%dim
 #ifdef DDEBUG
-    select case(dim)
+    select case(ndimA)
       case(2)
         assert(shape%loc == 3)
       case(3)
@@ -94,23 +95,19 @@ module libsupermesh_construction
     end select
 #endif
 
-    loc = ele_loc(positions_A, ele_A)
-
-    call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, dim, loc)
+    call libsupermesh_cintersector_set_input(ele_val_v(positions_A, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
-!    write(*,*) "libsupermesh_intersect_elements:",    &!IAKOVOS remove
-!       "nonods:",nonods,", totele:",totele,"."
     call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
     intersection_mesh%continuity = -1
-    call allocate(intersection, dim, intersection_mesh, "IntersectionCoordinates")
+    call allocate(intersection, ndimA, intersection_mesh, "IntersectionCoordinates")
     if (nonods > 0) then
 #ifdef DDEBUG
       intersection_mesh%ndglno = -1
 #endif
-      call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, nodes_tmp, intersection_mesh%ndglno)
+      call libsupermesh_cintersector_get_output(nonods, totele, ndimA, locA, nodes_tmp, intersection_mesh%ndglno)
 
-      do i = 1, dim
+      do i = 1, ndimA
         intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
       end do
     end if

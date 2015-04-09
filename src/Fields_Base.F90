@@ -149,6 +149,10 @@ module libsupermesh_fields_base
           & ele_val_tensor, ele_val_tensor_dim_dim
   end interface
   
+  interface ele_val_v
+     module procedure ele_val_v_vector
+  end interface
+  
   interface face_val
 !     module procedure face_val_scalar, face_val_vector, face_val_tensor,&
 !          & face_val_vector_dim, face_val_tensor_dim_dim
@@ -716,6 +720,31 @@ contains
 
 
   end function ele_val_vector
+  
+  function ele_val_v_vector(field, ele_number, dim, nnodes, loc, field_type, positions_a_MeshNdglno) result (ele_val)
+    ! Return the values of field at the nodes of ele_number.
+    real, dimension(:,:),intent(in) :: field
+    integer, intent(in), dimension(nnodes * dim), TARGET :: positions_a_MeshNdglno
+    integer, intent(in) :: ele_number, dim, loc, field_type, nnodes
+    real, dimension(dim, loc) :: ele_val
+
+    integer :: i
+    integer, dimension(:), pointer :: nodes
+    
+    select case(field_type)
+    case(FIELD_TYPE_NORMAL)
+!      nodes => ele_nodes(field, ele_number)
+      nodes => positions_a_MeshNdglno(loc*(ele_number-1)+1:loc*ele_number)
+      do i=1,dim
+         ele_val(i, :) = field(i,nodes)
+      end do
+    case(FIELD_TYPE_CONSTANT)
+      do i=1,dim
+         ele_val(i,:)=field(i,1)
+      end do
+    end select
+
+  end function ele_val_v_vector
 
   function ele_val_vector_dim(field, dim, ele_number) result (ele_val)
     ! Return the values of dimension dim of field at the nodes of ele_number.

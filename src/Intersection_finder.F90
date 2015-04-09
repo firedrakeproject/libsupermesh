@@ -201,13 +201,28 @@ contains
 
   end subroutine reset_intersection_tests_counter
       
-  function intersection_finder(positionsA, positionsB) result(map_AB)
+!  function intersection_finder(positionsA, positionsB) result(map_AB)
+  function intersection_finder(positionsA, positionsB, &
+       ndimA, elementCountA, fieldMeshShapeLocA, eelist_A, fieldTypeA, nnodesA, positions_a_MeshNdglno, &
+     & ndimB, elementCountB, fieldMeshShapeLocB, eelist_B, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
+    ! The positions and meshes of A and B
+!    type(vector_field_lib), intent(in), target :: positionsA, positionsB
+    real, intent(in), dimension(ndimA, fieldMeshShapeLocA) :: positionsA
+    real, intent(in), dimension(ndimB, fieldMeshShapeLocB) :: positionsB
+    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
+    integer, intent(in), dimension(nnodesB * ndimB) :: positions_b_MeshNdglno
+    type(csr_sparsity), intent(in), pointer :: eelist_A
+    type(csr_sparsity), intent(in), pointer :: eelist_B
+    ! for each element in A, the intersecting elements in B
+    type(ilist), dimension(elementCountA) :: map_AB
+    integer, intent(in) :: ndimA, ndimB, elementCountA, elementCountB, fieldMeshShapeLocA, fieldMeshShapeLocB, fieldTypeA, fieldTypeB, nnodesA, nnodesB
+    integer, optional, intent(in) :: seed
     !!< A simple wrapper to select an intersection finder
     
     ! The positions and meshes of A and B
-    type(vector_field_lib), intent(in), target :: positionsA, positionsB
+!    type(vector_field_lib), intent(in), target :: positionsA, positionsB
     ! for each element in A, the intersecting elements in B
-    type(ilist), dimension(ele_count(positionsA)) :: map_AB
+!    type(ilist), dimension(ele_count(positionsA)) :: map_AB
     
     integer :: i
     type(ilist) :: seeds
@@ -219,13 +234,16 @@ contains
     ! We cannot assume connectedness, so we may have to run the
     ! advancing front more than once (once per connected sub-domain)
   
-    seeds = advancing_front_intersection_finder_seeds(positionsA)
+    seeds = advancing_front_intersection_finder_seeds(eelist_A, elementCountA)
 
     allocate(sub_map_AB(size(map_AB)))
     node => seeds%firstnode
     do while(associated(node))
 !      sub_map_AB = advancing_front_intersection_finder(positionsA, positionsB, seed = node%value)
-      sub_map_AB = libsupermesh_advancing_front_intersection_finder(positionsA, positionsB, seed = node%value)
+!      sub_map_AB = libsupermesh_advancing_front_intersection_finder(positionsA, positionsB, seed = node%value)
+      sub_map_AB = libsupermesh_advancing_front_intersection_finder(positionsA, positionsB, &
+        & ndimA, elementCountA, fieldMeshShapeLocA, eelist_A, fieldTypeA, nnodesA, positions_a_MeshNdglno,   &
+        & ndimB, elementCountB, fieldMeshShapeLocB, eelist_B, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed)
       do i = 1, size(sub_map_AB)
         if(sub_map_AB(i)%length > 0) then
           assert(map_AB(i)%length == 0)
@@ -294,30 +312,32 @@ contains
     
   end function connected
   
-  function advancing_front_intersection_finder_seeds(positions) result(seeds)
+  function advancing_front_intersection_finder_seeds(eelist, elementCountA) result(seeds)
     !!< Return a list of seeds for the advancing front intersection finder - one
     !!< seed per connected sub-domain.
     
-    type(vector_field_lib), intent(in) :: positions
+!    type(vector_field_lib), intent(in) :: positions
+    type(csr_sparsity), intent(in), pointer :: eelist
+    integer, intent(in) :: elementCountA
     
     type(ilist) :: seeds
     
     integer :: ele, first_ele, i
-    type(csr_sparsity), pointer :: eelist
+!    type(csr_sparsity), pointer :: eelist
     logical, dimension(:), allocatable :: tested
     integer, dimension(:), pointer :: neigh
     type(ilist) :: next
     
-    eelist => extract_eelist(positions)
+!    eelist => extract_eelist(positions)
     
-    allocate(tested(ele_count(positions)))
+    allocate(tested(elementCountA))
     tested = .false.
     
     first_ele = 1
     do while(first_ele /= 0)
       ele = first_ele
       assert(ele > 0)
-      assert(ele <= ele_count(positions))
+      assert(ele <= elementCountA)
       assert(.not. tested(ele))
       
       call insert(seeds, ele)
@@ -375,11 +395,19 @@ contains
     
   end function advancing_front_intersection_finder_seeds
 
-  function libsupermesh_advancing_front_intersection_finder(positionsA, positionsB, seed) result(map_AB)
+  function libsupermesh_advancing_front_intersection_finder(positionsA, positionsB, &
+       & ndimA, elementCountA, fieldMeshShapeLocA, eelist_A, fieldTypeA, nnodesA, positions_a_MeshNdglno, &
+       & ndimB, elementCountB, fieldMeshShapeLocB, eelist_B, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
     ! The positions and meshes of A and B
-    type(vector_field_lib), intent(in), target :: positionsA, positionsB
+    real, intent(in), dimension(ndimA, fieldMeshShapeLocA) :: positionsA
+    real, intent(in), dimension(ndimB, fieldMeshShapeLocB) :: positionsB
+    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
+    integer, intent(in), dimension(nnodesB * ndimB) :: positions_b_MeshNdglno
+    type(csr_sparsity), intent(in) :: eelist_A
+    type(csr_sparsity), intent(in) :: eelist_B
     ! for each element in A, the intersecting elements in B
-    type(ilist), dimension(ele_count(positionsA)) :: map_AB
+    type(ilist), dimension(elementCountA) :: map_AB
+    integer, intent(in) :: ndimA, ndimB, elementCountA, elementCountB, fieldMeshShapeLocA, fieldMeshShapeLocB, fieldTypeA, fieldTypeB, nnodesA, nnodesB
     integer, optional, intent(in) :: seed
 
     ! processed_neighbour maps an element to a neighbour that has already been processed (i.e. its clue)
@@ -392,21 +420,22 @@ contains
     integer :: ele_A
     type(mesh_type), pointer :: mesh_A, mesh_B
     integer :: i, neighbour
-    real, dimension(ele_count(positionsB), positionsB%dim, 2) :: bboxes_B
+    real, dimension(elementCountB, ndimB, 2) :: bboxes_B
     integer, dimension(:), pointer :: neigh_A
-    type(csr_sparsity), pointer :: eelist_A, eelist_B
+!    type(csr_sparsity), pointer :: eelist_A, eelist_B
 
     type(ilist) :: clues
 
     ewrite(1, *) "In libsupermesh_advancing_front_intersection_finder"
       
-    mesh_A => positionsA%mesh
-    mesh_B => positionsB%mesh
+!    mesh_A => positionsA%mesh
+!    mesh_B => positionsB%mesh
 
-    eelist_A => extract_eelist(mesh_A)
-    eelist_B => extract_eelist(mesh_B)
+!    eelist_A => extract_eelist(mesh_A)
+!    eelist_B => extract_eelist(mesh_B)
 
-    call compute_bboxes(positionsB, bboxes_B)
+    call compute_bboxes(positionsB, bboxes_B, ndimB, fieldMeshShapeLocB, & 
+                 &elementCountB, nnodesB, fieldTypeB, positions_b_MeshNdglno)
 
     if(present(seed)) then
       assert(seed > 0)
@@ -415,7 +444,7 @@ contains
     else
       ele_A = 1
     end if
-    map_AB(ele_A) = brute_force_search(ele_val(positionsA, ele_A), positionsB, bboxes_B)
+    map_AB(ele_A) = brute_force_search(ele_val_v(positionsA, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), elementCountB, bboxes_B)
 
     call allocate(processed_neighbour)
     call allocate(seen_elements)
@@ -435,10 +464,9 @@ contains
       call insert(seen_elements, ele_A)
 
       assert(map_AB(ele_A)%length == 0) ! we haven't seen it yet
-
-      clues = clueful_search(ele_val(positionsA, ele_A), map_AB(neighbour), &
+      clues = clueful_search(ele_val_v(positionsA, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), map_AB(neighbour), &
                            & bboxes_B, ele_A, neighbour)
-      map_AB(ele_A) = advance_front(ele_val(positionsA, ele_A), positionsB, clues, bboxes_B, eelist_B)
+      map_AB(ele_A) = advance_front(ele_val_v(positionsA, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), clues, bboxes_B, eelist_B)
       call deallocate(clues)
 
       ! Now that ele_A has been computed, make its clues available to anyone who needs them
@@ -461,9 +489,10 @@ contains
     ewrite(1, *) "Exiting libsupermesh_advancing_front_intersection_finder"
 
     contains
-      function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)
+!      function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)
+      function advance_front(posA, clues, bboxes_B, eelist_B) result(map)
         real, dimension(:, :), intent(in) :: posA
-        type(vector_field_lib), intent(in), target :: positionsB
+!        type(vector_field_lib), intent(in), target :: positionsB
         type(ilist), intent(inout) :: clues
         real, dimension(:, :, :), intent(in) :: bboxes_B
         type(csr_sparsity), intent(in) :: eelist_B
@@ -472,7 +501,7 @@ contains
         integer, dimension(:), pointer :: neigh_B
         integer :: i, possible, neighbour, j
         logical :: intersects
-        type(mesh_type), pointer :: mesh_B
+!        type(mesh_type), pointer :: mesh_B
         real, dimension(size(posA, 1), 2) :: bboxA
         integer :: ele_B
         type(integer_set) :: in_list
@@ -484,7 +513,7 @@ contains
         call allocate(possibles_tbl)
         possible_size = 0
 
-        mesh_B => positionsB%mesh
+!        mesh_B => positionsB%mesh
 
         do while (clues%length /= 0)
           ele_B = pop(clues)
@@ -563,55 +592,64 @@ contains
     
   end function brute_force_intersection_finder
   
-  subroutine rtree_intersection_finder_set_input(old_positions)
-    type(vector_field_lib), intent(in) :: old_positions
-    real, dimension(node_count(old_positions) * old_positions%dim) :: tmp_positions
-    integer :: node, dim
+  subroutine rtree_intersection_finder_set_input(positions, ndim, nnodes, elementCount, loc, enlist)
+!    type(vector_field_lib), intent(in) :: old_positions
+    real, intent(in), dimension(nnodes * ndim) :: positions
+    integer, intent(in) :: ndim, nnodes, elementCount, loc
+    integer, intent(in), dimension(elementCount * loc) :: enlist
+!    real, dimension(nnodes * ndim) :: tmp_positions
+!    integer :: node, dim
     
-    dim = old_positions%dim
+!    dim = ndim
 
     ! Ugh. We have to copy the memory because old_positions
     ! stores it as 2 or 3 separate vectors
-    do node=1,node_count(old_positions)
-      tmp_positions((node-1)*dim+1:node*dim) = node_val(old_positions, node)
-    end do
+!    do node=1,node_count(old_positions)
+!      tmp_positions((node-1)*dim+1:node*dim) = node_val(old_positions, node)
+!    end do
 
-    call crtree_intersection_finder_set_input(tmp_positions, old_positions%mesh%ndglno, dim, &
-                                      & ele_loc(old_positions, 1), node_count(old_positions), &
-                                      & ele_count(old_positions))
+    call crtree_intersection_finder_set_input(positions, enlist, ndim, &
+                                      & loc, nnodes, &
+                                      & elementCount)
                                       
   end subroutine rtree_intersection_finder_set_input
 
-  subroutine rtree_intersection_finder_find(new_positions, ele_B)
-    type(vector_field_lib), intent(in) :: new_positions
-    integer, intent(in) :: ele_B
+  subroutine rtree_intersection_finder_find(new_positions, ele_B, dim, nnodes, loc, fieldType, positions_a_MeshNdglno)
+!    type(vector_field_lib), intent(in) :: new_positions
+    real, intent(in), dimension(dim, loc) :: new_positions
+    integer, intent(in), dimension(nnodes * dim) :: positions_a_MeshNdglno
+    integer, intent(in) :: ele_B, dim, loc, fieldType, nnodes
 
-    integer :: dim, loc
+!    integer :: dim, loc
 
-    dim = new_positions%dim
-    loc = ele_loc(new_positions, 1)
+!    dim = new_positions%dim
+!    loc = ele_loc(new_positions, 1)
 
-    call crtree_intersection_finder_find(reshape(ele_val(new_positions, ele_B), (/dim*loc/)), dim, loc)
+    call crtree_intersection_finder_find(reshape(ele_val_v(new_positions, ele_B, dim, nnodes, loc, fieldType, positions_a_MeshNdglno), (/dim*loc/)), dim, loc)
     
   end subroutine rtree_intersection_finder_find
   
-  function libsupermesh_rtree_intersection_finder(positions_a, positions_b, npredicates) result(map_ab)
+  function libsupermesh_rtree_intersection_finder(positions_a, ndimA, nnodesA, locA, elementCountA, fieldMeshShapeLocA, field_typeA, positions_a_MeshNdglno, positions_b, npredicates, ndimB, nnodesB, elementCountB, locB, enlistB) result(map_ab)
     !!< As advancing_front_intersection_finder, but uses an rtree algorithm. For
     !!< testing *only*. For practical applications, use the linear algorithm.
     
     ! The positions and meshes of A and B
-    type(vector_field_lib), intent(in), target :: positions_a, positions_b
+    integer, intent(in) :: ndimA, ndimB, nnodesA, nnodesB, elementCountA, elementCountB, locA, locB, fieldMeshShapeLocA, field_typeA
+    real, intent(in), dimension(ndimA, fieldMeshShapeLocA) :: positions_a
+    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
+    real, intent(in), dimension(nnodesB * ndimB) :: positions_b
+    integer, intent(in), dimension(elementCountB * locB) :: enlistB
     integer, intent(out), optional :: npredicates
     ! for each element in A, the intersecting elements in B
-    type(ilist), dimension(ele_count(positions_a)) :: map_ab
+    type(ilist), dimension(elementCountA) :: map_ab
     
     integer :: i, j, id, nelms, ntests
 
     ewrite(1, *) "In libsupermesh_rtree_intersection_finder"
     
-    call rtree_intersection_finder_set_input(positions_b)
-    do i = 1, ele_count(positions_a)
-      call rtree_intersection_finder_find(positions_a, i)
+    call rtree_intersection_finder_set_input(positions_b, ndimB, nnodesB, elementCountB, locB, enlistB)
+    do i = 1, elementCountA
+      call rtree_intersection_finder_find(positions_a, i, ndimA, nnodesA, locA, field_typeA, positions_a_MeshNdglno)
       call rtree_intersection_finder_query_output(nelms)
       do j = 1, nelms
         call rtree_intersection_finder_get_output(id, j)
@@ -629,19 +667,23 @@ contains
 ! IAKOVOS commented out
 !  subroutine verify_map(mesh_field_a, mesh_field_b, map_ab, map_ab_reference)
 
-  subroutine compute_bboxes(positionsB, bboxes_B)
-    type(vector_field_lib), intent(in) :: positionsB
+  subroutine compute_bboxes(positionsB, bboxes_B, ndimB, fieldMeshShapeLocB, elementCountB, nnodesB, fieldTypeB, positions_b_MeshNdglno)
+!    type(vector_field_lib), intent(in) :: positionsB
+    real, intent(in), dimension(ndimB, fieldMeshShapeLocB) :: positionsB
     real, dimension(:, :, :), intent(out) :: bboxes_B
+    integer, intent(in) :: ndimB, fieldMeshShapeLocB, elementCountB, fieldTypeB, nnodesB
+    integer, intent(in), dimension(nnodesB * ndimB) :: positions_b_MeshNdglno
     integer :: ele_B
 
-    do ele_B=1,ele_count(positionsB)
-      bboxes_B(ele_B, :, :) = bbox(ele_val(positionsB, ele_B))
+    do ele_B=1,elementCountB
+      bboxes_B(ele_B, :, :) = bbox(ele_val_v(positionsB, ele_B, ndimB, nnodesB, fieldMeshShapeLocB, fieldTypeB, positions_b_MeshNdglno))
     end do
   end subroutine compute_bboxes
 
-  function brute_force_search(posA, positionsB, bboxes_B) result(map)
+  function brute_force_search(posA, elementCountB, bboxes_B) result(map)
     real, dimension(:, :), intent(in) :: posA
-    type(vector_field_lib), intent(in) :: positionsB
+!    type(vector_field_lib), intent(in) :: positionsB
+    integer, intent(in) :: elementCountB
     real, dimension(:, :, :), intent(in) :: bboxes_B
     type(ilist) :: map
     integer :: ele_B
@@ -649,7 +691,7 @@ contains
 
     bboxA = bbox(posA)
 
-    do ele_B=1,ele_count(positionsB)
+    do ele_B=1,elementCountB
       if (bbox_predicate(bboxA, bboxes_B(ele_B, :, :))) then
         call insert(map, ele_B)
       end if
