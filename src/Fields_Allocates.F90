@@ -225,7 +225,7 @@ contains
        nullify(mesh%colourings(i)%sets)
     end do
     allocate(mesh%ndglno(elements*shape%loc))
-
+    
 #ifdef _OPENMP
     ! Use first touch policy.
     !$OMP PARALLEL DO SCHEDULE(STATIC)

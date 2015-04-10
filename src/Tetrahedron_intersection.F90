@@ -20,24 +20,24 @@ module libsupermesh_tet_intersection_module
   use libsupermesh_transform_elements
   implicit none
   
-  type libsupermesh_tet_type
+  type tet_type
     real, dimension(3, 4) :: V ! vertices of the tet
     integer, dimension(4) :: colours = -1 ! surface colours
-  end type libsupermesh_tet_type
+  end type tet_type
   
-  type libsupermesh_plane_type
+  type plane_type
     real, dimension(3) :: normal
     real :: c
-  end type libsupermesh_plane_type
+  end type plane_type
 
-  type(libsupermesh_tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array, libsupermesh_tet_array_tmp
+  type(tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array, libsupermesh_tet_array_tmp
   integer :: libsupermesh_tet_cnt = 0, libsupermesh_tet_cnt_tmp = 0
   type(mesh_type), save :: libsupermesh_intersection_mesh
   logical, save :: libsupermesh_mesh_allocated = .false.
 
 ! IAKOVOS commented out
 !  public :: tet_type, plane_type, intersect_tets, get_planes, finalise_tet_intersector
-  public :: libsupermesh_tet_type, libsupermesh_plane_type, libsupermesh_intersect_tets, get_planes
+  public :: tet_type, plane_type, libsupermesh_intersect_tets, get_planes
 
   interface libsupermesh_intersect_tets
     module procedure libsupermesh_intersect_tets_dt
@@ -57,8 +57,8 @@ module libsupermesh_tet_intersection_module
   end subroutine libsupermesh_finalise_tet_intersector
 
   subroutine libsupermesh_intersect_tets_dt(tetA, planesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
-    type(libsupermesh_tet_type), intent(in) :: tetA
-    type(libsupermesh_plane_type), dimension(:), intent(in) :: planesB
+    type(tet_type), intent(in) :: tetA
+    type(plane_type), dimension(:), intent(in) :: planesB
     type(element_type), intent(in) :: shape
     type(vector_field_lib), intent(inout) :: output
     type(vector_field_lib), intent(out), optional :: surface_positions
@@ -187,8 +187,8 @@ module libsupermesh_tet_intersection_module
   subroutine libsupermesh_clip(plane, tet)
   ! Clip tet against the plane
   ! and append any output to tet_array_tmp.
-    type(libsupermesh_plane_type), intent(in) :: plane
-    type(libsupermesh_tet_type), intent(in) :: tet
+    type(plane_type), intent(in) :: plane
+    type(tet_type), intent(in) :: tet
 
     real, dimension(4) :: dists
     integer :: neg_cnt, pos_cnt, zer_cnt
@@ -196,7 +196,7 @@ module libsupermesh_tet_intersection_module
     integer :: i
 
     real :: invdiff, w0, w1
-    type(libsupermesh_tet_type) :: tet_tmp
+    type(tet_type) :: tet_tmp
 
     ! Negative == inside
     ! Positive == outside
@@ -380,8 +380,8 @@ module libsupermesh_tet_intersection_module
   end subroutine libsupermesh_clip
   
   pure function get_planes_tet(tet) result(plane)
-    type(libsupermesh_tet_type), intent(in) :: tet
-    type(libsupermesh_plane_type), dimension(4) :: plane
+    type(tet_type), intent(in) :: tet
+    type(plane_type), dimension(4) :: plane
 
     real, dimension(3) :: edge10, edge20, edge30, edge21, edge31
     real :: det
@@ -416,7 +416,7 @@ module libsupermesh_tet_intersection_module
   function get_planes_hex(positions, ele) result(plane)
     type(vector_field_lib), intent(in) :: positions
     integer, intent(in) :: ele
-    type(libsupermesh_plane_type), dimension(6) :: plane
+    type(plane_type), dimension(6) :: plane
     integer, dimension(:), pointer :: faces
     integer :: i, face
     integer, dimension(4) :: fnodes
@@ -458,8 +458,8 @@ module libsupermesh_tet_intersection_module
   end function unit_cross
   
   pure function libsupermesh_distances_to_plane(plane, tet) result(dists)
-    type(libsupermesh_plane_type), intent(in) :: plane
-    type(libsupermesh_tet_type), intent(in) :: tet
+    type(plane_type), intent(in) :: plane
+    type(tet_type), intent(in) :: tet
     real, dimension(4) :: dists
     integer :: i
 
@@ -469,7 +469,7 @@ module libsupermesh_tet_intersection_module
   end function libsupermesh_distances_to_plane
   
   pure function libsupermesh_tet_volume(tet) result(vol)
-    type(libsupermesh_tet_type), intent(in) :: tet
+    type(tet_type), intent(in) :: tet
     real :: vol
     real, dimension(3) :: cross, vecA, vecB, vecC
 

@@ -4,7 +4,7 @@ module libsupermesh_construction
   use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
                     mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
                     scalar_field_lib => scalar_field, &
-                    vector_field_lib => vector_field, &
+!                    vector_field_lib => vector_field, &
                     tensor_field_lib => tensor_field, &
   scalar_boundary_condition_lib => scalar_boundary_condition, &
   vector_boundary_condition_lib => vector_boundary_condition, &
@@ -22,6 +22,7 @@ module libsupermesh_construction
   use libsupermesh_global_parameters, only : real_4, real_8
 !  use tetrahedron_intersection_module	! IAKOVOS commented out
   use libsupermesh_tet_intersection_module
+  use libsupermesh_shape_functions, only: make_element_shape
   implicit none
   
   interface libsupermesh_cintersector_set_input
@@ -72,18 +73,23 @@ module libsupermesh_construction
   
   end subroutine libsupermesh_intersector_set_input_sp
   
-  function libsupermesh_intersect_elements(positions_A, ele_A, posB, shape, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno) result(intersection)
-    real, intent(in), dimension(ndimA, fieldMeshShapeLocA) :: positions_A
-    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
+  function libsupermesh_intersect_elements(positions_A_val, elementCountA, verticesA, quadDimA, ele_A, posB, shape, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno) result(intersection)
+    real, intent(in), dimension(ndimA, nnodesA) :: positions_A_val
+    integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     integer, intent(in) :: ele_A, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA
     type(vector_field_lib) :: intersection
     type(mesh_type) :: intersection_mesh
     type(element_type), intent(in) :: shape
     real, dimension(:, :), intent(in) :: posB
   
-    integer :: dim
+    integer :: dim, elementCountA, verticesA, quadDimA
     integer :: nonods, totele
     integer :: i
+    
+    type(vector_field), target :: positions_A
+    type(mesh_type) :: mesh_lib
+    type(quadrature_type) :: quad_lib
+    type(element_type) :: shape_lib
 
 !    dim = positions_A%dim
 #ifdef DDEBUG
@@ -95,7 +101,19 @@ module libsupermesh_construction
     end select
 #endif
 
-    call libsupermesh_cintersector_set_input(ele_val_v(positions_A, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), posB, ndimA, locA)
+    quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
+    shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
+    call deallocate(quad_lib)
+    call allocate(mesh_lib, nnodesA, elementCountA, shape_lib)
+    call deallocate(shape_lib)
+    
+    mesh_lib%ndglno = positions_a_MeshNdglno
+    call allocate(positions_A, ndimA, mesh_lib)
+    positions_A%val = positions_A_val 
+    positions_A%dim = ndimA
+    call deallocate(mesh_lib)
+
+    call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
     call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
@@ -113,6 +131,7 @@ module libsupermesh_construction
     end if
 
     call deallocate(intersection_mesh)
+    call deallocate(positions_A)
 
   end function libsupermesh_intersect_elements
   

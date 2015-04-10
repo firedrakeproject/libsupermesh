@@ -31,7 +31,6 @@ if (PETSC_FOUND)
     PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS PETSC_VERSION)
 endif ()
 
-
 include_directories(${MPI_INCLUDE_PATH} ${PETSC_INCLUDES})
 ADD_DEFINITIONS(${PETSC_DEFINITIONS})
 
@@ -45,15 +44,11 @@ endif (NOT CMAKE_BUILD_TYPE)
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
-if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
+if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
-#  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
-#  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -ffree-line-length-0 -pthread -lmpi_f90 -lmpi_f77 -lmpi -ldl -lm -Wl,--export-dynamic -lrt -lnsl -lutil -lm -ldl")
-
-
   set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3    -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-fbounds-check -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -O0 -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
-elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
+elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   # ifort (untested)
   set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-f77rtl -O0 -g")
@@ -67,7 +62,7 @@ else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   message ("No optimized Fortran compiler flags are known, we just try -O2...")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O2")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
-endif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
+endif (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
 
 # Set installation prefix automatically to custom path if not explicitly specified on the command line
 #if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -93,12 +88,13 @@ configure_file (
 
 #SET(_WARNING_COMPILE_FLAGS "-std=f95 -Wextra -Wall -pedantic -Wextra")
 #SET(_WARNING_COMPILE_FLAGS "-Wextra -Wall -pedantic -Wextra")
-SET(_WARNING_COMPILE_FLAGS "-Wextra -Wall -Wimplicit-interface -Wno-surprising")
+SET(_WARNING_COMPILE_FLAGS_FORTRAN "-Wextra -Wall -Wimplicit-interface -Wno-surprising")
+SET(_WARNING_COMPILE_FLAGS_C "-Wextra -Wall")
 
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${_WARNING_COMPILE_FLAGS}" )
-SET( CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${_WARNING_COMPILE_FLAGS_C}" )
+SET( CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
 SET( CMAKE_Fortran_FLAGS_RELEASE  "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
-SET( CMAKE_Fortran_FLAGS_DEBUG    "${CMAKE_Fortran_FLAGS_DEBUG}   ${_WARNING_COMPILE_FLAGS}" )
+SET( CMAKE_Fortran_FLAGS_DEBUG    "${CMAKE_Fortran_FLAGS_DEBUG}   ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
 
 # should we use our own LIBRARY?
 option (USE_MYLIB 
