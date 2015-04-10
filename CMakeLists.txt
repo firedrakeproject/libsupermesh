@@ -14,12 +14,25 @@ find_package(Threads)
 if ("${PETSC_VERSION}" VERSION_LESS 3.4)
   message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
 elseif ("${PETSC_VERSION}" VERSION_GREATER 3.5)
-  message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
+  message(FATAL_ERROR "PETSc version 3.4 is required, but not found.. (Found version:" ${PETSC_VERSION} ".")
 endif ()
-message(STATUS, " Found PETSc version:" ${PETSC_VERSION} ".")
 
-include_directories(${MPI_INCLUDE_PATH})
-INCLUDE_DIRECTORIES(${PETSC_INCLUDES})
+if (PETSC_FOUND)
+  set (PETSC_EXECUTABLE_RUNS YES                  CACHE BOOL "Disable checking if this setup works" FORCE)
+  set (PETSC_FOUND           YES                  CACHE BOOL "PETSc was found (manually)" FORCE)
+  set (PETSC_INCLUDES        ${PETSC_INCLUDES}    CACHE STRING "Semicolon-delimited list of PETSc include directories" FORCE)
+  set (PETSC_LIBRARIES       ${PETSC_LIBRARIES}   CACHE STRING "Semicolon-delimited list of PETSc libraries" FORCE)
+  set (PETSC_COMPILER        ${PETSC_COMPILER}    CACHE FILEPATH "PETSc compiler; helpful to find a compatible MPI" FORCE)
+  set (PETSC_DEFINITIONS     ${PETSC_DEFINITIONS} CACHE STRING "PETSc definitions" FORCE)
+  set (PETSC_MPIEXEC         ${PETSC_MPIEXEC}     CACHE FILEPATH "Executable for running PETSc MPI programs" FORCE)
+  set (PETSC_VERSION         ${PETSC_VERSION}     CACHE STRING "PETSc version: MAJOR.MINOR.SUBMINOR" FORCE)
+  mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES
+    PETSC_COMPILER PETSC_DEFINITIONS
+    PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS PETSC_VERSION)
+endif ()
+
+
+include_directories(${MPI_INCLUDE_PATH} ${PETSC_INCLUDES})
 ADD_DEFINITIONS(${PETSC_DEFINITIONS})
 
 # make sure that the default is a RELEASE
