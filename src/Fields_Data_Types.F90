@@ -30,7 +30,7 @@ module libsupermesh_fields_data_types
   use libsupermesh_global_parameters, only:FIELD_NAME_LEN, current_debug_level, OPTION_PATH_LEN, PYTHON_FUNC_LEN
   use libsupermesh_picker_data_types
   use libsupermesh_shape_functions
-  use libsupermesh_sparse_tools, wrap_lib => wrap
+  use libsupermesh_sparse_tools
 !  use spud			! IAKOVOS commented out
   use libsupermesh_reference_counting
   use libsupermesh_halo_data_types

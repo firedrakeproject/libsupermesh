@@ -6,16 +6,7 @@ module libsupermesh_intersection_finder_module
 use libsupermesh_quadrature
 use libsupermesh_elements
 use libsupermesh_fields_base
-use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
-                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
-                    scalar_field_lib => scalar_field, &
-!                    vector_field_lib => vector_field, &
-                    tensor_field_lib => tensor_field, &
-!                    mesh_type_lib    => mesh_type, &
-  scalar_boundary_condition_lib => scalar_boundary_condition, &
-  vector_boundary_condition_lib => vector_boundary_condition, &
-  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
-  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
+use libsupermesh_fields_data_types
 use libsupermesh_fields_allocates
 use libsupermesh_adjacency_lists
 use libsupermesh_linked_lists
@@ -25,7 +16,7 @@ use libsupermesh_parallel_tools
 use libsupermesh_construction
 use libsupermesh_transform_elements
 use libsupermesh_data_structures
-use libsupermesh_sparse_tools, wrap_lib => wrap
+use libsupermesh_sparse_tools
 
 implicit none
 
@@ -210,7 +201,7 @@ contains
        ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, fieldTypeA, nnodesA, positions_a_MeshNdglno, &
      & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
     ! The positions and meshes of A and B
-!    type(vector_field_lib), intent(in), target :: positionsA, positionsB
+!    type(vector_field), intent(in), target :: positionsA, positionsB
     real, intent(in), dimension(ndimA, nnodesA) :: positionsA_val
     real, intent(in), dimension(ndimB, nnodesB) :: positionsB_val
 !    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
@@ -227,7 +218,7 @@ contains
     !!< A simple wrapper to select an intersection finder
     
     ! The positions and meshes of A and B
-!    type(vector_field_lib), intent(in), target :: positionsA, positionsB
+!    type(vector_field), intent(in), target :: positionsA, positionsB
     ! for each element in A, the intersecting elements in B
 !    type(ilist), dimension(ele_count(positionsA)) :: map_AB
     
@@ -293,7 +284,7 @@ contains
     !!< Return whether the supplied coordinate field is connected. Uses a simple
     !!< element advancing front.
     
-    type(vector_field_lib), intent(in) :: positions
+    type(vector_field), intent(in) :: positions
     
     logical :: connected
     
@@ -560,7 +551,7 @@ contains
       function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)
 !      function advance_front(posA, clues, bboxes_B, eelist_B) result(map)
         real, dimension(:, :), intent(in) :: posA
-        type(vector_field_lib), intent(in), target :: positionsB
+        type(vector_field), intent(in), target :: positionsB
         type(ilist), intent(inout) :: clues
         real, dimension(:, :, :), intent(in) :: bboxes_B
         type(csr_sparsity), intent(in) :: eelist_B
@@ -640,7 +631,7 @@ contains
     !!< linear algorithm.
   
     ! The positions and meshes of A and B
-    type(vector_field_lib), intent(in), target :: positions_a, positions_b
+    type(vector_field), intent(in), target :: positions_a, positions_b
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(ele_count(positions_a)) :: map_ab
     
@@ -661,7 +652,7 @@ contains
   end function brute_force_intersection_finder
   
   subroutine rtree_intersection_finder_set_input(positions, ndim, nnodes, elementCount, loc, enlist)
-!    type(vector_field_lib), intent(in) :: old_positions
+!    type(vector_field), intent(in) :: old_positions
     real, intent(in), dimension(nnodes * ndim) :: positions
     integer, intent(in) :: ndim, nnodes, elementCount, loc
     integer, intent(in), dimension(elementCount * loc) :: enlist
@@ -683,7 +674,7 @@ contains
   end subroutine rtree_intersection_finder_set_input
 
   subroutine rtree_intersection_finder_find(new_positions, ele_B)
-    type(vector_field_lib), intent(in) :: new_positions
+    type(vector_field), intent(in) :: new_positions
     integer, intent(in) :: ele_B
 
     integer :: dim, loc
@@ -707,11 +698,12 @@ contains
     integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     real, intent(in), dimension(nnodesB * ndimB) :: positions_b
     integer, intent(in), dimension(elementCountB * locB) :: enlistB
+    integer, intent(in) :: verticesA, quadDimA
     integer, intent(out), optional :: npredicates
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(elementCountA) :: map_ab
     
-    integer :: i, j, id, nelms, ntests, verticesA, quadDimA
+    integer :: i, j, id, nelms, ntests
     
     type(vector_field), target :: positions_a
     type(mesh_type) :: mesh_lib
@@ -758,7 +750,7 @@ contains
 
 !  subroutine compute_bboxes(positionsB, bboxes_B, ndimB, fieldMeshShapeLocB, elementCountB, nnodesB, fieldTypeB, positions_b_MeshNdglno)
   subroutine compute_bboxes(positionsB, bboxes_B)
-    type(vector_field_lib), intent(in) :: positionsB
+    type(vector_field), intent(in) :: positionsB
 !    real, intent(in), dimension(ndimB, fieldMeshShapeLocB) :: positionsB
     real, dimension(:, :, :), intent(out) :: bboxes_B
 !    integer, intent(in) :: ndimB, fieldMeshShapeLocB, elementCountB, fieldTypeB, nnodesB
@@ -775,7 +767,7 @@ contains
 !  function brute_force_search(posA, elementCountB, bboxes_B) result(map)
   function brute_force_search(posA, positionsB, bboxes_B) result(map)
     real, dimension(:, :), intent(in) :: posA
-    type(vector_field_lib), intent(in) :: positionsB
+    type(vector_field), intent(in) :: positionsB
 !    integer, intent(in) :: elementCountB
     real, dimension(:, :, :), intent(in) :: bboxes_B
     type(ilist) :: map

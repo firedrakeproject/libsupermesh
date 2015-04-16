@@ -5,19 +5,12 @@ module libsupermesh_tet_intersection_module
 
   use libsupermesh_elements
   use libsupermesh_vector_tools
-  use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
-                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
-                    scalar_field_lib => scalar_field, &
-                    vector_field_lib => vector_field, &
-                    tensor_field_lib => tensor_field, &
-  scalar_boundary_condition_lib => scalar_boundary_condition, &
-  vector_boundary_condition_lib => vector_boundary_condition, &
-  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
-  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
+  use libsupermesh_fields_data_types
   use libsupermesh_fields_base
   use libsupermesh_fields_allocates
   use libsupermesh_fields_manipulation
   use libsupermesh_transform_elements
+  use libsupermesh_shape_functions, only: make_element_shape
   implicit none
   
   type tet_type
@@ -56,14 +49,31 @@ module libsupermesh_tet_intersection_module
     end if
   end subroutine libsupermesh_finalise_tet_intersector
 
-  subroutine libsupermesh_intersect_tets_dt(tetA, planesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
-    type(tet_type), intent(in) :: tetA
-    type(plane_type), dimension(:), intent(in) :: planesB
-    type(element_type), intent(in) :: shape
-    type(vector_field_lib), intent(inout) :: output
-    type(vector_field_lib), intent(out), optional :: surface_positions
-    type(scalar_field_lib), intent(out), optional :: surface_colours
+!  subroutine libsupermesh_intersect_tets_dt(tetA, planesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
+  subroutine libsupermesh_intersect_tets_dt(tetA_V, tetA_colours, sizeOfPlanesB, planesB_normal, planesB_c, &
+     quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, &
+     outputMeshShapeQuadVertices, outputMeshShapeQuadDim, outputMeshShapeQuadNgi, outputMeshShapeDegree2, &
+     outputMeshShapeLoc, outputMeshShapeDim, outputMeshShapeDegree, &
+     outputNodeCount, outputElementCount, outputVal, outputDim, &
+     stat, output, &
+     surface_shape, surface_positions, surface_colours)
+!    type(tet_type), intent(in) :: tetA
+    real, intent(in), dimension(3, 4) :: tetA_V
+    integer, intent(in), dimension(4) :: tetA_colours
+    integer, intent(in)               :: sizeOfPlanesB
+    real, intent(in), dimension(sizeOfPlanesB,3) :: planesB_normal
+    real, intent(in), dimension(sizeOfPlanesB)   :: planesB_c
+!    type(plane_type), dimension(:), intent(in) :: planesB
+!    type(element_type), intent(in) :: shape
+    type(vector_field), intent(inout) :: output
+    type(vector_field), intent(out), optional :: surface_positions
+    type(scalar_field), intent(out), optional :: surface_colours
     type(element_type), intent(in), optional :: surface_shape
+    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
+    integer, intent(in) :: outputMeshShapeQuadVertices, outputMeshShapeQuadDim, outputMeshShapeQuadNgi, outputMeshShapeDegree2
+    integer, intent(in) :: outputMeshShapeLoc, outputMeshShapeDim, outputMeshShapeDegree
+    integer, intent(in) :: outputNodeCount, outputElementCount, outputDim
+    real, intent(in), dimension(outputDim, outputNodeCount) :: outputVal
     integer :: ele
     integer, intent(out) :: stat
 
@@ -73,13 +83,31 @@ module libsupermesh_tet_intersection_module
     integer, dimension(3) :: idx_tmp
     integer :: surface_eles, colour_tmp
     type(mesh_type) :: surface_mesh, pwc_surface_mesh
-
+    type(tet_type)  :: tetA
+    type(plane_type), dimension(sizeOfPlanesB) :: planesB
+    type(quadrature_type) :: quad_lib
+    type(element_type) :: shape
+!    type(vector_field), intent(out) :: output
+    
     if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
       assert(present(surface_positions))
       assert(present(surface_colours))
       assert(present(surface_shape))
     end if
 
+    tetA%V = tetA_V
+    tetA%colours = tetA_colours
+    
+    do i = 1, size(planesB)
+      do k = 1, 3
+        planesB(i)%normal(k)=planesB_normal(i,k)
+      end do
+    end do
+    FORALL(i=1:sizeOfPlanesB) planesB(i)%c=planesB_c(i)
+    
+    quad_lib = make_quadrature(vertices = quadVertices, dim = quadDim, ngi = quadNgi, degree = quadDegree)
+    shape = make_element_shape(vertices = shapeLoc, dim = shapeDim, degree = shapeDegree, quad = quad_lib)
+    call deallocate(quad_lib)
 
     assert(shape%degree == 1)
     assert(shape%numbering%family == FAMILY_SIMPLEX)
@@ -181,6 +209,8 @@ module libsupermesh_tet_intersection_module
         end do
       end do
     end if
+    
+    call deallocate(shape)
 
   end subroutine libsupermesh_intersect_tets_dt
   
@@ -414,7 +444,7 @@ module libsupermesh_tet_intersection_module
   end function get_planes_tet
 
   function get_planes_hex(positions, ele) result(plane)
-    type(vector_field_lib), intent(in) :: positions
+    type(vector_field), intent(in) :: positions
     integer, intent(in) :: ele
     type(plane_type), dimension(6) :: plane
     integer, dimension(:), pointer :: faces

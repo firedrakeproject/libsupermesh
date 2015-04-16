@@ -87,20 +87,20 @@ contains
 
     ! the first 2 ewrites have fixed priority, so we can call print_references 
     ! with priority 0 to print warnings *only* if there are any references left.
-    ewrite(1,*) "Printing out all currently allocated references:"
+!    ewrite(1,*) "Printing out all currently allocated references:"
     this_ref=>refcount_list%next
-    if (.not.associated(this_ref)) then
-       ewrite(1,*) "There are no references left."
-    end if
+!    if (.not.associated(this_ref)) then
+!       ewrite(1,*) "There are no references left."
+!    end if
     do 
        if (.not.associated(this_ref)) then
           exit
        end if
 
-       ewrite(priority, '(a,i0)') " " // trim(this_ref%type)//&
-            " " // trim(this_ref%name)//&
-            " has reference count ", this_ref%count, &
-            " and id ", this_ref%id
+!       ewrite(priority, '(a,i0)') " " // trim(this_ref%type)//&
+!            " " // trim(this_ref%name)//&
+!            " has reference count ", this_ref%count, &
+!            " and id ", this_ref%id
 
        this_ref=>this_ref%next
     end do
@@ -140,11 +140,11 @@ contains
 
     ! the first 2 ewrites have fixed priority, so we can call print_references 
     ! with priority 0 to print warnings *only* if there are any references left.
-    ewrite(1,*) "Printing out all tagged references:"
+!    ewrite(1,*) "Printing out all tagged references:"
     this_ref=>refcount_list%next
-    if (.not.associated(this_ref)) then
-       ewrite(1,*) "There are no tagged references left."
-    end if
+!    if (.not.associated(this_ref)) then
+!       ewrite(1,*) "There are no tagged references left."
+!    end if
     
     no_tags=.true.
     do 
@@ -154,10 +154,10 @@ contains
        
        if (this_ref%tagged) then
 
-          ewrite(priority, '(a,i0)') " " // trim(this_ref%type)//&
-            " " // trim(this_ref%name)//&
-            " has reference count ", this_ref%count, &
-            " and id ", this_ref%id
+!          ewrite(priority, '(a,i0)') " " // trim(this_ref%type)//&
+!            " " // trim(this_ref%name)//&
+!            " has reference count ", this_ref%count, &
+!            " and id ", this_ref%id
           no_tags=.false.
           
        end if
@@ -165,9 +165,9 @@ contains
        this_ref=>this_ref%next
     end do
       
-    if (no_tags) then
-       ewrite(1,*) "No tagged references left."
-    end if
+!    if (no_tags) then
+!       ewrite(1,*) "No tagged references left."
+!    end if
 
   end subroutine print_tagged_references
     

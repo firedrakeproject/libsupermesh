@@ -1,20 +1,11 @@
 #include "fdebug.h"
 
 module libsupermesh_construction
-  use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
-                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
-                    scalar_field_lib => scalar_field, &
-!                    vector_field_lib => vector_field, &
-                    tensor_field_lib => tensor_field, &
-  scalar_boundary_condition_lib => scalar_boundary_condition, &
-  vector_boundary_condition_lib => vector_boundary_condition, &
-  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
-  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
+  use libsupermesh_fields_data_types
   use libsupermesh_fields_allocates
   use libsupermesh_fields_base
-  use libsupermesh_sparse_tools, wrap_lib => wrap
-  use libsupermesh_futils, real_format_lib => real_format, &
-        real_format_len_lib => real_format_len
+  use libsupermesh_sparse_tools
+  use libsupermesh_futils
 !  use metric_tools			! IAKOVOS commented out
   use libsupermesh_linked_lists
 !  use unify_meshes_module		! IAKOVOS commented out
@@ -77,7 +68,7 @@ module libsupermesh_construction
     real, intent(in), dimension(ndimA, nnodesA) :: positions_A_val
     integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     integer, intent(in) :: ele_A, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA
-    type(vector_field_lib) :: intersection
+    type(vector_field) :: intersection
     type(mesh_type) :: intersection_mesh
     type(element_type), intent(in) :: shape
     real, dimension(:, :), intent(in) :: posB

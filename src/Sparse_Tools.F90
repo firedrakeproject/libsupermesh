@@ -29,8 +29,7 @@ module libsupermesh_sparse_tools
   !!< This module implements abstract data types for sparse matrices and
   !!< operations on them.
   use libsupermesh_FLDebug
-  use libsupermesh_Futils, real_format_lib => real_format, &
-        real_format_len_lib => real_format_len
+  use libsupermesh_Futils
   use libsupermesh_Reference_Counting
   use libsupermesh_Global_Parameters, only: FIELD_NAME_LEN
   use libsupermesh_Halo_data_types

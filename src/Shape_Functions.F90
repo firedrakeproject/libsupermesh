@@ -27,12 +27,11 @@
 #include "fdebug.h"
 module libsupermesh_shape_functions
   !!< Generate shape functions for elements of arbitrary polynomial degree.
-  use libsupermesh_futils, real_format_lib => real_format, &
-        real_format_len_lib => real_format_len
+  use libsupermesh_futils
   use libsupermesh_FLDebug
   use libsupermesh_polynomials
   use libsupermesh_elements
-  use libsupermesh_element_numbering, vertex_num_lib => vertex_num
+  use libsupermesh_element_numbering
   use libsupermesh_Superconvergence
   use libsupermesh_ieee_arithmetic, only: ieee_quiet_nan, ieee_value
   

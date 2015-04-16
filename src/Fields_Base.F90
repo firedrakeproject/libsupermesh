@@ -31,21 +31,13 @@ module libsupermesh_fields_base
   !!< connectivity with them.
   use libsupermesh_shape_functions, only: element_type
 !  use tensors					! IAKOVOS commented out
-  use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
-                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
-                    scalar_field_lib => scalar_field, &
-                    vector_field_lib => vector_field, &
-                    tensor_field_lib => tensor_field, &
-  scalar_boundary_condition_lib => scalar_boundary_condition, &
-  vector_boundary_condition_lib => vector_boundary_condition, &
-  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
-  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
+  use libsupermesh_fields_data_types
   use libsupermesh_reference_counting
   use libsupermesh_global_parameters, only: FIELD_NAME_LEN, current_debug_level, current_time
   use libsupermesh_elements
-  use libsupermesh_element_numbering, vertex_num_lib => vertex_num
+  use libsupermesh_element_numbering
 !  use embed_python				! IAKOVOS commented out
-  use libsupermesh_sparse_tools, wrap_lib => wrap
+  use libsupermesh_sparse_tools
   use libsupermesh_vector_tools, only: solve, invert, norm2, cross_product
   implicit none
   
@@ -220,7 +212,7 @@ contains
   pure function mesh_dim_vector(field) result (mesh_dim)
     ! Return the dimensionality of the field.
     integer :: mesh_dim
-    type(vector_field_lib), intent(in) :: field
+    type(vector_field), intent(in) :: field
     
     mesh_dim=field%mesh%shape%dim
 
@@ -318,7 +310,7 @@ contains
     !!< Return a pointer to a vector containing the element numbers of the
     !!< elements adjacent to ele_number.
     integer, dimension(:), pointer :: ele_neigh
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_neigh=>ele_neigh_mesh(field%mesh, ele_number)
@@ -329,7 +321,7 @@ contains
     !!< Return a pointer to a vector containing the face numbers of the
     !!< faces adjacent to ele_number.
     integer, dimension(:), pointer :: ele_faces
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_faces=>ele_faces_mesh(field%mesh, ele_number)
@@ -355,7 +347,7 @@ contains
   pure function face_loc_vector(field, face_number) result (face_loc)
     ! Return the number of nodes of face face_number.
     integer :: face_loc
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: face_number
     
     face_loc=field%mesh%faces%shape%loc
@@ -375,7 +367,7 @@ contains
   pure function face_ngi_vector(field, face_number) result (face_ngi)
     ! Return the number of nodes of element face_number.
     integer :: face_ngi
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: face_number
     
     face_ngi=field%mesh%faces%shape%ngi
@@ -385,7 +377,7 @@ contains
   elemental function face_ele_vector(field, face_number) result (face_ele)
     ! Return the index of the element of which face is a part.
     integer :: face_ele
-    type(vector_field_lib), intent(in) :: field
+    type(vector_field), intent(in) :: field
     integer, intent(in) :: face_number
 
     face_ele=field%mesh%faces%face_element_list(face_number)
@@ -410,7 +402,7 @@ contains
     integer, intent(in) :: face_number
     
     ! This just reduces notational clutter.
-    type(mesh_faces_lib), pointer :: faces
+    type(mesh_faces), pointer :: faces
 
     faces=>mesh%faces
 
@@ -422,7 +414,7 @@ contains
   pure function surface_element_count_vector(field) result (element_count)
     ! Return the number of surface elements in a field.
     integer :: element_count
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
 
     if (associated(field%mesh%faces)) then
       element_count=size(field%mesh%faces%boundary_ids)
@@ -448,7 +440,7 @@ contains
   pure function face_count_vector(field) result (face_count)
     ! Return the number of faces in a mesh.
     integer :: face_count
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
 
     if (associated(field%mesh%faces)) then
       face_count=size(field%mesh%faces%face_element_list)
@@ -461,7 +453,7 @@ contains
   function face_local_nodes_vector(field, face_number) result (face_nodes)
     !!< Return a vector containing the local node numbers of
     !!< facet face_number in field.
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: face_number
     integer, dimension(face_loc(field, face_number)) :: face_nodes 
 
@@ -489,7 +481,7 @@ contains
   function face_global_nodes_vector(field, face_number) result (face_nodes)
     !!< Return a vector containing the global node numbers of
     !!< facet face_number in field.
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: face_number
     integer, dimension(face_loc(field, face_number)) :: face_nodes 
 
@@ -520,7 +512,7 @@ contains
   function ele_face_vector(field, ele_number1, ele_number2) result (ele_face)
     ! Return the face in ele1 adjacent to ele2. 
     integer ele_face
-    type(vector_field_lib), intent(in) :: field
+    type(vector_field), intent(in) :: field
     integer, intent(in) :: ele_number1, ele_number2
     
     ele_face=ele_face_mesh(field%mesh, ele_number1, ele_number2)
@@ -543,7 +535,7 @@ contains
     ! Return a pointer to a vector containing the global node numbers of
     ! element ele_number in field.
     integer, dimension(:), pointer :: ele_nodes
-    type(scalar_field_lib),intent(in) :: field
+    type(scalar_field),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_nodes=>ele_nodes_mesh(field%mesh, ele_number)
@@ -554,7 +546,7 @@ contains
     ! Return a pointer to a vector containing the global node numbers of
     ! element ele_number in field.
     integer, dimension(:), pointer :: ele_nodes
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_nodes=>ele_nodes_mesh(field%mesh, ele_number)
@@ -565,7 +557,7 @@ contains
     ! Return a pointer to a tensor containing the global node numbers of
     ! element ele_number in field.
     integer, dimension(:), pointer :: ele_nodes
-    type(tensor_field_lib),intent(in) :: field
+    type(tensor_field),intent(in) :: field
     integer, intent(in) :: ele_number
 
     ele_nodes=>ele_nodes_mesh(field%mesh, ele_number)
@@ -585,7 +577,7 @@ contains
   pure function ele_loc_scalar(field, ele_number) result (ele_loc)
     ! Return the number of nodes of element ele_number.
     integer :: ele_loc
-    type(scalar_field_lib),intent(in) :: field
+    type(scalar_field),intent(in) :: field
     integer, intent(in) :: ele_number
     
     ele_loc=field%mesh%shape%loc
@@ -595,7 +587,7 @@ contains
   pure function ele_loc_vector(field, ele_number) result (ele_loc)
     ! Return the number of nodes of element ele_number.
     integer :: ele_loc
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: ele_number
     
     ele_loc=field%mesh%shape%loc
@@ -605,7 +597,7 @@ contains
   pure function ele_loc_tensor(field, ele_number) result (ele_loc)
     ! Return the number of nodes of element ele_number.
     integer :: ele_loc
-    type(tensor_field_lib),intent(in) :: field
+    type(tensor_field),intent(in) :: field
     integer, intent(in) :: ele_number
     
     ele_loc=field%mesh%shape%loc
@@ -645,7 +637,7 @@ contains
   function face_shape_vector(field, face_number) result (face_shape)
     ! Return a pointer to the shape of element ele_number.
     type(element_type), pointer :: face_shape
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: face_number
     
     face_shape=>field%mesh%faces%shape
@@ -654,7 +646,7 @@ contains
   
   function ele_val_scalar(field, ele_number) result (ele_val_out)
     ! Return the values of field at the nodes of ele_number.
-    type(scalar_field_lib),intent(in) :: field
+    type(scalar_field),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%mesh%shape%loc) :: ele_val_out
     integer :: i
@@ -695,7 +687,7 @@ contains
 
   function ele_val_vector(field, ele_number) result (ele_val)
     ! Return the values of field at the nodes of ele_number.
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%dim, field%mesh%shape%loc) :: ele_val
 
@@ -719,7 +711,7 @@ contains
   
   function ele_val_vector_dim(field, dim, ele_number) result (ele_val)
     ! Return the values of dimension dim of field at the nodes of ele_number.
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%mesh%shape%loc) :: ele_val
     integer, intent(in) :: dim
@@ -735,7 +727,7 @@ contains
 
   function ele_val_tensor(field, ele_number) result (ele_val)
     ! Return the values of field at the nodes of ele_number.
-    type(tensor_field_lib),intent(in) :: field
+    type(tensor_field),intent(in) :: field
     integer, intent(in) :: ele_number
     real, dimension(field%dim(1), field%dim(2), field%mesh%shape%loc) :: ele_val
 
@@ -756,7 +748,7 @@ contains
 
   function ele_val_tensor_dim_dim(field, dim1, dim2, ele_number) result (ele_val)
     ! Return the values of field at the nodes of ele_number.
-    type(tensor_field_lib),intent(in) :: field
+    type(tensor_field),intent(in) :: field
     integer, intent(in) :: dim1, dim2
     integer, intent(in) :: ele_number
     real, dimension(field%mesh%shape%loc) :: ele_val
@@ -775,7 +767,7 @@ contains
   
   function face_val_vector(field, face_number) result (face_val)
     ! Return the values of field at the nodes of face_number.
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: face_number
     real, dimension(field%dim, face_loc(field, face_number)) :: face_val
 
@@ -976,7 +968,7 @@ contains
     !! where X is a tuple containing the position of a point and t is the
     !! time. The result must be a float. 
     character(len=*), intent(in) :: func
-    type(vector_field_lib), intent(in) :: vfield
+    type(vector_field), intent(in) :: vfield
     real, intent(in) :: time
 
     integer :: dim
@@ -1030,7 +1022,7 @@ contains
   pure function element_count_scalar(field) result (element_count)
     ! Return the number of elements in a field.
     integer :: element_count
-    type(scalar_field_lib),intent(in) :: field
+    type(scalar_field),intent(in) :: field
 
     element_count=field%mesh%elements
 
@@ -1039,7 +1031,7 @@ contains
   pure function element_count_vector(field) result (element_count)
     ! Return the number of elements in a field.
     integer :: element_count
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
 
     element_count=field%mesh%elements
 
@@ -1048,7 +1040,7 @@ contains
   pure function element_count_tensor(field) result (element_count)
     ! Return the number of elements in a field.
     integer :: element_count
-    type(tensor_field_lib),intent(in) :: field
+    type(tensor_field),intent(in) :: field
 
     element_count=field%mesh%elements
 
@@ -1075,7 +1067,7 @@ contains
   pure function node_count_scalar(field) result (node_count)
     ! Return the number of nodes in a field.
     integer :: node_count
-    type(scalar_field_lib),intent(in) :: field
+    type(scalar_field),intent(in) :: field
 
     node_count=node_count_mesh(field%mesh)
 
@@ -1084,7 +1076,7 @@ contains
   pure function node_count_vector(field) result (node_count)
     ! Return the number of nodes in a field.
     integer :: node_count
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
 
     node_count=node_count_mesh(field%mesh)
 
@@ -1093,7 +1085,7 @@ contains
   pure function node_count_tensor(field) result (node_count)
     ! Return the number of nodes in a field.
     integer :: node_count
-    type(tensor_field_lib),intent(in) :: field
+    type(tensor_field),intent(in) :: field
 
     node_count=node_count_mesh(field%mesh)
 
@@ -1101,7 +1093,7 @@ contains
   
   pure function node_val_vector(field, node_number) result (val)
     ! Return the value of field at node node_number
-    type(vector_field_lib),intent(in) :: field
+    type(vector_field),intent(in) :: field
     integer, intent(in) :: node_number
     real, dimension(field%dim) :: val
 

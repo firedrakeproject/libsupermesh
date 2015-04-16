@@ -44,8 +44,6 @@ module libsupermesh_element_numbering
   !!<
   !!< Nodes are subdivided into four disjoint sets: vertex nodes, those lying
   !!< on edges, those lying on faces and those interior to elements. 
-!  use libsupermesh_futils, real_format_lib => real_format, &
-!                    real_format_len_lib => real_format_len
   use libsupermesh_futils
   use libsupermesh_FLDebug
   implicit none

@@ -28,7 +28,7 @@
 #include "fdebug.h"
 module libsupermesh_elements
   !!< This module provides derived types for finite elements and associated functions.
-  use libsupermesh_element_numbering, vertex_num_lib => vertex_num
+  use libsupermesh_element_numbering
   use libsupermesh_quadrature
   use libsupermesh_FLDebug
   use libsupermesh_polynomials

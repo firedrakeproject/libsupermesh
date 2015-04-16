@@ -27,15 +27,7 @@
 #include "fdebug.h"
 module libsupermesh_fields_allocates
 use libsupermesh_elements, only : element_type
-use libsupermesh_fields_data_types, mesh_faces_lib => mesh_faces, &
-                    mesh_subdomain_mesh_lib => mesh_subdomain_mesh, &
-                    scalar_field_lib => scalar_field, &
-                    vector_field_lib => vector_field, &
-                    tensor_field_lib => tensor_field, &
-  scalar_boundary_condition_lib => scalar_boundary_condition, &
-  vector_boundary_condition_lib => vector_boundary_condition, &
-  scalar_boundary_conditions_ptr_lib => scalar_boundary_conditions_ptr, &
-  vector_boundary_conditions_ptr => vector_boundary_conditions_ptr
+use libsupermesh_fields_data_types
 use libsupermesh_fields_base
 use libsupermesh_shape_functions, only: make_element_shape
 use libsupermesh_global_parameters, only: PYTHON_FUNC_LEN, empty_path, empty_name, &
@@ -255,13 +247,13 @@ contains
   end subroutine allocate_mesh
 
   subroutine allocate_scalar_field(field, mesh, name, field_type, py_func, py_positions)
-    type(scalar_field_lib), intent(out) :: field
+    type(scalar_field), intent(out) :: field
     type(mesh_type), intent(in), target :: mesh
     character(len=*), intent(in),optional :: name
     integer, intent(in), optional :: field_type
 
     character(len=*), intent(in), optional ::  py_func
-    type(vector_field_lib), intent(in), optional, target :: py_positions
+    type(vector_field), intent(in), optional, target :: py_positions
 
     integer :: lfield_type
     integer :: stat
@@ -352,7 +344,7 @@ contains
   end subroutine allocate_scalar_field
 
   subroutine allocate_vector_field(field, dim, mesh, name, field_type)
-    type(vector_field_lib), intent(out) :: field
+    type(vector_field), intent(out) :: field
     integer, intent(in) :: dim
     type(mesh_type), intent(in), target :: mesh
     character(len=*), intent(in), optional :: name
@@ -551,7 +543,7 @@ contains
     !!< Deallocate the storage associated with the field values. Deallocate
     !!< is called on the mesh which will delete one reference to it and
     !!< deallocate it if the count drops to zero.
-    type(vector_field_lib), intent(inout) :: field
+    type(vector_field), intent(inout) :: field
     
     call decref(field)
     if (has_references(field)) then
@@ -1460,7 +1452,7 @@ contains
   subroutine add_nelist_scalar(field)
     !!< Add the node-element list to the adjacency cache for the supplied field
     
-    type(scalar_field_lib), intent(in) :: field
+    type(scalar_field), intent(in) :: field
     
     call add_nelist(field%mesh)
   
@@ -1469,7 +1461,7 @@ contains
   subroutine add_nelist_vector(field)
     !!< Add the node-element list to the adjacency cache for the supplied field
     
-    type(vector_field_lib), intent(in) :: field
+    type(vector_field), intent(in) :: field
     
     call add_nelist(field%mesh)
   
@@ -1478,7 +1470,7 @@ contains
   subroutine add_nelist_tensor(field)
     !!< Add the node-element list to the adjacency cache for the supplied field
     
-    type(tensor_field_lib), intent(in) :: field
+    type(tensor_field), intent(in) :: field
     
     call add_nelist(field%mesh)
   
@@ -1502,7 +1494,7 @@ contains
     !!< Extract the node-element list (generating if necessary) from the
     !!< adjacency cache for the supplied field
     
-    type(scalar_field_lib), intent(in) :: field
+    type(scalar_field), intent(in) :: field
     
     type(csr_sparsity), pointer :: nelist
     
@@ -1514,7 +1506,7 @@ contains
     !!< Extract the node-element list (generating if necessary) from the
     !!< adjacency cache for the supplied field
     
-    type(vector_field_lib), intent(in) :: field
+    type(vector_field), intent(in) :: field
     
     type(csr_sparsity), pointer :: nelist
     
@@ -1526,7 +1518,7 @@ contains
     !!< Extract the node-element list (generating if necessary) from the
     !!< adjacency cache for the supplied field
     
-    type(tensor_field_lib), intent(in) :: field
+    type(tensor_field), intent(in) :: field
     
     type(csr_sparsity), pointer :: nelist
     
@@ -1562,7 +1554,7 @@ contains
   subroutine add_eelist_scalar(field)
     !!< Add the element-element list to the adjacency cache for the supplied field
     
-    type(scalar_field_lib), intent(in) :: field
+    type(scalar_field), intent(in) :: field
     
     call add_eelist(field%mesh)
   
@@ -1571,7 +1563,7 @@ contains
   subroutine add_eelist_vector(field)
     !!< Add the element-element list to the adjacency cache for the supplied field
     
-    type(vector_field_lib), intent(in) :: field
+    type(vector_field), intent(in) :: field
     
     call add_eelist(field%mesh)
   
@@ -1580,7 +1572,7 @@ contains
   subroutine add_eelist_tensor(field)
     !!< Add the element-element list to the adjacency cache for the supplied field
     
-    type(tensor_field_lib), intent(in) :: field
+    type(tensor_field), intent(in) :: field
     
     call add_eelist(field%mesh)
   
@@ -1607,7 +1599,7 @@ contains
     !!< Extract the element-element list (generating if necessary) from the
     !!< adjacency cache for the supplied field
     
-    type(vector_field_lib), intent(in) :: field
+    type(vector_field), intent(in) :: field
     
     type(csr_sparsity), pointer :: eelist
     
@@ -1677,7 +1669,7 @@ contains
   
   subroutine zero_scalar(field)
     !!< Set all entries in the field provided to 0.0
-    type(scalar_field_lib), intent(inout) :: field
+    type(scalar_field), intent(inout) :: field
 #ifdef _OPENMP
     integer :: i
 #endif
@@ -1699,7 +1691,7 @@ contains
 
   subroutine zero_vector(field)
     !!< Set all entries in the field provided to 0.0
-    type(vector_field_lib), intent(inout) :: field
+    type(vector_field), intent(inout) :: field
 
 #ifdef _OPENMP
     integer :: i
@@ -1722,7 +1714,7 @@ contains
 
   subroutine zero_vector_dim(field, dim)
     !!< Set all entries in dimension dim of the field provided to 0.0
-    type(vector_field_lib), intent(inout) :: field
+    type(vector_field), intent(inout) :: field
     integer, intent(in) :: dim
 
 #ifdef _OPENMP
@@ -1746,7 +1738,7 @@ contains
 
   subroutine zero_tensor(field)
     !!< Set all entries in the field provided to 0.0
-    type(tensor_field_lib), intent(inout) :: field
+    type(tensor_field), intent(inout) :: field
 
 #ifdef _OPENMP
     integer :: j
@@ -1769,7 +1761,7 @@ contains
 
   subroutine zero_tensor_dim_dim(field, dim1, dim2)
     !!< Set all entries in the component indicated of field to 0.0
-    type(tensor_field_lib), intent(inout) :: field
+    type(tensor_field), intent(inout) :: field
     integer, intent(in) :: dim1, dim2
 
 #ifdef _OPENMP
@@ -1794,7 +1786,7 @@ contains
   subroutine zero_scalar_field_nodes(field, node_numbers)
     !!< Zeroes the scalar field at the specified node_numbers
     !!< Does not work for constant fields
-    type(scalar_field_lib), intent(inout) :: field
+    type(scalar_field), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
 
     assert(field%field_type==FIELD_TYPE_NORMAL)
@@ -1806,7 +1798,7 @@ contains
   subroutine zero_vector_field_nodes(field, node_numbers)
     !!< Zeroes the vector field at the specified nodes
     !!< Does not work for constant fields
-    type(vector_field_lib), intent(inout) :: field
+    type(vector_field), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
     integer :: i
 
@@ -1821,7 +1813,7 @@ contains
   subroutine zero_tensor_field_nodes(field, node_numbers)
     !!< Zeroes the tensor field at the specified nodes
     !!< Does not work for constant fields
-    type(tensor_field_lib), intent(inout) :: field
+    type(tensor_field), intent(inout) :: field
     integer, dimension(:), intent(in) :: node_numbers
 
     assert(field%field_type==FIELD_TYPE_NORMAL)
