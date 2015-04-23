@@ -41,11 +41,21 @@ module libsupermesh_parallel_tools
   private
 
   public :: abort_if_in_parallel_region
-  public :: getnprocs, getprocno, &
-       isparallel, &
+  public :: getnprocs, getprocno, getrank, &
+       isparallel, parallel_filename, parallel_filename_len, &
        MPI_COMM_FEMTOOLS_LIB
   
   integer(c_int), bind(c) :: MPI_COMM_FEMTOOLS_LIB = MPI_COMM_WORLD
+  
+  interface parallel_filename_len
+    module procedure parallel_filename_no_extension_len, &
+      &  parallel_filename_with_extension_len
+  end interface
+  
+  interface parallel_filename
+    module procedure parallel_filename_no_extension, &
+      & parallel_filename_with_extension
+  end interface
   
 contains
 
@@ -80,6 +90,31 @@ contains
 #endif
 
   end function getprocno
+  
+  function getrank(communicator) result(rank)
+    !!< This is a convience routine which returns the MPI rank
+    !!< number of the process when MPI is being used and 0 otherwise.
+  
+    integer, optional, intent(in) :: communicator
+
+    integer::rank
+#ifdef HAVE_MPI
+    integer :: ierr, lcommunicator
+
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+
+    assert(valid_communicator(lcommunicator))
+    call MPI_Comm_Rank(lcommunicator, rank, ierr)
+    assert(ierr == MPI_SUCCESS)
+#else
+    rank = 0
+#endif
+
+  end function getrank
 
   ! Abort run if we're in an OMP parallel region
   ! Call this routine at the start of functions that are known not to
@@ -136,5 +171,61 @@ contains
     isparallel = (getnprocs()>1)
     
   end function isparallel
+  
+  pure function parallel_filename_no_extension_len(filename) result(length)
+    !!< Return the (maximum) length of a string containing:
+    !!<   [filename]_[process number]
+
+    character(len = *), intent(in) :: filename
+   
+    integer :: length
+    
+    length = len_trim(filename) + 1 + floor(log10(real(huge(0)))) + 1
+  
+  end function parallel_filename_no_extension_len
+  
+  function parallel_filename_no_extension(filename) result(pfilename)
+    !!< Return a string containing:
+    !!<   [filename]-[process-number]
+    !!< Note that is it important to trim the returned string.
+
+    character(len = *), intent(in) :: filename
+    
+    character(len = parallel_filename_len(filename)) :: pfilename
+
+    if (is_active_process .and. no_active_processes == 1) then
+      write(pfilename, "(a)") trim(filename)
+    else
+      write(pfilename, "(a, i0)") trim(filename) // "_", getrank()
+    end if
+      
+  end function parallel_filename_no_extension
+  
+  pure function parallel_filename_with_extension_len(filename, extension) result(length)
+    !!< Return the (maximum) length of a string containing:
+    !!<   [filename]_[process number].[extension]
+
+    character(len = *), intent(in) :: filename
+    character(len = *), intent(in) :: extension
+
+    integer :: length
+
+    length = parallel_filename_len(filename) + len_trim(extension)
+
+  end function parallel_filename_with_extension_len
+  
+  function parallel_filename_with_extension(filename, extension)  result(pfilename)
+    !!< Return a string containing:
+    !!<   [filename]-[process-number][extension]
+    !!< Note that is it important to trim the returned string.
+
+    character(len = *), intent(in) :: filename
+    character(len = *), intent(in) :: extension
+
+    character(len = parallel_filename_len(filename, extension)) :: pfilename
+
+    pfilename = trim(parallel_filename(filename)) // trim(extension)
+
+  end function parallel_filename_with_extension
 
 end module libsupermesh_parallel_tools

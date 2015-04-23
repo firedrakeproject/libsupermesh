@@ -31,9 +31,6 @@ if (PETSC_FOUND)
     PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS PETSC_VERSION)
 endif ()
 
-include_directories(${MPI_INCLUDE_PATH} ${PETSC_INCLUDES})
-ADD_DEFINITIONS(${PETSC_DEFINITIONS})
-
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE DEBUG CACHE STRING
@@ -64,6 +61,9 @@ else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 endif (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
 
+include_directories(${MPI_Fortran_INCLUDE_PATH} ${PETSC_INCLUDES})
+ADD_DEFINITIONS(${PETSC_DEFINITIONS})
+
 # Set installation prefix automatically to custom path if not explicitly specified on the command line
 #if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 #    set (CMAKE_INSTALL_PREFIX "/home/ipanourg/fluidity_git/fluidity" CACHE PATH "default install path" FORCE )
@@ -91,10 +91,10 @@ configure_file (
 SET(_WARNING_COMPILE_FLAGS_FORTRAN "-Wextra -Wall -Wimplicit-interface -Wno-surprising")
 SET(_WARNING_COMPILE_FLAGS_C "-Wextra -Wall")
 
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${_WARNING_COMPILE_FLAGS_C}" )
-SET( CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
-SET( CMAKE_Fortran_FLAGS_RELEASE  "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
-SET( CMAKE_Fortran_FLAGS_DEBUG    "${CMAKE_Fortran_FLAGS_DEBUG}   ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
+SET( CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} ${_WARNING_COMPILE_FLAGS_C}" )
+SET( CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
+SET( CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
+SET( CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
 
 # should we use our own LIBRARY?
 option (USE_MYLIB 
@@ -112,6 +112,8 @@ endif (USE_MYLIB)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_BINARY_DIR}")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include")
+include_directories ("${PROJECT_SOURCE_DIR}/libwm/")
+include_directories ("${PROJECT_SOURCE_DIR}/libspud/")
 
 
 # Create a library called "SuperMesh" which includes the source file "Element_Intersection.cpp".
@@ -119,28 +121,36 @@ include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include")
 #add_library (SuperMesh STATIC ${PROJECT_SOURCE_DIR}/src/Element_Intersection.cpp ${PROJECT_SOURCE_DIR}/src/Intersection_finder.F90 ${PROJECT_SOURCE_DIR}/src/Linked_Lists.F90)
 FILE(GLOB CPP_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
+FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90 ${PROJECT_SOURCE_DIR}/libwm/Wm4Command.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4System.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector2.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector3.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Math.cpp)
 #SET( many_srcs "${PROJECT_SOURCE_DIR}/src/Supermesh.F90")
 
 add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES})
+add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
+add_custom_target(test DEPENDS test_tri_intersector)
 
 if(UNIX AND NOT APPLE)
-    target_link_libraries(SuperMesh rt)
+    target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
+    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} rt)
+else ()
+    target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
+    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES})
 endif()
 
-if(MPI_COMPILE_FLAGS)
-  set_target_properties(SuperMesh PROPERTIES
-    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+if(MPI_Fortran_COMPILE_FLAGS)
+  set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
+  set_target_properties(test_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 endif()
 
-if(MPI_LINK_FLAGS)
-  set_target_properties(SuperMesh PROPERTIES
-    LINK_FLAGS "${MPI_LINK_FLAGS}")
+if(MPI_Fortran_LINK_FLAGS)
+  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
+  set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 endif()
 
 if(CMAKE_THREAD_LIBS_INIT)
-  set_target_properties(SuperMesh PROPERTIES
-    LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
-  target_link_libraries (SuperMesh ${CMAKE_THREAD_LIBS_INIT})
+  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
+#  set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
+  target_link_libraries(SuperMesh            ${CMAKE_THREAD_LIBS_INIT})
+#  target_link_libraries(test_tri_intersector ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 install (TARGETS SuperMesh DESTINATION lib)

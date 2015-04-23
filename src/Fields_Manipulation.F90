@@ -49,7 +49,7 @@ implicit none
 
   private
   
-  public :: piecewise_constant_mesh, set
+  public :: piecewise_constant_field, piecewise_constant_mesh, set
   
   interface set
     module procedure set_vector_field_node, set_vector_field, &
@@ -332,5 +332,27 @@ implicit none
     field%val(node_number) = val
     
   end subroutine set_scalar_field_node
+  
+  function piecewise_constant_field(in_mesh, name) result(field)
+    !!< From a given mesh, return a scalar field
+    !!< allocated on the mesh that's topologically the same
+    !!< but has piecewise constant basis functions.
+    !!< This is for the definition of elementwise quantities.
+    type(mesh_type), intent(in) :: in_mesh
+    type(mesh_type) :: new_mesh
+    type(element_type) :: shape, old_shape
+    type(scalar_field) :: field
+    character(len=*), intent(in) :: name
+
+    old_shape = in_mesh%shape
+
+    shape = make_element_shape(vertices=old_shape%loc, dim=old_shape%dim, degree=0, quad=old_shape%quadrature)
+    new_mesh = make_mesh(model=in_mesh, shape=shape, continuity=-1)
+    call allocate(field, new_mesh, name)
+    call zero(field)
+    call deallocate(shape)
+    call deallocate(new_mesh)
+    
+  end function piecewise_constant_field
   
 end module libsupermesh_fields_manipulation

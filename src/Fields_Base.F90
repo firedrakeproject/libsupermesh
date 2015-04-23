@@ -80,7 +80,7 @@ module libsupermesh_fields_base
   interface ele_shape
 !     module procedure ele_shape_scalar, ele_shape_vector, ele_shape_tensor,&
 !          & ele_shape_mesh 
-     module procedure ele_shape_mesh
+     module procedure ele_shape_vector, ele_shape_mesh
   end interface
   
   interface face_loc
@@ -191,12 +191,16 @@ module libsupermesh_fields_base
 !          & node_val_scalar_v, node_val_vector_v, node_val_vector_dim_v,&
 !          & node_val_tensor_v, node_val_vector_dim, node_val_tensor_dim_dim, &
 !          & node_val_tensor_dim_dim_v
-     module procedure node_val_vector
+     module procedure node_val_vector, node_val_vector_dim
   end interface
   
   interface has_faces
      module procedure has_faces_mesh
   end interface
+  
+  interface tetvol
+    module procedure tetvol_old
+  end interface tetvol
   
 contains
 
@@ -498,6 +502,16 @@ contains
     ele_shape=>mesh%shape
     
   end function ele_shape_mesh
+  
+  function ele_shape_vector(field, ele_number) result (ele_shape)
+    ! Return a pointer to the shape of element ele_number.
+    type(element_type), pointer :: ele_shape
+    type(vector_field),intent(in), target :: field
+    integer, intent(in) :: ele_number
+    
+    ele_shape=>field%mesh%shape
+    
+  end function ele_shape_vector
   
   function ele_face_mesh(mesh, ele_number1, ele_number2) result (ele_face)
     ! Return the face in ele1 adjacent to ele2. 
@@ -1112,6 +1126,23 @@ contains
 
   end function node_val_vector
   
+  pure function node_val_vector_dim(field, dim, node_number) &
+       result (val) 
+    ! Return the value of field at node node_numbers
+    type(vector_field),intent(in) :: field
+    integer, intent(in) :: node_number
+    integer, intent(in) :: dim
+    real :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val = field%val(dim,node_number)
+    case(FIELD_TYPE_CONSTANT)
+      val = field%val(dim,1)
+    end select
+    
+  end function node_val_vector_dim
+  
   function has_faces_mesh(mesh) result (has_faces)
     ! Check whether the faces component of mesh has been calculated.
     logical :: has_faces
@@ -1120,5 +1151,100 @@ contains
     has_faces=associated(mesh%faces)
 
   end function has_faces_mesh
+  
+  ! ------------------------------------------------------------------------
+  ! Geometric element volume routines. These really ought to go somewhere
+  ! else but tend to cause dependency problems when they do.
+  ! ------------------------------------------------------------------------
+
+  function tetvol_new(positions, ele) result(t)
+    real :: t
+    type(vector_field), intent(in) :: positions
+    integer, intent(in) :: ele
+    real, dimension(positions%dim, ele_loc(positions, ele)) :: pos
+
+    pos = ele_val(positions, ele)
+    t = tetvol_old(pos(1, :), pos(2, :), pos(3, :))
+    
+  end function tetvol_new
+  
+  real function tetvol_old( x, y, z )
+
+    real x(4), y(4), z(4)
+    real vol, x12, x13, x14, y12, y13, y14, z12, z13, z14
+    !
+    x12 = x(2) - x(1)
+    x13 = x(3) - x(1)
+    x14 = x(4) - x(1)
+    y12 = y(2) - y(1)
+    y13 = y(3) - y(1)
+    y14 = y(4) - y(1)
+    z12 = z(2) - z(1)
+    z13 = z(3) - z(1)
+    z14 = z(4) - z(1)
+    !
+    vol = x12*( y13*z14 - y14*z13 )  &
+         + x13*( y14*z12 - y12*z14 ) &
+         + x14*( y12*z13 - y13*z12 )
+    !
+    tetvol_old = vol/6
+    !
+    return
+  end function tetvol_old
+  
+  function triarea(positions, ele) result(t)
+    type(vector_field), intent(in) :: positions
+    integer, intent(in) :: ele
+    real :: t
+    real, dimension(positions%dim, positions%mesh%shape%loc) :: pos
+    real :: xA, xB, yA, yB, xC, yC
+
+    pos = ele_val(positions, ele)
+    if (positions%dim == 2) then
+      xA = pos(1, 1); xB = pos(1, 2); xC = pos(1, 3)
+      yA = pos(2, 1); yB = pos(2, 2); yC = pos(2, 3)
+      t = abs((xB*yA-xA*yB)+(xC*yB-xB*yC)+(xA*yC-xC*yA))/2
+    elseif (positions%dim == 3) then
+      ! http://mathworld.wolfram.com/TriangleArea.html, (19)
+      t = 0.5 * norm2(cross_product(pos(:, 2) - pos(:, 1), pos(:, 1) - pos(:, 3)))
+    else
+      FLAbort("Only 2 or 3 dimensions supported, sorry")
+    end if
+  end function triarea
+  
+  function tetvol_1d(positions, ele) result(t)
+    type(vector_field), intent(in) :: positions
+    integer, intent(in) :: ele
+    
+    real :: t
+    
+    integer, dimension(:), pointer :: element_nodes => null()
+    
+    assert(positions%dim == 1)
+    
+    element_nodes => ele_nodes(positions, ele)
+    
+    assert(size(element_nodes) == 2)
+    t = abs(node_val(positions, 1, element_nodes(2)) - node_val(positions, 1, element_nodes(1)))
+  
+  end function tetvol_1d
+  
+  function simplex_volume(positions, ele) result(t)
+    type(vector_field), intent(in) :: positions
+    integer, intent(in) :: ele
+    real :: t
+
+    select case(mesh_dim(positions))
+      case(3)
+        t = tetvol_new(positions, ele)
+      case(2)
+        t = triarea(positions, ele)
+      case(1)
+        t = tetvol_1d(positions, ele)
+    case default
+      FLAbort("Invalid dimension")
+    end select
+   
+  end function simplex_volume
 
 end module libsupermesh_fields_base

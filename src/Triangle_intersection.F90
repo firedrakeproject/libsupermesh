@@ -74,6 +74,40 @@ module libsupermesh_tri_intersection_module
     assert(shape%degree == 1)
     assert(shape%numbering%family == FAMILY_SIMPLEX)
     assert(shape%dim == 3)
+    
+    tri_cnt = 1
+    tri_array(1) = triA
+
+    if (.not. mesh_allocated) then
+      call allocate(intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shape, name="IntersectionMesh")
+      intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE*4) /)
+      intersection_mesh%continuity = -1
+      mesh_allocated = .true.
+    end if
+    
+    do i=1,size(planesB)
+      ! Clip the tri_array against the i'th plane
+!      tri_cnt_tmp = 0
+
+      do j=1,tri_cnt
+        call clip(planesB(i), tri_array(j))
+        tri_cnt = tri_cnt + 1
+        tri_array(tri_cnt) = tri_array_tmp(j)
+      end do
+    end do
+    
+    stat = 0
+    intersection_mesh%nodes = tri_cnt*4
+    intersection_mesh%elements = tri_cnt
+    call allocate(output, 3, intersection_mesh, "IntersectionCoordinates")
+    
+    do ele=1,tri_cnt
+      call set(output, ele_nodes(output, ele), tri_array(ele)%V)
+    end do
+    
+    if (present(surface_positions)) then
+      FLAbort("libsupermesh_intersect_tris_dt: Not surface_positions")
+    end if
 
   end subroutine libsupermesh_intersect_tris_dt
 
