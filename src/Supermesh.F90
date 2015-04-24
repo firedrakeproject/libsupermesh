@@ -82,6 +82,8 @@ module libsupermesh_construction
     type(quadrature_type) :: quad_lib
     type(element_type) :: shape_lib
 
+    ewrite(1, *) "In libsupermesh_intersect_elements"
+!    write(*, *) "In libsupermesh_intersect_elements"
 !    dim = positions_A%dim
 #ifdef DDEBUG
     select case(ndimA)

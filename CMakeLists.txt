@@ -38,6 +38,20 @@ if (NOT CMAKE_BUILD_TYPE)
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 
+add_subdirectory(libspud)
+add_subdirectory(spatialindex-1.8.0)
+
+#include(ExternalProject)
+#ExternalProject_Add(
+#  libspud
+#  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libspud
+#  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/libspud/configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/libspud --enable-shared --enable-static --enable-debugging
+#  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/libspud
+#  BUILD_COMMAND make -j
+#  BUILD_IN_SOURCE 1
+#  INSTALL_COMMAND echo "installing"
+#)
+
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
@@ -92,7 +106,7 @@ SET(_WARNING_COMPILE_FLAGS_FORTRAN "-Wextra -Wall -Wimplicit-interface -Wno-surp
 SET(_WARNING_COMPILE_FLAGS_C "-Wextra -Wall")
 
 SET( CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} ${_WARNING_COMPILE_FLAGS_C}" )
-SET( CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
+#SET( CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
 SET( CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS}" )
 SET( CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
 
@@ -119,14 +133,30 @@ include_directories ("${PROJECT_SOURCE_DIR}/libspud/")
 # Create a library called "SuperMesh" which includes the source file "Element_Intersection.cpp".
 # The extension is already found. Any number of sources could be listed here.
 #add_library (SuperMesh STATIC ${PROJECT_SOURCE_DIR}/src/Element_Intersection.cpp ${PROJECT_SOURCE_DIR}/src/Intersection_finder.F90 ${PROJECT_SOURCE_DIR}/src/Linked_Lists.F90)
+FILE(GLOB CPP_WM4_FILES ${PROJECT_SOURCE_DIR}/libwm/Wm4Command.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4System.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector2.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector3.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Math.cpp)
 FILE(GLOB CPP_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+FILE(GLOB CPP_LIBSPUD_O_FILES ${PROJECT_SOURCE_DIR}/libspud/fspud.o  ${PROJECT_SOURCE_DIR}/libspud/spud_interfaces.o  ${PROJECT_SOURCE_DIR}/libspud/spud.o  ${PROJECT_SOURCE_DIR}/libspud/tinystr.o  ${PROJECT_SOURCE_DIR}/libspud/tinyxmlerror.o  ${PROJECT_SOURCE_DIR}/libspud/tinyxml.o  ${PROJECT_SOURCE_DIR}/libspud/tinyxmlparser.o)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
-FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90 ${PROJECT_SOURCE_DIR}/libwm/Wm4Command.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4System.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector2.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector3.cpp ${PROJECT_SOURCE_DIR}/libwm/Wm4Math.cpp)
+FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90)
 #SET( many_srcs "${PROJECT_SOURCE_DIR}/src/Supermesh.F90")
 
-add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES})
-add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
+add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${CPP_WM4_FILES} ${CPP_LIBSPUD_O_FILES} ${PROJECT_SOURCE_DIR}/libspud/fspud.o  ${PROJECT_SOURCE_DIR}/libspud/spud_interfaces.o  ${PROJECT_SOURCE_DIR}/libspud/spud.o  ${PROJECT_SOURCE_DIR}/libspud/tinystr.o  ${PROJECT_SOURCE_DIR}/libspud/tinyxmlerror.o  ${PROJECT_SOURCE_DIR}/libspud/tinyxml.o  ${PROJECT_SOURCE_DIR}/libspud/tinyxmlparser.o)
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/libspud/fspud.o PROPERTIES GENERATED 1)
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/libspud/spud_interfaces.o PROPERTIES GENERATED 1)
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/libspud/spud.o PROPERTIES GENERATED 1)
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/libspud/tinystr.o PROPERTIES GENERATED 1)
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/libspud/tinyxmlerror.o PROPERTIES GENERATED 1)
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/libspud/tinyxml.o PROPERTIES GENERATED 1)
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/libspud/tinyxmlparser.o PROPERTIES GENERATED 1)
+
+add_dependencies(SuperMesh libspud)
+set_property(TARGET SuperMesh APPEND PROPERTY SOURCES ${CPP_LIBSPUD_O_FILES})
+add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_TEST_TRI_INTERSECTOR_FILES} ${CPP_WM4_FILES})
 add_custom_target(test DEPENDS test_tri_intersector)
+add_custom_target(distclean 
+  COMMAND "$(CMAKE)" --build "${CMAKE_BINARY_DIR}" clean
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && make distclean && rm -rf tmp/
+)
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
@@ -136,8 +166,34 @@ else ()
     target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES})
 endif()
 
-if(MPI_Fortran_COMPILE_FLAGS)
+get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
+#message(STATUS "CPP_LIBSPUD_O_FILES:" ${CPP_LIBSPUD_O_FILES} ".")
+#message(STATUS "CPP_WM4_FILES:" ${CPP_WM4_FILES} ".")
+message(STATUS "SuperMesh SOURCES:" ${supermesh_sources_files} ".")
+
+#message(STATUS "MPI_Fortran_FOUND:" ${MPI_Fortran_FOUND} ".")
+#message(STATUS "MPI_Fortran_COMPILER:" ${MPI_Fortran_COMPILER} ".")
+#message(STATUS "MPI_CXX_FOUND:" ${MPI_CXX_FOUND} ".")
+#message(STATUS "MPI_CXX_COMPILER:" ${MPI_CXX_COMPILER} ".")
+
+#message(STATUS "MPI_Fortran_LIBRARIES:" ${MPI_Fortran_LIBRARIES} ".")
+#message(STATUS "MPI_CXX_LIBRARIES:" ${MPI_CXX_LIBRARIES} ".")
+
+#message(STATUS "MPI_Fortran_COMPILE_FLAGS:" ${MPI_Fortran_COMPILE_FLAGS} ".")
+#message(STATUS "MPI_Fortran_LINK_FLAGS:" ${MPI_Fortran_LINK_FLAGS} ".")
+#message(STATUS "MPI_CXX_COMPILE_FLAGS:" ${MPI_CXX_COMPILE_FLAGS} ".")
+#message(STATUS "MPI_CXX_LINK_FLAGS:" ${MPI_CXX_LINK_FLAGS} ".")
+
+#message(STATUS "MPI_COMPILE_FLAGS:" ${MPI_COMPILE_FLAGS} ".")
+
+#if (MPI_Fortran_FOUND)
   set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
+  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
+  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
+#endif()
+
+if(MPI_Fortran_COMPILE_FLAGS)
+  set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
   set_target_properties(test_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 endif()
 
@@ -146,12 +202,14 @@ if(MPI_Fortran_LINK_FLAGS)
   set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 endif()
 
-if(CMAKE_THREAD_LIBS_INIT)
-  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
-#  set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
-  target_link_libraries(SuperMesh            ${CMAKE_THREAD_LIBS_INIT})
-#  target_link_libraries(test_tri_intersector ${CMAKE_THREAD_LIBS_INIT})
-endif()
+#if(CMAKE_THREAD_LIBS_INIT)
+#  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS_DEBUG "${CMAKE_THREAD_LIBS_INIT}")
+####  set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
+#  target_link_libraries(SuperMesh            ${CMAKE_THREAD_LIBS_INIT})
+####  target_link_libraries(test_tri_intersector ${CMAKE_THREAD_LIBS_INIT})
+#endif()
+
+
 
 install (TARGETS SuperMesh DESTINATION lib)
 install (FILES "${PROJECT_BINARY_DIR}/SuperMesh.pc" DESTINATION $ENV{PKG_CONFIG_PATH})

@@ -232,7 +232,8 @@ contains
     type(quadrature_type) :: quad_lib
     type(element_type) :: shape_lib
     
-    ewrite(1, *) "In intersection_finder"
+    ewrite(1, *) "In libsupermesh intersection_finder"
+!    write(*, *) "In libsupermesh intersection_finder"
 
     ! We cannot assume connectedness, so we may have to run the
     ! advancing front more than once (once per connected sub-domain)
@@ -276,7 +277,7 @@ contains
     deallocate(sub_map_AB)
     call deallocate(seeds)
 
-    ewrite(1, *) "Exiting intersection_finder"
+    ewrite(1, *) "Exiting libsupermesh intersection_finder"
   
   end function intersection_finder
   
@@ -455,6 +456,7 @@ contains
     type(ilist) :: clues
 
     ewrite(1, *) "In libsupermesh_advancing_front_intersection_finder"
+!    write(*, *) "In libsupermesh_advancing_front_intersection_finder"
     
     quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
     shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
@@ -546,6 +548,7 @@ contains
     call deallocate(positionsB)
 
     ewrite(1, *) "Exiting libsupermesh_advancing_front_intersection_finder"
+!    write(*, *) "Exiting libsupermesh_advancing_front_intersection_finder"
 
     contains
       function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)
