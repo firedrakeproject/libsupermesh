@@ -12,7 +12,7 @@ ExternalProject_Add(
   INSTALL_COMMAND echo "installing"
 )
 
-add_custom_target(distclean1 
+add_custom_target(distcleanlibspud
 #  COMMAND "$(CMAKE)" --build "${CMAKE_BINARY_DIR}" clean
   COMMAND cd "${PROJECT_SOURCE_DIR}" && make distclean && rm -rf tmp/
 )

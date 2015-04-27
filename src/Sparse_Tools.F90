@@ -362,7 +362,8 @@ module libsupermesh_sparse_tools
     
   interface matmul
      module procedure csr_matmul, &
-       block_csr_matmul, csr_sparsity_matmul
+!       block_csr_matmul, csr_sparsity_matmul
+       block_csr_matmul
   end interface
 
   interface matmul_addto
@@ -443,7 +444,8 @@ module libsupermesh_sparse_tools
   public :: allocate, deallocate, attach_block, &
        unclone, size, block, block_size, blocks, entries, row_m, row_val, &
        & row_m_ptr, row_val_ptr, row_ival_ptr, diag_val_ptr, row_length, zero, zero_row, addto,&
-       & addto_diag, set_diag,  set, val, ival, dense, dense_i, wrap, matmul, matmul_addto, matmul_T,&
+!       & addto_diag, set_diag,  set, val, ival, dense, dense_i, wrap, matmul, matmul_addto, matmul_T,&
+       & addto_diag, set_diag,        val, ival, dense, dense_i, wrap, matmul, matmul_addto, matmul_T,&
        & matrix2file, mmwrite, mmread, transpose, sparsity_sort,&
        & sparsity_merge, scale, set_inactive, get_inactive_mask, &
        & reset_inactive, has_solver_cache, destroy_solver_cache, is_symmetric, is_sorted, &
@@ -3123,7 +3125,7 @@ contains
     real, dimension(size(i)), intent(in) :: val
 
     integer :: iloc
-    
+ 
     do iloc=1,size(i)
        call set(matrix, i(iloc), j, val(iloc))
     end do
@@ -3316,6 +3318,7 @@ contains
        do row = 1, size(out_matrix,1)
           cols => row_m_ptr(in_matrix, row)          
           vals => row_val_ptr(in_matrix, row)
+          
           do i = 1, size(cols)
              call set(out_matrix,row,cols(i),vals(i))
           end do
@@ -4332,6 +4335,7 @@ contains
     
   end subroutine csr_matmul_t_preallocated
     
+
   function csr_sparsity_matmul(A, B) result (C)
     !!< Computes the sparsity of the matrix product:
     !!< 
@@ -4339,43 +4343,45 @@ contains
     !!< 
     type(csr_sparsity), intent(in) :: A, B
     type(csr_sparsity) :: C
+    
+    FLAbort("csr_sparsity_matmul: Called but removed.")
 
-    type(integer_set):: iset
-    integer, dimension(:), allocatable:: nnz
-    integer, dimension(:), pointer:: rowA_i, rowB_k, rowC_i
-    integer:: i, k
+!    type(integer_set):: iset
+!    integer, dimension(:), allocatable:: nnz
+!    integer, dimension(:), pointer:: rowA_i, rowB_k, rowC_i
+!    integer:: i, k
     
     ! work out number of nonzeros per row of C
-    allocate(nnz(size(A,1)))
-    do i=1, size(A, 1)
-     rowA_i => row_m_ptr(A, i)
-     call allocate(iset)
-     do k=1, size(rowA_i)
-       rowB_k => row_m_ptr(B, rowA_i(k))
-       call insert(iset, rowB_k)
-     end do
-     nnz(i)=key_count(iset)
-     call deallocate(iset)
+!    allocate(nnz(size(A,1)))
+!    do i=1, size(A, 1)
+!     rowA_i => row_m_ptr(A, i)
+!     call allocate(iset)
+!     do k=1, size(rowA_i)
+!       rowB_k => row_m_ptr(B, rowA_i(k))
+!       call insert(iset, rowB_k)
+!     end do
+!     nnz(i)=key_count(iset)
+!     call deallocate(iset)
      
-    end do
+!    end do
      
     ! the sparsity for C
-    call allocate(C, size(A,1), size(B,2), nnz=nnz, &
-      name="matmul_"//trim(A%name)//"*"//trim(B%name))
+!    call allocate(C, size(A,1), size(B,2), nnz=nnz, &
+!      name="matmul_"//trim(A%name)//"*"//trim(B%name))
 
     ! same thing, now actually filling in the column indices in the rows of C
-    do i=1, size(A, 1)
-     rowA_i => row_m_ptr(A, i)
-     rowC_i => row_m_ptr(C, i)
-     call allocate(iset)
-     do k=1, size(rowA_i)
-       rowB_k => row_m_ptr(B, rowA_i(k))
-       call insert(iset, rowB_k)
-     end do
-     assert(key_count(iset)==size(rowC_i))
-     rowC_i=set2vector(iset)
-     call deallocate(iset)
-    end do
+!    do i=1, size(A, 1)
+!     rowA_i => row_m_ptr(A, i)
+!     rowC_i => row_m_ptr(C, i)
+!     call allocate(iset)
+!     do k=1, size(rowA_i)
+!       rowB_k => row_m_ptr(B, rowA_i(k))
+!       call insert(iset, rowB_k)
+!     end do
+!     assert(key_count(iset)==size(rowC_i))
+!     rowC_i=set2vector(iset)
+!     call deallocate(iset)
+!    end do
 
   end function csr_sparsity_matmul
   
@@ -4387,23 +4393,25 @@ contains
     type(csr_matrix), intent(in) :: A, B
     type(csr_sparsity), intent(in), optional :: model
     type(csr_matrix) :: C
+    
+    FLAbort("csr_matmul: Called but removed.")
       
-    type(csr_sparsity):: sparsity
+!    type(csr_sparsity):: sparsity
 
-    ewrite(1,*) 'Entering csr_matmul'
+!    ewrite(1,*) 'Entering csr_matmul'
 
-    assert(size(A,2)==size(B,1))
+!    assert(size(A,2)==size(B,1))
 
-    if(.not.present(model)) then
-       sparsity = csr_sparsity_matmul(A%sparsity, B%sparsity)         
-       call allocate(C, sparsity)
-    else
-       call allocate(C, model)
-    end if
+!    if(.not.present(model)) then
+!       sparsity = csr_sparsity_matmul(A%sparsity, B%sparsity)         
+!       call allocate(C, sparsity)
+!    else
+!       call allocate(C, model)
+!    end if
 
-    C%name="matmul_"//trim(A%name)//"*"//trim(B%name)
+!    C%name="matmul_"//trim(A%name)//"*"//trim(B%name)
 
-    call csr_matmul_preallocated(A, B, product = C)
+!    call csr_matmul_preallocated(A, B, product = C)
     
   end function csr_matmul
   
@@ -4463,6 +4471,7 @@ contains
     end do
       
   end subroutine csr_matmul_addto
+  
   
   function block_csr_matmul(A, B, model) result (C)
     !!< Perform the matrix multiplication:
@@ -4638,7 +4647,7 @@ contains
     type(csr_matrix) :: A, AT
     type(csr_sparsity):: sparsity
     integer :: i, j
-
+    
     if (present_and_true(symmetric_sparsity)) then
       call allocate(block_AT, block_A%sparsity, (/ block_A%blocks(2), block_A%blocks(1) /), name=trim(block_A%name) // "Transpose")
     else

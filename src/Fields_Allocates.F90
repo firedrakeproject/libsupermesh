@@ -65,7 +65,7 @@ implicit none
 !  public :: add_lists, extract_lists, add_nnlist, extract_nnlist, add_nelist, &
 !    & extract_nelist, add_eelist, extract_eelist, remove_lists, remove_nnlist, &
 !    & remove_nelist, remove_eelist, extract_elements, remove_boundary_conditions
-  public :: add_lists, add_nelist, &
+  public :: add_lists, add_nnlist, add_nelist, &
        extract_nelist, add_eelist, extract_eelist, remove_lists, remove_nnlist, &
        remove_nelist, remove_eelist
 
@@ -123,6 +123,9 @@ implicit none
 !    module procedure add_nnlist_mesh, add_nnlist_scalar, add_nnlist_vector, &
 !      & add_nnlist_tensor
 !  end interface add_nnlist
+  interface add_nnlist
+    module procedure add_nnlist_mesh
+  end interface add_nnlist
 
 ! IAKOVOS commented out  
 !  interface extract_nnlist
@@ -891,8 +894,230 @@ contains
          ele_boundary, ele_boundary2 ! these last two are actually smaller    
     integer :: face_count, ele, j, snloc, m, n, p, face2
 
-! IAKOVOS commented out
-    FLAbort("add_faces: Code Commented out")
+    if (present(stat)) then
+      stat = 0
+    end if
+
+    if (associated(mesh%faces)) then
+      ! calling add_faces twice is dangerous as it may nuke information
+      ! supplied in the first call (such as sndgln, boundary_ids)
+      if (present(stat)) then
+        stat = 1
+        return
+      else
+        ewrite(0,*) "add_faces is already called for this mesh"
+        ewrite(0,*) "call deallocate_faces() first if you want to recompute"
+        FLAbort("The end.")
+      end if
+    end if
+
+    allocate(mesh%faces)
+    
+    ! only created in the first call to get_dg_surface_mesh()
+    mesh%faces%dg_surface_mesh => null()
+
+    if (.not. present(model)) then
+
+       ! create mesh%faces%face_list an integer csr matrix storing the
+       !     face number between each (directed) pair of adjacent elements
+       !     note that this is an assymetric matrix A
+       !     where A_ij gives the boundary of element i facing element j
+       !       and A_ji the boundary of element j facing element i
+       !       (i.e. there are 2 opposite faces between two elements)
+       ! and mesh%faces%face_element_list  storing the element adjacent to
+       !     each face
+       call add_faces_face_list(mesh, sndgln, &
+         boundary_ids=boundary_ids, &
+         element_owner=element_owner, &
+         incomplete_surface_mesh=incomplete_surface_mesh)
+         
+       ! we don't calculate coplanar_ids here, as we need positions
+       mesh%faces%coplanar_ids => null()
+
+       lmodel => mesh
+
+    else
+    
+      ! mesh%faces%face_list and mesh%faces%face_element_list
+      ! are the same as for the model, so are simply copied
+      ! (unless periodic)
+      assert(continuity(model)>=0)
+      
+      if (.not. associated(model%faces)) then
+        FLAbort("One should call add_faces on the model mesh first.")
+      end if
+
+      lmodel => model
+      
+      if (present(periodic_face_map)) then
+
+         ! make face_list from the model but change periodic faces to become internal
+         call add_faces_face_list_periodic_from_non_periodic_model( &
+            mesh, model, periodic_face_map)
+         
+         ! Having fixed the face list, we should now use the original mesh
+         ! rather than the model so that all faces which are supposed to be
+         ! adjacent actually are.
+         lmodel=>mesh
+         ! works as long as we're not discontinuous
+         assert( mesh%continuity>=0 )
+         
+         ! the periodic faces will be discontinuous internal faces in the output periodic mesh
+         mesh%faces%has_discontinuous_internal_boundaries = .true.         
+         
+      else if (model%periodic .and. .not. mesh%periodic) then
+        
+         ! make face_list from the model but change periodic faces to normal external faces
+         call add_faces_face_list_non_periodic_from_periodic_model( &
+            mesh, model, lperiodic_face_map, stat=stat)
+            
+         ! the subroutine above only works if the removing of periodic bcs has removed all internal boundaries
+         mesh%faces%has_discontinuous_internal_boundaries = .false.
+                     
+      else
+         ! Transfer the faces from model to mesh
+         mesh%faces%face_list=model%faces%face_list
+         call incref(mesh%faces%face_list)
+         
+         ! have internal faces if the model does
+         mesh%faces%has_discontinuous_internal_boundaries = has_discontinuous_internal_boundaries(model)
+      end if
+        
+      ! face_element_list is a pure copy of that of the model
+      allocate( mesh%faces%face_element_list(1:size(model%faces%face_element_list)) )
+      mesh%faces%face_element_list=model%faces%face_element_list
+#ifdef HAVE_MEMORY_STATS
+      call register_allocation("mesh_type", "integer", &
+           size(mesh%faces%face_element_list), &
+           trim(mesh%name)//" face_element_list.")
+#endif
+
+      ! boundary_ids is a pure copy of that of model
+      allocate( mesh%faces%boundary_ids(1:size(model%faces%boundary_ids)) )
+      mesh%faces%boundary_ids=model%faces%boundary_ids
+#ifdef HAVE_MEMORY_STATS
+      call register_allocation("mesh_type", "integer", &
+           size(mesh%faces%boundary_ids), &
+           trim(mesh%name)//" boundary_ids")
+#endif
+      mesh%faces%unique_surface_element_count = model%faces%unique_surface_element_count
+       
+      ! same for coplanar ids (if existent)
+      if (associated(model%faces%coplanar_ids)) then
+         allocate( mesh%faces%coplanar_ids(1:size(model%faces%coplanar_ids)) )
+         mesh%faces%coplanar_ids=model%faces%coplanar_ids
+      else
+         nullify(mesh%faces%coplanar_ids)
+      end if
+      
+    end if ! if (.not. present(model)) then ... else ...
+
+    ! at this point mesh%faces%face_list and mesh%faces%face_element_list are 
+    ! ready (either newly computed or copied from model)
+    ! now we only have to work out mesh%faces%face_lno
+
+    element => ele_shape(mesh, 1)
+    if (present(sngi)) then
+       ! if specified use quadrature with sngi gausspoints
+       quad_face = make_quadrature(vertices=face_vertices(element), &
+            & dim=mesh_dim(mesh)-1, ngi=sngi, family=element%quadrature%family)
+      ! quad_face will be deallocated inside deallocate_faces!
+    else
+       ! otherwise use degree of full mesh
+       quad_face = make_quadrature(vertices=face_vertices(element), &
+            & dim=mesh_dim(mesh)-1, degree=element%quadrature%degree, family=element%quadrature%family)
+      ! quad_face will be deallocated inside deallocate_faces!
+    end if
+
+    allocate(mesh%faces%shape)
+    mesh%faces%shape = make_element_shape(vertices=face_vertices(element), &
+         & dim=mesh_dim(mesh)-1, degree=element%degree, quad=quad_face)
+
+    face_count=entries(mesh%faces%face_list)
+    snloc=mesh%faces%shape%loc
+    allocate(mesh%faces%face_lno( face_count*snloc ))
+#ifdef HAVE_MEMORY_STATS
+    call register_allocation("mesh_type", "integer", &
+         size(mesh%faces%face_lno), name=mesh%name)
+#endif
+
+    vertices=local_vertices(lmodel%shape%numbering)    
+
+    ! now fill in face_lno
+    eleloop: do ele=1, size(mesh%faces%face_list,1)
+
+       faces => row_ival_ptr(mesh%faces%face_list, ele)
+       neigh => row_m_ptr(mesh%faces%face_list, ele)
+       model_ele_glno => ele_nodes(lmodel, ele)
+
+       faceloop: do j=1, size(faces)
+          if (ele<neigh(j)) then
+             ! interior face between ele and neigh(j)
+             ! ele<neigh(j) to ensure each pair {ele, neigh(j)} is handled once
+
+             model_ele_glno2 => ele_nodes(lmodel, neigh(j))
+             p=0
+             ! Look for common boundaries by matching common vertices
+             ! Note that we have to use the model mesh here
+             do m=1,size(vertices)
+                do n=1,size(vertices)
+                   if (model_ele_glno(vertices(m))==model_ele_glno2(vertices(n))) then
+                      p=p+1
+                      ele_boundary(p)=m
+                      ele_boundary2(p)=n
+                   end if
+                end do
+             end do
+
+             ! Check that we really have found two boundaries.
+             ASSERT(p==lmodel%faces%shape%numbering%vertices)
+             ! (this might break for the case where elements share more than one
+             ! face, but in that case the next few lines are wrong as well)
+
+             mesh%faces%face_lno((faces(j)-1)*snloc+1:faces(j)*snloc)= &
+                  boundary_local_num(ele_boundary(1:p), mesh%shape%numbering)
+
+             face2=ival(mesh%faces%face_list, neigh(j), ele)
+
+             mesh%faces%face_lno((face2-1)*snloc+1:face2*snloc)= &
+                  boundary_local_num(ele_boundary2(1:p), mesh%shape%numbering)
+
+          else if (neigh(j)<0) then
+
+             ! boundary face:
+             mesh%faces%face_lno((faces(j)-1)*snloc+1:faces(j)*snloc)= &
+                  & boundary_numbering(ele_shape(mesh, ele), j)
+                  
+             
+          end if
+
+       end do faceloop
+    end do eleloop
+    
+    if (present(periodic_face_map)) then  
+      call fix_periodic_face_orientation(model, mesh, periodic_face_map)
+    else if (present(model)) then
+      if (model%periodic .and. .not. mesh%periodic) then
+        nullify(mesh%faces%surface_node_list)
+        call fix_periodic_face_orientation(mesh, model, lperiodic_face_map)
+        call deallocate(lperiodic_face_map)
+      end if
+    end if
+      
+    if(mesh%shape%numbering%type/=ELEMENT_TRACE) then
+       ! this is a surface mesh consisting of all exterior faces
+       !    which is often used and therefore created in advance
+       ! this also create a surface_node_list which can be used
+       !    as a mapping between the node numbering of this surface mesh
+       !    and the node numbering of the full mesh
+       call create_surface_mesh(mesh%faces%surface_mesh, &
+            mesh%faces%surface_node_list, mesh, name='Surface'//trim(mesh%name))
+#ifdef HAVE_MEMORY_STATS
+       call register_allocation("mesh_type", "integer", &
+            size(mesh%faces%surface_node_list), name='Surface'//trim(mesh%name))
+#endif
+    end if
+
 
   end subroutine add_faces
 
@@ -1143,9 +1368,62 @@ contains
 ! IAKOVOS commented out
 !  subroutine register_external_surface_element(mesh, sele, ele, snodes)
 
-  ! IAKOVOS commented out
-!  subroutine add_faces_face_list_periodic_from_non_periodic_model( &
-!     mesh, model, periodic_face_map)
+  subroutine add_faces_face_list_periodic_from_non_periodic_model( &
+     mesh, model, periodic_face_map)
+     ! computes the face_list of a periodic mesh by copying it from
+     ! a non-periodic model mesh and changing the periodic faces
+     ! to internal
+     type(mesh_type), intent(inout):: mesh
+     type(mesh_type), intent(in):: model
+     type(integer_hash_table), intent(in):: periodic_face_map
+
+     type(csr_sparsity):: face_list_sparsity
+     integer, dimension(:), pointer :: faces, neigh
+     integer:: face1, face2, ele1, ele2
+     integer:: i, j
+
+     ewrite(1,*) "In add_faces_face_list_periodic_from_non_periodic_model"
+     
+     ! for periodic meshes we need to fix the face_list
+     ! so we have to have a separate copy
+     call allocate(face_list_sparsity, element_count(model), &
+       element_count(model), entries(model%faces%face_list), &
+       name=trim(mesh%name)//"EEList")
+     face_list_sparsity%colm=model%faces%face_list%sparsity%colm
+     face_list_sparsity%findrm=model%faces%face_list%sparsity%findrm
+
+     call allocate(mesh%faces%face_list, face_list_sparsity, &
+       type=CSR_INTEGER, name=trim(mesh%name)//"FaceList")
+     mesh%faces%face_list%ival=model%faces%face_list%ival
+     call deallocate(face_list_sparsity)
+    
+     ! now fix the face list
+     do i=1, key_count(periodic_face_map)
+        call fetch_pair(periodic_face_map, i, face1, face2)
+        ele1=model%faces%face_element_list(face1)
+        ele2=model%faces%face_element_list(face2)
+        
+        ! register ele2 as a neighbour of ele1
+        faces => row_ival_ptr(mesh%faces%face_list, ele1)
+        neigh => row_m_ptr(mesh%faces%face_list, ele1)
+        do j=1, size(faces)
+          if (faces(j)==face1) then
+             neigh(j)=ele2
+          end if
+        end do
+          
+        ! register ele1 as a neighbour of ele2
+        faces => row_ival_ptr(mesh%faces%face_list, ele2)
+        neigh => row_m_ptr(mesh%faces%face_list, ele2)
+        do j=1, size(faces)
+          if (faces(j)==face2) then
+             neigh(j)=ele1
+          end if
+        end do
+        
+     end do
+
+  end subroutine add_faces_face_list_periodic_from_non_periodic_model
     
   subroutine add_faces_face_list_non_periodic_from_periodic_model( &
      mesh, model, periodic_face_map, stat)
@@ -1226,8 +1504,64 @@ contains
 
   end subroutine add_faces_face_list_non_periodic_from_periodic_model
     
-! IAKOVOS commented out
-!  subroutine fix_periodic_face_orientation(nonperiodic, periodic, periodic_face_map)
+  subroutine fix_periodic_face_orientation(nonperiodic, periodic, periodic_face_map)
+    !!< Fixes, i.e. overwrites the face local node numbering of non-periodic nonperiodic
+    !!< in periodic faces to make it consistent with the periodic 'mesh'
+    !!< Assumes the shape functions of elements and faces in mesh and nonperiodic are the same!!
+    type(mesh_type), intent(in):: nonperiodic
+    type(mesh_type), intent(in):: periodic
+    type(integer_hash_table), intent(in):: periodic_face_map
+    
+    type(mesh_faces), pointer:: nonperiodic_faces
+    integer:: i, face1, face2
+    
+    ewrite(1,*) "Inside fix_periodic_face_orientation"
+
+    if (.not. periodic%faces%shape==nonperiodic%faces%shape) then
+      ewrite(-1,*) "When deriving the faces structure of a periodic mesh from a non-periodic mesh"
+      ewrite(-1,*) "Its shape functions have to be the same"
+      FLAbort("Different shape functions in non-periodic nonperiodic mesh")
+    end if
+    
+    do i=1, key_count(periodic_face_map)
+       call fetch_pair(periodic_face_map, i, face1, face2)
+       call fix_periodic_face_orientation_face(face1)
+       call fix_periodic_face_orientation_face(face2)
+    end do
+
+    ! when deriving a non-periodic mesh from a periodic model,
+    ! we don't have the surface mesh yet, so no need to fix it:
+    if (.not. associated(nonperiodic%faces%surface_node_list)) return
+    
+    nonperiodic_faces => nonperiodic%faces
+    call deallocate(nonperiodic_faces%surface_mesh)
+#ifdef HAVE_MEMORY_STATS
+    call register_deallocation("mesh_type", "integer", &
+         size(nonperiodic_faces%surface_node_list), name='Surface'//trim(nonperiodic%name))
+#endif
+    deallocate(nonperiodic_faces%surface_node_list)
+    call create_surface_mesh(nonperiodic_faces%surface_mesh, &
+       nonperiodic_faces%surface_node_list, nonperiodic, name='Surface'//trim(nonperiodic%name))
+#ifdef HAVE_MEMORY_STATS
+    call register_allocation("mesh_type", "integer", &
+         size(nonperiodic_faces%surface_node_list), name='Surface'//trim(nonperiodic%name))
+#endif
+      
+    contains
+    
+    subroutine fix_periodic_face_orientation_face(face)
+    integer, intent(in):: face
+    
+      integer, dimension(:), pointer:: mesh_face_local_nodes, nonperiodic_face_local_nodes
+      
+      mesh_face_local_nodes => face_local_nodes(periodic, face)
+      nonperiodic_face_local_nodes => face_local_nodes(nonperiodic, face)
+      
+      nonperiodic_face_local_nodes=mesh_face_local_nodes
+      
+    end subroutine fix_periodic_face_orientation_face
+    
+  end subroutine fix_periodic_face_orientation
 
   subroutine create_surface_mesh(surface_mesh, surface_nodes, &
     mesh, surface_elements, name)
@@ -1352,8 +1686,52 @@ contains
     
     logical :: ladd_nnlist, ladd_nelist, ladd_eelist
     
-! IAKOVOS commented out
-  FLAbort("add_lists_mesh: Code Commented out")
+    assert(associated(mesh%adj_lists))
+    ladd_nnlist = present_and_true(nnlist) .and. .not. associated(mesh%adj_lists%nnlist)
+    ladd_eelist = present_and_true(eelist) .and. .not. associated(mesh%adj_lists%eelist)
+    ladd_nelist = (present_and_true(nelist) .or. ladd_eelist) .and. .not. associated(mesh%adj_lists%nelist)
+
+    if(ladd_nnlist .and. ladd_nelist .and. ladd_eelist) then
+      ewrite(2, *) "Adding node-node list to mesh " // trim(mesh%name)    
+      ewrite(2, *) "Adding node-element list to mesh " // trim(mesh%name)    
+      ewrite(2, *) "Adding element-element list to mesh " // trim(mesh%name) 
+      allocate(mesh%adj_lists%nnlist)
+      allocate(mesh%adj_lists%nelist)
+      allocate(mesh%adj_lists%eelist)
+      ! Use these pointers to work around compilers that insist on having mesh
+      ! intent(inout) - it really only needs to be intent(in)
+      lnnlist => mesh%adj_lists%nnlist
+      lnelist => mesh%adj_lists%nelist
+      leelist => mesh%adj_lists%eelist
+      call makelists(mesh, &
+        & nnlist = lnnlist, &
+        & nelist = lnelist, &
+        & eelist = leelist)
+    else if(ladd_nnlist .and. ladd_nelist) then
+      ewrite(2, *) "Adding node-node list to mesh " // trim(mesh%name)    
+      ewrite(2, *) "Adding node-element list to mesh " // trim(mesh%name)    
+      allocate(mesh%adj_lists%nnlist)
+      allocate(mesh%adj_lists%nelist)
+      ! Use these pointers to work around compilers that insist on having mesh
+      ! intent(inout) - it really only needs to be intent(in)
+      lnnlist => mesh%adj_lists%nnlist
+      lnelist => mesh%adj_lists%nelist
+      call makelists(mesh, &
+        & nnlist = lnnlist, &
+        & nelist = lnelist)
+    else if(ladd_eelist) then
+      if(ladd_nnlist) then
+        call add_nnlist(mesh)
+      end if
+      call add_eelist(mesh)  ! The eelist generates the nelist. If we need all
+                             ! three then we enter the branch above.
+    else if(ladd_nnlist) then
+      call add_nnlist(mesh)
+    else if(ladd_nelist) then
+      call add_nelist(mesh)
+!    else
+!      ! We already have the requested lists (or no lists were requested)
+    end if
     
   end subroutine add_lists_mesh
   
@@ -1404,8 +1782,26 @@ contains
   ! IAKOVOS commented out
 !  subroutine extract_lists_tensor(field, nnlist, nelist, eelist)
   
-  ! IAKOVOS commented out
-!  subroutine add_nnlist_mesh(mesh)
+  subroutine add_nnlist_mesh(mesh)
+    !!< Add the node-node list to the adjacency cache for the supplied mesh
+  
+    type(mesh_type), intent(in) :: mesh
+    
+    type(csr_sparsity), pointer :: nnlist
+    
+    assert(associated(mesh%adj_lists))
+    if(.not. associated(mesh%adj_lists%nnlist)) then    
+      ewrite(2, *) "Adding node-node list to mesh " // trim(mesh%name)
+      allocate(nnlist)
+      mesh%adj_lists%nnlist => nnlist
+      call makelists(mesh, nnlist = nnlist)
+#ifdef DDEBUG
+    else
+      assert(has_references(mesh%adj_lists%nnlist))
+#endif
+    end if
+    
+  end subroutine add_nnlist_mesh
   
 ! IAKOVOS commented out
 !  subroutine add_nnlist_scalar(field)

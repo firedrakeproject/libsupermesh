@@ -7,7 +7,7 @@ subroutine test_tri_intersector
   use libsupermesh_quadrature, only:make_quadrature
   use libsupermesh_shape_functions, only:make_element_shape
 !  use libsupermesh_fields
-!  use unittest_tools
+  use libsupermesh_unittest_tools
   implicit none
 
   type(vector_field) :: positionsA, positionsB
@@ -49,14 +49,20 @@ subroutine test_tri_intersector
       shape_lib = make_element_shape(vertices = positionsB%mesh%shape%loc, dim = positionsB%mesh%shape%dim, degree = positionsB%mesh%shape%degree, quad = quad_lib)
       call deallocate(quad_lib)
       
+      write (*,*) "test_tri_intersector: positionsA%field_type:",positionsA%field_type,&
+        &", positionsA%dim:",positionsA%dim,", positionsA%shape%loc:",positionsA%mesh%shape%loc,"."
+      
 !      libwm = libsupermesh_intersect_elements(positionsB, ele_B, ele_val(positionsA, ele_A), ele_shape(positionsB, 1))
       libwm = libsupermesh_intersect_elements(positions_B_lib_val, ele_count(positionsB), &
         positionsB%mesh%shape%quadrature%vertices, positionsB%mesh%shape%quadrature%dim, ele_B, &
         ele_val(positionsA, ele_A), shape_lib, ele_loc(positionsB, ele_B), dimB, node_count(positionsB), &
         positionsB%mesh%shape%loc, positionsB%field_type, positionsB%mesh%ndglno)
       call deallocate(shape_lib)
+      write (*,*) "test_tri_intersector:1"
       tri_A%v = ele_val(positionsA, ele_A)
+      write (*,*) "test_tri_intersector:2"
       tri_B%v = ele_val(positionsB, ele_B)
+      write (*,*) "test_tri_intersector:3"
       planes_B = get_planes(tri_B)
       call libsupermesh_intersect_tris(tri_A, planes_B, shape=ele_shape(positionsB, 1), stat=stat, output=fort)
 

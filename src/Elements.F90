@@ -126,6 +126,10 @@ module libsupermesh_elements
      module procedure element_boundary_numbering
   end interface
   
+  interface operator(==)
+     module procedure element_equal
+  end interface
+  
   interface eval_shape
     module procedure eval_shape_node, eval_shape_all_nodes
   end interface
@@ -380,6 +384,19 @@ contains
          & boundary)
 
   end function element_boundary_numbering
+  
+  pure function element_equal(element1,element2)
+    !!< Return true if the two elements are equivalent.
+    logical :: element_equal
+    type(element_type), intent(in) :: element1, element2
+    
+    element_equal = element1%dim==element2%dim &
+         .and. element1%loc==element2%loc &
+         .and. element1%ngi==element2%ngi &
+         .and. element1%numbering==element2%numbering &
+         .and. element1%quadrature==element2%quadrature
+    
+  end function element_equal
 
   pure function eval_shape_node(shape, node,  l) result(eval_shape)
     ! Evaluate the shape function for node node local coordinates l
