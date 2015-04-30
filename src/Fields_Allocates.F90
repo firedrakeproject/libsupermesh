@@ -573,10 +573,10 @@ contains
     call deallocate(field%mesh)
 
 !    call remove_boundary_conditions(field)
-!    deallocate(field%bc)
+!    deallocate(field%bc)		! IAKOVOS dito for this one.
 !    
-!    assert(associated(field%picker))
-!    call remove_picker(field)
+!    assert(associated(field%picker))	! IAKOVOS this causes a memory leak of 8 bytes. Should be OK when we remove the field COMPLETELY.
+!    call remove_picker(field)		! If we do *not remove the field (picker) I need to port some more code
 !    deallocate(field%picker)
 !    nullify(field%picker)
     
