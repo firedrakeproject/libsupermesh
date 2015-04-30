@@ -44,6 +44,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 add_subdirectory(libspud)
 add_subdirectory(spatialindex-1.8.0)
+add_subdirectory(libjudy)
 #add_subdirectory(libjudy)
 
 #include(ExternalProject)
@@ -63,7 +64,8 @@ get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
   set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3    -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fbounds-check -fcheck=all -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=bounds,do,mem,pointer,recursion -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+#  set (CMAKE_Fortran_FLAGS_DEBUG   "-fbounds-check -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   # ifort (untested)
   set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
@@ -209,41 +211,41 @@ endforeach()
 
 set (CPP_LIBJUDY_O_FILES "")
 set (CPP_LIBJUDY_O_FILES
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1FreeArray.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Set.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Count.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1ByCount.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Unset.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Test.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1MallocIF.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Tables.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Decascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Cascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1CreateBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1InsertBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1First.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Next.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1Prev.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1NextEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/Judy1PrevEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLFreeArray.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLIns.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLCount.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLGet.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLDel.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLByCount.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLTables.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLMallocIF.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLDecascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLCascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLInsertBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLCreateBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLFirst.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLNext.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLPrev.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLNextEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyLPrevEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/JudyMalloc.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1FreeArray.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Set.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Count.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libcount_la-Judy1ByCount.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Unset.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Test.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1MallocIF.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Tables.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Decascade.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Cascade.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1CreateBranch.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1InsertBranch.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1First.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libnext_la-Judy1Next.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libprev_la-Judy1Prev.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libnext_la-Judy1NextEmpty.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libprev_la-Judy1PrevEmpty.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLFreeArray.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLIns.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLCount.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLGet.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLDel.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libcount_la-JudyLByCount.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLTables.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLMallocIF.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLDecascade.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLCascade.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLInsertBranch.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLCreateBranch.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLFirst.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libnext_la-JudyLNext.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrev.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libnext_la-JudyLNextEmpty.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrevEmpty.o
+  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyCommon/JudyMalloc.o
 )
 foreach (test ${CPP_LIBJUDY_O_FILES})
  SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
@@ -267,7 +269,7 @@ FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_WM4_FILES} ${CPP_LIBSPUD_O_FILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
 
 #add_dependencies(SuperMesh libspud spatialindex spatialindex_c libjudy)
-add_dependencies(SuperMesh libspud spatialindex spatialindex_c)
+add_dependencies(SuperMesh libjudy libspud spatialindex spatialindex_c)
 
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_TEST_TRI_INTERSECTOR_FILES} ${CPP_WM4_FILES})
 add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
@@ -281,7 +283,8 @@ add_custom_command(TARGET test_tri_intersector POST_BUILD
 add_custom_target(test DEPENDS test_tri_intersector)
 add_custom_target(distclean 
   COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && make distclean && rm -rf tmp/
-  COMMAND "$(CMAKE)" --build "${CMAKE_BINARY_DIR}" clean
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && make distclean && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/
+  COMMAND cd "${PROJECT_BINARY_DIR}/" && make clean
   COMMAND rm -rf data/
 #  COMMAND cd "${PROJECT_SOURCE_DIR}/libjud" && make distcleanlibjudy
 )

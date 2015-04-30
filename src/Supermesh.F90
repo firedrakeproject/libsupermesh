@@ -27,6 +27,29 @@ module libsupermesh_construction
     end subroutine libsupermesh_cintersector_set_input
   end interface libsupermesh_cintersector_set_input
   
+  interface 
+    subroutine libsupermesh_cintersector_drive
+    end subroutine libsupermesh_cintersector_drive
+  end interface
+
+  interface
+    subroutine libsupermesh_cintersector_query(nonods, totele)
+      implicit none
+      integer, intent(out) :: nonods, totele
+    end subroutine libsupermesh_cintersector_query
+  end interface
+
+  interface libsupermesh_cintersector_get_output
+    module procedure libsupermesh_intersector_get_output_sp
+  
+    subroutine libsupermesh_cintersector_get_output(nonods, totele, ndim, loc, nodes, enlist)
+      use libsupermesh_global_parameters, only : real_8
+      implicit none
+      integer, intent(in) :: nonods, totele, ndim, loc
+      real(kind = real_8), dimension(nonods * ndim), intent(out) :: nodes
+      integer, dimension(totele * loc), intent(out) :: enlist
+    end subroutine libsupermesh_cintersector_get_output
+  end interface libsupermesh_cintersector_get_output
   
   interface libsupermesh_intersector_set_dimension
     subroutine libsupermesh_cintersector_set_dimension(ndim)
@@ -64,7 +87,24 @@ module libsupermesh_construction
   
   end subroutine libsupermesh_intersector_set_input_sp
   
-  function libsupermesh_intersect_elements(positions_A_val, elementCountA, verticesA, quadDimA, ele_A, posB, shape, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno) result(intersection)
+  subroutine libsupermesh_intersector_get_output_sp(nonods, totele, ndim, loc, nodes, enlist)
+    integer, intent(in) :: nonods
+    integer, intent(in) :: totele
+    integer, intent(in) :: ndim
+    integer, intent(in) :: loc
+    real(kind = real_4), dimension(nonods * ndim), intent(out) :: nodes
+    integer, dimension(totele * loc), intent(out) :: enlist
+    
+    real(kind = real_8), dimension(size(nodes)) :: lnodes
+    
+    call libsupermesh_cintersector_get_output(nonods, totele, ndim, loc, lnodes, enlist)
+    nodes = lnodes
+    
+  end subroutine libsupermesh_intersector_get_output_sp
+  
+  function libsupermesh_intersect_elements(positions_A_val, elementCountA, verticesA, quadDimA, ele_A, &
+        posB, shape, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, &
+        positions_a_MeshNdglno) result(intersection)
     real, intent(in), dimension(ndimA, nnodesA) :: positions_A_val
     integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     integer, intent(in) :: ele_A, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA
@@ -83,8 +123,7 @@ module libsupermesh_construction
     type(element_type) :: shape_lib
 
     ewrite(1, *) "In libsupermesh_intersect_elements"
-!    write(*, *) "In libsupermesh_intersect_elements"
-!    dim = positions_A%dim
+
 #ifdef DDEBUG
     select case(ndimA)
       case(2)
@@ -96,19 +135,18 @@ module libsupermesh_construction
 
     quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
     shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
-    call deallocate(quad_lib)
     call allocate(mesh_lib, nnodesA, elementCountA, shape_lib)
-    call deallocate(shape_lib)
     
     mesh_lib%ndglno = positions_a_MeshNdglno
     call allocate(positions_A, ndimA, mesh_lib)
     positions_A%val = positions_A_val 
     positions_A%dim = ndimA
-    call deallocate(mesh_lib)
 
     call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
+    ! IAKOVOS REMOVE COMMENT
+    write(*,*) "libsupermesh_intersect_elements: nonods:",nonods,", totele:",totele,"."
     call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
     intersection_mesh%continuity = -1
     call allocate(intersection, ndimA, intersection_mesh, "IntersectionCoordinates")
@@ -123,6 +161,10 @@ module libsupermesh_construction
       end do
     end if
 
+    call deallocate(quad_lib)
+    call deallocate(shape_lib)
+    call deallocate(mesh_lib)
+    
     call deallocate(intersection_mesh)
     call deallocate(positions_A)
 

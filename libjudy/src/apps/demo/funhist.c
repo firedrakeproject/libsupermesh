@@ -44,7 +44,7 @@
 
 // Macro for correction english output for plurals
 
-#define    PLURAL(count) ((count == 1) ? "" : "s")
+#define	PLURAL(count) ((count == 1) ? "" : "s")
 
 // timing routines
 

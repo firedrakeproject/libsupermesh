@@ -149,6 +149,8 @@ contains
 
     if (present(stat)) stat=0
 
+    ! IAKOVOS REMOVE COMMENT
+    write (*,*) "make_element_shape: vertices:",vertices,", dim:",dim,", degree:",degree,", type:",type,"."
     ! Get the local numbering of our element
     ele_num=>find_element_numbering(vertices, dim, degree, type)
 

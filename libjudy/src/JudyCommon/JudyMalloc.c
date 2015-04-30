@@ -18,12 +18,12 @@
 // @(#) $Revision: 4.33 $ $Source: /judy/src/JudyCommon/JudyMalloc.c $
 // ************************************************************************ //
 //                    JUDY - Memory Allocater                             //
-//                              -by-                      //
-//                 Douglas L. Baskins                  //
-//              Hewlett Packard                  //
-//                        Fort Collins, Co                  //
-//                         (970) 229-2027                  //
-//                                      //
+//                              -by-					  //
+//		         Douglas L. Baskins				  //
+//			  Hewlett Packard				  //
+//                        Fort Collins, Co				  //
+//                         (970) 229-2027				  //
+//									  //
 // ************************************************************************ //
 
 // JUDY INCLUDE FILES
@@ -36,12 +36,12 @@
 // malloc(3C).  Note:  JPM accounting occurs at a higher level.
 
 Word_t JudyMalloc(
-    Word_t Words)
+	Word_t Words)
 {
-    Word_t Addr;
+	Word_t Addr;
 
-    Addr = (Word_t) malloc(Words * sizeof(Word_t));
-    return(Addr);
+	Addr = (Word_t) malloc(Words * sizeof(Word_t));
+	return(Addr);
 
 } // JudyMalloc()
 
@@ -50,11 +50,11 @@ Word_t JudyMalloc(
 // J U D Y   F R E E
 
 void JudyFree(
-    void * PWord,
-    Word_t Words)
+	void * PWord,
+	Word_t Words)
 {
-    (void) Words;
-    free(PWord);
+	(void) Words;
+	free(PWord);
 
 } // JudyFree()
 
@@ -68,9 +68,9 @@ void JudyFree(
 // and frees should go through this level.
 
 Word_t JudyMallocVirtual(
-    Word_t Words)
+	Word_t Words)
 {
-    return(JudyMalloc(Words));
+	return(JudyMalloc(Words));
 
 } // JudyMallocVirtual()
 
@@ -79,8 +79,8 @@ Word_t JudyMallocVirtual(
 // J U D Y   F R E E
 
 void JudyFreeVirtual(
-    void * PWord,
-    Word_t Words)
+	void * PWord,
+	Word_t Words)
 {
         JudyFree(PWord, Words);
 

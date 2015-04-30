@@ -50,62 +50,62 @@
 
 // Commands recognized by the program:
 
-#define    CMD_LIST "list"
-#define    CMD_QUIT "quit"
+#define	CMD_LIST "list"
+#define	CMD_QUIT "quit"
 
-#define    PLURAL(count) ((count == 1) ? "" : "s")
+#define	PLURAL(count) ((count == 1) ? "" : "s")
 
 main()
 {
-    char     Index [BUFSIZ];        // value from user.
-    void  ** PPValue;            // associated with Index.
-    void  *  PArray = (Pvoid_t) NULL;    // JudySL array.
+    char     Index [BUFSIZ];		// value from user.
+    void  ** PPValue;			// associated with Index.
+    void  *  PArray = (Pvoid_t) NULL;	// JudySL array.
     JError_t JError;                    // Judy error structure
-    char  *  Pc;            // place in string.
+    char  *  Pc;			// place in string.
 
 // EMIT INSTRUCTIONS:
 
-    (void) puts      ("JudySL interactive demonstration:");
-    (void) puts      ("When asked for input, enter some text or:");
+    (void) puts	  ("JudySL interactive demonstration:");
+    (void) puts	  ("When asked for input, enter some text or:");
     (void) printf ("- \"%s\" to list previously entered text or\n", CMD_LIST);
-    (void) printf ("- \"%s\" (or EOF) to quit the program\n\n",        CMD_QUIT);
+    (void) printf ("- \"%s\" (or EOF) to quit the program\n\n",	    CMD_QUIT);
 
 
 // ACCEPT COMMANDS:
 
     while (1)
     {
-    (void) printf ("\nEnter key/list/quit: ");
-    (void) fflush (stdout);
+	(void) printf ("\nEnter key/list/quit: ");
+	(void) fflush (stdout);
 
-    if (fgets (Index, BUFSIZ, stdin) == (char *) NULL)
-        break;
+	if (fgets (Index, BUFSIZ, stdin) == (char *) NULL)
+	    break;
 
-    if ((Pc = strchr (Index, '\n')) != (char *) NULL)
-        *Pc = '\0';            // strip trailing newline.
+	if ((Pc = strchr (Index, '\n')) != (char *) NULL)
+	    *Pc = '\0';			// strip trailing newline.
 
 // QUIT:
 
-    if (! strcmp (Index, CMD_QUIT)) break;
+	if (! strcmp (Index, CMD_QUIT)) break;
 
 
 // LIST ALL INPUT IN ALPHABETICAL ORDER:
 
-    if (! strcmp (Index, CMD_LIST))
-    {
-         Index[0] = '\0';
+	if (! strcmp (Index, CMD_LIST))
+	{
+	     Index[0] = '\0';
 
-         for (PPValue  = JudySLFirst (PArray, Index, 0);
-          PPValue != (PPvoid_t) NULL;
-          PPValue  = JudySLNext  (PArray, Index, 0))
-         {
-         (void) printf ("  \"%s\" stored %lu time%s\n",
-                Index,  *((PWord_t) PPValue),
-                PLURAL (*((PWord_t) PPValue)));
-         }
+	     for (PPValue  = JudySLFirst (PArray, Index, 0);
+		  PPValue != (PPvoid_t) NULL;
+		  PPValue  = JudySLNext  (PArray, Index, 0))
+	     {
+		 (void) printf ("  \"%s\" stored %lu time%s\n",
+				Index,  *((PWord_t) PPValue),
+				PLURAL (*((PWord_t) PPValue)));
+	     }
 
-         continue;
-    }
+	     continue;
+	}
 
 
 // ALL OTHER VALUES ARE KEYS:
@@ -114,18 +114,18 @@ main()
 // pointer to the old value.  If Index doesn't already exist, then a slot is
 // created and a pointer to this slot (initialized to zero) is returned.
 
-    if ((PPValue = JudySLIns (& PArray, Index, &JError)) == PPJERR)
-    {                    // assume out of memory.
-        (void) printf ("Error %d, cannot insert \"%s\" in array.\n",
-               JU_ERRNO(&JError), Index);
-        exit (1);
-    }
+	if ((PPValue = JudySLIns (& PArray, Index, &JError)) == PPJERR)
+	{					// assume out of memory.
+	    (void) printf ("Error %d, cannot insert \"%s\" in array.\n",
+			   JU_ERRNO(&JError), Index);
+	    exit (1);
+	}
 
-    ++(*((PWord_t) PPValue));        // increment usage count.
+	++(*((PWord_t) PPValue));		// increment usage count.
 
-    (void) printf ("  \"%s\" stored %ld time%s\n",
-               Index,  *((PWord_t) PPValue),
-               PLURAL (*((PWord_t) PPValue)));
+	(void) printf ("  \"%s\" stored %ld time%s\n",
+		       Index,  *((PWord_t) PPValue),
+		       PLURAL (*((PWord_t) PPValue)));
 
     } // while 1 (continuous loop until user quits)
 

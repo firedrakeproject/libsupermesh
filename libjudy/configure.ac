@@ -255,4 +255,17 @@ fi
 
 AC_SUBST(WARN_CFLAGS)
 
+AC_CONFIG_FILES([Makefile
+                 src/Judy1/Makefile
+                 src/JudyCommon/Makefile
+                 src/JudyHS/Makefile
+                 src/JudyL/Makefile
+                 src/JudySL/Makefile
+                 src/Makefile
+                 src/obj/Makefile
+		 tool/Makefile
+		 doc/Makefile
+		 test/Makefile])
+
+
 AC_OUTPUT

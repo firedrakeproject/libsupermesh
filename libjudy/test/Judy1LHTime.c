@@ -65,31 +65,31 @@ get_cycles(void)
     return (ret);
 }
 
-#define STARTTm                             \
-{                                     \
-    gettimeofday(&TVBeg__, NULL);                    \
-    GCBeg__ = get_cycles();                         \
+#define STARTTm 							\
+{ 									\
+    gettimeofday(&TVBeg__, NULL);					\
+    GCBeg__ = get_cycles(); 						\
 }
 
-#define ENDTm(D)                             \
-{                                     \
-    uint32_t  GCEnd__;                            \
-    GCEnd__ = get_cycles();                        \
-    gettimeofday(&TVEnd__, NULL);                                       \
-    (D) = (double)(TVEnd__.tv_sec  - TVBeg__.tv_sec) * 1E6 +           \
-         ((double)(TVEnd__.tv_usec - TVBeg__.tv_usec));             \
-    if (D < 10000.0) D = (double)(GCEnd__ - GCBeg__) * CPUSPEED;     \
+#define ENDTm(D) 							\
+{ 									\
+    uint32_t  GCEnd__;							\
+    GCEnd__ = get_cycles();						\
+    gettimeofday(&TVEnd__, NULL);                                   	\
+    (D) = (double)(TVEnd__.tv_sec  - TVBeg__.tv_sec) * 1E6 +   		\
+         ((double)(TVEnd__.tv_usec - TVBeg__.tv_usec));         	\
+    if (D < 10000.0) D = (double)(GCEnd__ - GCBeg__) * CPUSPEED; 	\
 }
 
 #else  // ! CPUMHZ
 
 #define STARTTm gettimeofday(&TVBeg__, NULL)
 
-#define ENDTm(D)                                                          \
+#define ENDTm(D)                                                      	\
 {                                                                       \
-    gettimeofday(&TVEnd__, NULL);                                       \
-    (D) = (double)(TVEnd__.tv_sec  - TVBeg__.tv_sec) * 1E6 +        \
-         ((double)(TVEnd__.tv_usec - TVBeg__.tv_usec));             \
+    gettimeofday(&TVEnd__, NULL);                                   	\
+    (D) = (double)(TVEnd__.tv_sec  - TVBeg__.tv_sec) * 1E6 +    	\
+         ((double)(TVEnd__.tv_usec - TVBeg__.tv_usec));         	\
 }
 
 #endif // ! CPUMHZ

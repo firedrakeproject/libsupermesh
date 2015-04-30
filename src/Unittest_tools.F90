@@ -643,16 +643,18 @@ module libsupermesh_unittest_tools
       integer i, row, col
       real val, rand
       
-      call allocate(mat, rows, cols)
-      do i=1, nnz
-        call random_number(rand)
-        row=floor(rand*rows)+1
-        call random_number(rand)
-        col=floor(rand*cols)+1
-        call random_number(rand)
-        val=(rand-0.5)*1e10
-        call set(mat, row, col, val)
-      end do
+      FLAbort("random_sparse_matrix: removed content")
+      
+!      call allocate(mat, rows, cols)
+!      do i=1, nnz
+!        call random_number(rand)
+!        row=floor(rand*rows)+1
+!        call random_number(rand)
+!        col=floor(rand*cols)+1
+!        call random_number(rand)
+!        val=(rand-0.5)*1e10
+!        call set(mat, row, col, val)
+!      end do
       
     end function random_sparse_matrix
 

@@ -200,35 +200,35 @@ char     *malStart;
 
 #define MAXLINE 10000   // max length line
 
-#define GETLINE(BUFFER,POINTER)            \
+#define GETLINE(BUFFER,POINTER)			\
 {                                               \
     char _chr;                                  \
     int  _count = 0;                            \
-    for (;;)    /* forever */            \
+    for (;;)	/* forever */			\
     {                                           \
-        switch (_chr = *POINTER++)        \
-        {                    \
-        case  ' ':    /* eat spaces  */    \
-        case '\t':    /* eat tabs    */    \
-        case '\r':    /* eat returns */    \
-            continue;                \
-    case '\n':      /* eat blank lines */    \
-        if (_count == 0) continue;        \
-    case '\0':    /* Done */        \
+        switch (_chr = *POINTER++)		\
+        {					\
+        case  ' ':	/* eat spaces  */	\
+        case '\t':	/* eat tabs    */	\
+        case '\r':	/* eat returns */	\
+            continue;				\
+	case '\n':      /* eat blank lines */	\
+	    if (_count == 0) continue;		\
+	case '\0':	/* Done */		\
             BUFFER[_count++] = '\0';              \
-        break;                \
-    default:    /* copy char */        \
-            if (_count == (MAXLINE - 1))    \
-        {             /* cut into 2 lines */    \
-                BUFFER[_count++] = '\0';    \
-            POINTER--;            \
-            break;                \
-        }                    \
-            BUFFER[_count++] = _chr;            \
-        continue;                \
-    }                    \
-    break;                    \
-    }                        \
+	    break;				\
+	default:	/* copy char */		\
+            if (_count == (MAXLINE - 1))	\
+	    { 	        /* cut into 2 lines */	\
+                BUFFER[_count++] = '\0';	\
+	        POINTER--;			\
+	        break;				\
+	    }					\
+            BUFFER[_count++] = _chr;	        \
+	    continue;				\
+	}					\
+	break;					\
+    }						\
 }
 
 
@@ -294,7 +294,7 @@ scmp(char *s1, char *s2)
 #ifdef HASHMETHOD
 #define ADTMETHOD       "HASH"
 
-#define MEMOVD    (sizeof(ht))     /* the hash table is overhead */
+#define MEMOVD	(sizeof(ht))     /* the hash table is overhead */
 
 #define STORESTRING(STRING)   hashinsert(ht, STRING)
 
@@ -314,7 +314,7 @@ scmp(char *s1, char *s2)
    statement is retained. */
 
 #define TSIZE (1LU << 20)  /* many processors need this to be a pwr of 2 */
-#define SEED    1159241
+#define SEED	1159241
 #define HASHFN  bitwisehash
 
 #define INITARRAY       static HASHREC *ht[TSIZE]
@@ -458,56 +458,56 @@ ANSREC;
 
 #define ONELEVEL(PAR,CURR,DIR,RID)      \
     {                                   \
-    PAR->DIR = CURR->RID;           \
-    if(PAR->DIR!=NULL)              \
-        PAR->DIR->PAR = PAR;        \
-    CURR->RID = PAR;                \
-    PAR->PAR = CURR;                \
-    CURR->PAR = NULL;               \
+	PAR->DIR = CURR->RID;           \
+	if(PAR->DIR!=NULL)              \
+	    PAR->DIR->PAR = PAR;        \
+	CURR->RID = PAR;                \
+	PAR->PAR = CURR;                \
+	CURR->PAR = NULL;               \
     }
 
 #define ZIGZIG(GPAR,PAR,CURR,DIR,RID)   \
     {                                   \
-    CURR->PAR = GPAR->PAR;          \
-    if (CURR->PAR != NULL)          \
-    {                               \
-        if (CURR->PAR->DIR == GPAR) \
-        CURR->PAR->DIR = CURR;  \
-        else                        \
-        CURR->PAR->RID = CURR;  \
-    }                               \
-    GPAR->DIR = PAR->RID;           \
-    if (GPAR->DIR != NULL)          \
-        GPAR->DIR->PAR = GPAR;      \
-    PAR->DIR = CURR->RID;           \
-    if (CURR->RID != NULL)          \
-        CURR->RID->PAR = PAR;       \
-    CURR->RID = PAR;                \
-    PAR->PAR = CURR;                \
-    PAR->RID = GPAR;                \
-    GPAR->PAR = PAR;                \
+	CURR->PAR = GPAR->PAR;          \
+	if (CURR->PAR != NULL)          \
+	{                               \
+	    if (CURR->PAR->DIR == GPAR) \
+		CURR->PAR->DIR = CURR;  \
+	    else                        \
+		CURR->PAR->RID = CURR;  \
+	}                               \
+	GPAR->DIR = PAR->RID;           \
+	if (GPAR->DIR != NULL)          \
+	    GPAR->DIR->PAR = GPAR;      \
+	PAR->DIR = CURR->RID;           \
+	if (CURR->RID != NULL)          \
+	    CURR->RID->PAR = PAR;       \
+	CURR->RID = PAR;                \
+	PAR->PAR = CURR;                \
+	PAR->RID = GPAR;                \
+	GPAR->PAR = PAR;                \
     }
 
 #define ZIGZAG(GPAR,PAR,CURR,DIR,RID)   \
     {                                   \
-    CURR->PAR = GPAR->PAR;          \
-    if (CURR->PAR != NULL)          \
-    {                               \
-        if (CURR->PAR->DIR == GPAR) \
-        CURR->PAR->DIR = CURR;  \
-        else                        \
-        CURR->PAR->RID = CURR;  \
-    }                               \
-    PAR->RID = CURR->DIR;           \
-    if (PAR->RID != NULL)           \
-        PAR->RID->PAR = PAR;        \
-    GPAR->DIR = CURR->RID;          \
-    if (GPAR->DIR != NULL)          \
-        GPAR->DIR->PAR = GPAR;      \
-    CURR->DIR = PAR;                \
-    PAR->PAR = CURR;                \
-    CURR->RID = GPAR;               \
-    GPAR->PAR = CURR;               \
+	CURR->PAR = GPAR->PAR;          \
+	if (CURR->PAR != NULL)          \
+	{                               \
+	    if (CURR->PAR->DIR == GPAR) \
+		CURR->PAR->DIR = CURR;  \
+	    else                        \
+		CURR->PAR->RID = CURR;  \
+	}                               \
+	PAR->RID = CURR->DIR;           \
+	if (PAR->RID != NULL)           \
+	    PAR->RID->PAR = PAR;        \
+	GPAR->DIR = CURR->RID;          \
+	if (GPAR->DIR != NULL)          \
+	    GPAR->DIR->PAR = GPAR;      \
+	CURR->DIR = PAR;                \
+	PAR->PAR = CURR;                \
+	CURR->RID = GPAR;               \
+	GPAR->PAR = CURR;               \
     }
 
 int       scount = ROTATEFAC;
@@ -722,8 +722,8 @@ typedef struct ansrec
 }
 ANSREC;
 
-#define RED        0
-#define BLACK        1
+#define RED		0
+#define BLACK		1
 
 /* Find word in a redblack tree */
 
@@ -933,11 +933,11 @@ wcreate(char *word, TREEREC * par)
 #define FILERROR                                                        \
 {                                                                       \
     printf("%s: Cannot open file \"%s\": %s "                           \
-        "(errno = %d)\n", argv[0], argv[1], strerror(errno),    \
-        errno);                                                 \
+		"(errno = %d)\n", argv[0], argv[1], strerror(errno),    \
+		errno);                                                 \
     fprintf(stderr, "%s: Cannot open file \"%s\": %s "                  \
-        "(errno = %d)\n", argv[0], argv[1], strerror(errno),    \
-        errno);                                                 \
+		"(errno = %d)\n", argv[0], argv[1], strerror(errno),    \
+		errno);                                                 \
     exit(1);                                                            \
 }
 
