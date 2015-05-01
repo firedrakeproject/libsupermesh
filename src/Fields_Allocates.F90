@@ -420,7 +420,7 @@ contains
 
   end subroutine deallocate_subdomain_mesh
 
-  subroutine deallocate_mesh_faces(mesh)
+  recursive subroutine deallocate_mesh_faces(mesh)
     type(mesh_type) :: mesh
 
     if (.not.associated(mesh%faces)) return
@@ -472,7 +472,7 @@ contains
     
   end subroutine deallocate_mesh_faces
 
-  subroutine deallocate_mesh(mesh)
+  recursive subroutine deallocate_mesh(mesh)
     !!< Deallocate the components of mesh. Shape functions are not
     !!< deallocated here.
     type(mesh_type), intent(inout) :: mesh

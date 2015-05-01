@@ -185,10 +185,6 @@ contains
        ltype=ELEMENT_LAGRANGIAN
     end if
 
-    ! IAKOVOS REMOVE COMMENT
-    write(*,*) "find_element_numbering: ltype:",ltype,"(1==ELEMENT_LAGRANGIAN), dimension:",&
-        dimension,", vertices:",vertices,", degree:",degree,"."
-    
     select case(ltype)
     case (ELEMENT_LAGRANGIAN)
        select case(dimension)

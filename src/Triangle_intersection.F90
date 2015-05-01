@@ -19,8 +19,7 @@ module libsupermesh_tri_intersection_module
 
   type line_type
     real, dimension(2) :: normal
-!                 (A,B)
-    real :: c
+    real :: c = 0
   end type line_type
 
   type(tri_type), dimension(BUF_SIZE), save :: tri_array, tri_array_tmp
@@ -64,7 +63,6 @@ module libsupermesh_tri_intersection_module
     integer, dimension(3) :: idx_tmp
     integer :: surface_eles, colour_tmp
     type(mesh_type) :: surface_mesh, pwc_surface_mesh
-    type(line_type), dimension(3) :: linesA
 
     if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
       assert(present(surface_positions))
@@ -78,7 +76,6 @@ module libsupermesh_tri_intersection_module
     
     tri_cnt = 1
     tri_array(1) = triA
-    linesA = get_lines(triA)
 
     if (.not. mesh_allocated) then
       call allocate(intersection_mesh, BUF_SIZE * 3, BUF_SIZE, shape, name="IntersectionMesh")
@@ -97,22 +94,28 @@ module libsupermesh_tri_intersection_module
       write(*,*) "libsupermesh_intersect_tris_dt: 3: tri_cnt_tmp:",tri_cnt_tmp,", tri_cnt:",tri_cnt,"."
 
       do j=1,tri_cnt
-        call clip(linesB(i), tri_array(j), linesA)
+        call clip(linesB(i), tri_array(j))
       end do
+      
+      ! IAKOVOS REMOVE COMMENT
+      write(*,*) "libsupermesh_intersect_tris_dt: 3: i:",i,", j:",j,", tri_cnt_tmp:",tri_cnt_tmp,", tri_cnt:",tri_cnt,"."
       
       if (i /= size(linesB)) then
         ! IAKOVOS REMOVE COMMENT
-        write(*,*) "libsupermesh_intersect_tris_dt: Inside if i:",i,"."
+        write(*,*) "libsupermesh_intersect_tris_dt: Inside IF i:",i,"."
         tri_cnt = tri_cnt_tmp
         tri_array(1:tri_cnt) = tri_array_tmp(1:tri_cnt)
+      else
+        ! IAKOVOS REMOVE COMMENT
+        write(*,*) "libsupermesh_intersect_tris_dt: Inside ELSE i:",i,", j:",j,"."
+        tri_cnt = tri_cnt
+!        tri_array(tri_cnt) = tri_array_tmp(j)
+        tri_array(1:tri_cnt) = tri_array_tmp(1:tri_cnt)
       end if
-      
-!      tri_cnt = tri_cnt + 1
-!      tri_array(tri_cnt) = tri_array_tmp(j)
     end do
     
     ! IAKOVOS REMOVE COMMENT
-    write(*,*) "libsupermesh_intersect_tris_dt: 4"
+    write(*,*) "libsupermesh_intersect_tris_dt: 4: tri_cnt:",tri_cnt,"."
     
     if (tri_cnt == 0) then
       stat=1
@@ -131,6 +134,9 @@ module libsupermesh_tri_intersection_module
     write(*,*) "libsupermesh_intersect_tris_dt: 6"
     
     do ele=1,tri_cnt
+      ! IAKOVOS REMOVE COMMENT
+      write(*,*) "libsupermesh_intersect_tris_dt: 6: ele_nodes(output, ele):",ele_nodes(output, ele),", tri_array(",ele,")%V:",tri_array(ele)%V,"."
+      
       call set(output, ele_nodes(output, ele), tri_array(ele)%V)
     end do
     
@@ -144,12 +150,11 @@ module libsupermesh_tri_intersection_module
   end subroutine libsupermesh_intersect_tris_dt
 
 
-  subroutine clip(line, tri, linesA)
+  subroutine clip(line, tri)
   ! Clip tri against the plane
   ! and append any output to tri_array_tmp.
     type(line_type), intent(in) :: line
     type(tri_type), intent(in) :: tri
-    type(line_type), dimension(:), intent(in) :: linesA
 
     real, dimension(3) :: dists
     integer :: neg_cnt, pos_cnt, zer_cnt
@@ -158,10 +163,10 @@ module libsupermesh_tri_intersection_module
     integer :: i
 
     real :: invdiff, w0, w1
-    type(tri_type) :: tet_tmp
+    type(tri_type) :: tri_tmp
 
-    ! Negative == ouside
-    ! Positive == inside
+    ! Negative == inside
+    ! Positive == outside
 
     neg_cnt = 0
     pos_cnt = 0
@@ -219,12 +224,30 @@ module libsupermesh_tri_intersection_module
         tri_array_tmp(tri_cnt_tmp) = tri
         do i=1,pos_cnt
           invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
-          write(*,*) "clip: Case 2: subcase 1:",i," point:",pos_idx(i),"(",tri%V(:,pos_idx(i)),") is POSITIVE (invdiff:",invdiff,")."
+          w0 = -dists(neg_idx(1)) * invdiff
+          w1 =  dists(pos_idx(i)) * invdiff
+          
+          write(*,*) "clip: Case 1: subcase 2:",i," tri_cnt_tmp:",tri_cnt_tmp,", point:",pos_idx(i),"(",tri%V(:,pos_idx(i)),") is POSITIVE (invdiff:",invdiff,")."
+          write(*,*) "clip: Case 1: subcase 2:",i," w0:",w0,",w1:",w1,"."
+          write(*,*) "clip: Case 1: subcase 2:",i," X and Y:",w0 * tri_array_tmp(tri_cnt_tmp)%V(:, pos_idx(i)) + w1 * tri_array_tmp(tri_cnt_tmp)%V(:, neg_idx(1)),"."
+          
+!          tri_array_tmp(tri_cnt_tmp)%V(:, pos_idx(i)) = &
+!           w0 * tri_array_tmp(tri_cnt_tmp)%V(:, pos_idx(i)) + &
+!           w1 * tri_array_tmp(tri_cnt_tmp)%V(:, neg_idx(1))
         
         end do
         do i=1,neg_cnt
           invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
-          write(*,*) "clip: Case 1: subcase 2:",i," point:",neg_idx(i)," is NEGATIVE (invdiff:",invdiff,")."
+          write(*,*) "clip: Case 1: subcase 2:",i," point:",neg_idx(i),"(",tri%V(:,neg_idx(i)),") is NEGATIVE (invdiff:",invdiff,")."
+          
+          w0 = -dists(neg_idx(i)) * invdiff
+          w1 =  dists(pos_idx(1)) * invdiff
+          
+          write(*,*) "clip: Case 1: subcase 2:",i," w0:",w0,",w1:",w1,"."
+          write(*,*) "clip: Case 1: subcase 2:",i," X and Y:",w0 * tri%V(:, pos_idx(1)) + w1 * tri%V(:, neg_idx(i)),"."
+          
+          tri_array_tmp(tri_cnt_tmp)%V(:, neg_idx(i)) = &
+           w0 * tri%V(:, pos_idx(1)) + w1 * tri%V(:, neg_idx(i))
           
         end do
       case default
@@ -238,9 +261,9 @@ module libsupermesh_tri_intersection_module
         ! We need to return two triangles
         
         ! Find the points w
+        
         write(*,*) "clip: Case 2: subcase 1:"
         
-!        temp_lines
         
         tri_cnt_tmp = tri_cnt_tmp + 1
         tri_array_tmp(tri_cnt_tmp) = tri
@@ -252,7 +275,7 @@ module libsupermesh_tri_intersection_module
         end do
         do i=1,neg_cnt
           invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
-          write(*,*) "clip: Case 2: subcase 1:",i," point:",neg_idx(i)," is NEGATIVE (invdiff:",invdiff,")."
+          write(*,*) "clip: Case 2: subcase 1:",i," point:",neg_idx(i),"(",tri%V(:,neg_idx(i)),") is NEGATIVE (invdiff:",invdiff,")."
           
         end do
         
@@ -274,105 +297,80 @@ module libsupermesh_tri_intersection_module
     type(tri_type), intent(in) :: tri
     type(line_type), dimension(3) :: lines
 
-    real, dimension(2) :: edge12, edge13, edge32
+    real, dimension(2) :: edge10, edge20, edge30
     real :: det
     integer :: i
-    
-!    do i=1,3
-    ! (1,) == X; (2,) == Y
-    ! 1->2
-    lines(1)%normal(1) = tri%V(2,1) - tri%V(2,2) ! A = Y1 - Y2
-    lines(1)%normal(2) = tri%V(1,2) - tri%V(1,1) ! B = X2 - X1
-    ! 2->3
-    lines(2)%normal(1) = tri%V(2,2) - tri%V(2,3) ! A = Y1 - Y2
-    lines(2)%normal(2) = tri%V(1,3) - tri%V(1,2) ! B = X2 - X1
-    ! 3->1
-    lines(3)%normal(1) = tri%V(2,3) - tri%V(2,1) ! A = Y1 - Y2
-    lines(3)%normal(2) = tri%V(1,1) - tri%V(1,3) ! B = X2 - X1
-!    end do
-    
-!    edge12 = tri%V(:, 2) - tri%V(:, 1);
-!    edge13 = tri%V(:, 3) - tri%V(:, 1);
-!    edge32 = tri%V(:, 3) - tri%V(:, 2);
+    ! P = 1, Q = 2, R = 3
+    edge10 = tri%V(:, 2) - tri%V(:, 1); ! PQ = ( Qx - Px , Qy - Py )
+    edge20 = tri%V(:, 3) - tri%V(:, 2); ! QR = ( Rx - Qx , Ry - Qy )
+    edge30 = tri%V(:, 1) - tri%V(:, 3); ! RP = ( Px - Rx , Py - Ry )
     
     ! IAKOVOS REMOVE COMMENT
-    write(*,*) "get_lines_tri: input: point1:",tri%V(1,1),tri%V(2,1),", point2:",tri%V(1,2),tri%V(2,2),&
-            ", point3:",tri%V(1,3),tri%V(2,3),"."
-!    write(*,*) "get_lines_tri: edge12(1):",edge12(1),", edge12(2):",edge12(2),"."
-!    write(*,*) "get_lines_tri: edge13(1):",edge13(1),", edge13(2):",edge13(2),"."
-!    write(*,*) "get_lines_tri: edge32(1):",edge32(1),", edge32(2):",edge32(2),"."
+    write(*,*) "get_lines_tri: input: point1 (P):",tri%V(:,1),", point2 (Q):",tri%V(:,2),&
+            ", point3 (R):",tri%V(:,3),"."
+    write(*,*) "get_lines_tri: edge10 (PQ):",edge10,"."
+    write(*,*) "get_lines_tri: edge20 (QR):",edge20,"."
+    write(*,*) "get_lines_tri: edge30 (PR):",edge30,"."
  
-!    lines(1)%normal = unit_cross(edge12)
-!    lines(2)%normal = unit_cross(edge13)
-!    lines(3)%normal = unit_cross(edge32)
+    lines(1)%normal = unit_cross(edge10) ! PQ normal
+    lines(2)%normal = unit_cross(edge20) ! QR normal
+    lines(3)%normal = unit_cross(edge30) ! PR normal
     
-    ! IAKOVOS REMOVE COMMENT
-!    write(*,*) "get_lines_tri: lines(1)%normal:",lines(1)%normal,"."
-!    write(*,*) "get_lines_tri: lines(2)%normal:",lines(2)%normal,"."
-!    write(*,*) "get_lines_tri: lines(3)%normal:",lines(3)%normal,"."
+    det = dot_product(edge30, lines(3)%normal)
+    if (det < 0) then
+      do i=1,3
+        lines(i)%normal = -lines(i)%normal
+      end do
+    end if
 
-!    det = dot_product(edge12, lines(3)%normal)
-!    if (det < 0) then
-!      do i=1,3
-!        lines(i)%normal = -lines(i)%normal
-!      end do
-!    end if
-    
-    ! IAKOVOS REMOVE COMMENT
-    write(*,*) "get_lines_tri: lines(1)%normal:",lines(1)%normal,"."
-    write(*,*) "get_lines_tri: lines(2)%normal:",lines(2)%normal,"."
-    write(*,*) "get_lines_tri: lines(3)%normal:",lines(3)%normal,"."
-
-    ! And calibrate what is the zero of this lines by dotting with
+    ! And calibrate what is the zero of this line by dotting with
     ! a point we know to be on it
-!    do i=1,3
-!      lines(i)%c = dot_product(tri%V(:, i), lines(i)%normal)
-!    end do
-
-    lines(1)%c = (-1) * lines(1)%normal(1) * tri%V(1,1) - lines(1)%normal(2) * tri%V(2,1)
-    lines(2)%c = (-1) * lines(2)%normal(1) * tri%V(1,2) - lines(2)%normal(2) * tri%V(2,2)
-    lines(3)%c = (-1) * lines(3)%normal(1) * tri%V(1,3) - lines(3)%normal(2) * tri%V(2,3)
+    do i=1,3
+      lines(i)%c = dot_product(tri%V(:, i), lines(i)%normal)
+    end do
     
     ! IAKOVOS REMOVE COMMENT
-    write(*,*) "get_lines_tri: lines(1)%c:",lines(1)%c,"."
-    write(*,*) "get_lines_tri: lines(2)%c:",lines(2)%c,"."
-    write(*,*) "get_lines_tri: lines(3)%c:",lines(3)%c,"."
+    do i=1,3
+      write(*,*) "get_lines_tri: lines(",i,")%normal:",lines(i)%normal,", lines%c:",lines(i)%c,"."
+    end do
     
   end function get_lines_tri
-
-!  pure function unit_cross(vecA, vecB) result(cross)
+  
   pure function unit_cross(vecA) result(cross)
     real, dimension(2), intent(in) :: vecA
     real, dimension(2) :: cross
-    cross(1) = vecA(2)
+    cross(1) = (-1) * vecA(2)
     cross(2) = vecA(1)
-!    cross(2) = vecA(3) * vecB(1) - vecA(1) * vecB(3)
-!    cross(3) = vecA(1) * vecB(2) - vecA(2) * vecB(1)
 
-!    cross = cross / norm2(cross)
   end function unit_cross
 
-  pure function distances_to_line(line, tri) result(dists)
+!  pure function distances_to_line(line, tri) result(dists)
+  function distances_to_line(line, tri) result(dists)
     type(line_type), intent(in) :: line
     type(tri_type), intent(in) :: tri
     real, dimension(3) :: dists
+    real, dimension(2) :: P
     integer :: i
     
-    forall(i=1:3)
-      dists(i) = dot_product(line%normal, tri%V(:, i)) + line%c
-    end forall
-
-  end function distances_to_line
-
-  function face_no(i, j, k) result(face)
-    ! Given three local node numbers, what is the face that they share?
-    integer, intent(in) :: i, j, k
-    integer :: face
-
-    do face=1,4
-      if (face /= i .and. face /= j .and. face /= k) return
+!    P(1) = 4
+!    P(2) = 4
+!    P(1,2) = 4
+!    P(2,2) = 4
+!    P(1,3) = 4
+!    P(2,3) = 4
+    
+!    forall(i=1:3)
+    do i=1,3
+!      dists(i) = dot_product(line%normal, tri%V(:, i)) - line%c
+!      dists(i) = dot_product((tri%V(:,i) - P), line%normal )
+      dists(i) = dot_product(line%normal, tri%V(:, i)) - line%c
+      
+      ! IAKOVOS REMOVE COMMENT
+!      write(*,*) "distances_to_line: i:",i," line%normal:",line%normal,"c:",line%c,", tri%V(:,",i,"):",tri%V(:,i)," - P(",i,"):",P," = ",dists(i),"."
+      write(*,*) "distances_to_line: i:",i," line%normal:",line%normal,"c:",line%c,", tri%V(:,",i,"):",tri%V(:,i)," = ",dists(i)
+!    end forall
     end do
 
-  end function face_no
+  end function distances_to_line
 
 end module libsupermesh_tri_intersection_module

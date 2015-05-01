@@ -12,8 +12,8 @@ find_package(MPI REQUIRED)
 find_package(Threads)
 find_package(LAPACK REQUIRED)
 #set(Python_ADDITIONAL_VERSIONS 2.7)
-find_package(PythonInterp 2.7 REQUIRED)
-find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT REQUIRED)
+#find_package(PythonInterp 2.7 REQUIRED)
+#find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT REQUIRED)
 
 if ("${PETSC_VERSION}" VERSION_LESS 3.4)
   message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
@@ -137,7 +137,7 @@ include_directories ("${PROJECT_SOURCE_DIR}/libwm/")
 include_directories ("${PROJECT_SOURCE_DIR}/libspud/")
 include_directories ("${PROJECT_SOURCE_DIR}/libspud/include")
 include_directories ("${PROJECT_SOURCE_DIR}/libjudy/src/")
-include_directories ("${PYTHON_INCLUDE_PATH}")
+#include_directories ("${PYTHON_INCLUDE_PATH}")
 
 set(CPP_WM4_FILES "")
 set(CPP_WM4_FILES
@@ -281,8 +281,8 @@ add_custom_command(TARGET test_tri_intersector POST_BUILD
 
 add_custom_target(test DEPENDS test_tri_intersector)
 add_custom_target(distclean 
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && make distclean && rm -rf tmp/
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && make distclean && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && rm -rf tmp/ && make distclean
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ && make distclean
   COMMAND cd "${PROJECT_BINARY_DIR}/" && make clean
   COMMAND rm -rf data/
 #  COMMAND cd "${PROJECT_SOURCE_DIR}/libjud" && make distcleanlibjudy
@@ -290,19 +290,21 @@ add_custom_target(distclean
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
-    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES} rt)
+#    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES} rt)
+    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
 else ()
     target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
-    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES})
+#    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES})
+    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
 endif()
 
 get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
 #message(STATUS "CPP_LIBSPUD_O_FILES:" ${CPP_LIBSPUD_O_FILES} ".")
 #message(STATUS "CPP_WM4_FILES:" ${CPP_WM4_FILES} ".")
-message(STATUS "SuperMesh SOURCES:" ${supermesh_sources_files} ".")
+#message(STATUS "SuperMesh SOURCES:" ${supermesh_sources_files} ".")
 
-message(STATUS "PYTHON_LIBRARIES:" ${PYTHON_LIBRARIES} ".")
-message(STATUS "PYTHON_INCLUDE_DIRS:" ${PYTHON_INCLUDE_DIRS} ".")
+#message(STATUS "PYTHON_LIBRARIES:" ${PYTHON_LIBRARIES} ".")
+#message(STATUS "PYTHON_INCLUDE_DIRS:" ${PYTHON_INCLUDE_DIRS} ".")
 
 #message(STATUS "MPI_Fortran_FOUND:" ${MPI_Fortran_FOUND} ".")
 #message(STATUS "MPI_Fortran_COMPILER:" ${MPI_Fortran_COMPILER} ".")

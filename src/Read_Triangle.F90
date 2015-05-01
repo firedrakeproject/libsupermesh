@@ -90,10 +90,6 @@ contains
     read (node_unit, *) lnodes, ldim, lnode_attributes, node_boundaries
     close(node_unit)
     
-    ! IAKOVOS REMOVE COMMENT
-    write(*,*) "identify_triangle_file: file:",filename,".node, lnodes:",lnodes,", ldim:",ldim,&
-       ", lnode_attributes:",lnode_attributes,", node_boundaries:",node_boundaries,"."
-
     ! Read volume element file header
     lelements = 0
     lloc = 0
@@ -109,10 +105,6 @@ contains
       ewrite(-1, *) "For triangle file with base name " // trim(filename)
       FLExit(".ele file not found")
     end if
-    
-    ! IAKOVOS REMOVE COMMENT
-    write(*,*) "identify_triangle_file: file:",filename,".ele, lelements:",lelements,", lloc:",lloc,&
-       ", ele_attributes:",ele_attributes,"."
 
     ! Read the surface element file header
     lselements = 0
@@ -169,11 +161,6 @@ contains
       selement_boundaries = lselement_boundaries
     end if
 
-    ! IAKOVOS REMOVE COMMENT
-    write(*,*) "identify_triangle_file: nodes:",nodes,", dim:",dim,", loc:",loc,&
-       ", node_attributes:",node_attributes,", elements:",elements,&
-       ", selements:",selements,", selement_boundaries:",selement_boundaries,"."
-       
     return
 
 42  FLExit("Unable to open "//trim(filename)//".node")

@@ -278,7 +278,7 @@ void ElementIntersectionFinder::SetInput(const double*& positions, const int& nn
   this->loc = loc;
   
   // IAKOVOS REMOVE COMMENT
-  printf("ElementIntersectionFinder::SetInput\n");
+//  printf("ElementIntersectionFinder::SetInput\n");
   MeshDataStream stream(positions, nnodes, dim,
                         enlist, nelements, loc);  
   // As in regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0
@@ -523,7 +523,7 @@ void ElementIntersector1D::Intersect()
   assert(positionsB);
   
   // IAKOVOS REMOVE COMMENT
-  printf("ElementIntersector1D::Intersect\n");
+//  printf("ElementIntersector1D::Intersect\n");
 
   double rightA = max(positionsA[0], positionsA[1]);
   double leftB = min(positionsB[0], positionsB[1]);
@@ -596,7 +596,7 @@ void ElementIntersector2D::Intersect()
   assert(positionsB);
   
   // IAKOVOS REMOVE COMMENT
-  printf("ElementIntersector2D::Intersect\n");
+//  printf("ElementIntersector2D::Intersect\n");
 
   if(intersection)
   {
@@ -605,7 +605,7 @@ void ElementIntersector2D::Intersect()
   }
   
   // IAKOVOS REMOVE COMMENT
-  printf("ElementIntersector2D::Intersect() loc:%d.\n", loc);
+//  printf("ElementIntersector2D::Intersect() loc:%d.\n", loc);
 
   if (loc == 3)
   {
@@ -615,21 +615,21 @@ void ElementIntersector2D::Intersect()
     Vector2 pointA1(vec);
     
     // IAKOVOS REMOVE COMMENT
-    printf("ElementIntersector2D::Intersect() pointA1 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
+//    printf("ElementIntersector2D::Intersect() pointA1 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
 
     for (int i = 0; i < 2; i++)
       vec[i] = (GEOM_REAL) positionsA[2 + i];
     Vector2 pointA2(vec);
     
     // IAKOVOS REMOVE COMMENT
-    printf("ElementIntersector2D::Intersect() pointA2 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
+//    printf("ElementIntersector2D::Intersect() pointA2 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
 
     for (int i = 0; i < 2; i++)
       vec[i] = (GEOM_REAL) positionsA[4 + i];
     Vector2 pointA3(vec);
     
     // IAKOVOS REMOVE COMMENT
-    printf("ElementIntersector2D::Intersect() pointA3 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
+//    printf("ElementIntersector2D::Intersect() pointA3 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
 
     Wm4::Triangle2<GEOM_REAL> triA = Triangle2(pointA1, pointA2, pointA3);
     triA.Orient();
@@ -639,21 +639,21 @@ void ElementIntersector2D::Intersect()
     Vector2 pointB1(vec);
     
     // IAKOVOS REMOVE COMMENT
-    printf("ElementIntersector2D::Intersect() pointB1 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
+//    printf("ElementIntersector2D::Intersect() pointB1 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
 
     for (int i = 0; i < 2; i++)
       vec[i] = (GEOM_REAL) positionsB[2 + i];
     Vector2 pointB2(vec);
     
     // IAKOVOS REMOVE COMMENT
-    printf("ElementIntersector2D::Intersect() pointB2 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
+//    printf("ElementIntersector2D::Intersect() pointB2 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
 
     for (int i = 0; i < 2; i++)
       vec[i] = (GEOM_REAL) positionsB[4 + i];
     Vector2 pointB3(vec);
     
     // IAKOVOS REMOVE COMMENT
-    printf("ElementIntersector2D::Intersect() pointB3 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
+//    printf("ElementIntersector2D::Intersect() pointB3 vec[0]:%f, vec[1]:%f, vec[2]:%f.\n", vec[0], vec[1]);
 
     Wm4::Triangle2<GEOM_REAL> triB = Triangle2(pointB1, pointB2, pointB3);
     triB.Orient();
@@ -768,7 +768,7 @@ void WmElementIntersector3D::Intersect()
   assert(positionsB);
   
   // IAKOVOS REMOVE COMMENT
-  printf("ElementIntersector3D::Intersect\n");
+//  printf("ElementIntersector3D::Intersect\n");
   
   if(intersection)
   {
@@ -1036,7 +1036,7 @@ extern "C"
     assert(*loc >= 0);
     
     // IAKOVOS REMOVE COMMENT
-    printf("cLibSuperMeshIntersectorSetInput\n");
+//    printf("cLibSuperMeshIntersectorSetInput\n");
     
     elementIntersector_LibSuperMesh->SetInput(positionsA, positionsB, *dim, *loc);
     
@@ -1113,7 +1113,7 @@ extern "C"
     assert(*nelements >= 0);
     
     // IAKOVOS REMOVE COMMENT
-    printf("cLibSuperMeshIntersectionFinderSetInput\n");
+//    printf("cLibSuperMeshIntersectionFinderSetInput\n");
  
     elementIntersectionFinder_LibSuperMesh.SetInput(positions, *nnodes, *dim, enlist, *nelements, *loc);
     

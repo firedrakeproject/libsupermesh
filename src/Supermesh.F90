@@ -146,7 +146,7 @@ module libsupermesh_construction
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
     ! IAKOVOS REMOVE COMMENT
-    write(*,*) "libsupermesh_intersect_elements: nonods:",nonods,", totele:",totele,"."
+!    write(*,*) "libsupermesh_intersect_elements: nonods:",nonods,", totele:",totele,"."
     call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
     intersection_mesh%continuity = -1
     call allocate(intersection, ndimA, intersection_mesh, "IntersectionCoordinates")
