@@ -1,4 +1,5 @@
-subroutine test_tri_intersector
+#define BUF_SIZE_A 150
+subroutine benchmark_tri_intersector
 
   use libsupermesh_read_triangle
   use libsupermesh_tri_intersection_module
@@ -10,10 +11,10 @@ subroutine test_tri_intersector
   use libsupermesh_unittest_tools
   implicit none
 
-  type(vector_field) :: positionsA, positionsB
+  type(vector_field) :: positionsAsmall, positionsBsmall, positionsA, positionsB
   type(vector_field) :: libwm, fort
   integer :: ele_A, ele_B, ele_C
-  real :: area_libwm, area_fort
+  real :: vol_libwm, vol_fort
   logical :: fail
   integer :: stat
   type(tri_type) :: tri_A, tri_B
@@ -22,13 +23,30 @@ subroutine test_tri_intersector
   real, dimension(:,:), allocatable :: positions_B_lib_val
   type(quadrature_type) :: quad_lib
   type(element_type) :: shape_lib
-  integer :: dimB, n_count
+  integer :: dimB, n_count, ele, i
+  
+  type(mesh_type) :: local_intersection_mesh
+  type(tri_type), dimension(BUF_SIZE_A) :: local_tri_array
+  type(element_type) :: shape
 
-  positionsA = read_triangle_files("data/plcA", quad_degree=3, mdim=2)
-  positionsB = read_triangle_files("data/plcB", quad_degree=3, mdim=2)
+  positionsAsmall = read_triangle_files("data/plcA", quad_degree=3, mdim=2)
+  positionsBsmall = read_triangle_files("data/plcB", quad_degree=3, mdim=2)
 
   call libsupermesh_intersector_set_dimension(2)
   call libsupermesh_intersector_set_exactness(.false.)
+  
+  
+  call allocate(local_intersection_mesh, BUF_SIZE_A * 3, BUF_SIZE_A, shape, name="IntersectionMesh")
+  local_intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE_A*3) /)
+  local_intersection_mesh%continuity = -1
+      
+  local_intersection_mesh%nodes = BUF_SIZE_A*3
+  local_intersection_mesh%elements = BUF_SIZE_A
+  call allocate(positionsA, 2, local_intersection_mesh, "IntersectionCoordinates")
+  
+  do ele=1,BUF_SIZE_A
+    call set(positionsA, ele_nodes(positionsA, ele), local_tri_array(ele)%V)
+  end do
 
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)
@@ -58,18 +76,18 @@ subroutine test_tri_intersector
       fail = (ele_count(libwm) /= ele_count(fort))
 !      call report_test("[tet_intersector counts]", fail, .false., "Should give the same number of elements.")
 
-      area_libwm = 0.0
+      vol_libwm = 0.0
       do ele_C=1,ele_count(libwm)
-        area_libwm = area_libwm + abs(simplex_volume(libwm, ele_C))
+        vol_libwm = vol_libwm + abs(simplex_volume(libwm, ele_C))
       end do
-      area_fort = 0.0
+      vol_fort = 0.0
       if (stat == 0) then
         do ele_C=1,ele_count(fort)
-          area_fort = area_fort + abs(simplex_volume(fort, ele_C))
+          vol_fort = vol_fort + abs(simplex_volume(fort, ele_C))
         end do
       end if
-      fail = (area_libwm .fne. area_fort)
-      call report_test("[tri_intersector areas]", fail, .false., "Should give the same areas of intersection")
+      fail = (vol_libwm .fne. vol_fort)
+      call report_test("[benchmark_tri_intersector areas]", fail, .false., "Should give the same areas of intersection")
 
       call deallocate(libwm)
       if (stat == 0) then
@@ -77,7 +95,10 @@ subroutine test_tri_intersector
       end if
     end do
   end do
+  call deallocate(positionsAsmall)
+  call deallocate(positionsBsmall)
+  call deallocate(local_intersection_mesh)
   call deallocate(positionsA)
   call deallocate(positionsB)
 
-end subroutine test_tri_intersector
+end subroutine benchmark_tri_intersector

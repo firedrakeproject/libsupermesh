@@ -4,6 +4,7 @@
 cmake_minimum_required (VERSION 2.8)
 project (SUPERMESH C CXX Fortran)
 enable_language (Fortran)
+enable_testing ()
 
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
 
@@ -17,7 +18,7 @@ find_package(LAPACK REQUIRED)
 
 if ("${PETSC_VERSION}" VERSION_LESS 3.4)
   message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
-elseif ("${PETSC_VERSION}" VERSION_GREATER 3.5)
+elseif ("${PETSC_VERSION}" VERSION_GREATER 3.6)
   message(FATAL_ERROR "PETSc version 3.4 is required, but not found.. (Found version:" ${PETSC_VERSION} ".")
 endif ()
 
@@ -45,18 +46,6 @@ endif (NOT CMAKE_BUILD_TYPE)
 add_subdirectory(libspud)
 add_subdirectory(spatialindex-1.8.0)
 add_subdirectory(libjudy)
-#add_subdirectory(libjudy)
-
-#include(ExternalProject)
-#ExternalProject_Add(
-#  libspud
-#  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libspud
-#  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/libspud/configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/libspud --enable-shared --enable-static --enable-debugging
-#  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/libspud
-#  BUILD_COMMAND make -j
-#  BUILD_IN_SOURCE 1
-#  INSTALL_COMMAND echo "installing"
-#)
 
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
@@ -130,14 +119,11 @@ endif (USE_MYLIB)
 
 
 include_directories ("${PROJECT_SOURCE_DIR}/include")
-include_directories ("${PROJECT_BINARY_DIR}")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
-include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/")
 include_directories ("${PROJECT_SOURCE_DIR}/libwm/")
 include_directories ("${PROJECT_SOURCE_DIR}/libspud/")
 include_directories ("${PROJECT_SOURCE_DIR}/libspud/include")
 include_directories ("${PROJECT_SOURCE_DIR}/libjudy/src/")
-#include_directories ("${PYTHON_INCLUDE_PATH}")
 
 set(CPP_WM4_FILES "")
 set(CPP_WM4_FILES
@@ -256,13 +242,14 @@ set (CPP_TEST_SOURCE_FILES
 )
 
 
-# Create a library called "SuperMesh" which includes the source file "Element_Intersection.cpp".
+# Create a library called "SuperMesh" which includes the source files.
 # The extension is already found. Any number of sources could be listed here.
 #add_library (SuperMesh STATIC ${PROJECT_SOURCE_DIR}/src/Element_Intersection.cpp ${PROJECT_SOURCE_DIR}/src/Intersection_finder.F90 ${PROJECT_SOURCE_DIR}/src/Linked_Lists.F90)
 FILE(GLOB CPP_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 FILE(GLOB C_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.c)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
 FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90)
+FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
 add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_WM4_FILES} ${CPP_LIBSPUD_O_FILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
@@ -270,20 +257,39 @@ add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} 
 #add_dependencies(SuperMesh libspud spatialindex spatialindex_c libjudy)
 add_dependencies(SuperMesh libjudy libspud spatialindex spatialindex_c)
 
-#add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_TEST_TRI_INTERSECTOR_FILES} ${CPP_WM4_FILES})
-add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
-set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
+#add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
+add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
+add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
+#set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
+set_property(TARGET test_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
+set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector")
 
-add_custom_command(TARGET test_tri_intersector POST_BUILD
+add_custom_target(benchmark DEPENDS benchmark_tri_intersector)
+
+#add_custom_target(unittest DEPENDS test_tri_intersector)
+
+add_test (test_tri_intersector_test test_tri_intersector
+#  COMMAND cd unittests && ./test_tri_intersector && cd ..
+)
+set_tests_properties (test_tri_intersector_test 
+  PROPERTIES PASS_REGULAR_EXPRESSION "Pass:")
+add_custom_command(TARGET test_tri_intersector
+  POST_BUILD
+  COMMAND mkdir -p unittests/data
+  COMMAND cp test_tri_intersector unittests/
   COMMAND mkdir -p data
-  COMMAND cp "${PROJECT_SOURCE_DIR}/src/tests/data/*" data/
+  COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" ./
+  COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" unittests/
+#  COMMAND cd unittests && ./test_tri_intersector && cd ..
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+#  COMMENT "Running test_tri_intersector" VERBATIM
 )
 
-add_custom_target(test DEPENDS test_tri_intersector)
 add_custom_target(distclean 
   COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && rm -rf tmp/ && make distclean
   COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ && make distclean
   COMMAND cd "${PROJECT_BINARY_DIR}/" && make clean
+  COMMAND rm -rf unittests/
   COMMAND rm -rf data/
 #  COMMAND cd "${PROJECT_SOURCE_DIR}/libjud" && make distcleanlibjudy
 )
@@ -292,34 +298,16 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES} rt)
     target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+    target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
 else ()
     target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES})
     target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+    target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
 endif()
 
-get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
-#message(STATUS "CPP_LIBSPUD_O_FILES:" ${CPP_LIBSPUD_O_FILES} ".")
-#message(STATUS "CPP_WM4_FILES:" ${CPP_WM4_FILES} ".")
+#get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
 #message(STATUS "SuperMesh SOURCES:" ${supermesh_sources_files} ".")
-
-#message(STATUS "PYTHON_LIBRARIES:" ${PYTHON_LIBRARIES} ".")
-#message(STATUS "PYTHON_INCLUDE_DIRS:" ${PYTHON_INCLUDE_DIRS} ".")
-
-#message(STATUS "MPI_Fortran_FOUND:" ${MPI_Fortran_FOUND} ".")
-#message(STATUS "MPI_Fortran_COMPILER:" ${MPI_Fortran_COMPILER} ".")
-#message(STATUS "MPI_CXX_FOUND:" ${MPI_CXX_FOUND} ".")
-#message(STATUS "MPI_CXX_COMPILER:" ${MPI_CXX_COMPILER} ".")
-
-#message(STATUS "MPI_Fortran_LIBRARIES:" ${MPI_Fortran_LIBRARIES} ".")
-#message(STATUS "MPI_CXX_LIBRARIES:" ${MPI_CXX_LIBRARIES} ".")
-
-#message(STATUS "MPI_Fortran_COMPILE_FLAGS:" ${MPI_Fortran_COMPILE_FLAGS} ".")
-#message(STATUS "MPI_Fortran_LINK_FLAGS:" ${MPI_Fortran_LINK_FLAGS} ".")
-#message(STATUS "MPI_CXX_COMPILE_FLAGS:" ${MPI_CXX_COMPILE_FLAGS} ".")
-#message(STATUS "MPI_CXX_LINK_FLAGS:" ${MPI_CXX_LINK_FLAGS} ".")
-
-#message(STATUS "MPI_COMPILE_FLAGS:" ${MPI_COMPILE_FLAGS} ".")
 
 #if (MPI_Fortran_FOUND)
   set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
@@ -330,11 +318,13 @@ get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
 if(MPI_Fortran_COMPILE_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
   set_target_properties(test_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  set_target_properties(benchmark_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 endif()
 
 if(MPI_Fortran_LINK_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
   set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  set_target_properties(benchmark_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 endif()
 
 #if(CMAKE_THREAD_LIBS_INIT)
@@ -365,5 +355,3 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_sparse_tools.mod"        DEST
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod"  DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_transform_elements.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_vector_tools.mod"       DESTINATION include)
-
-

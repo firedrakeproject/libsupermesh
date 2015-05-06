@@ -413,7 +413,7 @@ void ElementIntersector::SetInput(double*& positionsA, double*& positionsB, cons
   assert(loc >= 0);
   
   // IAKOVOS REMOVE COMMENT
-  printf("ElementIntersector::SetInput: dim:%d, loc:%d\n", dim, loc);
+//  printf("ElementIntersector::SetInput: dim:%d, loc:%d\n", dim, loc);
   
   if(this->positionsA)
   {
@@ -1048,7 +1048,7 @@ extern "C"
     assert(elementIntersector_LibSuperMesh);
     
     // IAKOVOS REMOVE COMMENT
-    printf("cLibSuperMeshIntersectorDrive\n");
+//    printf("cLibSuperMeshIntersectorDrive\n");
   
     elementIntersector_LibSuperMesh->Intersect();
     

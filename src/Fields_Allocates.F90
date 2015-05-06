@@ -393,12 +393,12 @@ contains
 
     field%wrapped = .false.
     field%aliased = .false.
-    allocate(field%bc)
+    allocate(field%bc)			! IAKOVOS dito for this one.
     nullify(field%refcount) ! Hack for gfortran component initialisation
     !                         bug.    
     
-    allocate(field%picker)
-    
+    allocate(field%picker)		! IAKOVOS this causes a memory leak of 8 bytes. Should be OK when we remove the field COMPLETELY.
+					! If we do *not remove the field (picker) I need to port some more code
     call addref(field)
 
     call zero(field)
