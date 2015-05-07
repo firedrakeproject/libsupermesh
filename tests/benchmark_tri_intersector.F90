@@ -1,4 +1,5 @@
-#define BUF_SIZE_A 150
+#define BUF_SIZE_A 2
+#define BUF_SIZE_B 2
 subroutine benchmark_tri_intersector
 
   use libsupermesh_read_triangle
@@ -25,9 +26,10 @@ subroutine benchmark_tri_intersector
   type(element_type) :: shape_lib
   integer :: dimB, n_count, ele, i
   
-  type(mesh_type) :: local_intersection_mesh
+  type(mesh_type) :: intersection_mesh_A, intersection_mesh_B
   type(tri_type), dimension(BUF_SIZE_A) :: local_tri_array
   type(element_type) :: shape
+  REAL :: num
 
   positionsAsmall = read_triangle_files("data/plcA", quad_degree=3, mdim=2)
   positionsBsmall = read_triangle_files("data/plcB", quad_degree=3, mdim=2)
@@ -36,16 +38,36 @@ subroutine benchmark_tri_intersector
   call libsupermesh_intersector_set_exactness(.false.)
   
   
-  call allocate(local_intersection_mesh, BUF_SIZE_A * 3, BUF_SIZE_A, shape, name="IntersectionMesh")
-  local_intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE_A*3) /)
-  local_intersection_mesh%continuity = -1
+  
+  CALL RANDOM_SEED ()
+  
+  call allocate(intersection_mesh_A, BUF_SIZE_A * 3, BUF_SIZE_A, ele_shape(positionsAsmall, 1), name="IntersectionMeshA")
+  intersection_mesh_A%ndglno = (/ (i, i=1,BUF_SIZE_A*3) /)
+  intersection_mesh_A%continuity = -1
       
-  local_intersection_mesh%nodes = BUF_SIZE_A*3
-  local_intersection_mesh%elements = BUF_SIZE_A
-  call allocate(positionsA, 2, local_intersection_mesh, "IntersectionCoordinates")
+  intersection_mesh_A%nodes = BUF_SIZE_A*3
+  intersection_mesh_A%elements = BUF_SIZE_A
+  call allocate(positionsA, 2, intersection_mesh_A, "IntersectionCoordinatesA")
   
   do ele=1,BUF_SIZE_A
+    CALL RANDOM_NUMBER(num)
+    PRINT *, num
+    
+    local_tri_array(ele)%V = ele_val(positionsAsmall, 1)
     call set(positionsA, ele_nodes(positionsA, ele), local_tri_array(ele)%V)
+  end do
+  
+  call allocate(intersection_mesh_B, BUF_SIZE_B * 3, BUF_SIZE_B, ele_shape(positionsBsmall, 1), name="IntersectionMeshB")
+  intersection_mesh_B%ndglno = (/ (i, i=1,BUF_SIZE_B*3) /)
+  intersection_mesh_B%continuity = -1
+      
+  intersection_mesh_B%nodes = BUF_SIZE_B*3
+  intersection_mesh_B%elements = BUF_SIZE_B
+  call allocate(positionsB, 2, intersection_mesh_B, "IntersectionCoordinatesB")
+  
+  do ele=1,BUF_SIZE_B
+    local_tri_array(ele)%V = ele_val(positionsBsmall, 1)
+    call set(positionsB, ele_nodes(positionsB, ele), local_tri_array(ele)%V)
   end do
 
   do ele_A=1,ele_count(positionsA)
@@ -97,7 +119,8 @@ subroutine benchmark_tri_intersector
   end do
   call deallocate(positionsAsmall)
   call deallocate(positionsBsmall)
-  call deallocate(local_intersection_mesh)
+  call deallocate(intersection_mesh_A)
+  call deallocate(intersection_mesh_B)
   call deallocate(positionsA)
   call deallocate(positionsB)
 

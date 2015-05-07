@@ -131,7 +131,7 @@ module libsupermesh_tri_intersection_module
     
     tri_cnt = 1
     tri_array(1) = triA
-
+    
     if (.not. mesh_allocated) then
       call allocate(intersection_mesh, BUF_SIZE * 3, BUF_SIZE, shape, name="IntersectionMesh")
       intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE*3) /)

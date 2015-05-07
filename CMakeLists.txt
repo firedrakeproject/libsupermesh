@@ -262,7 +262,7 @@ add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 #set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
 set_property(TARGET test_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
-set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector")
+set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
 
 add_custom_target(benchmark DEPENDS benchmark_tri_intersector)
 
