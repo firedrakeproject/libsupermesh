@@ -133,20 +133,19 @@ module libsupermesh_construction
     end select
 #endif
 
-    quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
-    shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
-    call allocate(mesh_lib, nnodesA, elementCountA, shape_lib)
+!    quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
+!    shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
+!    call allocate(mesh_lib, nnodesA, elementCountA, shape_lib)
     
-    mesh_lib%ndglno = positions_a_MeshNdglno
-    call allocate(positions_A, ndimA, mesh_lib)
-    positions_A%val = positions_A_val 
-    positions_A%dim = ndimA
+!    mesh_lib%ndglno = positions_a_MeshNdglno
+!    call allocate(positions_A, ndimA, mesh_lib)
+!    positions_A%val = positions_A_val 
+!    positions_A%dim = ndimA
 
-    call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, ndimA, locA)
+!    call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, ndimA, locA)
+    call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
-    ! IAKOVOS REMOVE COMMENT
-!    write(*,*) "libsupermesh_intersect_elements: nonods:",nonods,", totele:",totele,"."
     call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
     intersection_mesh%continuity = -1
     call allocate(intersection, ndimA, intersection_mesh, "IntersectionCoordinates")
@@ -161,12 +160,12 @@ module libsupermesh_construction
       end do
     end if
 
-    call deallocate(quad_lib)
-    call deallocate(shape_lib)
-    call deallocate(mesh_lib)
+!    call deallocate(quad_lib)
+!    call deallocate(shape_lib)
+!    call deallocate(mesh_lib)
     
     call deallocate(intersection_mesh)
-    call deallocate(positions_A)
+!    call deallocate(positions_A)
 
   end function libsupermesh_intersect_elements
   
