@@ -76,7 +76,7 @@ implicit none
 !          & allocate_scalar_boundary_condition, &
 !          & allocate_vector_boundary_condition
      module procedure allocate_scalar_field, allocate_vector_field, &
-           & allocate_mesh
+           & allocate_mesh, allocate_mesh_noshape
   end interface
 
   interface deallocate
@@ -183,6 +183,75 @@ implicit none
 #include "Reference_count_interface_tensor_field.F90"
 
 contains
+  subroutine allocate_mesh_noshape(mesh, nodes, elements, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name)
+    type(mesh_type), intent(out) :: mesh
+    integer, intent(in) :: nodes, elements, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree
+    character(len=*), intent(in), optional :: name
+    integer :: i, loc
+#ifdef _OPENMP
+    integer :: j
+#endif
+    
+    loc = nodes / elements
+    
+    mesh%nodes=nodes
+
+    mesh%elements=elements
+    
+    mesh%shape%dim=shapeDim
+    mesh%shape%loc = loc
+    mesh%shape%degree = shapeDegree
+    mesh%shape%quadrature%vertices = quadVertices
+    mesh%shape%quadrature%dim = quadDim
+    mesh%shape%quadrature%ngi = quadNgi
+    mesh%shape%quadrature%degree = quadDegree
+    
+    if (present(name)) then
+       mesh%name=name
+    else
+       mesh%name=empty_name
+    end if
+    
+    ! should happen in derived type initialisation already,
+    ! but just to make sure in case an mesh variable is supplied
+    ! that has previously been used for something else:
+    nullify(mesh%faces)
+    nullify(mesh%columns)
+    nullify(mesh%element_columns)
+
+    allocate(mesh%colourings(NUM_COLOURINGS))
+    do i = 1, NUM_COLOURINGS
+       nullify(mesh%colourings(i)%sets)
+    end do
+    allocate(mesh%ndglno(nodes))
+    
+#ifdef _OPENMP
+    ! Use first touch policy.
+    !$OMP PARALLEL DO SCHEDULE(STATIC)
+    do i=1, mesh%elements
+       do j=1, loc
+          mesh%ndglno((i-1)*loc+j)=0
+       end do
+    end do
+    !$OMP END PARALLEL DO
+#endif
+
+#ifdef HAVE_MEMORY_STATS
+    call register_allocation("mesh_type", "integer", nodes,&
+         & name=mesh%name)
+#endif
+
+    allocate(mesh%adj_lists)
+    mesh%wrapped=.false.
+    nullify(mesh%region_ids)
+    nullify(mesh%subdomain_mesh)
+    nullify(mesh%refcount) ! Hack for gfortran component initialisation
+    !                         bug.
+    mesh%periodic=.false.
+    
+    call addref(mesh)
+
+  end subroutine allocate_mesh_noshape
 
   subroutine allocate_mesh(mesh, nodes, elements, shape, name)
     type(mesh_type), intent(out) :: mesh
@@ -199,7 +268,6 @@ contains
     mesh%elements=elements
 
     mesh%shape=shape
-!    write(*,*) "Test1, dim:", shape%dim
     call incref(shape)
     
     if (present(name)) then

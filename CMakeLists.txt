@@ -38,7 +38,7 @@ endif ()
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
+  set (CMAKE_BUILD_TYPE DEBUG CACHE STRING
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -53,7 +53,7 @@ get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
   set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3    -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=bounds,do,mem,pointer,recursion -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=all -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   # ifort (untested)
   set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
@@ -265,6 +265,7 @@ FILE(GLOB C_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.c)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
 FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
+FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
 add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_WM4_FILES} ${CPP_LIBSPUD_O_FILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
@@ -275,11 +276,14 @@ add_dependencies(SuperMesh libjudy libspud spatialindex spatialindex_c)
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
+add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
+
 #set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
 set_property(TARGET test_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
 set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
+set_property(TARGET benchmark_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tet_intersector_")
 
-add_custom_target(benchmark DEPENDS benchmark_tri_intersector)
+add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector)
 
 #add_custom_target(unittest DEPENDS test_tri_intersector)
 
@@ -314,11 +318,13 @@ if(UNIX AND NOT APPLE)
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES} rt)
     target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
     target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+    target_link_libraries(benchmark_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
 else ()
     target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES})
     target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
     target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+    target_link_libraries(benchmark_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
 endif()
 
 #get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
@@ -334,12 +340,14 @@ if(MPI_Fortran_COMPILE_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
   set_target_properties(test_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
   set_target_properties(benchmark_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  set_target_properties(benchmark_tet_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 endif()
 
 if(MPI_Fortran_LINK_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
   set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
   set_target_properties(benchmark_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  set_target_properties(benchmark_tet_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 endif()
 
 #if(CMAKE_THREAD_LIBS_INIT)

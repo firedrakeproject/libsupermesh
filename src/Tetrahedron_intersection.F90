@@ -51,10 +51,12 @@ module libsupermesh_tet_intersection_module
 
 !  subroutine libsupermesh_intersect_tets_dt(tetA, planesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
   subroutine libsupermesh_intersect_tets_dt(tetA_V, tetA_colours, sizeOfPlanesB, planesB_normal, planesB_c, &
-     quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, &
+     quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, shapeNumberingFamily, &
      outputMeshShapeQuadVertices, outputMeshShapeQuadDim, outputMeshShapeQuadNgi, outputMeshShapeDegree2, &
      outputMeshShapeLoc, outputMeshShapeDim, outputMeshShapeDegree, &
-     outputNodeCount, outputElementCount, outputVal, outputDim, &
+     outputNodeCount, outputElementCount, &
+!     outputVal, 
+     outputDim, &
      stat, output, &
      surface_shape, surface_positions, surface_colours)
 !    type(tet_type), intent(in) :: tetA
@@ -69,11 +71,11 @@ module libsupermesh_tet_intersection_module
     type(vector_field), intent(out), optional :: surface_positions
     type(scalar_field), intent(out), optional :: surface_colours
     type(element_type), intent(in), optional :: surface_shape
-    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
+    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, shapeNumberingFamily
     integer, intent(in) :: outputMeshShapeQuadVertices, outputMeshShapeQuadDim, outputMeshShapeQuadNgi, outputMeshShapeDegree2
     integer, intent(in) :: outputMeshShapeLoc, outputMeshShapeDim, outputMeshShapeDegree
     integer, intent(in) :: outputNodeCount, outputElementCount, outputDim
-    real, intent(in), dimension(outputDim, outputNodeCount) :: outputVal
+!    real, intent(in), dimension(outputDim, outputNodeCount) :: outputVal
     integer :: ele
     integer, intent(out) :: stat
 
@@ -105,23 +107,26 @@ module libsupermesh_tet_intersection_module
     end do
     FORALL(i=1:sizeOfPlanesB) planesB(i)%c=planesB_c(i)
     
-    quad_lib = make_quadrature(vertices = quadVertices, dim = quadDim, ngi = quadNgi, degree = quadDegree)
-    shape = make_element_shape(vertices = shapeLoc, dim = shapeDim, degree = shapeDegree, quad = quad_lib)
-    call deallocate(quad_lib)
+!    quad_lib = make_quadrature(vertices = quadVertices, dim = quadDim, ngi = quadNgi, degree = quadDegree)
+!    shape = make_element_shape(vertices = shapeLoc, dim = shapeDim, degree = shapeDegree, quad = quad_lib)
+!    call deallocate(quad_lib)
 
-    assert(shape%degree == 1)
-    assert(shape%numbering%family == FAMILY_SIMPLEX)
-    assert(shape%dim == 3)
+    assert(shapeDegree == 1)
+    assert(shapeNumberingFamily == FAMILY_SIMPLEX)
+    assert(shapeDim == 3)
 
     libsupermesh_tet_cnt = 1
     libsupermesh_tet_array(1) = tetA
 
     if (.not. libsupermesh_mesh_allocated) then
-      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shape, name="IntersectionMesh")
+!      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shape, name="IntersectionMesh")
+      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
       libsupermesh_intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE*4) /)
       libsupermesh_intersection_mesh%continuity = -1
       libsupermesh_mesh_allocated = .true.
     end if
+
+!    call deallocate(shape)
 
     do i=1,size(planesB)
       ! Clip the libsupermesh_tet_array against the i'th plane
@@ -209,8 +214,6 @@ module libsupermesh_tet_intersection_module
         end do
       end do
     end if
-    
-    call deallocate(shape)
 
   end subroutine libsupermesh_intersect_tets_dt
   
