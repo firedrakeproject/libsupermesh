@@ -183,23 +183,21 @@ implicit none
 #include "Reference_count_interface_tensor_field.F90"
 
 contains
-  subroutine allocate_mesh_noshape(mesh, nodes, elements, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name)
+  subroutine allocate_mesh_noshape(mesh, nodes, elements, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name)
     type(mesh_type), intent(out) :: mesh
-    integer, intent(in) :: nodes, elements, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree
+    integer, intent(in) :: nodes, elements, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree
     character(len=*), intent(in), optional :: name
-    integer :: i, loc
+    integer :: i
 #ifdef _OPENMP
     integer :: j
 #endif
-    
-    loc = nodes / elements
-    
+
     mesh%nodes=nodes
 
     mesh%elements=elements
     
     mesh%shape%dim=shapeDim
-    mesh%shape%loc = loc
+    mesh%shape%loc = shapeLoc
     mesh%shape%degree = shapeDegree
     mesh%shape%quadrature%vertices = quadVertices
     mesh%shape%quadrature%dim = quadDim
@@ -229,8 +227,8 @@ contains
     ! Use first touch policy.
     !$OMP PARALLEL DO SCHEDULE(STATIC)
     do i=1, mesh%elements
-       do j=1, loc
-          mesh%ndglno((i-1)*loc+j)=0
+       do j=1, shapeLoc
+          mesh%ndglno((i-1)*shapeLoc+j)=0
        end do
     end do
     !$OMP END PARALLEL DO

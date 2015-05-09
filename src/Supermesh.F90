@@ -123,7 +123,6 @@ module libsupermesh_construction
     type(element_type) :: shape_lib
 
     ewrite(1, *) "In libsupermesh_intersect_elements"
-
 #ifdef DDEBUG
     select case(ndimA)
       case(2)

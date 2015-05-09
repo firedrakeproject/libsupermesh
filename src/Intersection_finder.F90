@@ -695,9 +695,7 @@ contains
     
     ! The positions and meshes of A and B
     integer, intent(in) :: ndimA, ndimB, nnodesA, nnodesB, elementCountA, elementCountB, locA, locB, fieldMeshShapeLocA, field_typeA
-!    real, intent(in), dimension(ndimA, fieldMeshShapeLocA) :: positions_a_val
     real, intent(in), dimension(ndimA, nnodesA) :: positions_a_val
-!    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
     integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     real, intent(in), dimension(nnodesB * ndimB) :: positions_b
     integer, intent(in), dimension(elementCountB * locB) :: enlistB
@@ -754,13 +752,9 @@ contains
 !  subroutine compute_bboxes(positionsB, bboxes_B, ndimB, fieldMeshShapeLocB, elementCountB, nnodesB, fieldTypeB, positions_b_MeshNdglno)
   subroutine compute_bboxes(positionsB, bboxes_B)
     type(vector_field), intent(in) :: positionsB
-!    real, intent(in), dimension(ndimB, fieldMeshShapeLocB) :: positionsB
     real, dimension(:, :, :), intent(out) :: bboxes_B
-!    integer, intent(in) :: ndimB, fieldMeshShapeLocB, elementCountB, fieldTypeB, nnodesB
-!    integer, intent(in), dimension(nnodesB * ndimB) :: positions_b_MeshNdglno
     integer :: ele_B
 
-!    do ele_B=1,elementCountB
     do ele_B=1,ele_count(positionsB)
 !      bboxes_B(ele_B, :, :) = bbox(ele_val_v(positionsB, ele_B, ndimB, nnodesB, fieldMeshShapeLocB, fieldTypeB, positions_b_MeshNdglno))
       bboxes_B(ele_B, :, :) = bbox(ele_val(positionsB, ele_B))
@@ -771,7 +765,6 @@ contains
   function brute_force_search(posA, positionsB, bboxes_B) result(map)
     real, dimension(:, :), intent(in) :: posA
     type(vector_field), intent(in) :: positionsB
-!    integer, intent(in) :: elementCountB
     real, dimension(:, :, :), intent(in) :: bboxes_B
     type(ilist) :: map
     integer :: ele_B
@@ -779,7 +772,6 @@ contains
 
     bboxA = bbox(posA)
 
-!    do ele_B=1,elementCountB
     do ele_B=1,ele_count(positionsB)
       if (bbox_predicate(bboxA, bboxes_B(ele_B, :, :))) then
         call insert(map, ele_B)

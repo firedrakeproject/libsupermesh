@@ -99,7 +99,7 @@ module libsupermesh_tet_intersection_module
 
     tetA%V = tetA_V
     tetA%colours = tetA_colours
-    
+
     do i = 1, size(planesB)
       do k = 1, 3
         planesB(i)%normal(k)=planesB_normal(i,k)
@@ -120,7 +120,7 @@ module libsupermesh_tet_intersection_module
 
     if (.not. libsupermesh_mesh_allocated) then
 !      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shape, name="IntersectionMesh")
-      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
+      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
       libsupermesh_intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE*4) /)
       libsupermesh_intersection_mesh%continuity = -1
       libsupermesh_mesh_allocated = .true.
