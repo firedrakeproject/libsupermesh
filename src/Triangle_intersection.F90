@@ -1,4 +1,4 @@
-#define BUF_SIZE 150
+#define BUF_SIZE 8
 #include "fdebug.h"
 
 !
@@ -58,18 +58,12 @@
 
 module libsupermesh_tri_intersection_module
 
-  use libsupermesh_elements
-  use libsupermesh_vector_tools
-  use libsupermesh_fields_data_types
-  use libsupermesh_fields_base
-  use libsupermesh_fields_allocates
-  use libsupermesh_fields_manipulation
-  use libsupermesh_transform_elements
+  use libsupermesh_fldebug
+
   implicit none
 
   type tri_type
     real, dimension(2, 3) :: V ! vertices of the tri
-    integer, dimension(3) :: colours = -1 ! surface colours
   end type tri_type
 
   type line_type
@@ -77,14 +71,12 @@ module libsupermesh_tri_intersection_module
     real :: c = 0
   end type line_type
 
-  type(tri_type), dimension(BUF_SIZE), save :: tri_array, tri_array_tmp
-  integer :: tri_cnt = 0, tri_cnt_tmp = 0
-  type(mesh_type), save :: intersection_mesh
-  logical, save :: mesh_allocated = .false.
+  type(tri_type), dimension(BUF_SIZE), save :: tri_array_tmp
+  integer :: tri_cnt_tmp = 0
 
-  public :: tri_type, line_type, libsupermesh_intersect_tris, get_lines, finalise_tri_intersector
+  public :: tri_type, line_type, libsupermesh_intersect_tris_libwm, libsupermesh_intersect_tris_dt, get_lines
 
-  interface libsupermesh_intersect_tris
+  interface libsupermesh_intersect_tris_dt
     module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public
   end interface
 
@@ -92,141 +84,83 @@ module libsupermesh_tri_intersection_module
     module procedure get_lines_tri
   end interface
 
-  contains
+contains
 
-  subroutine finalise_tri_intersector
-    if (mesh_allocated) then
-      call deallocate(intersection_mesh)
-      mesh_allocated = .false.
-    end if
-  end subroutine finalise_tri_intersector
+  subroutine libsupermesh_intersect_tris_libwm(triA, triB, nodesC, ndglnoC, n_trisC)
+    real, dimension(2, 3), intent(in) :: triA
+    real, dimension(2, 3), intent(in) :: triB
+    real, dimension(2, 8), intent(out) :: nodesC
+    integer, dimension(3, 8), intent(out) :: ndglnoC
+    integer, intent(out) :: n_trisC
 
-  subroutine libsupermesh_intersect_tris_dt_public(triA_V, triA_colours, &
-     sizeOfLinesB, linesB_normal, linesB_c, &
-     quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, &
-     stat, output, &
-     surface_shape, surface_positions, surface_colours)
-    real, intent(in), dimension(2, 3) :: triA_V
-    integer, intent(in), dimension(3) :: triA_colours
-    integer, intent(in)               :: sizeOfLinesB
-    real, intent(in), dimension(sizeOfLinesB,2) :: linesB_normal
-    real, intent(in), dimension(sizeOfLinesB)   :: linesB_c
-    type(vector_field), intent(inout) :: output
-    type(vector_field), intent(out), optional :: surface_positions
-    type(scalar_field), intent(out), optional :: surface_colours
-    type(element_type), intent(in), optional :: surface_shape
-    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
-    integer :: ele, i, j, k, l
-    integer, intent(out) :: stat
-
-    type(tri_type)  :: triA
-    type(line_type), dimension(sizeOfLinesB) :: linesB
+    integer :: i, nonods
+    real, dimension(16), save :: lnodesC = -huge(0.0)
     
-    if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
-      assert(present(surface_positions))
-      assert(present(surface_colours))
-      assert(present(surface_shape))
-    end if
+    call libsupermesh_cintersector_set_input(triB, triA, 2, 3)
+    call libsupermesh_cintersector_drive
+    call libsupermesh_cintersector_query(nonods, n_trisC)
+    call libsupermesh_cintersector_get_output(nonods, n_trisC, 2, 3, lnodesC, ndglnoC)
 
-    triA%V = triA_V
-    triA%colours = triA_colours
-
-    do i = 1, size(linesB)
-      do k = 1, 3
-        linesB(i)%normal(k)=linesB_normal(i,k)
-      end do
+    do i = 1, nonods
+      nodesC(1, i) = lnodesC(i)
+      nodesC(2, i) = lnodesC(i + nonods)
     end do
-    FORALL(i=1:sizeOfLinesB) linesB(i)%c=linesB_c(i)
-    
-    assert(shapeDegree == 1)
-    assert(shapeNumberingFamily == FAMILY_SIMPLEX)
-    assert(shapeDim == 3)
-    
-    call libsupermesh_intersect_tris_dt(triA, linesB, &
-        quadVertices, quadDim, quadNgi, quadDegree, &
-        shapeLoc, shapeDim, shapeDegree, &
-        stat = stat, output = output)
-  
+
+  end subroutine libsupermesh_intersect_tris_libwm
+
+  subroutine libsupermesh_intersect_tris_dt_public(triA, triB, trisC, n_trisC)
+    real, dimension(2, 3), intent(in) :: triA
+    real, dimension(2, 3), intent(in) :: triB
+    real, dimension(2, 3, 8), intent(out) :: trisC
+    integer, intent(out) :: n_trisC
+
+    integer :: i
+    type(tri_type) :: triA_t, triB_t
+    type(tri_type), dimension(8) :: trisC_t
+
+    triA_t%v = triA
+    triB_t%v = triB
+    call libsupermesh_intersect_tris_dt(triA_t, triB_t, trisC_t, n_trisC)
+    do i = 1, n_trisC
+      trisC(:, :, i) = trisC_t(i)%v
+    end do
+
   end subroutine libsupermesh_intersect_tris_dt_public
   
-!  subroutine libsupermesh_intersect_tris_dt(triA, linesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
-  subroutine libsupermesh_intersect_tris_dt(triA, linesB, &
-    quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, &
-    stat, output, surface_shape, surface_positions, surface_colours)
+  subroutine libsupermesh_intersect_tris_dt(triA, triB, trisC, n_trisC)
     type(tri_type), intent(in) :: triA
-    type(line_type), dimension(:), intent(in) :: linesB
-    type(vector_field), intent(inout) :: output
-    type(vector_field), intent(out), optional :: surface_positions
-    type(scalar_field), intent(out), optional :: surface_colours
-    type(element_type), intent(in), optional :: surface_shape
-    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
-    integer :: ele, i, j, k, l
-    integer, intent(out) :: stat
+    type(tri_type), intent(in) :: triB
+    type(tri_type), dimension(8), intent(out) :: trisC
+    integer, intent(out) :: n_trisC
 
-!    real, dimension(3) :: vec_tmp
-!    integer, dimension(3) :: idx_tmp
-!    integer :: surface_eles, colour_tmp
-!    type(mesh_type) :: surface_mesh, pwc_surface_mesh
+    integer :: i, j
+    type(line_type), dimension(3) :: linesB
 
-    if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
-      assert(present(surface_positions))
-      assert(present(surface_colours))
-      assert(present(surface_shape))
-    end if
+    linesB = get_lines(triB)
 
-    assert(shape%degree == 1)
-    assert(shape%numbering%family == FAMILY_SIMPLEX)
-    assert(shape%dim == 3)
-
-    tri_cnt = 1
-    tri_array(1) = triA
-
-    if (.not. mesh_allocated) then
-!      call allocate(intersection_mesh, BUF_SIZE * 3, BUF_SIZE, shape, name="IntersectionMesh")
-      call allocate(intersection_mesh, BUF_SIZE * 3, BUF_SIZE, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
-      intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE*3) /)
-      intersection_mesh%continuity = -1
-      mesh_allocated = .true.
-    end if
+    n_trisC = 1
+    trisC(1) = triA
 
     do i=1,size(linesB)
-      ! Clip the tri_array against the i'th plane
+      ! Clip the trisC against the i'th plane
       tri_cnt_tmp = 0
 
-      do j=1,tri_cnt
-        call clip(linesB(i), tri_array(j))
+      do j=1,n_trisC
+        call clip(linesB(i), trisC(j))
       end do
 
       if (i /= size(linesB)) then
-        tri_cnt = tri_cnt_tmp
-        tri_array(1:tri_cnt) = tri_array_tmp(1:tri_cnt)
+        n_trisC = tri_cnt_tmp
+        trisC(1:n_trisC) = tri_array_tmp(1:n_trisC)
       else
         ! Copy the result
-        tri_cnt = 0
+        n_trisC = 0
         do j=1,tri_cnt_tmp
-          tri_cnt = tri_cnt + 1
-          tri_array(tri_cnt) = tri_array_tmp(j)
+          n_trisC = n_trisC + 1
+          trisC(n_trisC) = tri_array_tmp(j)
         end do
       end if
     end do
-
-    if (tri_cnt == 0) then
-      stat=1
-      return
-    end if
-
-    stat = 0
-    intersection_mesh%nodes = tri_cnt*3
-    intersection_mesh%elements = tri_cnt
-    call allocate(output, 2, intersection_mesh, "IntersectionCoordinates")
-
-    do ele=1,tri_cnt
-      call set(output, ele_nodes(output, ele), tri_array(ele)%V)
-    end do
-
-    if (present(surface_positions)) then
-      FLAbort("libsupermesh_intersect_tris_dt: surface_positions are not supported.")
-    end if
 
   end subroutine libsupermesh_intersect_tris_dt
 
@@ -237,9 +171,8 @@ module libsupermesh_tri_intersection_module
     type(tri_type), intent(in) :: tri
 
     real, dimension(3) :: dists
-    integer :: neg_cnt, pos_cnt, zer_cnt
-    integer, dimension(3) :: neg_idx, pos_idx, zer_idx
-    type(line_type), dimension(2) :: temp_lines
+    integer :: neg_cnt, pos_cnt
+    integer, dimension(3) :: neg_idx, pos_idx
     integer :: i
 
     real :: invdiff, w0, w1
@@ -371,7 +304,6 @@ module libsupermesh_tri_intersection_module
     type(line_type), intent(in) :: line
     type(tri_type), intent(in) :: tri
     real, dimension(3) :: dists
-    real, dimension(2) :: P
     integer :: i
 
     forall(i=1:3)
