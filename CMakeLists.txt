@@ -291,7 +291,7 @@ add_test (test_tri_intersector_test test_tri_intersector
 #  COMMAND cd unittests && ./test_tri_intersector && cd ..
 )
 set_tests_properties (test_tri_intersector_test 
-  PROPERTIES PASS_REGULAR_EXPRESSION "Pass:")
+  PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD
   COMMAND mkdir -p unittests/data
