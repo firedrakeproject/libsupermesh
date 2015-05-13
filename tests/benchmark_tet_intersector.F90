@@ -115,10 +115,10 @@ subroutine benchmark_tet_intersector
       nodeCount = node_count(positionsB)
 
       t1 = MPI_Wtime();
-      libsupermesh_intersect_elements_result = libsupermesh_intersect_elements(positions_B_lib_val, elementCount, &
-        positionsB%mesh%shape%quadrature%vertices, positionsB%mesh%shape%quadrature%dim, ele_B, &
-        posB, elementShape, loc, dimB, &
-        nodeCount, positionsB%mesh%shape%loc, positionsB%field_type, positionsB%mesh%ndglno)
+      libsupermesh_intersect_elements_result = libsupermesh_intersect_elements(positions_B_lib_val, &
+        posB, loc, dimB, nodeCount, &
+        elementShape%quadrature%vertices, elementShape%quadrature%dim, elementShape%quadrature%ngi, &
+        elementShape%quadrature%degree, elementShape%loc, elementShape%dim, elementShape%degree)
       t2 = MPI_Wtime();
       dtLibSuperMeshIntersectElements = dtLibSuperMeshIntersectElements + ( t2 -t1 )
       
@@ -193,13 +193,10 @@ subroutine benchmark_tet_intersector
       end do
       FORALL(i=1:size(planes_B)) planesB_c(i)=planes_B(i)%c
       !call libsupermesh_intersect_tets(tet_A, planes_B, shape=ele_shape(positionsB, 1), stat=stat, output=libsupermesh_tet_intersector_result)
-      call libsupermesh_intersect_tets_dt(tet_A%V, tet_A%colours, size(planes_B), planesB_normal, planesB_c, &
+      call libsupermesh_intersect_tets_dt(tet_A%V, tet_A%colours, &
+          size(planes_B), planesB_normal, planesB_c, &
           positionsA%mesh%shape%quadrature%vertices, positionsA%mesh%shape%quadrature%dim, positionsA%mesh%shape%quadrature%ngi, &
-          positionsA%mesh%shape%quadrature%degree, positionsA%mesh%shape%loc, positionsA%mesh%shape%dim, &
-          positionsA%mesh%shape%degree, positionsA%mesh%shape%numbering%family, &
-          -7771, -7772, -7773, -7774, &
-          -7775, -7776, -7777, &
-          -7778, -7779, -7781, &
+          positionsA%mesh%shape%quadrature%degree, positionsA%mesh%shape%loc, positionsA%mesh%shape%dim, positionsA%mesh%shape%degree, &
           stat = stat, output = libsupermesh_tet_intersector_result)
       t2 = MPI_Wtime();
       dtLibSuperMeshTetIntersector = dtLibSuperMeshTetIntersector + ( t2 -t1 )

@@ -85,7 +85,7 @@ module libsupermesh_tri_intersection_module
   public :: tri_type, line_type, libsupermesh_intersect_tris, get_lines, finalise_tri_intersector
 
   interface libsupermesh_intersect_tris
-    module procedure libsupermesh_intersect_tris_dt
+    module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public
   end interface
 
   interface get_lines
@@ -101,6 +101,10 @@ module libsupermesh_tri_intersection_module
     end if
   end subroutine finalise_tri_intersector
 
+  subroutine libsupermesh_intersect_tris_dt_public()
+  
+  end subroutine libsupermesh_intersect_tris_dt_public
+  
   subroutine libsupermesh_intersect_tris_dt(triA, linesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
     type(tri_type), intent(in) :: triA
     type(line_type), dimension(:), intent(in) :: linesB

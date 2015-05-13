@@ -108,15 +108,15 @@ subroutine benchmark_tri_intersector
       elementCount = ele_count(positionsB)
       allocate(posB(positionsA%dim, ele_loc(positionsA, ele_A)))
       posB = ele_val(positionsA, ele_A)
-      elementShape = ele_shape(positionsB, 1)
+      elementShape = ele_shape(positionsB, ele_B)
       loc = ele_loc(positionsB, ele_B)
       nodeCount = node_count(positionsB)
 
       t1 = MPI_Wtime();
-      libsupermesh_intersect_elements_result = libsupermesh_intersect_elements(positions_B_lib_val, elementCount, &
-        positionsB%mesh%shape%quadrature%vertices, positionsB%mesh%shape%quadrature%dim, ele_B, &
-        posB, elementShape, loc, dimB, &
-        nodeCount, positionsB%mesh%shape%loc, positionsB%field_type, positionsB%mesh%ndglno)
+      libsupermesh_intersect_elements_result = libsupermesh_intersect_elements(positions_B_lib_val, &
+        posB, loc, dimB, nodeCount, &
+        elementShape%quadrature%vertices, elementShape%quadrature%dim, elementShape%quadrature%ngi, &
+        elementShape%quadrature%degree, elementShape%loc, elementShape%dim, elementShape%degree)
       t2 = MPI_Wtime();
       dtLibSuperMeshIntersectElements = dtLibSuperMeshIntersectElements + ( t2 -t1 )
       
