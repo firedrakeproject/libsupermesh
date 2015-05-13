@@ -102,33 +102,32 @@ module libsupermesh_construction
     
   end subroutine libsupermesh_intersector_get_output_sp
   
-  function libsupermesh_intersect_elements(positions_A_val, elementCountA, verticesA, quadDimA, ele_A, &
-        posB, shape, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, &
-        positions_a_MeshNdglno) result(intersection)
+  function libsupermesh_intersect_elements(positions_A_val, &
+        posB, locA, ndimA, nnodesA, &
+        quadVertices, quadDim, quadNgi, quadDegree, &
+        shapeLoc, shapeDim, shapeDegree) result(intersection)
     real, intent(in), dimension(ndimA, nnodesA) :: positions_A_val
-    integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
-    integer, intent(in) :: ele_A, locA, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA
+!    integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
+    integer, intent(in) :: locA, ndimA, nnodesA
     type(vector_field) :: intersection
     type(mesh_type) :: intersection_mesh
-    type(element_type), intent(in) :: shape
     real, dimension(:, :), intent(in) :: posB
   
-    integer :: dim, elementCountA, verticesA, quadDimA
-    integer :: nonods, totele
-    integer :: i
-    
-    type(vector_field), target :: positions_A
-    type(mesh_type) :: mesh_lib
-    type(quadrature_type) :: quad_lib
-    type(element_type) :: shape_lib
+    integer :: nonods, totele, i
+    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
+!   integer :: dim, ele_A, fieldTypeA, verticesA, elementCountA, fieldMeshShapeLocA, quadDimA
+!    type(vector_field), target :: positions_A
+!    type(mesh_type) :: mesh_lib
+!    type(quadrature_type) :: quad_lib
+!    type(element_type) :: shape_lib
 
     ewrite(1, *) "In libsupermesh_intersect_elements"
 #ifdef DDEBUG
     select case(ndimA)
       case(2)
-        assert(shape%loc == 3)
+        assert(shapeLoc == 3)
       case(3)
-        assert(shape%loc == 4)
+        assert(shapeLoc == 4)
     end select
 #endif
 
@@ -145,7 +144,9 @@ module libsupermesh_construction
     call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
-    call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
+!    call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
+    call allocate(intersection_mesh, nonods, totele, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
+!    intersection_mesh%ndglno = (/ (i, i=1,totele) /)
     intersection_mesh%continuity = -1
     call allocate(intersection, ndimA, intersection_mesh, "IntersectionCoordinates")
     if (nonods > 0) then

@@ -51,12 +51,8 @@ module libsupermesh_tet_intersection_module
 
 !  subroutine libsupermesh_intersect_tets_dt(tetA, planesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
   subroutine libsupermesh_intersect_tets_dt(tetA_V, tetA_colours, sizeOfPlanesB, planesB_normal, planesB_c, &
-     quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, shapeNumberingFamily, &
-     outputMeshShapeQuadVertices, outputMeshShapeQuadDim, outputMeshShapeQuadNgi, outputMeshShapeDegree2, &
-     outputMeshShapeLoc, outputMeshShapeDim, outputMeshShapeDegree, &
-     outputNodeCount, outputElementCount, &
+     quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, &
 !     outputVal, 
-     outputDim, &
      stat, output, &
      surface_shape, surface_positions, surface_colours)
 !    type(tet_type), intent(in) :: tetA
@@ -71,10 +67,7 @@ module libsupermesh_tet_intersection_module
     type(vector_field), intent(out), optional :: surface_positions
     type(scalar_field), intent(out), optional :: surface_colours
     type(element_type), intent(in), optional :: surface_shape
-    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, shapeNumberingFamily
-    integer, intent(in) :: outputMeshShapeQuadVertices, outputMeshShapeQuadDim, outputMeshShapeQuadNgi, outputMeshShapeDegree2
-    integer, intent(in) :: outputMeshShapeLoc, outputMeshShapeDim, outputMeshShapeDegree
-    integer, intent(in) :: outputNodeCount, outputElementCount, outputDim
+    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
 !    real, intent(in), dimension(outputDim, outputNodeCount) :: outputVal
     integer :: ele
     integer, intent(out) :: stat
@@ -87,9 +80,6 @@ module libsupermesh_tet_intersection_module
     type(mesh_type) :: surface_mesh, pwc_surface_mesh
     type(tet_type)  :: tetA
     type(plane_type), dimension(sizeOfPlanesB) :: planesB
-    type(quadrature_type) :: quad_lib
-    type(element_type) :: shape
-!    type(vector_field), intent(out) :: output
     
     if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
       assert(present(surface_positions))

@@ -221,7 +221,7 @@ contains
     do i = 1, NUM_COLOURINGS
        nullify(mesh%colourings(i)%sets)
     end do
-    allocate(mesh%ndglno(nodes))
+    allocate(mesh%ndglno(elements*shapeLoc))
     
 #ifdef _OPENMP
     ! Use first touch policy.

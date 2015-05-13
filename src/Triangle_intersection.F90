@@ -228,8 +228,6 @@ module libsupermesh_tri_intersection_module
 
     select case(pos_cnt)
     case(1)
-      ! IAKOVOS REMOVE COMMENT
-!      write(*,*) "clip: Case 1"
       select case(neg_cnt)
       case(2)
         tri_cnt_tmp = tri_cnt_tmp + 1

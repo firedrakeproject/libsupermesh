@@ -19,6 +19,7 @@ subroutine test_tri_intersector
   type(tri_type) :: tri_A, tri_B
   type(line_type), dimension(3) :: lines_B
   
+!  real, dimension(:,:), allocatable :: positions_B_lib_val
   real, dimension(:,:), allocatable :: positions_B_lib_val
   type(quadrature_type) :: quad_lib
   type(element_type) :: shape_lib
@@ -38,18 +39,22 @@ subroutine test_tri_intersector
       select case(positionsB%field_type)
       case(FIELD_TYPE_NORMAL)
         n_count = node_count(positionsB%mesh)
-        allocate(positions_B_lib_val(dimB,n_count))
+!        allocate(positions_B_lib_val(dimB,n_count))
       case(FIELD_TYPE_CONSTANT)
-        allocate(positions_B_lib_val(dimB,1))
+!        allocate(positions_B_lib_val(dimB,1))
       case(FIELD_TYPE_DEFERRED)
-        allocate(positions_B_lib_val(0,0))
+!        allocate(positions_B_lib_val(0,0))
       end select
-      positions_B_lib_val = positionsB%val
+       allocate(positions_B_lib_val(dimB, dimB+1))
+      positions_B_lib_val = ele_val(positionsB, ele_B)
+      shape_lib = ele_shape(positionsB, ele_B)
 
-      libwm = libsupermesh_intersect_elements(positions_B_lib_val, ele_count(positionsB), &
-        positionsB%mesh%shape%quadrature%vertices, positionsB%mesh%shape%quadrature%dim, ele_B, &
-        ele_val(positionsA, ele_A), ele_shape(positionsB, 1), ele_loc(positionsB, ele_B), dimB, &
-        node_count(positionsB), positionsB%mesh%shape%loc, positionsB%field_type, positionsB%mesh%ndglno)
+      libwm = libsupermesh_intersect_elements(positions_B_lib_val, &
+        ele_val(positionsA, ele_A), &
+        ele_loc(positionsB, ele_B), dimB, &
+        node_count(positionsA), &
+        shape_lib%quadrature%vertices, shape_lib%quadrature%dim, shape_lib%quadrature%ngi, &
+        shape_lib%quadrature%degree, shape_lib%loc, shape_lib%dim, shape_lib%degree)
       deallocate(positions_B_lib_val)
       tri_A%v = ele_val(positionsA, ele_A)
       tri_B%v = ele_val(positionsB, ele_B)
@@ -61,6 +66,7 @@ subroutine test_tri_intersector
       area_libwm = 0.0
       do ele_C=1,ele_count(libwm)
         area_libwm = area_libwm + abs(simplex_volume(libwm, ele_C))
+!        write(*,*) "libsupermesh_intersect_elements: ",ele_val(libwm, ele_C),"."
       end do
       area_fort = 0.0
       if (stat == 0) then
@@ -70,6 +76,9 @@ subroutine test_tri_intersector
       end if
       fail = (area_libwm .fne. area_fort)
       call report_test("[tri_intersector areas]", fail, .false., "Should give the same areas of intersection")
+      if ( fail .eqv. .TRUE. ) then
+        write (*,*) "[tri_intersector areas] area_libwm:",area_libwm,", area_fort:",area_fort,"."
+      end if
 
       call deallocate(libwm)
       if (stat == 0) then

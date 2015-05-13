@@ -322,8 +322,10 @@ contains
     end if
     lstat=max(lstat,tstat)
 
-    deallocate(element%n,element%dn, stat=tstat)
-    lstat=max(lstat,tstat)
+    if ( associated(element%n) ) then
+      deallocate(element%n,element%dn, stat=tstat)
+      lstat=max(lstat,tstat)
+    end if
 
     if(associated(element%constraints)) then
        call deallocate(element%constraints,stat=tstat)
@@ -332,6 +334,7 @@ contains
        deallocate(element%constraints, stat=tstat)
        lstat = max(lstat,tstat)
     end if
+
     if (present(stat)) then
        stat=lstat
     else if (lstat/=0) then

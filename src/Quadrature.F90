@@ -185,7 +185,7 @@ contains
     ! Number of local coordinates
     integer coords
 
-    integer :: lfamily
+    integer :: lfamily = -1
     integer :: wandzura_rule_idx, wandzura_rule_degree, max_wandzura_rule, wandzura_order
     real, dimension(2, 3) :: wandzura_ref_tri
     real, dimension(3, 3) :: wandzura_ref_map
@@ -537,7 +537,7 @@ contains
     !! Stat returns zero for successful completion and nonzero otherwise.
     integer, intent(out), optional :: stat
 
-    integer :: lstat
+    integer :: lstat = 0
 
     call decref(quad)
     if (has_references(quad)) then
@@ -545,7 +545,10 @@ contains
        return
     end if
     
-    deallocate(quad%weight,quad%l, stat=lstat)
+    ! libsupermesh
+    if ( associated(quad%weight) ) then
+      deallocate(quad%weight,quad%l, stat=lstat)
+    end if
     
     if (present(stat)) then
        stat=lstat

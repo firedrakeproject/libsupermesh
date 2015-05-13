@@ -196,24 +196,17 @@ contains
       
 !  function intersection_finder(positionsA, positionsB) result(map_AB)
   function intersection_finder(positionsA_val, positionsB_val, &
-!       ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, eelist_A, fieldTypeA, nnodesA, positions_a_MeshNdglno, &
-!     & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, eelist_B, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
-       ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, fieldTypeA, nnodesA, positions_a_MeshNdglno, &
-     & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
+       ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, nnodesA, positions_a_MeshNdglno, &
+     & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
     ! The positions and meshes of A and B
-!    type(vector_field), intent(in), target :: positionsA, positionsB
     real, intent(in), dimension(ndimA, nnodesA) :: positionsA_val
     real, intent(in), dimension(ndimB, nnodesB) :: positionsB_val
-!    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
-!    integer, intent(in), dimension(nnodesB * ndimB) :: positions_b_MeshNdglno
     integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     integer, intent(in), dimension(elementCountB * fieldMeshShapeLocB) :: positions_b_MeshNdglno
-!    type(csr_sparsity), intent(in) :: eelist_A
-!    type(csr_sparsity), intent(in) :: eelist_B
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(elementCountA) :: map_AB
-    integer, intent(in) :: ndimA, verticesA, quadDimA, elementCountA, fieldMeshShapeLocA, fieldTypeA, nnodesA, &
-                         & ndimB, verticesB, quadDimB, elementCountB, fieldMeshShapeLocB, fieldTypeB, nnodesB
+    integer, intent(in) :: ndimA, verticesA, quadDimA, elementCountA, fieldMeshShapeLocA, nnodesA, &
+                         & ndimB, verticesB, quadDimB, elementCountB, fieldMeshShapeLocB, nnodesB
     integer, optional, intent(in) :: seed
     !!< A simple wrapper to select an intersection finder
     
@@ -233,11 +226,9 @@ contains
     type(element_type) :: shape_lib
     
     ewrite(1, *) "In libsupermesh intersection_finder"
-!    write(*, *) "In libsupermesh intersection_finder"
 
     ! We cannot assume connectedness, so we may have to run the
     ! advancing front more than once (once per connected sub-domain)
-    
     
     quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
     shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
@@ -258,12 +249,9 @@ contains
     allocate(sub_map_AB(size(map_AB)))
     node => seeds%firstnode
     do while(associated(node))
-!      sub_map_AB = advancing_front_intersection_finder(positionsA, positionsB, seed = node%value)
       sub_map_AB = libsupermesh_advancing_front_intersection_finder(positionsA_val, positionsB_val, &
-!        & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, eelist_A, fieldTypeA, nnodesA, positions_a_MeshNdglno,   &
-!        & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, eelist_B, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed)
-        & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, fieldTypeA, nnodesA, positions_a_MeshNdglno,   &
-        & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed)
+        & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, nnodesA, positions_a_MeshNdglno,   &
+        & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, nnodesB, positions_b_MeshNdglno, seed)
       do i = 1, size(sub_map_AB)
         if(sub_map_AB(i)%length > 0) then
           assert(map_AB(i)%length == 0)
@@ -416,23 +404,17 @@ contains
   end function advancing_front_intersection_finder_seeds
 
   function libsupermesh_advancing_front_intersection_finder(positionsA_val, positionsB_val, &
-!       & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, eelist_A, fieldTypeA, nnodesA, positions_a_MeshNdglno, &
-!       & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, eelist_B, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
-       & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, fieldTypeA, nnodesA, positions_a_MeshNdglno, &
-       & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, fieldTypeB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
+       & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, nnodesA, positions_a_MeshNdglno, &
+       & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
     ! The positions and meshes of A and B
     real, intent(in), dimension(ndimA, nnodesA) :: positionsA_val
     real, intent(in), dimension(ndimB, nnodesB) :: positionsB_val
-!    integer, intent(in), dimension(nnodesA * ndimA) :: positions_a_MeshNdglno
-!    integer, intent(in), dimension(nnodesB * ndimB) :: positions_b_MeshNdglno
     integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     integer, intent(in), dimension(elementCountB * fieldMeshShapeLocB) :: positions_b_MeshNdglno
-!    type(csr_sparsity), intent(in) :: eelist_A
-!    type(csr_sparsity), intent(in) :: eelist_B
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(elementCountA) :: map_AB
-    integer, intent(in) :: ndimA, verticesA, quadDimA, elementCountA, fieldMeshShapeLocA, fieldTypeA, nnodesA, &
-                         & ndimB, verticesB, quadDimB, elementCountB, fieldMeshShapeLocB, fieldTypeB, nnodesB
+    integer, intent(in) :: ndimA, verticesA, quadDimA, elementCountA, fieldMeshShapeLocA, nnodesA, &
+                         & ndimB, verticesB, quadDimB, elementCountB, fieldMeshShapeLocB, nnodesB
     integer, optional, intent(in) :: seed
 
     ! processed_neighbour maps an element to a neighbour that has already been processed (i.e. its clue)
@@ -689,12 +671,14 @@ contains
     
   end subroutine rtree_intersection_finder_find
   
-  function libsupermesh_rtree_intersection_finder(positions_a_val, ndimA, verticesA, quadDimA, nnodesA, locA, elementCountA, fieldMeshShapeLocA, field_typeA, positions_a_MeshNdglno, positions_b, npredicates, ndimB, nnodesB, elementCountB, locB, enlistB) result(map_ab)
+  function libsupermesh_rtree_intersection_finder(positions_a_val, ndimA, verticesA, quadDimA, nnodesA, &
+       elementCountA, fieldMeshShapeLocA, positions_a_MeshNdglno, &
+       positions_b, npredicates, ndimB, nnodesB, elementCountB, locB, enlistB) result(map_ab)
     !!< As advancing_front_intersection_finder, but uses an rtree algorithm. For
     !!< testing *only*. For practical applications, use the linear algorithm.
     
     ! The positions and meshes of A and B
-    integer, intent(in) :: ndimA, ndimB, nnodesA, nnodesB, elementCountA, elementCountB, locA, locB, fieldMeshShapeLocA, field_typeA
+    integer, intent(in) :: ndimA, ndimB, nnodesA, nnodesB, elementCountA, elementCountB, locB, fieldMeshShapeLocA
     real, intent(in), dimension(ndimA, nnodesA) :: positions_a_val
     integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
     real, intent(in), dimension(nnodesB * ndimB) :: positions_b
@@ -724,8 +708,6 @@ contains
     positions_a%val = positions_a_val
     positions_a%dim = ndimA
     call deallocate(mesh_lib)
-    
-    
     
     call rtree_intersection_finder_set_input(positions_b, ndimB, nnodesB, elementCountB, locB, enlistB)
     do i = 1, elementCountA
