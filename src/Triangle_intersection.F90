@@ -142,7 +142,7 @@ module libsupermesh_tri_intersection_module
     assert(shapeNumberingFamily == FAMILY_SIMPLEX)
     assert(shapeDim == 3)
     
-    output = libsupermesh_intersect_tris_dt(triA, linesB, &
+    call libsupermesh_intersect_tris_dt(triA, linesB, &
         quadVertices, quadDim, quadNgi, quadDegree, &
         shapeLoc, shapeDim, shapeDegree, &
         stat = stat, output = output)
@@ -177,10 +177,10 @@ module libsupermesh_tri_intersection_module
     assert(shape%degree == 1)
     assert(shape%numbering%family == FAMILY_SIMPLEX)
     assert(shape%dim == 3)
-    
+
     tri_cnt = 1
     tri_array(1) = triA
-    
+
     if (.not. mesh_allocated) then
 !      call allocate(intersection_mesh, BUF_SIZE * 3, BUF_SIZE, shape, name="IntersectionMesh")
       call allocate(intersection_mesh, BUF_SIZE * 3, BUF_SIZE, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
