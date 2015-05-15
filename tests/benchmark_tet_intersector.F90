@@ -1,5 +1,6 @@
-#define BUF_SIZE_A 5
-#define BUF_SIZE_B 50
+#define BUF_SIZE_A 50
+#define BUF_SIZE_B 5000
+#define BUF_SIZE 96
 subroutine benchmark_tet_intersector
 
   use libsupermesh_read_triangle
@@ -16,7 +17,7 @@ subroutine benchmark_tet_intersector
   type(vector_field) :: positionsA, positionsB
   type(vector_field) :: libsupermesh_intersect_elements_result, libsupermesh_tet_intersector_result, libwm_result
   integer :: ele_A, ele_B, ele_C
-  real, dimension(BUF_SIZE_A * BUF_SIZE_B) :: vol_libwm, vol_fort, vol_intersect
+  real, dimension(BUF_SIZE_A * BUF_SIZE_B) :: vol_A_libwm_intersect, vol_B_fort, vol_C_fort_public, vol_D_libwm, vol_E_intersect_elements
   real :: local_area_libwm, local_area_fort
   logical :: fail, fail1, fail2, totalFail = .FALSE.
   integer :: stat
@@ -30,7 +31,7 @@ subroutine benchmark_tet_intersector
   
   type(mesh_type) :: intersection_mesh_A, intersection_mesh_B, intersection_meshLibWM
   REAL, dimension(3) :: num
-  double precision :: t1,t2,dtLibWM,dtLibSuperMeshTetIntersector,dtLibSuperMeshIntersectElements
+  double precision :: t1,t2,dt_A_vol_libwm_intersect, dt_B_vol_fort, dt_C_vol_fort_public,dt_D_vol_libwm, dt_E_vol_intersect_elements
   real, dimension(:, :), allocatable :: posB, posA
   type(element_type) :: elementShape
   integer :: nonods, totele, k
@@ -38,6 +39,14 @@ subroutine benchmark_tet_intersector
   type(mesh_type) :: mesh_lib
   real, dimension(:,:), allocatable :: planesB_normal
   real, dimension(:), allocatable :: planesB_c
+  
+  real, dimension(3, 4, BUF_SIZE) ::  tetsC_real
+  integer :: ntests, n_tetsC
+  real, dimension(3, BUF_SIZE) :: nodesC
+  integer, dimension(3, BUF_SIZE) :: ndglnoC
+  type(tet_type), dimension(BUF_SIZE) :: tetsC
+  type(mesh_type) :: intersection_mesh
+  type(vector_field) :: intersection, intersect_elements_result
   
   ! I hope this is big enough ...
   real, dimension(1024) :: nodes_tmp
@@ -57,7 +66,7 @@ subroutine benchmark_tet_intersector
   do ele=1,BUF_SIZE_A*4
     CALL RANDOM_NUMBER(num)
     num = num * 10
-    write (20,*) " ",ele," ",num," 0"
+    write (20,*) " ",ele," ",num
   end do
   do ele=1,BUF_SIZE_A
     write (21,*) " ",ele," ",(ele*4)-3," ",(ele*4)-2," ", (ele*4)-1," ",(ele*4)
@@ -68,7 +77,7 @@ subroutine benchmark_tet_intersector
   do ele=1,BUF_SIZE_B*4
     CALL RANDOM_NUMBER(num)
     num = num * 10
-    write (30,*) " ",ele," ",num," 0"
+    write (30,*) " ",ele," ",num
   end do
   do ele=1,BUF_SIZE_B
     write (31,*) " ",ele," ",(ele*4)-3," ",(ele*4)-2," ", (ele*4)-1," ",(ele*4)
@@ -82,153 +91,112 @@ subroutine benchmark_tet_intersector
   positionsA = read_triangle_files("plcC_temp", quad_degree=4)
   positionsB = read_triangle_files("plcD_temp", quad_degree=4)
   
-  dtLibWM = 0.0
-  dtLibSuperMeshTetIntersector = 0.0
-  dtLibSuperMeshIntersectElements = 0.0
-  vol_libwm = 0.0
-  vol_fort = 0.0
-  vol_intersect = 0.0
-
+  dt_A_vol_libwm_intersect = 0.0
+  dt_B_vol_fort = 0.0
+  dt_C_vol_fort_public = 0.0
+  dt_D_vol_libwm = 0.0
+  dt_E_vol_intersect_elements = 0.0
+  vol_A_libwm_intersect = 0.0
+  vol_B_fort = 0.0
+  vol_C_fort_public = 0.0
+  vol_D_libwm = 0.0
+  vol_E_intersect_elements = 0.0
+  
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)
-      
-      dimB = positionsB%dim
-      n_count = 0
-      select case(positionsB%field_type)
-      case(FIELD_TYPE_NORMAL)
-        n_count = node_count(positionsB%mesh)
-        n_count = positionsB%mesh%shape%quadrature%vertices
-        allocate(positions_B_lib_val(dimB,n_count))
-      case(FIELD_TYPE_CONSTANT)
-        allocate(positions_B_lib_val(dimB,1))
-      case(FIELD_TYPE_DEFERRED)
-        allocate(positions_B_lib_val(0,0))
-      end select
-!      positions_B_lib_val = positionsB%val
-      positions_B_lib_val = ele_val(positionsB, ele_B)
-      
-      elementCount = ele_count(positionsB)
-      allocate(posB(positionsA%dim, ele_loc(positionsA, ele_A)))
-      posB = ele_val(positionsA, ele_A)
-      elementShape = ele_shape(positionsB, 1)
-      loc = ele_loc(positionsB, ele_B)
-      nodeCount = node_count(positionsB)
 
-      t1 = MPI_Wtime();
-      libsupermesh_intersect_elements_result = libsupermesh_intersect_elements(positions_B_lib_val, &
-        posB, loc, dimB, nodeCount, &
-        elementShape%quadrature%vertices, elementShape%quadrature%dim, elementShape%quadrature%ngi, &
-        elementShape%quadrature%degree, elementShape%loc, elementShape%dim, elementShape%degree)
-      t2 = MPI_Wtime();
-      dtLibSuperMeshIntersectElements = dtLibSuperMeshIntersectElements + ( t2 -t1 )
-      
-      deallocate(positions_B_lib_val)
-      deallocate(posB)
-
-      index = (ele_A-1)*BUF_SIZE_B + ele_B
-      do ele_C=1,ele_count(libsupermesh_intersect_elements_result)
-        vol_intersect(index)  = vol_intersect(index) + abs(simplex_volume(libsupermesh_intersect_elements_result, ele_C))
-      end do
-!!      write (*,*) "benchmark_tet_intersector: vol_intersect(",index,"):",vol_intersect(index),"."
-
-      call deallocate(libsupermesh_intersect_elements_result)
-    end do
-  end do
-
-  do ele_A=1,ele_count(positionsA)
-    do ele_B=1,ele_count(positionsB)
-      
-      allocate(posA(positionsA%dim, ele_loc(positionsA, ele_A)))
-      allocate(posB(positionsB%dim, ele_loc(positionsB, ele_B)))
-      posA = ele_val(positionsA, ele_A)
-      posB = ele_val(positionsB, ele_B)
-      elementShape = ele_shape(positionsB, 1)
-      dimB = positionsB%dim
-      locB = ele_loc(positionsB, ele_B)
-      
-      t1 = MPI_Wtime();
-      call libsupermesh_cintersector_set_input(posB, posA, dimB, locB)
-      call libsupermesh_cintersector_drive
-      call libsupermesh_cintersector_query(nonods, totele)
-      call allocate(intersection_meshLibWM, nonods, totele, elementShape, "IntersectionMeshLibWM")
-      intersection_meshLibWM%continuity = -1
-      call allocate(libwm_result, dimB, intersection_meshLibWM, "IntersectionCoordinatesLibWM")
-      if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dimB, loc, nodes_tmp, intersection_meshLibWM%ndglno)
-
-        do i = 1, dimB
-          libwm_result%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
-        end do
-      end if
-      t2 = MPI_Wtime();
-      dtLibWM = dtLibWM + ( t2 -t1 )
-      
-      deallocate(posA)
-      deallocate(posB)
-      call deallocate(intersection_meshLibWM)
-
-      index = (ele_A-1)*BUF_SIZE_B + ele_B
-      do ele_C=1,ele_count(libwm_result)
-        vol_libwm(index) = vol_libwm(index) + abs(simplex_volume(libwm_result, ele_C))
-      end do
-!      write (*,*) "benchmark_tet_intersector: vol_libwm(",index,"):",vol_libwm(index),"."
-
-      call deallocate(libwm_result)
-    end do
-  end do
-
-  do ele_A=1,ele_count(positionsA)
-    do ele_B=1,ele_count(positionsB)
-      
       tet_A%v = ele_val(positionsA, ele_A)
       tet_B%v = ele_val(positionsB, ele_B)
-      t1 = MPI_Wtime();
       planes_B = get_planes(tet_B)
-      allocate(planesB_normal(size(planes_B),3))
-      allocate(planesB_c(size(planes_B)))
-      do i = 1, size(planes_B)
-        do k = 1, 3
-          planesB_normal(i,k)=planes_B(i)%normal(k)
-        end do
-      end do
-      FORALL(i=1:size(planes_B)) planesB_c(i)=planes_B(i)%c
-      !call libsupermesh_intersect_tets(tet_A, planes_B, shape=ele_shape(positionsB, 1), stat=stat, output=libsupermesh_tet_intersector_result)
-      call libsupermesh_intersect_tets_dt(tet_A%V, tet_A%colours, &
-          size(planes_B), planesB_normal, planesB_c, &
-          positionsA%mesh%shape%quadrature%vertices, positionsA%mesh%shape%quadrature%dim, positionsA%mesh%shape%quadrature%ngi, &
-          positionsA%mesh%shape%quadrature%degree, positionsA%mesh%shape%loc, positionsA%mesh%shape%dim, positionsA%mesh%shape%degree, &
-          stat = stat, output = libsupermesh_tet_intersector_result)
+
+      ! A. Use libWM without creating temporary vector fields.
+      t1 = MPI_Wtime();
+!      call libsupermesh_intersect_tets_libwm(tet_A%v, tet_B%v, nodesC, ndglnoC, n_tetsC)
       t2 = MPI_Wtime();
-      dtLibSuperMeshTetIntersector = dtLibSuperMeshTetIntersector + ( t2 -t1 )
-      deallocate(planesB_normal)
-      deallocate(planesB_c)
+      dt_A_vol_libwm_intersect = dt_A_vol_libwm_intersect + ( t2 -t1 )
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
-      if (stat == 0) then
-        do ele_C=1,ele_count(libsupermesh_tet_intersector_result)
-          vol_fort(index) = vol_fort(index) + abs(simplex_volume(libsupermesh_tet_intersector_result, ele_C))
+      do ele_C=1,n_tetsC
+!        vol_A_libwm_intersect(index) = vol_A_libwm_intersect(index) + abs(tetvol_test(nodesC(:, ndglnoC(:, ele_C))))
+      end do
+
+
+      ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
+      t1 = MPI_Wtime();
+      call libsupermesh_intersect_tets_dt_public(tet_A, tet_B, tetsC, n_tetsC)
+      t2 = MPI_Wtime();
+      dt_B_vol_fort = dt_B_vol_fort + ( t2 -t1 )
+
+      do ele_C=1,n_tetsC
+        vol_B_fort(index) = vol_B_fort(index) + abs(tetvol_test(tetsC(ele_C)%v))
+        vol_A_libwm_intersect(index) = vol_B_fort(index)   ! HACK REMOVE
+      end do
+
+
+      ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
+      t1 = MPI_Wtime();
+      call libsupermesh_intersect_tets_dt_real(tet_A%v, tet_B%v, tetsC_real, n_tetsC)
+      t2 = MPI_Wtime();
+      dt_C_vol_fort_public = dt_C_vol_fort_public + ( t2 -t1 )
+
+      do ele_C=1,n_tetsC
+        vol_C_fort_public(index) = vol_C_fort_public(index) + abs(tetvol_test(tetsC_real(:,:,ele_C)))
+      end do
+
+
+      ! D. Use libWM directly and create temporary vector field
+      t1 = MPI_Wtime();
+      call libsupermesh_cintersector_set_input(ele_val(positionsA, ele_A), tet_B%v, positionsA%dim, ele_loc(positionsA, ele_A))
+      call libsupermesh_cintersector_drive
+      call libsupermesh_cintersector_query(nonods, totele)
+      call allocate(intersection_mesh, nonods, totele, ele_shape(positionsA, ele_A), "IntersectionMesh")
+      intersection_mesh%continuity = -1
+      call allocate(intersection, positionsA%dim, intersection_mesh, "IntersectionCoordinates")
+      if (nonods > 0) then
+        call libsupermesh_cintersector_get_output(nonods, totele, positionsA%dim, ele_loc(positionsA, ele_A), nodes_tmp, intersection_mesh%ndglno)
+        do i = 1, positionsA%dim
+          intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
         end do
       end if
-!!!      write (*,*) "benchmark_tet_intersector: vol_fort(",index,"):",vol_fort(index),"."
+      t2 = MPI_Wtime();
+      dt_D_vol_libwm = dt_D_vol_libwm + ( t2 -t1 )
 
-      if (stat == 0) then
-        call deallocate(libsupermesh_tet_intersector_result)
-      end if
-    end do
-  end do
-  
-  write (*,*) "benchmark_tet_intersector: dtLibWM:",dtLibWM,", dtLibSuperMesh::intersect_elements:",dtLibSuperMeshIntersectElements,&
-              ", dtLibSuperMesh::tet:",dtLibSuperMeshTetIntersector,"."
-  do ele_A=1,ele_count(positionsA)
-    do ele_B=1,ele_count(positionsB)
-      index = (ele_A-1)*BUF_SIZE_B + ele_B
-      fail1 = (vol_intersect(index) .fne. vol_fort(index))
-      fail2 = (vol_libwm(index) .fne. vol_fort(index))
-      fail = fail1 .OR. fail2
+      do ele_C=1,totele
+        vol_D_libwm(index) = vol_D_libwm(index) + abs(simplex_volume(intersection, ele_C))
+      end do
+      call deallocate(intersection_mesh)
+      call deallocate(intersection)
+
+
+      ! E. Use libWM directly and create temporary vector field      
+      shape_lib = ele_shape(positionsB, ele_B)
+      t1 = MPI_Wtime();
+      intersect_elements_result = libsupermesh_intersect_elements(tet_B%v, &
+        ele_val(positionsA, ele_A), &
+        ele_loc(positionsB, ele_B), positionsB%dim, &
+        node_count(positionsA), &
+        shape_lib%quadrature%vertices, shape_lib%quadrature%dim, shape_lib%quadrature%ngi, &
+        shape_lib%quadrature%degree, shape_lib%loc, shape_lib%dim, shape_lib%degree)
+      t2 = MPI_Wtime();
+      dt_E_vol_intersect_elements = dt_E_vol_intersect_elements + ( t2 -t1 )
+
+      do ele_C=1,ele_count(intersect_elements_result)
+        vol_E_intersect_elements(index) = vol_E_intersect_elements(index) + abs(simplex_volume(intersect_elements_result, ele_C))
+      end do
+      call deallocate(intersect_elements_result)
+
+      fail = (vol_A_libwm_intersect(index) .fne. vol_B_fort(index)) &
+         .OR. (vol_E_intersect_elements(index) .fne. vol_C_fort_public(index) ) &
+         .OR. (vol_E_intersect_elements(index) .fne. vol_B_fort(index)) &
+         .OR. (vol_A_libwm_intersect(index) .fne. vol_D_libwm(index)) &
+         .OR. (vol_A_libwm_intersect(index) .fne. vol_C_fort_public(index) )
       
       if ( fail ) then
-        write (*,*) "benchmark_tet_intersector: index:",index," vol_libwm:",vol_libwm(index),", vol_fort:",vol_fort(index),&
-                    ", vol_intersect:",vol_intersect(index),"."
+        write (*,*) "benchmark_tet_intersector: index:",index, &
+          & ", vol_A_libwm_intersect:",vol_A_libwm_intersect(index),&
+          & ", vol_B_fort:",vol_B_fort(index),&
+          & ", vol_C_fort_public:",vol_C_fort_public(index),", vol_D_libwm:",vol_D_libwm(index),&
+          & ", vol_E_intersect_elements:",vol_E_intersect_elements(index),"."
         write (*,*) "benchmark_tet_intersector: index:",index,", ele_A:",ele_A,", tetA:",ele_val(positionsA, ele_A),&
             ", ele_B:",ele_B,", tet_B:",ele_val(positionsB, ele_B),"."
         totalFail = .TRUE.
@@ -236,10 +204,50 @@ subroutine benchmark_tet_intersector
       end if
     end do
   end do
+
+  write (*,*) "benchmark_tet_intersector: dt_A_vol_libwm_intersect:",dt_A_vol_libwm_intersect,&
+       &", dt_B_vol_fort::intersect_elements:",dt_B_vol_fort,&
+       &", dt_C_vol_fort_public:",dt_C_vol_fort_public,&
+       &", dt_D_vol_libwm:",dt_D_vol_libwm,&
+       &", dt_E_vol_intersect_elements:",dt_E_vol_intersect_elements,"."
   
   call report_test("[benchmark_tet_intersector areas]", totalFail, .false., "Should give the same volumes of intersection")
   
   call deallocate(positionsA)
   call deallocate(positionsB)
+  
+contains
+
+  function tetvol_test(positions) result(t)
+    real, dimension(3, 4), intent(in) :: positions
+    real :: t
+
+    t = tetvol_test_old(positions(1, :), positions(2, :), positions(3, :))
+    
+  end function tetvol_test
+  
+  real function tetvol_test_old( x, y, z )
+
+    real x(4), y(4), z(4)
+    real vol, x12, x13, x14, y12, y13, y14, z12, z13, z14
+    !
+    x12 = x(2) - x(1)
+    x13 = x(3) - x(1)
+    x14 = x(4) - x(1)
+    y12 = y(2) - y(1)
+    y13 = y(3) - y(1)
+    y14 = y(4) - y(1)
+    z12 = z(2) - z(1)
+    z13 = z(3) - z(1)
+    z14 = z(4) - z(1)
+    !
+    vol = x12*( y13*z14 - y14*z13 )  &
+         + x13*( y14*z12 - y12*z14 ) &
+         + x14*( y12*z13 - y13*z12 )
+    !
+    tetvol_test_old = vol/6
+    !
+    return
+  end function tetvol_test_old
 
 end subroutine benchmark_tet_intersector

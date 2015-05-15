@@ -53,9 +53,8 @@ module libsupermesh_fields_base
   end interface
   
   interface face_global_nodes
-!     module procedure face_global_nodes_mesh, face_global_nodes_vector,&
-!          & face_global_nodes_scalar, face_global_nodes_tensor
-      module procedure face_global_nodes_mesh, face_global_nodes_vector
+     module procedure face_global_nodes_mesh, face_global_nodes_vector,&
+          & face_global_nodes_scalar, face_global_nodes_tensor
   end interface
   
   interface ele_neigh
@@ -84,9 +83,8 @@ module libsupermesh_fields_base
   end interface
   
   interface face_loc
-!     module procedure face_loc_scalar, face_loc_vector, face_loc_tensor,&
-!          & face_loc_mesh
-      module procedure face_loc_vector, face_loc_mesh
+     module procedure face_loc_scalar, face_loc_vector, face_loc_tensor,&
+          & face_loc_mesh
   end interface
   
   interface face_ele
@@ -102,15 +100,32 @@ module libsupermesh_fields_base
   end interface
   
   interface face_shape
-!     module procedure face_shape_scalar, face_shape_vector,&
-!          & face_shape_tensor, face_shape_mesh
-     module procedure face_shape_vector
+     module procedure face_shape_scalar, face_shape_vector,&
+          & face_shape_tensor, face_shape_mesh
   end interface
   
   interface mesh_dim
-!     module procedure mesh_dim_mesh, mesh_dim_scalar, mesh_dim_vector,&
-!          & mesh_dim_tensor
-     module procedure mesh_dim_mesh, mesh_dim_vector
+     module procedure mesh_dim_mesh, mesh_dim_scalar, mesh_dim_vector,&
+          & mesh_dim_tensor
+  end interface
+  
+  interface extract_scalar_field ! extract_scalar_field is already used in State.F90
+!     module procedure extract_scalar_field_from_vector_field, extract_scalar_field_from_tensor_field
+     module procedure extract_scalar_field_from_vector_field
+  end interface
+  
+  interface halo_count
+    module procedure halo_count_mesh, halo_count_scalar, halo_count_vector, &
+      & halo_count_tensor
+  end interface halo_count
+  
+  interface element_halo_count
+    module procedure element_halo_count_mesh, element_halo_count_scalar, &
+      & element_halo_count_vector, element_halo_count_tensor
+  end interface element_halo_count
+  
+  interface operator(==)
+     module procedure mesh_equal
   end interface
   
   interface surface_element_count
@@ -142,9 +157,8 @@ module libsupermesh_fields_base
   end interface
   
   interface face_val
-!     module procedure face_val_scalar, face_val_vector, face_val_tensor,&
-!          & face_val_vector_dim, face_val_tensor_dim_dim
-      module procedure face_val_vector
+     module procedure face_val_scalar, face_val_vector, face_val_tensor,&
+          & face_val_vector_dim, face_val_tensor_dim_dim
   end interface
   
   interface has_discontinuous_internal_boundaries
@@ -152,9 +166,8 @@ module libsupermesh_fields_base
   end interface has_discontinuous_internal_boundaries
 
   interface element_count
-!     module procedure element_count_scalar, element_count_vector,&
-!          & element_count_tensor, element_count_mesh
-     module procedure element_count_mesh, element_count_vector
+     module procedure element_count_scalar, element_count_vector,&
+          & element_count_tensor, element_count_mesh
   end interface
   
   interface ele_count
@@ -163,9 +176,8 @@ module libsupermesh_fields_base
   end interface
   
   interface face_count
-!    module procedure face_count_scalar, face_count_vector, &
-!          & face_count_tensor, face_count_mesh
-    module procedure face_count_vector
+    module procedure face_count_scalar, face_count_vector, &
+          & face_count_tensor, face_count_mesh
   end interface
   
   interface node_count
@@ -177,7 +189,8 @@ module libsupermesh_fields_base
 !    module procedure local_coords_interpolation, &
 !          local_coords_interpolation_all, local_coords_mesh, &
 !          local_coords_scalar, local_coords_vector, local_coords_tensor
-    module procedure local_coords_mesh
+    module procedure local_coords_interpolation, &
+           local_coords_vector, local_coords_mesh
   end interface
   
   interface local_face_number
@@ -187,11 +200,10 @@ module libsupermesh_fields_base
   end interface local_face_number
   
   interface node_val
-!     module procedure node_val_scalar, node_val_vector, node_val_tensor, &
-!          & node_val_scalar_v, node_val_vector_v, node_val_vector_dim_v,&
-!          & node_val_tensor_v, node_val_vector_dim, node_val_tensor_dim_dim, &
-!          & node_val_tensor_dim_dim_v
-     module procedure node_val_vector, node_val_vector_dim
+     module procedure node_val_scalar, node_val_vector, node_val_tensor, &
+          & node_val_scalar_v, node_val_vector_v, node_val_vector_dim_v,&
+          & node_val_tensor_v, node_val_vector_dim, node_val_tensor_dim_dim, &
+          & node_val_tensor_dim_dim_v
   end interface
   
   interface has_faces
@@ -213,6 +225,15 @@ contains
 
   end function mesh_dim_mesh
   
+  pure function mesh_dim_scalar(field) result (mesh_dim)
+    ! Return the dimensionality of the field.
+    integer :: mesh_dim
+    type(scalar_field), intent(in) :: field
+    
+    mesh_dim=field%mesh%shape%dim
+
+  end function mesh_dim_scalar
+
   pure function mesh_dim_vector(field) result (mesh_dim)
     ! Return the dimensionality of the field.
     integer :: mesh_dim
@@ -221,6 +242,15 @@ contains
     mesh_dim=field%mesh%shape%dim
 
   end function mesh_dim_vector
+
+  pure function mesh_dim_tensor(field) result (mesh_dim)
+    ! Return the dimensionality of the field.
+    integer :: mesh_dim
+    type(tensor_field), intent(in) :: field
+    
+    mesh_dim=field%mesh%shape%dim
+
+  end function mesh_dim_tensor
   
   function mesh_connectivity(mesh) result (ndglno)
     !!< Assuming that the input mesh is at least C0, return the connectivity
@@ -257,6 +287,154 @@ contains
     end do
     
   end function mesh_connectivity
+  
+  pure function mesh_equal(mesh1, mesh2)
+    !!< Test for the equality of two meshes. This is not totally safe since
+    !!< we do not compare all of ndglno. We assume that two meshes are equal
+    !!< if they have the same element, continuity, node count and element
+    !!< count. This should be sufficient in almost all circumstances.
+    logical :: mesh_equal
+    type(mesh_type), intent(in) :: mesh1, mesh2
+
+    if (associated(mesh1%refcount) .and. associated(mesh2%refcount)) then
+       mesh_equal= (mesh1%refcount%id==mesh2%refcount%id)
+    else
+       mesh_equal= .false.
+    end if
+
+  end function mesh_equal
+  
+  pure function halo_count_mesh(mesh) result(count)
+    type(mesh_type), intent(in) :: mesh
+    
+    integer :: count
+    
+    if(.not. associated(mesh%halos)) then
+      count = 0
+    else
+      count = size(mesh%halos)
+    end if
+  
+  end function halo_count_mesh
+  
+  pure function halo_count_scalar(s_field) result(count)
+    type(scalar_field), intent(in) :: s_field
+    
+    integer :: count
+    
+    count = halo_count(s_field%mesh)
+  
+  end function halo_count_scalar
+  
+  pure function halo_count_vector(v_field) result(count)
+    type(vector_field), intent(in) :: v_field
+    
+    integer :: count
+    
+    count = halo_count(v_field%mesh)
+  
+  end function halo_count_vector
+  
+  pure function halo_count_tensor(t_field) result(count)
+    type(tensor_field), intent(in) :: t_field
+    
+    integer :: count
+    
+    count = halo_count(t_field%mesh)
+  
+  end function halo_count_tensor
+
+  pure function element_halo_count_mesh(mesh) result(count)
+    type(mesh_type), intent(in) :: mesh
+    
+    integer :: count
+    
+    if(.not. associated(mesh%element_halos)) then
+      count = 0
+    else
+      count = size(mesh%element_halos)
+    end if
+  
+  end function element_halo_count_mesh
+  
+  pure function element_halo_count_scalar(s_field) result(count)
+    type(scalar_field), intent(in) :: s_field
+    
+    integer :: count
+    
+    count = element_halo_count(s_field%mesh)
+  
+  end function element_halo_count_scalar
+  
+  pure function element_halo_count_vector(v_field) result(count)
+    type(vector_field), intent(in) :: v_field
+    
+    integer :: count
+    
+    count = element_halo_count(v_field%mesh)
+  
+  end function element_halo_count_vector
+  
+  pure function element_halo_count_tensor(t_field) result(count)
+    type(tensor_field), intent(in) :: t_field
+    
+    integer :: count
+    
+    count = element_halo_count(t_field%mesh)
+  
+  end function element_halo_count_tensor
+
+  function local_coords_interpolation(position_field, ele, position) result(local_coords)
+    !!< Given a position field, this returns the local coordinates of
+    !!< position with respect to element "ele".
+    !!<
+    !!< This assumes the position field is linear. For higher order
+    !!< only the coordinates of the vertices are considered
+    type(vector_field), intent(in) :: position_field
+    integer, intent(in) :: ele
+    real, dimension(:), intent(in) :: position
+    real, dimension(size(position) + 1) :: local_coords
+    real, dimension(mesh_dim(position_field) + 1, size(position) + 1) :: matrix
+    real, dimension(mesh_dim(position_field), size(position) + 1) :: tmp_matrix
+    integer, dimension(position_field%mesh%shape%numbering%vertices):: vertices
+    integer, dimension(:), pointer:: nodes
+    integer :: dim
+
+    dim = size(position)
+
+    assert(dim == mesh_dim(position_field))
+    assert(position_field%mesh%shape%numbering%family==FAMILY_SIMPLEX)
+    assert(position_field%mesh%shape%numbering%type==ELEMENT_LAGRANGIAN)
+
+    local_coords(1:dim) = position
+    local_coords(dim+1) = 1.0
+
+    if (position_field%mesh%shape%degree==1) then
+      tmp_matrix = ele_val(position_field, ele)
+    else
+      nodes => ele_nodes(position_field, ele)
+      vertices=local_vertices(position_field%mesh%shape%numbering)
+      tmp_matrix = node_val(position_field, nodes(vertices) )
+    end if
+    
+    matrix(1:dim, :) = tmp_matrix
+    matrix(dim+1, :) = 1.0
+
+    call solve(matrix, local_coords)
+    
+  end function local_coords_interpolation
+  
+  function local_coords_vector(field, ele, node, stat) result(local_coord)
+    !!< returns the local node number within a given element ele of the global
+    !!< node number node
+    type(vector_field), intent(in) :: field
+    integer, intent(in) :: ele, node
+    integer, intent(inout), optional :: stat
+    integer :: local_coord
+    
+    local_coord = local_coords(field%mesh, ele, node, stat)
+    
+  end function local_coords_vector
   
   function local_coords_mesh(mesh, ele, node, stat) result(local_coord)
     !!< returns the local node number within a given element ele of the global
@@ -348,6 +526,26 @@ contains
   
   end function mesh_has_discontinuous_internal_boundaries
   
+  pure function face_loc_mesh(mesh, face_number) result (face_loc)
+    ! Return the number of nodes of face face_number.
+    integer :: face_loc
+    type(mesh_type),intent(in) :: mesh
+    integer, intent(in) :: face_number
+    
+    face_loc=mesh%faces%shape%loc
+
+  end function face_loc_mesh
+  
+  pure function face_loc_scalar(field, face_number) result (face_loc)
+    ! Return the number of nodes of face face_number.
+    integer :: face_loc
+    type(scalar_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    
+    face_loc=field%mesh%faces%shape%loc
+    
+  end function face_loc_scalar
+  
   pure function face_loc_vector(field, face_number) result (face_loc)
     ! Return the number of nodes of face face_number.
     integer :: face_loc
@@ -358,15 +556,15 @@ contains
     
   end function face_loc_vector
   
-  pure function face_loc_mesh(mesh, face_number) result (face_loc)
+  pure function face_loc_tensor(field, face_number) result (face_loc)
     ! Return the number of nodes of face face_number.
     integer :: face_loc
-    type(mesh_type),intent(in) :: mesh
+    type(tensor_field),intent(in) :: field
     integer, intent(in) :: face_number
     
-    face_loc=mesh%faces%shape%loc
-
-  end function face_loc_mesh
+    face_loc=field%mesh%faces%shape%loc
+    
+  end function face_loc_tensor
   
   pure function face_ngi_vector(field, face_number) result (face_ngi)
     ! Return the number of nodes of element face_number.
@@ -441,6 +639,19 @@ contains
 
   end function surface_element_count_mesh  
   
+  pure function face_count_scalar(field) result (face_count)
+    ! Return the number of faces in a mesh.
+    integer :: face_count
+    type(scalar_field),intent(in) :: field
+
+    if (associated(field%mesh%faces)) then
+      face_count=size(field%mesh%faces%face_element_list)
+    else
+      face_count=0
+    end if
+
+  end function face_count_scalar
+  
   pure function face_count_vector(field) result (face_count)
     ! Return the number of faces in a mesh.
     integer :: face_count
@@ -453,6 +664,32 @@ contains
     end if
 
   end function face_count_vector
+  
+  pure function face_count_tensor(field) result (face_count)
+    ! Return the number of faces in a mesh.
+    integer :: face_count
+    type(tensor_field),intent(in) :: field
+
+    if (associated(field%mesh%faces)) then
+      face_count=size(field%mesh%faces%face_element_list)
+    else
+      face_count=0
+    end if
+
+  end function face_count_tensor
+
+  pure function face_count_mesh(mesh) result (face_count)
+    ! Return the number of faces in a mesh.
+    integer :: face_count
+    type(mesh_type),intent(in) :: mesh
+
+    if (associated(mesh%faces)) then
+      face_count=size(mesh%faces%face_element_list)
+    else
+      face_count=0
+    end if
+
+  end function face_count_mesh  
   
   function face_local_nodes_vector(field, face_number) result (face_nodes)
     !!< Return a vector containing the local node numbers of
@@ -481,7 +718,18 @@ contains
     face_nodes=ele(face_local_nodes_mesh(mesh, face_number))
     
   end function face_global_nodes_mesh
-  
+    
+  function face_global_nodes_scalar(field, face_number) result (face_nodes)
+    !!< Return a vector containing the global node numbers of
+    !!< facet face_number in field.
+    type(scalar_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    integer, dimension(face_loc(field, face_number)) :: face_nodes 
+
+    face_nodes=face_global_nodes_mesh(field%mesh, face_number)
+
+  end function face_global_nodes_scalar
+
   function face_global_nodes_vector(field, face_number) result (face_nodes)
     !!< Return a vector containing the global node numbers of
     !!< facet face_number in field.
@@ -492,6 +740,17 @@ contains
     face_nodes=face_global_nodes_mesh(field%mesh, face_number)
 
   end function face_global_nodes_vector
+
+  function face_global_nodes_tensor(field, face_number) result (face_nodes)
+    !!< Return a vector containing the global node numbers of
+    !!< facet face_number in field.
+    type(tensor_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    integer, dimension(face_loc(field, face_number)) :: face_nodes 
+
+    face_nodes=face_global_nodes_mesh(field%mesh, face_number)
+
+  end function face_global_nodes_tensor
   
   function ele_shape_mesh(mesh, ele_number) result (ele_shape)
     ! Return a pointer to the shape of element ele_number.
@@ -648,6 +907,26 @@ contains
     
   end function face_vertices_shape
   
+  function face_shape_mesh(mesh, face_number) result (face_shape)
+    ! Return a pointer to the shape of element ele_number.
+    type(element_type), pointer :: face_shape
+    type(mesh_type),intent(in) :: mesh
+    integer, intent(in) :: face_number
+    
+    face_shape=>mesh%faces%shape
+    
+  end function face_shape_mesh
+
+  function face_shape_scalar(field, face_number) result (face_shape)
+    ! Return a pointer to the shape of element ele_number.
+    type(element_type), pointer :: face_shape
+    type(scalar_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    
+    face_shape=>field%mesh%faces%shape
+    
+  end function face_shape_scalar
+
   function face_shape_vector(field, face_number) result (face_shape)
     ! Return a pointer to the shape of element ele_number.
     type(element_type), pointer :: face_shape
@@ -657,6 +936,16 @@ contains
     face_shape=>field%mesh%faces%shape
     
   end function face_shape_vector
+
+  function face_shape_tensor(field, face_number) result (face_shape)
+    ! Return a pointer to the shape of element ele_number.
+    type(element_type), pointer :: face_shape
+    type(tensor_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    
+    face_shape=>field%mesh%faces%shape
+    
+  end function face_shape_tensor
   
   function ele_val_scalar(field, ele_number) result (ele_val_out)
     ! Return the values of field at the nodes of ele_number.
@@ -779,6 +1068,21 @@ contains
     
   end function ele_val_tensor_dim_dim
   
+  function face_val_scalar(field, face_number) result (face_val)
+    ! Return the values of field at the nodes of face_number.
+    type(scalar_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    real, dimension(face_loc(field, face_number)) :: face_val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      face_val=field%val(face_global_nodes(field,face_number))
+    case(FIELD_TYPE_CONSTANT)
+      face_val=field%val(1)
+    end select
+    
+  end function face_val_scalar
+
   function face_val_vector(field, face_number) result (face_val)
     ! Return the values of field at the nodes of face_number.
     type(vector_field),intent(in) :: field
@@ -798,7 +1102,234 @@ contains
 
   end function face_val_vector
 
+  function face_val_vector_dim(field, dim, face_number) result (face_val)
+    !!< Return the values of dimension dim of field at the nodes of face_number.
+    type(vector_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    real, dimension(face_loc(field, face_number)) :: face_val
+    integer :: dim
 
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      face_val=field%val(dim,face_global_nodes(field,face_number))
+    case(FIELD_TYPE_CONSTANT)
+      face_val=field%val(dim,1)
+    end select
+
+  end function face_val_vector_dim
+
+  function face_val_tensor(field, face_number) result (face_val)
+    ! Return the values of field at the nodes of face_number.
+    type(tensor_field),intent(in) :: field
+    integer, intent(in) :: face_number
+    real, dimension(field%dim(1), field%dim(2), face_loc(field, face_number)) ::&
+         & face_val
+
+    integer :: i
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+       face_val=field%val(:,:,face_global_nodes(field,face_number))
+
+    case(FIELD_TYPE_CONSTANT)
+       forall(i=1:face_loc(field, face_number))
+          face_val(:,:,i)=field%val(:,:,1)
+       end forall
+    end select
+
+  end function face_val_tensor
+
+  function face_val_tensor_dim_dim(field, dim1, dim2, face_number) result&
+       & (face_val)
+    !!< Return the values of dimension dim of field at the nodes of face_number.
+    type(tensor_field),intent(in) :: field
+    integer, intent(in) :: dim1, dim2
+    integer, intent(in) :: face_number
+    real, dimension(face_loc(field, face_number)) :: face_val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      face_val=field%val(dim1,dim2,face_global_nodes(field,face_number))
+    case(FIELD_TYPE_CONSTANT)
+      face_val=field%val(dim1,dim2,1)
+    end select
+
+  end function face_val_tensor_dim_dim
+
+  function node_val_scalar(field, node_number) result (val)
+    ! Return the value of field at node node_number
+    type(scalar_field),intent(in) :: field
+    integer, intent(in) :: node_number
+    real :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val=field%val(node_number)
+    case(FIELD_TYPE_CONSTANT)
+      val=field%val(1)
+    case(FIELD_TYPE_PYTHON)
+        FLAbort("node_val_scalar: FIELD_TYPE_PYTHON not implemented.")
+!       call val_python
+    end select
+
+  end function node_val_scalar
+
+  pure function node_val_vector(field, node_number) result (val)
+    ! Return the value of field at node node_number
+    type(vector_field),intent(in) :: field
+    integer, intent(in) :: node_number
+    real, dimension(field%dim) :: val
+
+    integer :: i
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      do i=1,field%dim
+         val(i)=field%val(i,node_number)
+      end do
+    case(FIELD_TYPE_CONSTANT)
+      do i=1,field%dim
+        val(i)=field%val(i,1)
+      end do
+    end select
+
+  end function node_val_vector
+
+  pure function node_val_tensor(field, node_number) result (val)
+    ! Return the value of field at node node_number
+    type(tensor_field),intent(in) :: field
+    integer, intent(in) :: node_number
+    real, dimension(field%dim(1), field%dim(2)) :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val=field%val(:,:,node_number)
+    case(FIELD_TYPE_CONSTANT)
+      val=field%val(:,:,1)
+    end select
+
+  end function node_val_tensor
+
+  pure function node_val_tensor_dim_dim(field, dim1, dim2, node_number) result (val)
+    ! Return the value of field at node node_number
+    type(tensor_field),intent(in) :: field
+    integer, intent(in) :: node_number
+    integer, intent(in) :: dim1, dim2
+    real :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val=field%val(dim1,dim2,node_number)
+    case(FIELD_TYPE_CONSTANT)
+      val=field%val(dim1,dim2,1)
+    end select
+
+  end function node_val_tensor_dim_dim
+
+  pure function node_val_tensor_dim_dim_v(field, dim1, dim2, node_numbers) result (val)
+    ! Return the value of field at nodes node_numbers
+    type(tensor_field),intent(in) :: field
+    integer, dimension(:), intent(in) :: node_numbers
+    integer, intent(in) :: dim1, dim2
+    real, dimension(size(node_numbers)) :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val=field%val(dim1,dim2,node_numbers)
+    case(FIELD_TYPE_CONSTANT)
+      val=field%val(dim1,dim2,1)
+    end select
+
+  end function node_val_tensor_dim_dim_v
+
+  pure function node_val_scalar_v(field, node_numbers) result (val)
+    ! Return the value of field at node node_numbers
+    type(scalar_field),intent(in) :: field
+    integer, dimension(:), intent(in) :: node_numbers
+    real, dimension(size(node_numbers)) :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val=field%val(node_numbers)
+    case(FIELD_TYPE_CONSTANT)
+      val=field%val(1)
+    end select
+
+  end function node_val_scalar_v
+
+  pure function node_val_vector_v(field, node_numbers) result (val)
+    ! Return the value of field at node node_numbers
+    type(vector_field),intent(in) :: field
+    integer, dimension(:), intent(in) :: node_numbers
+    real, dimension(field%dim, size(node_numbers)) :: val
+
+    integer :: i
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      do i=1,field%dim
+         val(i,:)=field%val(i,node_numbers)
+      end do
+    case(FIELD_TYPE_CONSTANT)
+      do i=1,field%dim
+         val(i,:)=field%val(i,1)
+      end do
+    end select
+
+  end function node_val_vector_v
+
+  pure function node_val_vector_dim(field, dim, node_number) &
+       result (val) 
+    ! Return the value of field at node node_numbers
+    type(vector_field),intent(in) :: field
+    integer, intent(in) :: node_number
+    integer, intent(in) :: dim
+    real :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val = field%val(dim,node_number)
+    case(FIELD_TYPE_CONSTANT)
+      val = field%val(dim,1)
+    end select
+    
+  end function node_val_vector_dim
+
+  pure function node_val_vector_dim_v(field, dim, node_numbers) &
+       result (val) 
+    ! Return the value of field at node node_numbers
+    type(vector_field),intent(in) :: field
+    integer, dimension(:), intent(in) :: node_numbers
+    integer, intent(in) :: dim
+    real, dimension(size(node_numbers)) :: val
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val(:)=field%val(dim,node_numbers)
+    case(FIELD_TYPE_CONSTANT)
+      val=field%val(dim,1)
+    end select
+
+  end function node_val_vector_dim_v
+
+  pure function node_val_tensor_v(field, node_numbers) result (val)
+    ! Return the value of field at node node_numbers
+    type(tensor_field),intent(in) :: field
+    integer, dimension(:), intent(in) :: node_numbers
+    real, dimension(field%dim(1), field%dim(2), size(node_numbers)) :: val
+    integer :: i
+
+
+    select case(field%field_type)
+    case(FIELD_TYPE_NORMAL)
+      val=field%val(:,:,node_numbers)
+    case(FIELD_TYPE_CONSTANT)
+      do i=1,size(node_numbers)
+        val(:, :, i)=field%val(:, :, 1)
+      end do
+    end select
+
+  end function node_val_tensor_v
   
   ! ------------------------------------------------------------------------
   ! Point wise python evalutiation
@@ -1105,44 +1636,6 @@ contains
 
   end function node_count_tensor
   
-  pure function node_val_vector(field, node_number) result (val)
-    ! Return the value of field at node node_number
-    type(vector_field),intent(in) :: field
-    integer, intent(in) :: node_number
-    real, dimension(field%dim) :: val
-
-    integer :: i
-
-    select case(field%field_type)
-    case(FIELD_TYPE_NORMAL)
-      do i=1,field%dim
-         val(i)=field%val(i,node_number)
-      end do
-    case(FIELD_TYPE_CONSTANT)
-      do i=1,field%dim
-        val(i)=field%val(i,1)
-      end do
-    end select
-
-  end function node_val_vector
-  
-  pure function node_val_vector_dim(field, dim, node_number) &
-       result (val) 
-    ! Return the value of field at node node_numbers
-    type(vector_field),intent(in) :: field
-    integer, intent(in) :: node_number
-    integer, intent(in) :: dim
-    real :: val
-
-    select case(field%field_type)
-    case(FIELD_TYPE_NORMAL)
-      val = field%val(dim,node_number)
-    case(FIELD_TYPE_CONSTANT)
-      val = field%val(dim,1)
-    end select
-    
-  end function node_val_vector_dim
-  
   function has_faces_mesh(mesh) result (has_faces)
     ! Check whether the faces component of mesh has been calculated.
     logical :: has_faces
@@ -1151,6 +1644,41 @@ contains
     has_faces=associated(mesh%faces)
 
   end function has_faces_mesh
+  
+  function extract_scalar_field_from_vector_field(vfield, dim, stat) result(sfield)
+  !!< This function gives you a way to treat a vector field
+  !!< as a union of scalar fields.
+
+    type(vector_field), intent(in), target :: vfield
+    integer, intent(in) :: dim
+    type(scalar_field) :: sfield
+    integer, intent(out), optional :: stat
+
+    if (present(stat)) then
+      stat = 0
+      if (dim > vfield%dim) then
+        stat = 1
+        return
+      end if
+    end if
+    assert(dim .le. vfield%dim)
+
+    ! Note that the reference count is not incremented as this is a
+    ! borrowed field reference.
+    sfield%mesh = vfield%mesh
+    sfield%val  => vfield%val(dim,:)
+    sfield%val_stride = vfield%dim
+    sfield%option_path = vfield%option_path
+    sfield%field_type = vfield%field_type
+    write(sfield%name, '(a, i0)') trim(vfield%name) // "%", dim
+    
+    ! FIXME: make these the same as the vector field
+    sfield%py_dim = mesh_dim(vfield%mesh)
+    sfield%py_positions_shape => vfield%mesh%shape
+    
+    sfield%refcount => vfield%refcount
+
+  end function extract_scalar_field_from_vector_field
   
   ! ------------------------------------------------------------------------
   ! Geometric element volume routines. These really ought to go somewhere

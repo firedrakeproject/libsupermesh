@@ -35,7 +35,7 @@ use libsupermesh_global_parameters, only: PYTHON_FUNC_LEN, empty_path, empty_nam
 use libsupermesh_halo_data_types
 use libsupermesh_halos_allocates
 use libsupermesh_halos_repair
-!use pickers_deallocates	! IAKOVOS commented out
+use libsupermesh_pickers_deallocates
 use libsupermesh_adjacency_lists
 use libsupermesh_global_numbering, only: make_global_numbering, make_global_numbering_dg,&
       make_global_numbering_trace
@@ -67,7 +67,7 @@ implicit none
 !    & remove_nelist, remove_eelist, extract_elements, remove_boundary_conditions
   public :: add_lists, add_nnlist, add_nelist, &
        extract_nelist, add_eelist, extract_eelist, remove_lists, remove_nnlist, &
-       remove_nelist, remove_eelist
+       remove_nelist, remove_eelist, remove_boundary_conditions
 
   interface allocate
 ! IAKOVOS commented out
@@ -85,7 +85,8 @@ implicit none
 !          & deallocate_vector_field, deallocate_tensor_field, &
 !          & deallocate_scalar_boundary_condition, &
 !          & deallocate_vector_boundary_condition
-     module procedure deallocate_mesh, deallocate_vector_field
+     module procedure deallocate_mesh, deallocate_vector_field, &
+           & deallocate_vector_boundary_condition
   end interface
 
   interface zero
@@ -172,10 +173,11 @@ implicit none
   end interface remove_eelist
  
 ! IAKOVOS commented out
-!  interface remove_boundary_conditions
+  interface remove_boundary_conditions
 !    module procedure remove_boundary_conditions_scalar, &
 !      remove_boundary_conditions_vector
-!  end interface remove_boundary_conditions
+    module procedure remove_boundary_conditions_vector
+  end interface remove_boundary_conditions
   
 #include "Reference_count_interface_mesh_type.F90"
 #include "Reference_count_interface_scalar_field.F90"
@@ -638,18 +640,30 @@ contains
 
     call deallocate(field%mesh)
 
-!    call remove_boundary_conditions(field)
-!    deallocate(field%bc)		! IAKOVOS dito for this one.
-!    
-!    assert(associated(field%picker))	! IAKOVOS this causes a memory leak of 8 bytes. Should be OK when we remove the field COMPLETELY.
-!    call remove_picker(field)		! If we do *not remove the field (picker) I need to port some more code
-!    deallocate(field%picker)
-!    nullify(field%picker)
+    call remove_boundary_conditions(field)
+    deallocate(field%bc)		! IAKOVOS dito for this one.
+
+    assert(associated(field%picker))	! IAKOVOS this causes a memory leak of 8 bytes. Should be OK when we remove the field COMPLETELY.
+    call remove_picker(field)		! If we do *not remove the field (picker) I need to port some more code
+    deallocate(field%picker)
+    nullify(field%picker)
     
   end subroutine deallocate_vector_field
  
-! IAKOVOS commented out
-!  subroutine remove_boundary_conditions_vector(field)
+  subroutine remove_boundary_conditions_vector(field)
+     !!< Removes and deallocates all boundary conditions from a field
+     type(vector_field), intent(inout):: field
+     
+     integer:: i
+     
+     if (associated(field%bc%boundary_condition)) then
+        do i=1, size(field%bc%boundary_condition)
+           call deallocate(field%bc%boundary_condition(i))
+        end do
+       deallocate(field%bc%boundary_condition)
+     end if
+    
+  end subroutine remove_boundary_conditions_vector
   
 ! IAKOVOS commented out
 !  subroutine deallocate_tensor_field(field)
@@ -664,8 +678,32 @@ contains
 ! IAKOVOS commented out
 !  subroutine deallocate_scalar_boundary_condition(bc)
   
+  subroutine deallocate_vector_boundary_condition(bc)
+  !! deallocate a vector boundary condition
+  type(vector_boundary_condition), intent(inout):: bc
+    
+    integer i
+    
+    if (associated(bc%surface_fields)) then
+      do i=1, size(bc%surface_fields)
+        call deallocate(bc%surface_fields(i))
+      end do
+      deallocate(bc%surface_fields)
+    end if
+    
+    if (associated(bc%scalar_surface_fields)) then
+      do i=1, size(bc%scalar_surface_fields)
 ! IAKOVOS commented out
-!  subroutine deallocate_vector_boundary_condition(bc)
+!        call deallocate(bc%scalar_surface_fields(i))
+      end do
+      deallocate(bc%scalar_surface_fields)
+    end if
+    
+    call deallocate(bc%surface_mesh)
+    deallocate(bc%surface_mesh)
+    
+    deallocate(bc%surface_element_list, bc%surface_node_list)
+  end subroutine deallocate_vector_boundary_condition
     
   !---------------------------------------------------------------------
   ! routines for wrapping meshes and fields around provided arrays

@@ -1,4 +1,4 @@
-#define BUF_SIZE 150
+#define BUF_SIZE 96
 #include "fdebug.h"
 
 module libsupermesh_tet_intersection_module
@@ -23,8 +23,8 @@ module libsupermesh_tet_intersection_module
     real :: c
   end type plane_type
 
-  type(tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array, libsupermesh_tet_array_tmp
-  integer :: libsupermesh_tet_cnt = 0, libsupermesh_tet_cnt_tmp = 0
+  type(tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array_tmp
+  integer :: libsupermesh_tet_cnt_tmp = 0
   type(mesh_type), save :: libsupermesh_intersection_mesh
   logical, save :: libsupermesh_mesh_allocated = .false.
 
@@ -33,7 +33,8 @@ module libsupermesh_tet_intersection_module
   public :: tet_type, plane_type, libsupermesh_intersect_tets, get_planes
 
   interface libsupermesh_intersect_tets
-    module procedure libsupermesh_intersect_tets_dt
+    module procedure libsupermesh_intersect_tets_dt, libsupermesh_intersect_tets_dt_public, &
+        libsupermesh_intersect_tets_dt_real
   end interface
   
   interface get_planes
@@ -48,90 +49,89 @@ module libsupermesh_tet_intersection_module
       libsupermesh_mesh_allocated = .false.
     end if
   end subroutine libsupermesh_finalise_tet_intersector
+  
+  subroutine libsupermesh_intersect_tets_libwm(tetA, tetB, nodesC, ndglnoC, n_tetsC)
+    real, dimension(3, 4), intent(in) :: tetA
+    real, dimension(3, 4), intent(in) :: tetB
+    real, dimension(3, BUF_SIZE), intent(out) :: nodesC
+    integer, dimension(3, BUF_SIZE), intent(out) :: ndglnoC
+    integer, intent(out) :: n_tetsC
 
-!  subroutine libsupermesh_intersect_tets_dt(tetA, planesB, shape, stat, output, surface_shape, surface_positions, surface_colours)
-  subroutine libsupermesh_intersect_tets_dt(tetA_V, tetA_colours, sizeOfPlanesB, planesB_normal, planesB_c, &
-     quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree, &
-!     outputVal, 
-     stat, output, &
-     surface_shape, surface_positions, surface_colours)
-!    type(tet_type), intent(in) :: tetA
-    real, intent(in), dimension(3, 4) :: tetA_V
-    integer, intent(in), dimension(4) :: tetA_colours
-    integer, intent(in)               :: sizeOfPlanesB
-    real, intent(in), dimension(sizeOfPlanesB,3) :: planesB_normal
-    real, intent(in), dimension(sizeOfPlanesB)   :: planesB_c
-!    type(plane_type), dimension(:), intent(in) :: planesB
-!    type(element_type), intent(in) :: shape
-    type(vector_field), intent(inout) :: output
-    type(vector_field), intent(out), optional :: surface_positions
-    type(scalar_field), intent(out), optional :: surface_colours
-    type(element_type), intent(in), optional :: surface_shape
-    integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
-!    real, intent(in), dimension(outputDim, outputNodeCount) :: outputVal
-    integer :: ele
-    integer, intent(out) :: stat
-
-    integer :: i, j, k, l
-    real :: vol
-    real, dimension(3) :: vec_tmp
-    integer, dimension(3) :: idx_tmp
-    integer :: surface_eles, colour_tmp
-    type(mesh_type) :: surface_mesh, pwc_surface_mesh
-    type(tet_type)  :: tetA
-    type(plane_type), dimension(sizeOfPlanesB) :: planesB
+    integer :: i, nonods
+    real, dimension(3 * BUF_SIZE), save :: lnodesC = -huge(0.0)
     
-    if (present(surface_colours) .or. present(surface_positions) .or. present(surface_shape)) then
-      assert(present(surface_positions))
-      assert(present(surface_colours))
-      assert(present(surface_shape))
-    end if
+    call libsupermesh_cintersector_set_input(tetA, tetB, 3, 4)
+    call libsupermesh_cintersector_drive
+    call libsupermesh_cintersector_query(nonods, n_tetsC)
+    call libsupermesh_cintersector_get_output(nonods, n_tetsC, 3, 4, lnodesC, ndglnoC)
 
-    tetA%V = tetA_V
-    tetA%colours = tetA_colours
-
-    do i = 1, size(planesB)
-      do k = 1, 3
-        planesB(i)%normal(k)=planesB_normal(i,k)
-      end do
+    do i = 1, nonods
+      nodesC(1, i) = lnodesC(i)
+      nodesC(2, i) = lnodesC(i + nonods)
+      nodesC(3, i) = lnodesC(i + 2 * nonods)
     end do
-    FORALL(i=1:sizeOfPlanesB) planesB(i)%c=planesB_c(i)
+
+  end subroutine libsupermesh_intersect_tets_libwm
+  
+  subroutine libsupermesh_intersect_tets_dt_real(tetA, tetB, tetsC, n_tetsC)
+    real, dimension(3, 4), intent(in) :: tetA
+    real, dimension(3, 4), intent(in) :: tetB
+    real, dimension(3, 4, BUF_SIZE), intent(out) :: tetsC
+    integer, intent(out) :: n_tetsC
+
+    integer :: i
+    type(tet_type) :: tetA_t, tetB_t
+    type(tet_type), dimension(BUF_SIZE) :: tetsC_t
+
+    tetA_t%v = tetA
+    tetB_t%v = tetB
+    call libsupermesh_intersect_tets_dt_public(tetA_t, tetB_t, tetsC_t, n_tetsC)
+    do i = 1, n_tetsC
+      tetsC(:, :, i) = tetsC_t(i)%v
+    end do
+
+  end subroutine libsupermesh_intersect_tets_dt_real
+  
+  subroutine libsupermesh_intersect_tets_dt_public(tetA, tetB, tetsC, n_tetsC)
+    type(tet_type), intent(in) :: tetA
+    type(tet_type), intent(in) :: tetB
+    type(tet_type), dimension(BUF_SIZE), intent(out) :: tetsC
+    integer, intent(out) :: n_tetsC
+    type(plane_type), dimension(4) :: planesB
+
+    planesB = get_planes(tetB)
+
+    call libsupermesh_intersect_tets_dt(tetA, planesB, tetsC, n_tetsC)
+  
+  end subroutine libsupermesh_intersect_tets_dt_public
+
+  subroutine libsupermesh_intersect_tets_dt(tetA, planesB, tetsC, n_tetsC)
+    type(tet_type), intent(in) :: tetA
+    type(plane_type), dimension(4), intent(in)  :: planesB
+    type(tet_type), dimension(BUF_SIZE), intent(out) :: tetsC
+    integer, intent(out) :: n_tetsC
     
-!    quad_lib = make_quadrature(vertices = quadVertices, dim = quadDim, ngi = quadNgi, degree = quadDegree)
-!    shape = make_element_shape(vertices = shapeLoc, dim = shapeDim, degree = shapeDegree, quad = quad_lib)
-!    call deallocate(quad_lib)
-
-    assert(shapeDegree == 1)
-    assert(shapeNumberingFamily == FAMILY_SIMPLEX)
-    assert(shapeDim == 3)
-
-    libsupermesh_tet_cnt = 1
-    libsupermesh_tet_array(1) = tetA
-
-    if (.not. libsupermesh_mesh_allocated) then
-!      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shape, name="IntersectionMesh")
-      call allocate(libsupermesh_intersection_mesh, BUF_SIZE * 4, BUF_SIZE, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
-      libsupermesh_intersection_mesh%ndglno = (/ (i, i=1,BUF_SIZE*4) /)
-      libsupermesh_intersection_mesh%continuity = -1
-      libsupermesh_mesh_allocated = .true.
-    end if
-
-!    call deallocate(shape)
+    integer :: colour_tmp, i, j
+    real, dimension(3) :: vec_tmp
+    real :: vol
+    
+    n_tetsC = 1
+    tetsC(1) = tetA
 
     do i=1,size(planesB)
       ! Clip the libsupermesh_tet_array against the i'th plane
       libsupermesh_tet_cnt_tmp = 0
 
-      do j=1,libsupermesh_tet_cnt
-        call libsupermesh_clip(planesB(i), libsupermesh_tet_array(j))
+      do j=1,n_tetsC
+        call libsupermesh_clip(planesB(i), tetsC(j))
       end do
 
       if (i /= size(planesB)) then
-        libsupermesh_tet_cnt = libsupermesh_tet_cnt_tmp
-        libsupermesh_tet_array(1:libsupermesh_tet_cnt) = libsupermesh_tet_array_tmp(1:libsupermesh_tet_cnt)
+        n_tetsC = libsupermesh_tet_cnt_tmp
+        tetsC(1:n_tetsC) = libsupermesh_tet_array_tmp(1:n_tetsC)
       else
         ! Copy the result if the volume is > epsilon
-        libsupermesh_tet_cnt = 0
+        n_tetsC = 0
         do j=1,libsupermesh_tet_cnt_tmp
           vol = libsupermesh_tet_volume(libsupermesh_tet_array_tmp(j))
           if (vol < 0.0) then
@@ -145,65 +145,65 @@ module libsupermesh_tet_intersection_module
           end if
 
           if (vol > epsilon(0.0)) then
-            libsupermesh_tet_cnt = libsupermesh_tet_cnt + 1
-            libsupermesh_tet_array(libsupermesh_tet_cnt) = libsupermesh_tet_array_tmp(j)
+            n_tetsC = n_tetsC + 1
+            tetsC(n_tetsC) = libsupermesh_tet_array_tmp(j)
           end if
         end do
       end if
     end do
 
-    if (libsupermesh_tet_cnt == 0) then
-      stat=1
-      return
-    end if
+!    if (libsupermesh_tet_cnt == 0) then
+!      stat=1
+!      return
+!    end if
 
-    stat = 0
-    libsupermesh_intersection_mesh%nodes = libsupermesh_tet_cnt*4
-    libsupermesh_intersection_mesh%elements = libsupermesh_tet_cnt
-    call allocate(output, 3, libsupermesh_intersection_mesh, "IntersectionCoordinates")
+!    stat = 0
+!    libsupermesh_intersection_mesh%nodes = libsupermesh_tet_cnt*4
+!    libsupermesh_intersection_mesh%elements = libsupermesh_tet_cnt
+!    call allocate(output, 3, libsupermesh_intersection_mesh, "IntersectionCoordinates")
 
-    do ele=1,libsupermesh_tet_cnt
-      call set(output, ele_nodes(output, ele), libsupermesh_tet_array(ele)%V)
-    end do
+!    do ele=1,libsupermesh_tet_cnt
+!      call set(output, ele_nodes(output, ele), libsupermesh_tet_array(ele)%V)
+!    end do
 
-    if (present(surface_positions)) then
-      ! OK! Let's loop through all the tets we have and see which faces have positive
-      ! colour. These are the ones we want to record in the mesh
-      surface_eles = 0
-      do ele=1,libsupermesh_tet_cnt
-        surface_eles = surface_eles + count(libsupermesh_tet_array(ele)%colours > 0)
-      end do
+!    if (present(surface_positions)) then
+!      ! OK! Let's loop through all the tets we have and see which faces have positive
+!      ! colour. These are the ones we want to record in the mesh
+!      surface_eles = 0
+!      do ele=1,libsupermesh_tet_cnt
+!        surface_eles = surface_eles + count(libsupermesh_tet_array(ele)%colours > 0)
+!      end do
 
-      call allocate(surface_mesh, surface_eles * 3, surface_eles, surface_shape, name="SurfaceMesh")
-      surface_mesh%ndglno = (/ (i, i=1,surface_eles * 3) /)
-      call allocate(surface_positions, 3, surface_mesh, "OutputSurfaceCoordinate")
-      pwc_surface_mesh = piecewise_constant_mesh(surface_mesh, "PWCSurfaceMesh")
-      call allocate(surface_colours, pwc_surface_mesh, "SurfaceColours")
-      call deallocate(surface_mesh)
-      call deallocate(pwc_surface_mesh)
+!      call allocate(surface_mesh, surface_eles * 3, surface_eles, surface_shape, name="SurfaceMesh")
+!      surface_mesh%ndglno = (/ (i, i=1,surface_eles * 3) /)
+!      call allocate(surface_positions, 3, surface_mesh, "OutputSurfaceCoordinate")
+!      pwc_surface_mesh = piecewise_constant_mesh(surface_mesh, "PWCSurfaceMesh")
+!      call allocate(surface_colours, pwc_surface_mesh, "SurfaceColours")
+!      call deallocate(surface_mesh)
+!      call deallocate(pwc_surface_mesh)
 
-      j = 1
-      do ele=1,libsupermesh_tet_cnt
-        do i=1,4
-          if (libsupermesh_tet_array(ele)%colours(i) > 0) then
+!      j = 1
+!      do ele=1,libsupermesh_tet_cnt
+!        do i=1,4
+!          if (libsupermesh_tet_array(ele)%colours(i) > 0) then
 
-            ! In python, this is
-            ! idx_tmp = [x for x in range(4) if x != i]
-            ! Hopefully that will make it clearer
-            k = 1
-            do l=1,4
-              if (l /= i) then
-                idx_tmp(k) = l
-                k = k + 1
-              end if
-            end do
-            call set(surface_positions, ele_nodes(surface_positions, j), libsupermesh_tet_array(ele)%V(:, idx_tmp))
-            call set(surface_colours, j, float(libsupermesh_tet_array(ele)%colours(i)))
-            j = j + 1
-          end if
-        end do
-      end do
-    end if
+!            ! In python, this is
+!            ! idx_tmp = [x for x in range(4) if x != i]
+!            ! Hopefully that will make it clearer
+!            k = 1
+!            do l=1,4
+!              if (l /= i) then
+!                idx_tmp(k) = l
+!                k = k + 1
+!              end if
+!            end do
+!            call set(surface_positions, ele_nodes(surface_positions, j), libsupermesh_tet_array(ele)%V(:, idx_tmp))
+!            call set(surface_colours, j, float(libsupermesh_tet_array(ele)%colours(i)))
+!            j = j + 1
+!          end if
+!        end do
+!      end do
+!    end if
 
   end subroutine libsupermesh_intersect_tets_dt
   

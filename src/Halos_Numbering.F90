@@ -35,7 +35,7 @@ module libsupermesh_halos_numbering
   use libsupermesh_halo_data_types
   use libsupermesh_halos_allocates
   use libsupermesh_halos_base
-!  use halos_communications		! IAKOVOS commented out
+  use libsupermesh_halos_communications
 !  use halos_debug			! IAKOVOS commented out
   use libsupermesh_mpi_interfaces
   use libsupermesh_parallel_tools
@@ -51,7 +51,8 @@ module libsupermesh_halos_numbering
 !    & get_universal_numbering_inverse, set_halo_universal_number, &
 !    & ewrite_universal_numbers, valid_global_to_universal_numbering
   public :: create_global_to_universal_numbering, &
-    & halo_universal_number, &
+    & universal_numbering_count, &
+    & halo_universal_number, halo_universal_numbers, &
     & has_global_to_universal_numbering
 
   interface halo_universal_number
@@ -97,6 +98,257 @@ contains
 #endif
 
   end subroutine create_global_to_universal_numbering
+  
+  subroutine create_global_to_universal_numbering_order_general(halo, local_only)
+    type(halo_type), intent(inout) :: halo
+    logical, intent(in), optional :: local_only
+
+#ifdef HAVE_MPI    
+    integer :: communicator, i, ierr, nowned_nodes, nprocs, nreceives, nsends, &
+      & rank, count, nnodes
+    integer, dimension(:), allocatable :: receive_types, requests,&
+         & send_types, statuses
+    logical, dimension(:), allocatable :: local_nodes
+    integer tag
+
+    ewrite(1,*) "Creating universal numbering for a general order halo"
+
+    nprocs = halo_proc_count(halo)
+    communicator = halo_communicator(halo)
+    rank = getrank(communicator)
+    nowned_nodes = halo_nowned_nodes(halo)
+
+    call set_universal_numbering_count(halo)
+
+    ! Calculate the base universal node number for the owned nodes. The i th
+    ! owned node then has universal node number equal to the base + i.
+    call mpi_scan(nowned_nodes, halo%my_owned_nodes_unn_base, 1, getpinteger(), MPI_SUM, communicator, ierr)
+    assert(ierr == MPI_SUCCESS)
+    halo%my_owned_nodes_unn_base = halo%my_owned_nodes_unn_base - nowned_nodes
+    ! gather this information from/to all other processors:
+    allocate(halo%owned_nodes_unn_base(1:nprocs+1))
+    call mpi_allgather(halo%my_owned_nodes_unn_base, 1, getpinteger(), &
+      halo%owned_nodes_unn_base, 1, getpinteger(), communicator, ierr)
+    assert(ierr == MPI_SUCCESS)
+    assert( halo%owned_nodes_unn_base(rank+1)==halo%my_owned_nodes_unn_base )
+    ! extra entry for convenience, such that number of owned nodes on a process
+    ! can be derived from subtracting its unn_base from the next (similar to findrm):
+    halo%owned_nodes_unn_base(nprocs+1)=universal_numbering_count(halo)
+    assert( halo%owned_nodes_unn_base(nprocs)<=halo%owned_nodes_unn_base(nprocs+1) )
+   
+    nnodes = node_count(halo) 
+
+    allocate(local_nodes(nnodes))
+    local_nodes=.true.
+    assert(max_halo_receive_node(halo) <= nnodes)
+    do i = 1, nprocs
+      local_nodes(halo_receives(halo, i)) = .false.
+    end do
+
+    allocate(halo%gnn_to_unn(nnodes))
+    halo%gnn_to_unn=-1
+
+    count=halo%my_owned_nodes_unn_base
+    do i=1, nnodes 
+       if (local_nodes(i)) then
+          count=count+1
+          halo%gnn_to_unn(i)=count
+       end if
+    end do
+
+    if (present_and_true(local_only)) then
+       return
+    end if
+
+    ! Create indexed MPI types defining the indices into halo%gnn_to_unn to be sent/received
+    allocate(send_types(nprocs))
+    allocate(receive_types(nprocs))
+    send_types = MPI_DATATYPE_NULL
+    receive_types = MPI_DATATYPE_NULL
+    do i = 1, nprocs
+      nsends = halo_send_count(halo, i)
+      if(nsends > 0) then
+        call mpi_type_create_indexed_block(nsends, 1, &
+          & halo_sends(halo, i) - lbound(halo%gnn_to_unn, 1), &
+          & getpinteger(), send_types(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+        call mpi_type_commit(send_types(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+      end if
+
+      nreceives = halo_receive_count(halo, i)
+      if(nreceives > 0) then
+        call mpi_type_create_indexed_block(nreceives, 1, &
+          & halo_receives(halo, i) - lbound(halo%gnn_to_unn, 1), &
+          & getpinteger(), receive_types(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+        call mpi_type_commit(receive_types(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+      end if
+    end do
+
+    ! Set up non-blocking communications
+    allocate(requests(nprocs * 2))
+    requests = MPI_REQUEST_NULL
+    tag = next_mpi_tag()
+    
+    do i = 1, nprocs      
+      ! Non-blocking sends
+      if(halo_send_count(halo, i) > 0) then
+        call mpi_isend(halo%gnn_to_unn, 1, send_types(i), i - 1, tag, communicator, requests(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+      end if
+      
+      ! Non-blocking receives
+      if(halo_receive_count(halo, i) > 0) then
+        call mpi_irecv(halo%gnn_to_unn, 1, receive_types(i), i - 1, tag, communicator, requests(i + nprocs), ierr)
+        assert(ierr == MPI_SUCCESS)
+      end if
+    end do    
+        
+    ! Wait for all non-blocking communications to complete
+    allocate(statuses(MPI_STATUS_SIZE * size(requests)))
+    call mpi_waitall(size(requests), requests, statuses, ierr)
+    assert(ierr == MPI_SUCCESS)
+    deallocate(statuses)
+    deallocate(requests)
+    
+    ! Free the indexed MPI types
+    do i = 1, nprocs
+      if(send_types(i) /= MPI_DATATYPE_NULL) then
+        call mpi_type_free(send_types(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+      end if
+      
+      if(receive_types(i) /= MPI_DATATYPE_NULL) then
+        call mpi_type_free(receive_types(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+      end if
+    end do
+    deallocate(send_types)
+    deallocate(receive_types)  
+    
+#else
+    if(valid_serial_halo(halo)) then
+      allocate(halo%owned_nodes_unn_base(halo_proc_count(halo)))
+      halo%owned_nodes_unn_base = 0
+      halo%my_owned_nodes_unn_base = 0
+      allocate(halo%receives_gnn_to_unn(halo_all_receives_count(halo)))
+    else
+      FLAbort("Cannot create global to universal numbering without MPI support")
+    end if
+#endif
+
+  end subroutine create_global_to_universal_numbering_order_general
+  
+  subroutine create_global_to_universal_numbering_order_trailing_receives&
+       (halo, local_only)
+    type(halo_type), intent(inout) :: halo
+    logical, intent(in), optional :: local_only
+
+#ifdef HAVE_MPI    
+    integer :: communicator, i, ierr, nowned_nodes, nprocs, rank
+    integer, dimension(:), allocatable :: requests, statuses
+    type(integer_vector), dimension(:), allocatable :: receives_unn, sends_unn
+    integer tag
+
+    ewrite(1,*) "Creating universal numbering for a trailing receives halo"
+    assert(trailing_receives_consistent(halo))
+    assert(halo_valid_for_communication(halo))
+
+    nprocs = halo_proc_count(halo)
+    communicator = halo_communicator(halo)
+    rank = getrank(communicator)
+    nowned_nodes = halo_nowned_nodes(halo)
+
+    call set_universal_numbering_count(halo)
+
+    ! Calculate the base universal node number for the owned nodes. The i th
+    ! owned node then has universal node number equal to the base + i.
+    call mpi_scan(nowned_nodes, halo%my_owned_nodes_unn_base, 1, getpinteger(), MPI_SUM, communicator, ierr)
+    assert(ierr == MPI_SUCCESS)
+    halo%my_owned_nodes_unn_base = halo%my_owned_nodes_unn_base - nowned_nodes
+    ! gather this information from/to all other processors:
+    allocate(halo%owned_nodes_unn_base(1:nprocs+1))
+    call mpi_allgather(halo%my_owned_nodes_unn_base, 1, getpinteger(), &
+      halo%owned_nodes_unn_base, 1, getpinteger(), communicator, ierr)
+    assert(ierr == MPI_SUCCESS)
+    assert( halo%owned_nodes_unn_base(rank+1)==halo%my_owned_nodes_unn_base )
+    ! extra entry for convenience, such that number of owned nodes on a process
+    ! can be derived from subtracting its unn_base from the next (similar to findrm):
+    halo%owned_nodes_unn_base(nprocs+1)=universal_numbering_count(halo)
+    assert( halo%owned_nodes_unn_base(nprocs)<=halo%owned_nodes_unn_base(nprocs+1) )
+    
+    ewrite(2, "(a,i0)") "Owned nodes universal node number base = ", &
+      & halo%my_owned_nodes_unn_base
+    ewrite(2, "(a,i0)") "Total receive_nodes = ", halo_all_receives_count(halo)
+    allocate(halo%receives_gnn_to_unn(halo_all_receives_count(halo)))
+    
+    if(present_and_true(local_only)) then
+      halo%receives_gnn_to_unn = -1
+      return
+    end if
+
+    ! Communicate the universal node numbers of the receive nodes across
+    ! processes
+    allocate(sends_unn(nprocs))
+    do i = 1, nprocs
+      allocate(sends_unn(i)%ptr(halo_send_count(halo, i)))
+      sends_unn(i)%ptr = halo%my_owned_nodes_unn_base + halo_sends(halo, i)
+      assert(all(sends_unn(i)%ptr > halo%my_owned_nodes_unn_base .and. sends_unn(i)%ptr <= halo%my_owned_nodes_unn_base + nowned_nodes))
+    end do
+    allocate(receives_unn(nprocs))
+    allocate(requests(nprocs * 2))
+    requests = MPI_REQUEST_NULL
+    rank = getrank(communicator) 
+    tag = next_mpi_tag()
+    do i = 1, nprocs      
+      allocate(receives_unn(i)%ptr(halo_receive_count(halo, i)))
+      
+      ! Non-blocking sends
+      if(halo_send_count(halo, i) > 0) then
+        call mpi_isend(sends_unn(i)%ptr, size(sends_unn(i)%ptr), getpinteger(), i - 1, tag, communicator, requests(i), ierr)
+        assert(ierr == MPI_SUCCESS)
+      end if
+
+      ! Non-blocking receives
+      if(halo_receive_count(halo, i) > 0) then
+        call mpi_irecv(receives_unn(i)%ptr, halo_receive_count(halo, i),&
+             & getpinteger(), i - 1, tag, communicator, requests(i +&
+             & nprocs), ierr) 
+        assert(ierr == MPI_SUCCESS)
+      end if
+    end do
+   
+    ! Wait for all non-blocking communications to complete
+    allocate(statuses(MPI_STATUS_SIZE * size(requests)))
+    call mpi_waitall(size(requests), requests, statuses, ierr)
+    assert(ierr == MPI_SUCCESS)
+
+    deallocate(statuses)
+    deallocate(requests)
+
+    do i = 1, nprocs
+      assert(all(receives_unn(i)%ptr <= halo%my_owned_nodes_unn_base .or. receives_unn(i)%ptr > halo%my_owned_nodes_unn_base + nowned_nodes))
+      halo%receives_gnn_to_unn(halo_receives(halo, i) - nowned_nodes) = receives_unn(i)%ptr
+      deallocate(sends_unn(i)%ptr)
+      deallocate(receives_unn(i)%ptr)
+    end do
+    deallocate(sends_unn)
+    deallocate(receives_unn)
+
+#else
+    if(valid_serial_halo(halo)) then
+      allocate(halo%owned_nodes_unn_base(halo_proc_count(halo)))
+      halo%owned_nodes_unn_base = 0
+      halo%my_owned_nodes_unn_base = 0
+      allocate(halo%receives_gnn_to_unn(halo_all_receives_count(halo)))
+    else
+      FLAbort("Cannot create global to universal numbering without MPI support")
+    end if
+#endif
+    
+  end subroutine create_global_to_universal_numbering_order_trailing_receives
 
   function has_global_to_universal_numbering(halo) result(has_gnn_to_unn)
     !!< Return whether the supplied halo has global to universal node numbering
@@ -122,6 +374,27 @@ contains
     end select
 
   end function has_global_to_universal_numbering
+  
+  pure function universal_numbering_count(halo) result(unn_count)
+    !!< Return the global (universal) number of nodes
+    
+    type(halo_type), intent(in) :: halo
+    
+    integer :: unn_count
+    
+    unn_count = halo%unn_count
+    
+  end function universal_numbering_count
+  
+  subroutine set_universal_numbering_count(halo)
+    !!< Set the universal numbering count for the supplied halo
+    
+    type(halo_type), intent(inout) :: halo
+    
+    halo%unn_count = halo_nowned_nodes(halo)
+    call allsum(halo%unn_count, communicator = halo_communicator(halo))
+  
+  end subroutine set_universal_numbering_count
   
   function halo_universal_number(halo, global_number) result(unn)
     !!< For the supplied halo, return the corresponding universal node number
@@ -195,5 +468,21 @@ contains
     end if
    
   end function halo_universal_number_order_trailing_receives
+  
+  function halo_universal_numbers(halo, global_numbers) result(unns)
+    !!< For the supplied halo, return the corresponding universal node numbers
+    !!< for the supplied global node numbers
+    
+    type(halo_type), intent(in) :: halo
+    integer, dimension(:), intent(in) :: global_numbers
+    
+    integer :: i
+    integer, dimension(size(global_numbers)) :: unns
+
+    do i = 1, size(global_numbers)
+      unns(i) = halo_universal_number(halo, global_numbers(i))
+    end do
+    
+  end function halo_universal_numbers
 
 end module libsupermesh_halos_numbering

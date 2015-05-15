@@ -101,6 +101,8 @@ contains
     call libsupermesh_cintersector_query(nonods, n_trisC)
     call libsupermesh_cintersector_get_output(nonods, n_trisC, 2, 3, lnodesC, ndglnoC)
 
+    write(*,*) "libsupermesh_intersect_tris_libwm: nonods",nonods,"."
+    write(*,*) "libsupermesh_intersect_tris_libwm: ndglnoC",ndglnoC,"."
     do i = 1, nonods
       nodesC(1, i) = lnodesC(i)
       nodesC(2, i) = lnodesC(i + nonods)

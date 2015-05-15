@@ -41,12 +41,23 @@ module libsupermesh_parallel_tools
   private
 
   public :: abort_if_in_parallel_region
-  public :: getnprocs, getprocno, getrank, &
+  public :: alland, allmax, allsum, allmean, &
+       getnprocs, getpinteger, getpreal, getprocno, getrank, &
        isparallel, parallel_filename, parallel_filename_len, &
+       pending_communication, valid_communicator, next_mpi_tag, &
        MPI_COMM_FEMTOOLS_LIB
   
   integer(c_int), bind(c) :: MPI_COMM_FEMTOOLS_LIB = MPI_COMM_WORLD
   
+  interface allmax
+    module procedure allmax_integer, allmax_real
+  end interface allmax
+  
+  interface allsum
+    module procedure allsum_integer, allsum_real, allsum_integer_vector, &
+      & allsum_real_vector
+  end interface allsum
+
   interface parallel_filename_len
     module procedure parallel_filename_no_extension_len, &
       &  parallel_filename_with_extension_len
@@ -57,8 +68,30 @@ module libsupermesh_parallel_tools
       & parallel_filename_with_extension
   end interface
   
+  interface pending_communication
+    module procedure pending_communication_communicator
+  end interface pending_communication
+  
 contains
 
+  integer function next_mpi_tag()
+#ifdef HAVE_MPI
+    integer, save::last_tag=0, tag_ub=0
+    integer flag, ierr
+    if(tag_ub==0) then
+       call MPI_Attr_get(MPI_COMM_FEMTOOLS_LIB, MPI_TAG_UB, tag_ub, flag, ierr)
+    end if
+
+    last_tag = mod(last_tag+1, tag_ub)
+    if(last_tag==0) then
+       last_tag = last_tag+1
+    end if
+    next_mpi_tag = last_tag
+#else
+    next_mpi_tag = 1
+#endif
+  end function next_mpi_tag
+  
   function getprocno(communicator) result(procno)
     !!< This is a convenience routine which returns the MPI rank
     !!< number + 1 when MPI is being used and 1 otherwise.
@@ -171,6 +204,286 @@ contains
     isparallel = (getnprocs()>1)
     
   end function isparallel
+  
+  function getpinteger() result(pinteger)
+    !!< This is a convience routine which returns the MPI integer type 
+    !!< being used. If MPI is not being used Pinteger is set to -1
+  
+    integer :: pinteger
+#ifdef HAVE_MPI
+    pinteger = MPI_INTEGER
+#else
+    pinteger = -1
+#endif
+
+  end function getpinteger
+  
+  function getpreal() result(preal)
+    !!< This is a convience routine which returns the MPI real type 
+    !!< being used. If MPI is not being used PREAL is set to -1
+  
+    integer :: preal
+#ifdef HAVE_MPI
+
+#ifdef DOUBLEP
+    preal = MPI_DOUBLE_PRECISION
+#else
+    preal = MPI_REAL
+#endif
+
+#else
+    preal = -1
+#endif
+
+  end function getpreal
+  
+  function pending_communication_communicator(communicator) result(pending)
+    !!< Return whether there is a pending communication for the supplied communicator.
+    
+    integer, optional, intent(in) :: communicator
+
+    logical :: pending
+
+    integer :: lcommunicator
+
+#ifdef HAVE_MPI
+    integer :: ierr, ipending
+    
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if    
+
+    call mpi_iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, lcommunicator, ipending, MPI_STATUS_IGNORE, ierr)
+    assert(ierr == MPI_SUCCESS)
+    
+    pending = (ipending /= 0)
+
+    ! Note - removing this mpi_barrier could result in a false
+    ! positive on another process.
+    call mpi_barrier(lcommunicator, ierr)
+    assert(ierr == MPI_SUCCESS)
+#else
+    pending = .false.
+#endif
+    
+  end function pending_communication_communicator
+  
+  function valid_communicator(communicator) result(valid)
+    !!< Return whether the supplied MPI communicator is valid
+    
+    integer, intent(in) :: communicator
+    
+    logical :: valid
+    
+#ifdef HAVE_MPI
+    integer :: ierr, size
+
+    call mpi_comm_size(communicator, size, ierr)
+
+    valid = (ierr == MPI_SUCCESS)
+#else
+    valid = .false.
+#endif
+
+  end function valid_communicator
+  
+  subroutine alland(value, communicator)
+    !!< And the logical value across all processes
+    
+    logical, intent(inout) :: value
+    integer, optional, intent(in) :: communicator
+    
+#ifdef HAVE_MPI
+    integer :: ierr, lcommunicator
+    logical :: and
+    
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+    
+    if(isparallel()) then    
+      assert(valid_communicator(lcommunicator))
+      call mpi_allreduce(value, and, 1, MPI_LOGICAL, MPI_LAND, lcommunicator, ierr)
+      assert(ierr == MPI_SUCCESS)
+      value = and
+    end if
+#endif
+
+  end subroutine alland
+  
+  subroutine allmax_integer(value, communicator)
+    !!< Find the maxmimum value across all processes
+  
+    integer, intent(inout) :: value
+    integer, optional, intent(in) :: communicator
+    
+#ifdef HAVE_MPI
+    integer :: ierr, lcommunicator, maximum
+    
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+    
+    if(isparallel()) then
+       assert(valid_communicator(lcommunicator))
+       call MPI_Allreduce(value, maximum, 1, getpinteger(), MPI_MAX, lcommunicator, ierr)
+       assert(ierr == MPI_SUCCESS)
+       value = maximum
+    end if
+#endif
+  
+  end subroutine allmax_integer
+
+  subroutine allmax_real(value, communicator)
+    !!< Find the maxmimum value across all processes
+  
+    real, intent(inout) :: value
+    integer, optional, intent(in) :: communicator
+    
+#ifdef HAVE_MPI
+    integer :: ierr, lcommunicator
+    real :: maximum
+    
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+    
+    if(isparallel()) then
+       assert(valid_communicator(lcommunicator))
+       call mpi_allreduce(value, maximum, 1, getpreal(), MPI_MAX, lcommunicator, ierr)
+       assert(ierr == MPI_SUCCESS)
+       value = maximum
+    end if
+#endif
+
+  end subroutine allmax_real
+  
+  subroutine allsum_integer(value, communicator)
+    !!< Sum the integer value across all processes
+  
+    integer, intent(inout) :: value
+    integer, optional, intent(in) :: communicator
+    
+#ifdef HAVE_MPI
+    integer :: ierr, lcommunicator
+    integer :: sum
+
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+
+    if(isparallel()) then
+       assert(valid_communicator(lcommunicator))
+       sum = 0.0
+       call MPI_Allreduce(value, sum, 1, getpinteger(), MPI_SUM, lcommunicator, ierr)
+       assert(ierr == MPI_SUCCESS)
+       value = sum
+    end if
+#endif
+
+  end subroutine allsum_integer
+
+  subroutine allsum_real(value, communicator)
+    !!< Sum the real value across all processes
+  
+    real, intent(inout) :: value
+    integer, optional, intent(in) :: communicator
+    
+#ifdef HAVE_MPI
+    integer :: ierr, lcommunicator
+    real :: sum
+
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+
+    if(isparallel()) then
+       assert(valid_communicator(lcommunicator))
+       sum = 0.0
+       call MPI_Allreduce(value, sum, 1, getpreal(), MPI_SUM, lcommunicator, ierr)
+       assert(ierr == MPI_SUCCESS)
+       value = sum
+    end if
+#endif
+
+  end subroutine allsum_real
+  
+  subroutine allmean(value, communicator)
+    !!< Sum the real value across all processes
+  
+    real, intent(inout) :: value
+    integer, optional, intent(in) :: communicator
+    
+    call allsum(value, communicator = communicator)
+    value = value / getnprocs(communicator = communicator)
+    
+  end subroutine allmean
+
+  subroutine allsum_integer_vector(value, communicator)
+    !!< Sum the value across all processes
+  
+    integer, intent(inout) :: value(:)
+    integer, optional, intent(in) :: communicator
+    
+#ifdef HAVE_MPI
+    integer :: lcommunicator, ierr
+    integer, dimension(size(value)) :: sum
+    
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+    
+    if(isparallel()) then
+       assert(valid_communicator(lcommunicator))
+       sum = 0
+       call MPI_Allreduce(value, sum, size(value), getpinteger(), MPI_SUM, lcommunicator, ierr)
+       assert(ierr == MPI_SUCCESS)
+       value = sum
+    end if
+#endif
+
+  end subroutine allsum_integer_vector
+
+  subroutine allsum_real_vector(value, communicator)
+    !!< Sum the value across all processes
+  
+    real, intent(inout) :: value(:)
+    integer, optional, intent(in) :: communicator
+    
+#ifdef HAVE_MPI
+    integer :: lcommunicator, ierr
+    real, dimension(size(value)) :: sum
+    
+    if(present(communicator)) then
+      lcommunicator = communicator
+    else
+      lcommunicator = MPI_COMM_FEMTOOLS_LIB
+    end if
+    
+    if(isparallel()) then
+       assert(valid_communicator(lcommunicator))
+       sum = 0.0
+       call MPI_Allreduce(value, sum, size(value), getpreal(), MPI_SUM, lcommunicator, ierr)
+       assert(ierr == MPI_SUCCESS)
+       value = sum
+    end if
+#endif
+
+  end subroutine allsum_real_vector
   
   pure function parallel_filename_no_extension_len(filename) result(length)
     !!< Return the (maximum) length of a string containing:

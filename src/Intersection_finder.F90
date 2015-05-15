@@ -11,7 +11,7 @@ use libsupermesh_fields_allocates
 use libsupermesh_adjacency_lists
 use libsupermesh_linked_lists
 use libsupermesh_shape_functions, only: make_element_shape
-!use parallel_fields		! IAKOVOS commented out
+use libsupermesh_parallel_fields
 use libsupermesh_parallel_tools
 use libsupermesh_construction
 use libsupermesh_transform_elements
