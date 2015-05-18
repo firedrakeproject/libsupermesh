@@ -1,5 +1,5 @@
 #define BUF_SIZE_A 50
-#define BUF_SIZE_B 5000
+#define BUF_SIZE_B 400
 #define BUF_SIZE 96
 subroutine benchmark_tet_intersector
 
@@ -111,7 +111,7 @@ subroutine benchmark_tet_intersector
 
       ! A. Use libWM without creating temporary vector fields.
       t1 = MPI_Wtime();
-!      call libsupermesh_intersect_tets_libwm(tet_A%v, tet_B%v, nodesC, ndglnoC, n_tetsC)
+      call libsupermesh_intersect_tets_libwm(tet_A%v, tet_B%v, nodesC, ndglnoC, n_tetsC)
       t2 = MPI_Wtime();
       dt_A_vol_libwm_intersect = dt_A_vol_libwm_intersect + ( t2 -t1 )
 
