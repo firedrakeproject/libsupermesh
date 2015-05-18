@@ -249,9 +249,10 @@ contains
     allocate(sub_map_AB(size(map_AB)))
     node => seeds%firstnode
     do while(associated(node))
-      sub_map_AB = libsupermesh_advancing_front_intersection_finder(positionsA_val, positionsB_val, &
-        & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, nnodesA, positions_a_MeshNdglno,   &
-        & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, nnodesB, positions_b_MeshNdglno, seed)
+      sub_map_AB = libsupermesh_advancing_front_intersection_finder( &
+        & positionsA_val, reshape(positions_a_MeshNdglno, (/verticesA, elementCountA/)), &
+        & positionsB_val, reshape(positions_b_MeshNdglno, (/verticesB, elementCountB/)), &
+        & seed = seed)
       do i = 1, size(sub_map_AB)
         if(sub_map_AB(i)%length > 0) then
           assert(map_AB(i)%length == 0)
@@ -403,19 +404,20 @@ contains
     
   end function advancing_front_intersection_finder_seeds
 
-  function libsupermesh_advancing_front_intersection_finder(positionsA_val, positionsB_val, &
-       & ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, nnodesA, positions_a_MeshNdglno, &
-       & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
-    ! The positions and meshes of A and B
-    real, intent(in), dimension(ndimA, nnodesA) :: positionsA_val
-    real, intent(in), dimension(ndimB, nnodesB) :: positionsB_val
-    integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
-    integer, intent(in), dimension(elementCountB * fieldMeshShapeLocB) :: positions_b_MeshNdglno
-    ! for each element in A, the intersecting elements in B
-    type(ilist), dimension(elementCountA) :: map_AB
-    integer, intent(in) :: ndimA, verticesA, quadDimA, elementCountA, fieldMeshShapeLocA, nnodesA, &
-                         & ndimB, verticesB, quadDimB, elementCountB, fieldMeshShapeLocB, nnodesB
+  function libsupermesh_advancing_front_intersection_finder(positionsA, ndglnoA, positionsB, ndglnoB, seed) result(map_AB)
+    real, dimension(:, :), intent(in) :: positionsA
+    integer, dimension(:, :), intent(in) :: ndglnoA
+    real, dimension(:, :), intent(in) :: positionsB
+    integer, dimension(:, :), intent(in) :: ndglnoB
     integer, optional, intent(in) :: seed
+
+    type(ilist), dimension(size(ndglnoA, 2)) :: map_AB
+
+    integer :: dimA, dimB, nodesA, nodesB, verticesA, verticesB
+    type(element_type) :: shape
+    type(mesh_type) :: mesh
+    type(vector_field), target :: lpositionsA, lpositionsB
+    type(quadrature_type) :: quad
 
     ! processed_neighbour maps an element to a neighbour that has already been processed (i.e. its clue)
     type(integer_hash_table) :: processed_neighbour
@@ -423,66 +425,66 @@ contains
     ! the elements that have map_AB(ele)%length > 0 in the case where the domain
     ! is not simply connected!
     type(integer_set) :: seen_elements
-    type(vector_field), target :: positionsA, positionsB
-    type(mesh_type) :: mesh_lib
-    type(quadrature_type) :: quad_lib
-    type(element_type) :: shape_lib
 
     integer :: ele_A
     type(mesh_type), pointer :: mesh_A, mesh_B
     integer :: i, neighbour
-    real, dimension(elementCountB, ndimB, 2) :: bboxes_B
+    real, dimension(size(ndglnoB, 2), size(positionsB, 1), 2) :: bboxes_B
     integer, dimension(:), pointer :: neigh_A
     type(csr_sparsity), pointer :: eelist_A, eelist_B
 
     type(ilist) :: clues
 
     ewrite(1, *) "In libsupermesh_advancing_front_intersection_finder"
-!    write(*, *) "In libsupermesh_advancing_front_intersection_finder"
-    
-    quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
-    shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
-    call deallocate(quad_lib)
-    call allocate(mesh_lib, nnodesA, elementCountA, shape_lib)
-    call deallocate(shape_lib)
-    
-    mesh_lib%ndglno = positions_a_MeshNdglno
-    call allocate(positionsA, ndimA, mesh_lib)
-    positionsA%val = positionsA_val
-    positionsA%dim = ndimA
-    call deallocate(mesh_lib)
 
-    quad_lib = make_quadrature(vertices = verticesB, dim = quadDimB, ngi = 6, degree = 2)
-    shape_lib = make_element_shape(vertices = fieldMeshShapeLocB, dim = ndimB, degree = 1, quad = quad_lib)
-    call deallocate(quad_lib)
-    call allocate(mesh_lib, nnodesB, elementCountB, shape_lib)
-    call deallocate(shape_lib)
-    
-    mesh_lib%ndglno = positions_b_MeshNdglno
-    call allocate(positionsB, ndimB, mesh_lib)
-    positionsB%val = positionsB_val
-    positionsB%dim = ndimB
-    call deallocate(mesh_lib)
+    dimA = size(positionsA, 1)
+    nodesA = size(positionsA, 2)
+    dimB = size(positionsB, 1)
+    nodesB = size(positionsB, 2)
+    if(.not. dimA == dimB) then
+      FLAbort("Incompatible input meshes")
+    end if
+    verticesA = size(ndglnoA, 1)
+    verticesB = size(ndglnoB, 1)
+
+    quad = make_quadrature(vertices = verticesA, dim = dimA, ngi = 0, degree = 0)
+    shape = make_element_shape(vertices = verticesA, dim = dimA, degree = 1, quad = quad)
+    call deallocate(quad)
+    call allocate(mesh, nodesA, size(ndglnoA, 2), shape)
+    call deallocate(shape)
+    do i = 1, size(ndglnoA, 2)
+      mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
+    end do
+    call allocate(lpositionsA, dimA, mesh)
+    call deallocate(mesh)
+
+    quad = make_quadrature(vertices = verticesB, dim = dimB, ngi = 0, degree = 0)
+    shape = make_element_shape(vertices = verticesB, dim = dimB, degree = 1, quad = quad)
+    call deallocate(quad)
+    call allocate(mesh, nodesB, size(ndglnoB, 2), shape)
+    call deallocate(shape)
+    do i = 1, size(ndglnoB, 2)
+      mesh%ndglno((i - 1) * verticesB + 1:i * verticesB) = ndglnoB(:, i)
+    end do
+    call allocate(lpositionsB, dimB, mesh)
+    call deallocate(mesh)
       
-    mesh_A => positionsA%mesh
-    mesh_B => positionsB%mesh
+    mesh_A => lpositionsA%mesh
+    mesh_B => lpositionsB%mesh
 
     eelist_A => extract_eelist(mesh_A)
     eelist_B => extract_eelist(mesh_B)
 
-!    call compute_bboxes(positionsB_val, bboxes_B, ndimB, fieldMeshShapeLocB, & 
-!                 &elementCountB, nnodesB, fieldTypeB, positions_b_MeshNdglno)
-    call compute_bboxes(positionsB, bboxes_B)
+    call compute_bboxes(lpositionsB, bboxes_B)
 
     if(present(seed)) then
       assert(seed > 0)
-      assert(seed <= ele_count(positionsA_val))
+      assert(seed <= ele_count(lpositionsA_val))
       ele_A = seed
     else
       ele_A = 1
     end if
-!    map_AB(ele_A) = brute_force_search(ele_val_v(positionsA_val, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), elementCountB, bboxes_B)
-    map_AB(ele_A) = brute_force_search(ele_val(positionsA, ele_A), positionsB, bboxes_B)
+    map_AB(ele_A) = brute_force_search(ele_val(lpositionsA, ele_A), bboxes_B)
 
     call allocate(processed_neighbour)
     call allocate(seen_elements)
@@ -502,12 +504,9 @@ contains
       call insert(seen_elements, ele_A)
 
       assert(map_AB(ele_A)%length == 0) ! we haven't seen it yet
-!      clues = clueful_search(ele_val_v(positionsA_val, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), map_AB(neighbour), &
-!                           & bboxes_B, ele_A, neighbour)
-!      map_AB(ele_A) = advance_front(ele_val_v(positionsA_val, ele_A, ndimA, nnodesA, fieldMeshShapeLocA, fieldTypeA, positions_a_MeshNdglno), clues, bboxes_B, eelist_B)
-      clues = clueful_search(ele_val(positionsA, ele_A), map_AB(neighbour), &
+      clues = clueful_search(ele_val(lpositionsA, ele_A), map_AB(neighbour), &
                            & bboxes_B, ele_A, neighbour)
-      map_AB(ele_A) = advance_front(ele_val(positionsA, ele_A), positionsB, clues, bboxes_B, eelist_B)
+      map_AB(ele_A) = advance_front(ele_val(lpositionsA, ele_A), lpositionsB, clues, bboxes_B, eelist_B)
       call deallocate(clues)
 
       ! Now that ele_A has been computed, make its clues available to anyone who needs them
@@ -526,15 +525,13 @@ contains
     assert(key_count(processed_neighbour) == 0)
     call deallocate(processed_neighbour)
     call deallocate(seen_elements)
-    call deallocate(positionsA)
-    call deallocate(positionsB)
+    call deallocate(lpositionsA)
+    call deallocate(lpositionsB)
 
     ewrite(1, *) "Exiting libsupermesh_advancing_front_intersection_finder"
-!    write(*, *) "Exiting libsupermesh_advancing_front_intersection_finder"
 
     contains
       function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)
-!      function advance_front(posA, clues, bboxes_B, eelist_B) result(map)
         real, dimension(:, :), intent(in) :: posA
         type(vector_field), intent(in), target :: positionsB
         type(ilist), intent(inout) :: clues
@@ -743,26 +740,27 @@ contains
     end do
   end subroutine compute_bboxes
 
-!  function brute_force_search(posA, elementCountB, bboxes_B) result(map)
-  function brute_force_search(posA, positionsB, bboxes_B) result(map)
+  function brute_force_search(posA, bboxes_B) result(map)
     real, dimension(:, :), intent(in) :: posA
-    type(vector_field), intent(in) :: positionsB
     real, dimension(:, :, :), intent(in) :: bboxes_B
+
     type(ilist) :: map
+
     integer :: ele_B
     real, dimension(size(posA, 1), 2) :: bboxA
 
     bboxA = bbox(posA)
 
-    do ele_B=1,ele_count(positionsB)
+    do ele_B=1,size(bboxes_B, 1)
       if (bbox_predicate(bboxA, bboxes_B(ele_B, :, :))) then
         call insert(map, ele_B)
       end if
     end do
 
-    if (map%length == 0) then
+    if(map%length == 0) then
       FLAbort("Should never get here -- it has to intersect /something/!")
     end if
+    
   end function brute_force_search
 
   function clueful_search(posA, possibles, bboxes_B, ele_A, neighbour) result(clues)
@@ -786,35 +784,6 @@ contains
       node => node%next
     end do
 
-!    if (clues%length == 0) then
-!      ewrite(-1,*) "It seems something has gone rather badly wrong."
-!      ewrite(-1,*) "Element in A we are searching for: ", ele_A
-!      ewrite(-1,*) "Neighbour element we are looking for a clue from: ", neighbour
-!      ewrite(-1,*) "Recorded list of neighbour's intersections: "
-!      call print_list(possibles, -1)
-!      ewrite(-1,*) "I will not crash as this MIGHT happen legitimately if your"
-!      ewrite(-1,*) "source domain is not connected, but your target domain is connected"
-!      ewrite(-1,*) "across the disconnection."
-!!      subpos = extract_elements(positionsB, list2vector(possibles))
-!!      call vtk_write_fields("intersection_failure", 0, subpos, subpos%mesh)
-!!      call deallocate(subpos)
-!!      ewrite(-1,*) "Brute forcing to find intersections of neighbour: "
-!!      clues = brute_force_search(neighbour_posA, positionsB, bboxes_B)
-!!      call print_list(clues, -1)
-!!      subpos = extract_elements(positionsB, list2vector(clues))
-!!      call vtk_write_fields("intersection_failure", 1, subpos, subpos%mesh)
-!!      call deallocate(subpos)
-!!      ewrite(-1,*) "Brute forcing to find intersections of ele_A: "
-!!      clues = brute_force_search(posA, positionsB, bboxes_B)
-!!      call print_list(clues, -1)
-!!      subpos = extract_elements(positionsB, list2vector(clues))
-!!      call vtk_write_fields("intersection_failure", 2, subpos, subpos%mesh)
-!!      call deallocate(subpos)
-!!      subpos = extract_elements(positionsA, (/ele_A, neighbour/))
-!!      call vtk_write_fields("intersection_failure", 3, subpos, subpos%mesh)
-!!      call deallocate(subpos)
-!!      FLAbort("Should never get here -- it has to intersect /something/!")
-!    end if
   end function clueful_search
 
 end module libsupermesh_intersection_finder_module
