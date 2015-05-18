@@ -3,14 +3,8 @@
 
 module libsupermesh_tet_intersection_module
 
-  use libsupermesh_elements
-  use libsupermesh_vector_tools
-  use libsupermesh_fields_data_types
-  use libsupermesh_fields_base
-  use libsupermesh_fields_allocates
-  use libsupermesh_fields_manipulation
-  use libsupermesh_transform_elements
-  use libsupermesh_shape_functions, only: make_element_shape
+  use libsupermesh_fldebug
+
   implicit none
   
   type tet_type
@@ -25,11 +19,8 @@ module libsupermesh_tet_intersection_module
 
   type(tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array_tmp
   integer :: libsupermesh_tet_cnt_tmp = 0
-  type(mesh_type), save :: libsupermesh_intersection_mesh
   logical, save :: libsupermesh_mesh_allocated = .false.
 
-! IAKOVOS commented out
-!  public :: tet_type, plane_type, intersect_tets, get_planes, finalise_tet_intersector
   public :: tet_type, plane_type, libsupermesh_intersect_tets, get_planes
 
   interface libsupermesh_intersect_tets
@@ -38,23 +29,18 @@ module libsupermesh_tet_intersection_module
   end interface
   
   interface get_planes
-    module procedure get_planes_tet, get_planes_hex
+    module procedure get_planes_tet
   end interface
 
-  contains
+  integer, parameter, public :: tet_buf_size = BUF_SIZE
 
-  subroutine libsupermesh_finalise_tet_intersector
-    if (libsupermesh_mesh_allocated) then
-      call deallocate(libsupermesh_intersection_mesh)
-      libsupermesh_mesh_allocated = .false.
-    end if
-  end subroutine libsupermesh_finalise_tet_intersector
+contains
   
   subroutine libsupermesh_intersect_tets_libwm(tetA, tetB, nodesC, ndglnoC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
     real, dimension(3, BUF_SIZE), intent(out) :: nodesC
-    integer, dimension(3, BUF_SIZE), intent(out) :: ndglnoC
+    integer, dimension(4, BUF_SIZE), intent(out) :: ndglnoC
     integer, intent(out) :: n_tetsC
 
     integer :: i, nonods
@@ -436,39 +422,39 @@ module libsupermesh_tet_intersection_module
 
   end function get_planes_tet
 
-  function get_planes_hex(positions, ele) result(plane)
-    type(vector_field), intent(in) :: positions
-    integer, intent(in) :: ele
-    type(plane_type), dimension(6) :: plane
-    integer, dimension(:), pointer :: faces
-    integer :: i, face
-    integer, dimension(4) :: fnodes
-    real, dimension(positions%dim, face_ngi(positions, ele)) :: normals
-
-    ! This could be done much more efficiently by exploiting
-    ! more information about how we number faces and such on a hex
-
-    assert(positions%mesh%shape%numbering%family == FAMILY_CUBE)
-    assert(positions%mesh%faces%shape%numbering%family == FAMILY_CUBE)
-    assert(positions%mesh%shape%degree == 1)
-    assert(has_faces(positions%mesh))
-
-    faces => ele_faces(positions, ele)
-    assert(size(faces) == 6)
-
-    do i=1,size(faces)
-      face = faces(i)
-      fnodes = face_global_nodes(positions, face)
-
-      call transform_facet_to_physical(positions, face, normal=normals)
-      plane(i)%normal = normals(:, 1)
-
-      ! Now we calibrate the constant (setting the 'zero level' of the plane, as it were)
-      ! with a node we know is on the face
-      plane(i)%c = dot_product(plane(i)%normal, node_val(positions, fnodes(1)))
-
-    end do
-  end function get_planes_hex
+!   function get_planes_hex(positions, ele) result(plane)
+!     type(vector_field), intent(in) :: positions
+!     integer, intent(in) :: ele
+!     type(plane_type), dimension(6) :: plane
+!     integer, dimension(:), pointer :: faces
+!     integer :: i, face
+!     integer, dimension(4) :: fnodes
+!     real, dimension(positions%dim, face_ngi(positions, ele)) :: normals
+! 
+!     ! This could be done much more efficiently by exploiting
+!     ! more information about how we number faces and such on a hex
+! 
+!     assert(positions%mesh%shape%numbering%family == FAMILY_CUBE)
+!     assert(positions%mesh%faces%shape%numbering%family == FAMILY_CUBE)
+!     assert(positions%mesh%shape%degree == 1)
+!     assert(has_faces(positions%mesh))
+! 
+!     faces => ele_faces(positions, ele)
+!     assert(size(faces) == 6)
+! 
+!     do i=1,size(faces)
+!       face = faces(i)
+!       fnodes = face_global_nodes(positions, face)
+! 
+!       call transform_facet_to_physical(positions, face, normal=normals)
+!       plane(i)%normal = normals(:, 1)
+! 
+!       ! Now we calibrate the constant (setting the 'zero level' of the plane, as it were)
+!       ! with a node we know is on the face
+!       plane(i)%c = dot_product(plane(i)%normal, node_val(positions, fnodes(1)))
+! 
+!     end do
+!   end function get_planes_hex
   
   pure function unit_cross(vecA, vecB) result(cross)
     real, dimension(3), intent(in) :: vecA, vecB
