@@ -84,6 +84,8 @@ module libsupermesh_tri_intersection_module
     module procedure get_lines_tri
   end interface
 
+  integer, parameter, public :: tri_buf_size = BUF_SIZE
+
 contains
 
   subroutine libsupermesh_intersect_tris_libwm(triA, triB, nodesC, ndglnoC, n_trisC)
@@ -96,7 +98,7 @@ contains
     integer :: i, nonods
     real, dimension(2 * BUF_SIZE), save :: lnodesC = -huge(0.0)
     
-    call libsupermesh_cintersector_set_input(triB, triA, 2, 3)
+    call libsupermesh_cintersector_set_input(triA, triB, 2, 3)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, n_trisC)
     call libsupermesh_cintersector_get_output(nonods, n_trisC, 2, 3, lnodesC, ndglnoC)
@@ -186,10 +188,10 @@ contains
     
     dists = distances_to_line(line, tri)
     do i=1,3
-      if (dists(i) < 0.0) then
+      if (dists(i) <= 0.0) then
         neg_cnt = neg_cnt + 1
         neg_idx(neg_cnt) = i
-      else if (dists(i) > 0.0) then
+      else
         pos_cnt = pos_cnt + 1
         pos_idx(pos_cnt) = i
       end if
