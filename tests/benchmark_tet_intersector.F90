@@ -1,12 +1,11 @@
-#define BUF_SIZE_A 50
-#define BUF_SIZE_B 400
-#define BUF_SIZE 96
+#define BUF_SIZE_A 500
+#define BUF_SIZE_B 500
 subroutine benchmark_tet_intersector
 
+  use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tet_intersection_module
   use libsupermesh_construction
-  use libsupermesh_fields_base, only:ele_shape
   use libsupermesh_quadrature, only:make_quadrature
   use libsupermesh_shape_functions, only:make_element_shape
   use libsupermesh_unittest_tools
@@ -40,11 +39,11 @@ subroutine benchmark_tet_intersector
   real, dimension(:,:), allocatable :: planesB_normal
   real, dimension(:), allocatable :: planesB_c
   
-  real, dimension(3, 4, BUF_SIZE) ::  tetsC_real
+  real, dimension(3, 4, tet_buf_size) ::  tetsC_real
   integer :: ntests, n_tetsC
-  real, dimension(3, BUF_SIZE) :: nodesC
-  integer, dimension(3, BUF_SIZE) :: ndglnoC
-  type(tet_type), dimension(BUF_SIZE) :: tetsC
+  real, dimension(3, tet_buf_size) :: nodesC
+  integer, dimension(4, tet_buf_size) :: ndglnoC
+  type(tet_type), dimension(tet_buf_size) :: tetsC
   type(mesh_type) :: intersection_mesh
   type(vector_field) :: intersection, intersect_elements_result
   
@@ -117,7 +116,7 @@ subroutine benchmark_tet_intersector
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_tetsC
-!        vol_A_libwm_intersect(index) = vol_A_libwm_intersect(index) + abs(tetvol_test(nodesC(:, ndglnoC(:, ele_C))))
+        vol_A_libwm_intersect(index) = vol_A_libwm_intersect(index) + abs(tetvol_test(nodesC(:, ndglnoC(:, ele_C))))
       end do
 
 
@@ -129,7 +128,7 @@ subroutine benchmark_tet_intersector
 
       do ele_C=1,n_tetsC
         vol_B_fort(index) = vol_B_fort(index) + abs(tetvol_test(tetsC(ele_C)%v))
-        vol_A_libwm_intersect(index) = vol_B_fort(index)   ! HACK REMOVE
+!        vol_A_libwm_intersect(index) = vol_B_fort(index)   ! HACK REMOVE
       end do
 
 

@@ -1,6 +1,5 @@
-#define BUF_SIZE_A 50
-#define BUF_SIZE_B 400
-#define BUF_SIZE 8
+#define BUF_SIZE_A 4000
+#define BUF_SIZE_B 4000
 subroutine benchmark_tri_intersector
 
   use libsupermesh_construction
@@ -11,8 +10,13 @@ subroutine benchmark_tri_intersector
   use libsupermesh_unittest_tools
   
   implicit none
-  
-  include "mpif.h"
+
+  interface mpi_wtime
+    function mpi_wtime()
+      implicit none
+      real :: mpi_wtime
+    end function mpi_wtime
+  end interface mpi_wtime
 
   type(vector_field) :: positionsA, positionsB
   integer :: ele_A, ele_B, ele_C
@@ -21,26 +25,24 @@ subroutine benchmark_tri_intersector
   
   type(tri_type) :: triA, triB
   type(tri_type), dimension(8) :: trisC
-  real, dimension(2, 3, BUF_SIZE) ::  trisC_real
+  real, dimension(2, 3, tri_buf_size) ::  trisC_real
   integer :: ntests, n_trisC
-  real, dimension(2, BUF_SIZE) :: nodesC
-  integer, dimension(3, BUF_SIZE) :: ndglnoC
+  real, dimension(2, tri_buf_size) :: nodesC
+  integer, dimension(3, tri_buf_size) :: ndglnoC
   
-  type(vector_field) :: libsupermesh_intersect_elements_result, libsupermesh_tri_intersector_result, libwm_result
-  real :: local_area_libwm, local_area_fort
-  double precision :: t1,t2,dt_A_area_intersect_libwm,dt_B_LibSuperMeshTriIntersector,dt_C_area_fort_public,dt_D_area_libwm,dt_E_area_intersect_elements
+  type(vector_field) :: libsupermesh_intersect_elements_result, libwm_result
+  real :: t1,t2,dt_A_area_intersect_libwm,dt_B_LibSuperMeshTriIntersector,dt_C_area_fort_public,dt_D_area_libwm,dt_E_area_intersect_elements
   real, dimension(:, :), allocatable :: posB, posA
-  type(mesh_type) :: intersection_mesh_A, intersection_mesh_B, intersection_meshLibWM
-  REAL, dimension(2) :: num
+  type(mesh_type) :: intersection_meshLibWM
+  REAL :: num
 
   integer :: index, ele, dimB, i, locB, loc, elementCount, n_count, nodeCount
   type(element_type) :: elementShape
   
   real, dimension(:,:), allocatable :: positions_B_lib_val
+  integer, dimension(3) :: counters
   
   integer :: nonods, totele
-  
-  type(mesh_type) :: mesh_lib
   
   ! I hope this is big enough ...
   real, dimension(1024) :: nodes_tmp
@@ -52,15 +54,24 @@ subroutine benchmark_tri_intersector
   open (unit = 21, file = "plcC_temp.ele")
   open (unit = 30, file = "plcD_temp.node")
   open (unit = 31, file = "plcD_temp.ele")
-  
-  CALL RANDOM_SEED ()
+
+  i = 20
+  CALL RANDOM_SEED(i)
   
   write (20,*) "",BUF_SIZE_A*3," 2 0 0"
   write (21,*) "",BUF_SIZE_A," 3 0"
   do ele=1,BUF_SIZE_A*3
     CALL RANDOM_NUMBER(num)
-    num = num * 10
-    write (20,*) " ",ele," ",num," 0"
+    num = num * 4.0
+    if(num < 1.0) then
+      write(20, *) " ", ele, " ", 1.0, num, " 0"
+    else if(num < 2.0) then
+      write(20, *) " ", ele, " ", 1.0 - (num - 1.0), 1.0, " 0"
+    else if(num < 3.0) then
+      write(20, *) " ", ele, " ", 0.0, 1.0 - (num - 2.0), " 0"
+    else
+      write(20, *) " ", ele, " ", num - 3.0, 0.0, " 0"
+    end if
   end do
   do ele=1,BUF_SIZE_A
     write (21,*) " ",ele," ",(ele*3)-2," ", (ele*3)-1," ",(ele*3)
@@ -70,8 +81,16 @@ subroutine benchmark_tri_intersector
   write (31,*) "",BUF_SIZE_B," 3 0"
   do ele=1,BUF_SIZE_B*3
     CALL RANDOM_NUMBER(num)
-    num = num * 10
-    write (30,*) " ",ele," ",num," 0"
+    num = num * 4.0
+    if(num < 1.0) then
+      write(30, *) " ", ele, " ", 1.0, num, " 0"
+    else if(num < 2.0) then
+      write(30, *) " ", ele, " ", 1.0 - (num - 1.0), 1.0, " 0"
+    else if(num < 3.0) then
+      write(30, *) " ", ele, " ", 0.0, 1.0 - (num - 2.0), " 0"
+    else
+      write(30, *) " ", ele, " ", num - 3.0, 0.0, " 0"
+    end if
   end do
   do ele=1,BUF_SIZE_B
     write (31,*) " ",ele," ",(ele*3)-2," ", (ele*3)-1," ",(ele*3)
@@ -95,7 +114,8 @@ subroutine benchmark_tri_intersector
   area_C_fort_public = 0.0
   area_D_libwm = 0.0
   area_E_intersect_elements = 0.0
-  
+
+  counters = 0
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)  
       triA%v = ele_val(positionsA, ele_A)
@@ -134,6 +154,13 @@ subroutine benchmark_tri_intersector
         area_C_fort_public(index) = area_C_fort_public(index) + triangle_area(trisC_real(:,:,ele_C))
       end do
 
+      if(n_trisC == 0) then
+        counters(1) = counters(1) + 1
+      else if(n_trisC == 1) then
+        counters(3) = counters(3) + 1
+      else
+        counters(2) = counters(2) + 1
+      end if
 
       ! D. Use libWM directly and create temporary vector field
        allocate(posA(positionsA%dim, ele_loc(positionsA, ele_A)))
@@ -237,11 +264,12 @@ subroutine benchmark_tri_intersector
     end do
   end do
 
-  write (*,*) "benchmark_tri_intersector: dt_A_area_intersect_libwm:",dt_A_area_intersect_libwm, &
-      & ", dt_B_LibSuperMeshTriIntersector:",dt_B_LibSuperMeshTriIntersector, &
-      & ", dt_C_area_fort_public:",dt_C_area_fort_public, &
-      & ", dt_D_area_libwm:",dt_D_area_libwm, &
-      & ", dt_E_area_intersect_elements:",dt_E_area_intersect_elements,"."
+  write(*, *) "counters:",counters
+  write(*, *) "dt_A_area_intersect_libwm      :",dt_A_area_intersect_libwm
+  write(*, *) "dt_B_LibSuperMeshTriIntersector:",dt_B_LibSuperMeshTriIntersector
+  write(*, *) "dt_C_area_fort_public          :",dt_C_area_fort_public
+  write(*, *) "dt_D_area_libwm                :",dt_D_area_libwm
+  write(*, *) "dt_E_area_intersect_elements   :",dt_E_area_intersect_elements
       
   call report_test("[benchmark_tri_intersector areas]", totalFail, .false., "Should give the same areas of intersection")
   

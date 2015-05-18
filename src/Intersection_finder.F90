@@ -21,42 +21,42 @@ use libsupermesh_sparse_tools
 implicit none
 
 interface crtree_intersection_finder_set_input
-  subroutine cintersection_finder_set_input(positions, enlist, ndim, loc, nnodes, nelements)
+  subroutine libsupermesh_cintersection_finder_set_input(positions, enlist, ndim, loc, nnodes, nelements)
     implicit none
     integer, intent(in) :: ndim, loc, nnodes, nelements
     real, intent(in), dimension(nnodes * ndim) :: positions
     integer, intent(in), dimension(nelements * loc) :: enlist
-  end subroutine cintersection_finder_set_input
+  end subroutine libsupermesh_cintersection_finder_set_input
 end interface crtree_intersection_finder_set_input
 
 interface crtree_intersection_finder_find
-  subroutine cintersection_finder_find(positions, ndim, loc)
+  subroutine libsupermesh_cintersection_finder_find(positions, ndim, loc)
     implicit none
     integer, intent(in) :: ndim, loc
     real, dimension(ndim * loc) :: positions
-  end subroutine cintersection_finder_find
+  end subroutine libsupermesh_cintersection_finder_find
 end interface crtree_intersection_finder_find
 
 interface rtree_intersection_finder_query_output
-  subroutine cintersection_finder_query_output(nelems)
+  subroutine libsupermesh_cintersection_finder_query_output(nelems)
     implicit none
     integer, intent(out) :: nelems
-  end subroutine cintersection_finder_query_output
+  end subroutine libsupermesh_cintersection_finder_query_output
 end interface rtree_intersection_finder_query_output
 
 interface rtree_intersection_finder_get_output
-  subroutine cintersection_finder_get_output(id, nelem)
+  subroutine libsupermesh_cintersection_finder_get_output(id, nelem)
     implicit none
     integer, intent(out) :: id
     integer, intent(in) :: nelem
-  end subroutine cintersection_finder_get_output
+  end subroutine libsupermesh_cintersection_finder_get_output
 end interface rtree_intersection_finder_get_output
 
 interface rtree_intersection_finder_reset
-  subroutine cintersection_finder_reset(ntests)
+  subroutine libsupermesh_cintersection_finder_reset(ntests)
     implicit none
     integer, intent(out) :: ntests
-  end subroutine cintersection_finder_reset
+  end subroutine libsupermesh_cintersection_finder_reset
 end interface rtree_intersection_finder_reset
 
 private
@@ -65,12 +65,7 @@ public :: rtree_intersection_finder_set_input, rtree_intersection_finder_find, &
   & rtree_intersection_finder_query_output, &
   & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
 
-! IAKOVOS commented out
-!public :: tri_predicate, tet_predicate, bbox_predicate, intersection_tests, &
-!  & reset_intersection_tests_counter, intersection_finder, &
-!  & advancing_front_intersection_finder_seeds, advancing_front_intersection_finder, &
-!  & rtree_intersection_finder, brute_force_intersection_finder, verify_map
-public :: tri_predicate, tet_predicate, bbox_predicate, intersection_tests, &
+public :: bbox_predicate, intersection_tests, &
   & reset_intersection_tests_counter, intersection_finder, &
   & advancing_front_intersection_finder_seeds, libsupermesh_advancing_front_intersection_finder, &
   & libsupermesh_rtree_intersection_finder, brute_force_intersection_finder
@@ -80,54 +75,6 @@ integer, save :: intersection_tests_count = 0
 #endif
 
 contains
-  function tri_predicate(posA, posB) result(intersects)
-    ! dim x loc
-    real, dimension(:, :), intent(in) :: posA, posB
-    logical :: intersects
-    
-    interface 
-      function tri_tri_overlap_test_2d(p1, q1, r1, p2, q2, r2) result(f)
-      real, dimension(2) :: p1, q1, r1, p2, q2, r2
-      integer :: f
-      end function tri_tri_overlap_test_2d
-    end interface
-
-    real, dimension(2) :: p1, q1, r1, p2, q2, r2
-    integer :: f
-    
-#ifdef COUNT_INTERSECTION_TESTS
-    intersection_tests_count = intersection_tests_count + 1
-#endif
-
-    p1 = posA(:, 1); q1 = posA(:, 2); r1 = posA(:, 3)
-    p2 = posB(:, 1); q2 = posB(:, 2); r2 = posB(:, 3)
-    f = tri_tri_overlap_test_2d(p1, q1, r1, p2, q2, r2)
-    intersects = (f == 1)
-    
-  end function tri_predicate
-
-  function tet_predicate(posA, posB) result(intersects)
-    ! dim x loc
-    real, dimension(:, :), intent(in) :: posA, posB
-    logical :: intersects
-
-    interface
-      function tet_a_tet(V1, V2) result(f)
-        real, dimension(4, 3), intent(in) :: V1, V2
-        integer :: f
-      end function tet_a_tet
-    end interface
-
-    integer :: f
-    
-#ifdef COUNT_INTERSECTION_TESTS
-    intersection_tests_count = intersection_tests_count + 1
-#endif
-
-    f = tet_a_tet(posA, posB)
-    intersects = (f == 1)
-    
-  end function tet_predicate
 
   function bbox(pos) result(box)
     ! dim x loc
