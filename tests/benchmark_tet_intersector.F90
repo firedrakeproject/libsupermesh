@@ -11,36 +11,29 @@ subroutine benchmark_tet_intersector
   use libsupermesh_unittest_tools
   implicit none
   
-  include "mpif.h"
+  interface mpi_wtime
+    function mpi_wtime()
+      implicit none
+      real :: mpi_wtime
+    end function mpi_wtime
+  end interface mpi_wtime
 
   type(vector_field) :: positionsA, positionsB
-  type(vector_field) :: libsupermesh_intersect_elements_result, libsupermesh_tet_intersector_result, libwm_result
   integer :: ele_A, ele_B, ele_C
   real, dimension(BUF_SIZE_A * BUF_SIZE_B) :: vol_A_libwm_intersect, vol_B_fort, vol_C_fort_public, vol_D_libwm, vol_E_intersect_elements
-  real :: local_area_libwm, local_area_fort
-  logical :: fail, fail1, fail2, totalFail = .FALSE.
-  integer :: stat
+  logical :: fail, totalFail = .FALSE.
   type(tet_type) :: tet_A, tet_B
   type(plane_type), dimension(4) :: planes_B
   
-  real, dimension(:,:), allocatable :: positions_B_lib_val
-  type(quadrature_type) :: quad_lib
   type(element_type) :: shape_lib
-  integer :: dimA, dimB, n_count, ele, i, index, elementCount, loc, nodeCount, locB
+  integer :: ele, i, index
   
-  type(mesh_type) :: intersection_mesh_A, intersection_mesh_B, intersection_meshLibWM
   REAL, dimension(3) :: num
   double precision :: t1,t2,dt_A_vol_libwm_intersect, dt_B_vol_fort, dt_C_vol_fort_public,dt_D_vol_libwm, dt_E_vol_intersect_elements
-  real, dimension(:, :), allocatable :: posB, posA
-  type(element_type) :: elementShape
-  integer :: nonods, totele, k
-  
-  type(mesh_type) :: mesh_lib
-  real, dimension(:,:), allocatable :: planesB_normal
-  real, dimension(:), allocatable :: planesB_c
+  integer :: nonods, totele
   
   real, dimension(3, 4, tet_buf_size) ::  tetsC_real
-  integer :: ntests, n_tetsC
+  integer :: n_tetsC
   real, dimension(3, tet_buf_size) :: nodesC
   integer, dimension(4, tet_buf_size) :: ndglnoC
   type(tet_type), dimension(tet_buf_size) :: tetsC

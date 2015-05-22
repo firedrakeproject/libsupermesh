@@ -1,4 +1,3 @@
-#define BUF_SIZE 96
 subroutine test_tet_intersector
 
   use libsupermesh_construction
@@ -16,12 +15,12 @@ subroutine test_tet_intersector
   logical :: fail
   
   type(tet_type) :: tet_A, tet_B
-  type(tet_type), dimension(BUF_SIZE) :: tetsC
+  type(tet_type), dimension(tet_buf_size) :: tetsC
   type(plane_type), dimension(4) :: planes_B
   integer :: ntests, n_tetsC
-  real, dimension(3, BUF_SIZE) :: nodesC
+  real, dimension(3, tet_buf_size) :: nodesC
   integer, dimension(4, 8) :: ndglnoC
-  real, dimension(3, 4, BUF_SIZE) ::  tetsC_real
+  real, dimension(3, 4, tet_buf_size) ::  tetsC_real
   integer :: i, nonods, totele
   type(vector_field) :: intersection, intersect_elements_result
   type(mesh_type) :: intersection_mesh

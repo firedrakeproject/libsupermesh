@@ -15,11 +15,11 @@ subroutine test_tri_intersector
   logical :: fail
   
   type(tri_type) :: triA, triB
-  type(tri_type), dimension(8) :: trisC
+  type(tri_type), dimension(tri_buf_size) :: trisC
   integer :: ntests, n_trisC, i, nonods, totele
-  real, dimension(2, 8) :: nodesC
-  integer, dimension(3, 8) :: ndglnoC
-  real, dimension(2, 3, 8) ::  trisC_real
+  real, dimension(2, tri_buf_size) :: nodesC
+  integer, dimension(3, tri_buf_size) :: ndglnoC
+  real, dimension(2, 3, tri_buf_size) ::  trisC_real
   type(vector_field) :: intersection
   type(mesh_type) :: intersection_mesh
   type(element_type) :: shape_lib

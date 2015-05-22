@@ -38,7 +38,7 @@ endif ()
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
+  set (CMAKE_BUILD_TYPE DEBUG CACHE STRING
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -52,12 +52,15 @@ get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
-  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3    -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=all -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ftree-vectorize -march=native -fgcse-lm -fgcse-sm -fgcse-las -fgcse-after-reload -faggressive-loop-optimizations -fipa-cp -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=all -ffpe-trap=zero,overflow,underflow -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  SET(_WARNING_COMPILE_FLAGS " ")
+  SET(_WARNING_COMPILE_FLAGS_FORTRAN_DEBUG "-Wextra -Wall -Wimplicit-interface -Wno-surprising")
+  SET(_WARNING_COMPILE_FLAGS_RELEASE "")
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   # ifort (untested)
-  set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-f77rtl -O0 -g")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3 -xhost")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-f77rtl -O0 -g  -check noarg_temp_created -fpe0 -warn alignments -warn declarations -warn general -warn interfaces -warn truncated_source -warn uncalled -warn uninitialized -warn usage -common_args -warn unused -fp-stack-check -check bounds -check uninit -check format")
 elseif (Fortran_COMPILER_NAME MATCHES "g77")
   # g77
   set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -m32")
@@ -74,12 +77,21 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU")
   # gcc
   set (CMAKE_C_FLAGS_RELEASE "-O3")
   set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
+  SET(_WARNING_COMPILE_FLAGS_C "-Wextra -Wall")  
+elseif (CMAKE_C_COMPILER_ID MATCHES "Intel")
+  # icc (untested)
+  set (CMAKE_C_FLAGS_RELEASE "-O3 -xhost")
+  set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
 endif (CMAKE_C_COMPILER_ID MATCHES "GNU")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   # g++
   set (CMAKE_CXX_FLAGS_RELEASE "-O3")
   set (CMAKE_CXX_FLAGS_DEBUG   "-Og -g")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  # icpc (untested)
+  set (CMAKE_C_FLAGS_RELEASE "-O3 -xhost")
+  set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
 endif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 
 include_directories(${MPI_Fortran_INCLUDE_PATH} ${PETSC_INCLUDES})
@@ -106,11 +118,6 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/config/SuperMesh.pc.in"
   "${PROJECT_BINARY_DIR}/SuperMesh.pc"
   )
-
-SET(_WARNING_COMPILE_FLAGS " ")
-SET(_WARNING_COMPILE_FLAGS_FORTRAN_DEBUG "-Wextra -Wall -Wimplicit-interface -Wno-surprising")
-SET(_WARNING_COMPILE_FLAGS_RELEASE "")
-SET(_WARNING_COMPILE_FLAGS_C "-Wextra -Wall")
 
 SET( CMAKE_CXX_FLAGS_RELEASE     "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_C}" )
 SET( CMAKE_CXX_FLAGS_DEBUG       "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS_C}" )

@@ -106,8 +106,7 @@ module libsupermesh_construction
         posB, locA, ndimA, nnodesA, &
         quadVertices, quadDim, quadNgi, quadDegree, &
         shapeLoc, shapeDim, shapeDegree) result(intersection)
-    real, intent(in), dimension(ndimA, nnodesA) :: positions_A_val
-!    integer, intent(in), dimension(elementCountA * fieldMeshShapeLocA) :: positions_a_MeshNdglno
+    real, intent(in), dimension(ndimA, locA) :: positions_A_val
     integer, intent(in) :: locA, ndimA, nnodesA
     type(vector_field) :: intersection
     type(mesh_type) :: intersection_mesh
@@ -115,11 +114,6 @@ module libsupermesh_construction
   
     integer :: nonods, totele, i
     integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
-!   integer :: dim, ele_A, fieldTypeA, verticesA, elementCountA, fieldMeshShapeLocA, quadDimA
-!    type(vector_field), target :: positions_A
-!    type(mesh_type) :: mesh_lib
-!    type(quadrature_type) :: quad_lib
-!    type(element_type) :: shape_lib
 
     ewrite(1, *) "In libsupermesh_intersect_elements"
 #ifdef DDEBUG
@@ -131,20 +125,9 @@ module libsupermesh_construction
     end select
 #endif
 
-!    quad_lib = make_quadrature(vertices = verticesA, dim = quadDimA, ngi = 1, degree = 2)
-!    shape_lib = make_element_shape(vertices = fieldMeshShapeLocA, dim = ndimA, degree = 1, quad = quad_lib)
-!    call allocate(mesh_lib, nnodesA, elementCountA, shape_lib)
-    
-!    mesh_lib%ndglno = positions_a_MeshNdglno
-!    call allocate(positions_A, ndimA, mesh_lib)
-!    positions_A%val = positions_A_val 
-!    positions_A%dim = ndimA
-
-!    call libsupermesh_cintersector_set_input(ele_val(positions_A, ele_A), posB, ndimA, locA)
     call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
-!    call allocate(intersection_mesh, nonods, totele, shape, "IntersectionMesh")
     call allocate(intersection_mesh, nonods, totele, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
 !    intersection_mesh%ndglno = (/ (i, i=1,totele) /)
     intersection_mesh%continuity = -1
@@ -160,12 +143,7 @@ module libsupermesh_construction
       end do
     end if
 
-!    call deallocate(quad_lib)
-!    call deallocate(shape_lib)
-!    call deallocate(mesh_lib)
-    
     call deallocate(intersection_mesh)
-!    call deallocate(positions_A)
 
   end function libsupermesh_intersect_elements
   

@@ -4,6 +4,7 @@ include(ExternalProject)
 ExternalProject_Add(
   libjudy
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+#  CONFIGURE_COMMAND CXX=icpc CC=icc FC=ifort ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debug
   CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debug
   PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
   BUILD_COMMAND make

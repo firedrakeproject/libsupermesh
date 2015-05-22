@@ -18,6 +18,11 @@ mark_as_advanced(CMAKE_VERBOSE_MAKEFILE)
 # Path to additional CMake modules
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 
+# HACK for INTEL Compiler
+#include(CMakeForceCompiler)
+#CMAKE_FORCE_C_COMPILER(gcc "GNU C Compiler")
+#CMAKE_FORCE_CXX_COMPILER(g++ "GNU C++ Compiler")
+#CMAKE_FORCE_Fortran_COMPILER(gfortran "GNU Fortran Compiler")
 
 #------------------------------------------------------------------------------
 # libspatialindex general settings
