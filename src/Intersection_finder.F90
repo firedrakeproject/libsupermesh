@@ -145,6 +145,8 @@ contains
   function intersection_finder(positionsA_val, positionsB_val, &
        ndimA, elementCountA, verticesA, quadDimA, fieldMeshShapeLocA, nnodesA, positions_a_MeshNdglno, &
      & ndimB, elementCountB, verticesB, quadDimB, fieldMeshShapeLocB, nnodesB, positions_b_MeshNdglno, seed) result(map_AB)
+    integer, intent(in) :: ndimA, verticesA, quadDimA, elementCountA, fieldMeshShapeLocA, nnodesA, &
+                         & ndimB, verticesB, quadDimB, elementCountB, fieldMeshShapeLocB, nnodesB
     ! The positions and meshes of A and B
     real, intent(in), dimension(ndimA, nnodesA) :: positionsA_val
     real, intent(in), dimension(ndimB, nnodesB) :: positionsB_val
@@ -152,8 +154,6 @@ contains
     integer, intent(in), dimension(elementCountB * fieldMeshShapeLocB) :: positions_b_MeshNdglno
     ! for each element in A, the intersecting elements in B
     type(ilist), dimension(elementCountA) :: map_AB
-    integer, intent(in) :: ndimA, verticesA, quadDimA, elementCountA, fieldMeshShapeLocA, nnodesA, &
-                         & ndimB, verticesB, quadDimB, elementCountB, fieldMeshShapeLocB, nnodesB
     integer, optional, intent(in) :: seed
     !!< A simple wrapper to select an intersection finder
     
@@ -404,6 +404,7 @@ contains
     end do
     call allocate(lpositionsA, dimA, mesh)
     call deallocate(mesh)
+    lpositionsA%val = positionsA
 
     quad = make_quadrature(vertices = verticesB, dim = dimB, ngi = 0, degree = 0)
     shape = make_element_shape(vertices = verticesB, dim = dimB, degree = 1, quad = quad)
@@ -415,7 +416,8 @@ contains
     end do
     call allocate(lpositionsB, dimB, mesh)
     call deallocate(mesh)
-      
+    lpositionsB%val = positionsB
+
     mesh_A => lpositionsA%mesh
     mesh_B => lpositionsB%mesh
 
@@ -426,7 +428,7 @@ contains
 
     if(present(seed)) then
       assert(seed > 0)
-      assert(seed <= ele_count(lpositionsA_val))
+      assert(seed <= ele_count(lpositionsA))
       ele_A = seed
     else
       ele_A = 1
@@ -675,14 +677,12 @@ contains
 ! IAKOVOS commented out
 !  subroutine verify_map(mesh_field_a, mesh_field_b, map_ab, map_ab_reference)
 
-!  subroutine compute_bboxes(positionsB, bboxes_B, ndimB, fieldMeshShapeLocB, elementCountB, nnodesB, fieldTypeB, positions_b_MeshNdglno)
   subroutine compute_bboxes(positionsB, bboxes_B)
     type(vector_field), intent(in) :: positionsB
     real, dimension(:, :, :), intent(out) :: bboxes_B
     integer :: ele_B
 
     do ele_B=1,ele_count(positionsB)
-!      bboxes_B(ele_B, :, :) = bbox(ele_val_v(positionsB, ele_B, ndimB, nnodesB, fieldMeshShapeLocB, fieldTypeB, positions_b_MeshNdglno))
       bboxes_B(ele_B, :, :) = bbox(ele_val(positionsB, ele_B))
     end do
   end subroutine compute_bboxes

@@ -1,5 +1,5 @@
-#define BUF_SIZE_A 4000
-#define BUF_SIZE_B 4000
+#define BUF_SIZE_A 200
+#define BUF_SIZE_B 200
 subroutine benchmark_tri_intersector
 
   use libsupermesh_construction
