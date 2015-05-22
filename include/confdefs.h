@@ -52,3 +52,4 @@
 #define HAVE_LIBVTKGRAPHICS 1
 #define HAVE_LIBVTKIO 1
 #define HAVE_MBA_2D 1
+#define UNUSED(x) (void)(x)

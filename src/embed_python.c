@@ -43,6 +43,13 @@ void set_scalar_field_from_python(char *function, int *function_len, int *dim,
                                   double result[], int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(dim);}
+  {UNUSED(nodes);}
+  {UNUSED(x);}
+  {UNUSED(y);}
+  {UNUSED(z);}
+  {UNUSED(t);}
+  {UNUSED(result);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -168,6 +175,13 @@ void set_integer_array_from_python(char* function, int* function_len, int* dim,
                                    int* result, int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(dim);}
+  {UNUSED(nodes);}
+  {UNUSED(x);}
+  {UNUSED(y);}
+  {UNUSED(z);}
+  {UNUSED(t);}
+  {UNUSED(result);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -289,6 +303,16 @@ void set_vector_field_from_python(char *function, int *function_len, int *dim,
                                   double result_z[], int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(dim);}
+  {UNUSED(nodes);}
+  {UNUSED(x);}
+  {UNUSED(y);}
+  {UNUSED(z);}
+  {UNUSED(t);}
+  {UNUSED(result_dim);}
+  {UNUSED(result_x);}
+  {UNUSED(result_y);}
+  {UNUSED(result_z);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -438,6 +462,14 @@ void set_tensor_field_from_python(char *function, int *function_len, int *dim,
                                   double result[], int* stat)
 {
 #ifndef HAVE_NUMPY
+  {UNUSED(dim);}
+  {UNUSED(nodes);}
+  {UNUSED(x);}
+  {UNUSED(y);}
+  {UNUSED(z);}
+  {UNUSED(t);}
+  {UNUSED(result_dim);}
+  {UNUSED(result);}
   int i;
   strncpy(function, "No Numpy support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -582,6 +614,9 @@ void set_particle_sfield_from_python(char *function, int *function_len,
                                      int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(nparticles);}
+  {UNUSED(t);}
+  {UNUSED(result);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -689,6 +724,11 @@ void set_particle_vfield_from_python(char *function, int *function_len,
                                      double result_z[], int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(nparticles);}
+  {UNUSED(t);}
+  {UNUSED(result_x);}
+  {UNUSED(result_y);}
+  {UNUSED(result_z);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -817,6 +857,13 @@ void set_detectors_from_python(char *function, int *function_len, int *dim,
                                double result_z[], int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(dim);}
+  {UNUSED(ndete);}
+  {UNUSED(t);}
+  {UNUSED(result_dim);}
+  {UNUSED(result_x);}
+  {UNUSED(result_y);}
+  {UNUSED(result_z);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -944,6 +991,8 @@ void real_from_python(char* function, int* function_len,
                         double* result, int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(t);}
+  {UNUSED(result);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -1049,6 +1098,9 @@ void real_vector_from_python(char* function, int* function_len,
 {
   int i;
 #ifndef HAVE_PYTHON
+  {UNUSED(result_len);}
+  {UNUSED(t);}
+  {UNUSED(result);}
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
   {
@@ -1173,6 +1225,9 @@ void integer_vector_from_python(char* function, int* function_len,
 {
   int i;
 #ifndef HAVE_PYTHON
+  {UNUSED(result_len);}
+  {UNUSED(t);}
+  {UNUSED(result);}
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
   {
@@ -1295,6 +1350,8 @@ void integer_from_python(char* function, int* function_len,
                         int* result, int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(t);}
+  {UNUSED(result);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
@@ -1394,6 +1451,9 @@ void string_from_python(char* function, int* function_len,
                         char* result, int* stat)
 {
 #ifndef HAVE_PYTHON
+  {UNUSED(result_len);}
+  {UNUSED(t);}
+  {UNUSED(result);}
   int i;
   strncpy(function, "No Python support!\n", (size_t) *function_len);
   for (i=0; i < *function_len; i++)
