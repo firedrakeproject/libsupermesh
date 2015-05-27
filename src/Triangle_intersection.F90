@@ -74,10 +74,11 @@ module libsupermesh_tri_intersection_module
   type(tri_type), dimension(BUF_SIZE), save :: tri_array_tmp
   integer :: tri_cnt_tmp = 0
 
-  public :: tri_type, line_type, libsupermesh_intersect_tris_libwm, libsupermesh_intersect_tris_dt, get_lines
+  public :: tri_type, line_type, get_lines
 
-  interface libsupermesh_intersect_tris_dt
-    module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public
+  interface libsupermesh_intersect_tris
+    module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public, &
+     &  libsupermesh_intersect_tris_libwm
   end interface
 
   interface get_lines

@@ -28,7 +28,7 @@
 module libsupermesh_fields_manipulation
 use libsupermesh_elements
 use libsupermesh_element_set
-!use libsupermesh_embed_python			! IAKOVOS commented out
+use libsupermesh_embed_python
 use libsupermesh_data_structures
 use libsupermesh_fields_data_types
 use libsupermesh_fields_base
@@ -988,7 +988,7 @@ implicit none
     integer :: i
 
     assert(field%field_type==FIELD_TYPE_NORMAL)
-    
+
     do i=1,field%dim
       field%val(i,node_numbers) = val(i, :)
     end do
@@ -2154,11 +2154,11 @@ implicit none
     integer, dimension(:), intent(in):: surface_element_list
     integer, intent(out), optional:: stat
     
-    real, dimension(ele_loc(to_field,1), face_loc(from_field,1)) :: locweight
-    type(element_type), pointer:: from_shape, to_shape
-    real, dimension(face_loc(from_field,1)) :: from_val
-    integer, dimension(:), pointer :: to_nodes
-    integer toloc, fromloc, ele, face
+!    real, dimension(ele_loc(to_field,1), face_loc(from_field,1)) :: locweight
+!    type(element_type), pointer:: from_shape, to_shape
+!    real, dimension(face_loc(from_field,1)) :: from_val
+!    integer, dimension(:), pointer :: to_nodes
+!    integer toloc, fromloc, ele, face
 
     FLAbort('remap_scalar_field_to_surface: Not implemented.')
     
@@ -2275,11 +2275,11 @@ implicit none
     integer, dimension(:), intent(in):: surface_element_list
     integer, intent(out), optional:: stat
     
-    real, dimension(ele_loc(to_field,1), face_loc(from_field,1)) :: locweight
-    type(element_type), pointer:: from_shape, to_shape
-    real, dimension(from_field%dim(1), from_field%dim(2), face_loc(from_field,1)) :: from_val
-    integer, dimension(:), pointer :: to_nodes
-    integer toloc, fromloc, ele, face, i, j
+!    real, dimension(ele_loc(to_field,1), face_loc(from_field,1)) :: locweight
+!    type(element_type), pointer:: from_shape, to_shape
+!    real, dimension(from_field%dim(1), from_field%dim(2), face_loc(from_field,1)) :: from_val
+!    integer, dimension(:), pointer :: to_nodes
+!    integer toloc, fromloc, ele, face, i, j
     
     FLAbort('remap_tensor_field_to_surface: Not implemented.')
 
@@ -2351,7 +2351,7 @@ implicit none
     !!< This is for the definition of elementwise quantities.
     type(mesh_type), intent(in) :: in_mesh
     type(mesh_type) :: new_mesh
-    type(element_type) :: shape, old_shape
+!    type(element_type) :: shape, old_shape
     character(len=*), intent(in) :: name
 
     FLAbort('piecewise_constant_mesh: Not implemented.')
@@ -2371,8 +2371,8 @@ implicit none
     !!< but has piecewise constant basis functions.
     !!< This is for the definition of elementwise quantities.
     type(mesh_type), intent(in) :: in_mesh
-    type(mesh_type) :: new_mesh
-    type(element_type) :: shape, old_shape
+!    type(mesh_type) :: new_mesh
+!    type(element_type) :: shape, old_shape
     type(scalar_field) :: field
     character(len=*), intent(in) :: name
     
@@ -3910,10 +3910,10 @@ implicit none
     !! argument
     integer, optional, intent(in) :: element_halo_ordering_scheme
 
-    type(mesh_type) :: output_mesh
-    integer :: ele, node, halo_num, lelement_halo_ordering_scheme, proc
-    type(halo_type), pointer :: input_halo, output_halo
-    integer, dimension(:), allocatable :: sndgln
+!    type(mesh_type) :: output_mesh
+!    integer :: ele, node, halo_num, lelement_halo_ordering_scheme, proc
+!    type(halo_type), pointer :: input_halo, output_halo
+!    integer, dimension(:), allocatable :: sndgln
     
     FLAbort('renumber_positions_elements: Not implemented.')
 
@@ -4069,13 +4069,13 @@ implicit none
     !! reordering before caches have been generated.
     type(integer_set), dimension(:), intent(in), optional :: use_unns
 
-    integer :: tmp, ele, nhalos
+!    integer :: tmp, ele, nhalos
     ! Note that this is invalid for mixed geometry meshes, but adaptivity
     ! doesn't support those anyway!
-    integer, dimension(ele_loc(positions,1)) :: unns, unns_order
-    integer, dimension(:), allocatable :: sndgln
-    integer, dimension(:), pointer :: nodes
-    type(mesh_type), pointer :: mesh
+!    integer, dimension(ele_loc(positions,1)) :: unns, unns_order
+!    integer, dimension(:), allocatable :: sndgln
+!    integer, dimension(:), pointer :: nodes
+!    type(mesh_type), pointer :: mesh
     
     FLAbort('reorder_element_numbering: Not implemented.')
 

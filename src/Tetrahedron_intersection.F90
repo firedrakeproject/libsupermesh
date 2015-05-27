@@ -72,6 +72,7 @@ contains
     tetA_t%v = tetA
     tetB_t%v = tetB
     call libsupermesh_intersect_tets_dt_public(tetA_t, tetB_t, tetsC_t, n_tetsC)
+
     do i = 1, n_tetsC
       tetsC(:, :, i) = tetsC_t(i)%v
     end do

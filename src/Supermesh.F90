@@ -1,9 +1,7 @@
 #include "fdebug.h"
 
 module libsupermesh_construction
-  use libsupermesh_fields_data_types
-  use libsupermesh_fields_allocates
-  use libsupermesh_fields_base
+  use libsupermesh_fields
   use libsupermesh_sparse_tools
   use libsupermesh_futils
 !  use metric_tools			! IAKOVOS commented out
@@ -13,6 +11,7 @@ module libsupermesh_construction
   use libsupermesh_global_parameters, only : real_4, real_8
 !  use tetrahedron_intersection_module	! IAKOVOS commented out
   use libsupermesh_tet_intersection_module
+  use libsupermesh_tri_intersection_module
   use libsupermesh_shape_functions, only: make_element_shape
   implicit none
   
@@ -68,14 +67,24 @@ module libsupermesh_construction
   ! I hope this is big enough ...
   real, dimension(1024) :: nodes_tmp
   logical :: libsupermesh_intersector_exactness = .false.
+  type(mesh_type), save :: intersection_mesh
+  logical, save :: mesh_allocated = .false.
 
-  public :: libsupermesh_intersect_elements, libsupermesh_intersector_set_dimension, &
-                  libsupermesh_intersector_set_exactness
+  public :: libsupermesh_intersect_elements, libsupermesh_intersect_elements_old, &
+          &    libsupermesh_intersector_set_dimension, &
+          &    libsupermesh_intersector_set_exactness, finalise_libsupermesh
   public :: libsupermesh_intersector_exactness
-
+  
   private
  
   contains
+  
+  subroutine finalise_libsupermesh
+    if (mesh_allocated) then
+      call deallocate(intersection_mesh)
+      mesh_allocated = .false.
+    end if
+  end subroutine finalise_libsupermesh
   
   subroutine libsupermesh_intersector_set_input_sp(nodes_A, nodes_B, ndim, loc)
     real(kind = real_4), dimension(ndim, loc), intent(in) :: nodes_A
@@ -102,17 +111,49 @@ module libsupermesh_construction
     
   end subroutine libsupermesh_intersector_get_output_sp
   
-  function libsupermesh_intersect_elements(positions_A_val, &
+  subroutine libsupermesh_intersect_elements(positions_A_val, &
+        posB, ndimA, n_C, trisC_real, tetsC_real)
+
+    real, dimension(:, :), intent(in) :: positions_A_val
+    integer, intent(in) :: ndimA
+    real, dimension(:, :), intent(in) :: posB
+  
+    real, dimension(2, 3, tri_buf_size), intent(out), optional ::  trisC_real
+    real, dimension(3, 4, tet_buf_size), intent(out), optional ::  tetsC_real
+    integer, intent(out) :: n_C
+
+    type(tri_type) :: triA, triB
+    type(tet_type) :: tetA, tetB
+
+    ewrite(1, *) "In libsupermesh_intersect_elements"
+
+    if ( (ndimA == 2) ) then
+      triA%v = positions_A_val
+      triB%v = posB
+
+      call libsupermesh_intersect_tris_dt_public(triA%v, triB%v, trisC_real, n_C)
+    else if ( ndimA == 3 ) then
+      tetA%v = positions_A_val
+      tetB%v = posB
+
+      call libsupermesh_intersect_tets(tetA%v, tetB%v, tetsC_real, n_C)
+    else
+      FLAbort("libsupermesh_intersect_elements: Unsupported dimension.")
+    end if
+
+  end subroutine libsupermesh_intersect_elements
+  
+  function libsupermesh_intersect_elements_old(positions_A_val, &
         posB, locA, ndimA, nnodesA, &
         quadVertices, quadDim, quadNgi, quadDegree, &
         shapeLoc, shapeDim, shapeDegree) result(intersection)
+
     real, intent(in), dimension(ndimA, locA) :: positions_A_val
     integer, intent(in) :: locA, ndimA, nnodesA
     type(vector_field) :: intersection
-    type(mesh_type) :: intersection_mesh
     real, dimension(:, :), intent(in) :: posB
   
-    integer :: nonods, totele, i
+    integer :: i, nonods, totele
     integer, intent(in) :: quadVertices, quadDim, quadNgi, quadDegree, shapeLoc, shapeDim, shapeDegree
 
     ewrite(1, *) "In libsupermesh_intersect_elements"
@@ -144,8 +185,8 @@ module libsupermesh_construction
     end if
 
     call deallocate(intersection_mesh)
-
-  end function libsupermesh_intersect_elements
+    
+  end function libsupermesh_intersect_elements_old
   
   subroutine libsupermesh_intersector_set_exactness(exactness)
     logical, intent(in) :: exactness

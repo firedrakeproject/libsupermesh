@@ -151,11 +151,6 @@ contains
     type(ilist), dimension(size(ndglnoA, 2)) :: map_AB
     integer, optional, intent(in) :: seed
     !!< A simple wrapper to select an intersection finder
-    
-    ! The positions and meshes of A and B
-!    type(vector_field), intent(in), target :: positionsA, positionsB
-    ! for each element in A, the intersecting elements in B
-!    type(ilist), dimension(ele_count(positionsA)) :: map_AB
 
     integer :: i, dimA, dimB, nodesA, nodesB, verticesA, verticesB
     type(element_type) :: shape
@@ -202,8 +197,6 @@ contains
     node => seeds%firstnode
     do while(associated(node))
       sub_map_AB = libsupermesh_advancing_front_intersection_finder( &
-!        & positionsA, reshape(ndglnoA, (/verticesA, size(ndglnoA, 1)/)), &
-!        & positionsB, reshape(ndglnoB, (/verticesB, size(ndglnoB, 1)/)), &
         & positionsA, ndglnoA, &
         & positionsB, ndglnoB, &
         & seed = seed)
@@ -278,19 +271,16 @@ contains
   function advancing_front_intersection_finder_seeds(positions) result(seeds)
     !!< Return a list of seeds for the advancing front intersection finder - one
     !!< seed per connected sub-domain.
-    
+
     type(vector_field), intent(in) :: positions
-!    type(csr_sparsity), intent(in), pointer :: eelist
-!    integer, intent(in) :: elementCountA
-    
+
     type(ilist) :: seeds
-    
     integer :: ele, first_ele, i
     type(csr_sparsity), pointer :: eelist
     logical, dimension(:), allocatable :: tested
     integer, dimension(:), pointer :: neigh
     type(ilist) :: next
-    
+
     eelist => extract_eelist(positions)
     
     allocate(tested(ele_count(positions)))
@@ -340,11 +330,9 @@ contains
     pure function next_false_loc(start_index, logical_vector) result(loc)
       integer, intent(in) :: start_index
       logical, dimension(:), intent(in) :: logical_vector
-      
-      integer :: loc
-      
-      integer :: i
-      
+
+      integer :: loc, i
+
       do i = start_index, size(logical_vector)
         if(.not. logical_vector(i)) then
           loc = i
@@ -589,26 +577,27 @@ contains
     
   end function brute_force_intersection_finder
   
-  subroutine rtree_intersection_finder_set_input(positions, ndim, nnodes, elementCount, loc, enlist)
-!    type(vector_field), intent(in) :: old_positions
-    real, intent(in), dimension(nnodes * ndim) :: positions
-    integer, intent(in) :: ndim, nnodes, elementCount, loc
-    integer, intent(in), dimension(elementCount * loc) :: enlist
-!    real, dimension(nnodes * ndim) :: tmp_positions
-!    integer :: node, dim
-    
-!    dim = ndim
+!  subroutine rtree_intersection_finder_set_input(positions, ndim, nnodes, elementCount, loc, enlist)
+  subroutine rtree_intersection_finder_set_input(old_positions)
+    type(vector_field), intent(in) :: old_positions
+!    real, intent(in), dimension(nnodes * ndim) :: positions
+!    integer, intent(in) :: ndim, nnodes, elementCount, loc
+!    integer, intent(in), dimension(elementCount * loc) :: enlist
+    real, dimension(node_count(old_positions) * old_positions%dim) :: tmp_positions
+    integer :: node, dim
+
+    dim = old_positions%dim
 
     ! Ugh. We have to copy the memory because old_positions
     ! stores it as 2 or 3 separate vectors
-!    do node=1,node_count(old_positions)
-!      tmp_positions((node-1)*dim+1:node*dim) = node_val(old_positions, node)
-!    end do
+    do node=1,node_count(old_positions)
+      tmp_positions((node-1)*dim+1:node*dim) = node_val(old_positions, node)
+    end do
 
-    call crtree_intersection_finder_set_input(positions, enlist, ndim, &
-                                      & loc, nnodes, &
-                                      & elementCount)
-                                      
+    call crtree_intersection_finder_set_input(tmp_positions, old_positions%mesh%ndglno, dim, &
+                                      & ele_loc(old_positions, 1), node_count(old_positions), &
+                                      & ele_count(old_positions))
+
   end subroutine rtree_intersection_finder_set_input
 
   subroutine rtree_intersection_finder_find(new_positions, ele_B)
@@ -628,25 +617,25 @@ contains
        positionsB, ndglnoB, npredicates) result(map_ab)
     !!< As advancing_front_intersection_finder, but uses an rtree algorithm. For
     !!< testing *only*. For practical applications, use the linear algorithm.
-    
+
     ! The positions and meshes of A and B
     real, dimension(:, :), intent(in) :: positionsA
-    integer, dimension(:), intent(in) :: ndglnoA
+    integer, dimension(:, :), intent(in) :: ndglnoA
     real, dimension(:, :), intent(in) :: positionsB
-    integer, dimension(:), intent(in) :: ndglnoB
+    integer, dimension(:, :), intent(in) :: ndglnoB
     integer, intent(out), optional :: npredicates
     ! for each element in A, the intersecting elements in B
-    type(ilist), dimension(size(ndglnoA, 1)) :: map_ab
-    
+    type(ilist), dimension(size(ndglnoA, 2)) :: map_ab
+
     integer :: i, j, id, nelms, ntests, dimA, verticesA, nodesA, dimB, nodesB, verticesB
-    
+
     type(mesh_type) :: mesh
     type(vector_field), target :: lpositionsA, lpositionsB
     type(quadrature_type) :: quad
     type(element_type) :: shape
 
     ewrite(1, *) "In libsupermesh_rtree_intersection_finder"
-    
+
     dimA = size(positionsA, 1)
     nodesA = size(positionsA, 2)
     verticesA = size(ndglnoA, 1)
@@ -657,17 +646,30 @@ contains
     quad = make_quadrature(vertices = verticesA, dim = dimA, ngi = 0, degree = 0)
     shape = make_element_shape(vertices = verticesA, dim = dimA, degree = 1, quad = quad)
     call deallocate(quad)
-    call allocate(mesh, nodesA, size(ndglnoA, 1), shape)
+    call allocate(mesh, nodesA, size(ndglnoA, 2), shape)
     call deallocate(shape)
-    do i = 1, size(ndglnoA, 1)
-      mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(i)
+    do i = 1, size(ndglnoA, 2)
+      mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
     end do
     call allocate(lpositionsA, dimA, mesh)
     call deallocate(mesh)
     lpositionsA%val = positionsA
     
-    call rtree_intersection_finder_set_input(positionsB, dimB, nodesB, size(ndglnoB, 1), verticesB, ndglnoB)
-    do i = 1, size(ndglnoA, 1)
+    quad = make_quadrature(vertices = verticesB, dim = dimB, ngi = 0, degree = 0)
+    shape = make_element_shape(vertices = verticesB, dim = dimB, degree = 1, quad = quad)
+    call deallocate(quad)
+    call allocate(mesh, nodesB, size(ndglnoB, 2), shape)
+    call deallocate(shape)
+    do i = 1, size(ndglnoB, 2)
+      mesh%ndglno((i - 1) * verticesB + 1:i * verticesB) = ndglnoB(:, i)
+    end do
+    call allocate(lpositionsB, dimB, mesh)
+    call deallocate(mesh)
+    lpositionsB%val = positionsB
+    
+!    call rtree_intersection_finder_set_input(positionsB, dimB, nodesB, size(ndglnoB, 1), verticesB, ndglnoB)
+    call rtree_intersection_finder_set_input(lpositionsB)
+    do i = 1, size(ndglnoA, 2)
       call rtree_intersection_finder_find(lpositionsA, i)
       call rtree_intersection_finder_query_output(nelms)
       do j = 1, nelms
@@ -682,6 +684,7 @@ contains
     ewrite(1, *) "Exiting libsupermesh_rtree_intersection_finder"
     
     call deallocate(lpositionsA)
+    call deallocate(lpositionsB)
     
   end function libsupermesh_rtree_intersection_finder
   

@@ -1,8 +1,7 @@
 subroutine test_tet_intersector
 
   use libsupermesh_construction
-  use libsupermesh_fields_allocates
-  use libsupermesh_fields_base
+  use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tet_intersection_module
   use libsupermesh_unittest_tools
@@ -11,7 +10,8 @@ subroutine test_tet_intersector
 
   type(vector_field) :: positionsA, positionsB
   integer :: ele_A, ele_B, ele_C
-  real :: vol_libwm, vol_libwm_intersect, vol_fort, vol_fort_public, vol_intersect_elements
+  real :: vol_libwm, vol_libwm_intersect, vol_fort, vol_fort_public, vol_E_intersect_elements, &
+      &    vol_F_intersect_elements, vol_G_intersect_elements
   logical :: fail
   
   type(tet_type) :: tet_A, tet_B
@@ -19,11 +19,11 @@ subroutine test_tet_intersector
   type(plane_type), dimension(4) :: planes_B
   integer :: ntests, n_tetsC
   real, dimension(3, tet_buf_size) :: nodesC
-  integer, dimension(4, 8) :: ndglnoC
+  integer, dimension(4, tet_buf_size) :: ndglnoC
   real, dimension(3, 4, tet_buf_size) ::  tetsC_real
   integer :: i, nonods, totele
   type(vector_field) :: intersection, intersect_elements_result
-  type(mesh_type) :: intersection_mesh
+  type(mesh_type) :: intersection_mesh, new_mesh
   type(element_type) :: shape_lib
   
   ! I hope this is big enough ...
@@ -87,29 +87,64 @@ subroutine test_tet_intersector
 
       ! E. Use libWM directly and create temporary vector field      
       shape_lib = ele_shape(positionsB, ele_B)
-      intersect_elements_result = libsupermesh_intersect_elements(tet_B%v, &
+      intersect_elements_result = libsupermesh_intersect_elements_old(tet_B%v, &
         ele_val(positionsA, ele_A), &
         ele_loc(positionsB, ele_B), positionsB%dim, &
         node_count(positionsA), &
         shape_lib%quadrature%vertices, shape_lib%quadrature%dim, shape_lib%quadrature%ngi, &
         shape_lib%quadrature%degree, shape_lib%loc, shape_lib%dim, shape_lib%degree)
         
-      vol_intersect_elements = 0.0
+      vol_E_intersect_elements = 0.0
       do ele_C=1,ele_count(intersect_elements_result)
-        vol_intersect_elements = vol_intersect_elements + abs(simplex_volume(intersect_elements_result, ele_C))
+        vol_E_intersect_elements = vol_E_intersect_elements + abs(simplex_volume(intersect_elements_result, ele_C))
       end do
       call deallocate(intersect_elements_result)
+      
+      ! F. Use the new libsupermesh_intersect_elements and do NOT create vector field 
+      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
+      vol_F_intersect_elements = 0.0
+      do ele_C=1,n_tetsC
+        vol_F_intersect_elements = vol_F_intersect_elements + abs(tetvol_test(tetsC_real(:,:,ele_C)))
+      end do
+
+      ! G. Use the new libsupermesh_intersect_elements and DO create vector field 
+      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
+      call allocate(new_mesh, n_tetsC * 4, n_tetsC, ele_shape(positionsA, ele_A))
+
+      if ( n_tetsC > 0 ) then
+        new_mesh%ndglno = (/ (i, i=1,4 * n_tetsC) /)
+        new_mesh%continuity = -1
+      end if
+
+      call allocate(intersection, positionsA%dim, new_mesh, "IntersectionCoordinates")
+      if ( n_tetsC > 0 ) then
+        do i = 1, n_tetsC
+          call set(intersection, ele_nodes(intersection, i), tetsC_real(:,:,i))
+        end do
+      end if
+      call deallocate(new_mesh)
+      vol_G_intersect_elements = 0.0
+      do ele_C=1,ele_count(intersection)
+        vol_G_intersect_elements = vol_G_intersect_elements + abs(simplex_volume(intersection, ele_C))
+      end do
+      call deallocate(intersection)
 
       fail = (vol_libwm_intersect .fne. vol_fort) &
-         .OR. (vol_intersect_elements .fne. vol_fort_public ) &
-         .OR. (vol_intersect_elements .fne. vol_fort) &
+         .OR. (vol_E_intersect_elements .fne. vol_fort_public ) &
+         .OR. (vol_E_intersect_elements .fne. vol_fort) &
          .OR. (vol_libwm_intersect .fne. vol_libwm) &
-         .OR. (vol_libwm_intersect .fne. vol_fort_public )
+         .OR. (vol_libwm_intersect .fne. vol_fort_public ) &
+         .OR. (vol_F_intersect_elements .fne. vol_libwm_intersect ) &
+         .OR. (vol_F_intersect_elements .fne. vol_libwm ) &
+         .OR. (vol_G_intersect_elements .fne. vol_fort) &
+         .OR. (vol_G_intersect_elements .fne. vol_libwm )
       call report_test("[tet_intersector volumes]", fail, .false., "Should give the same volumes of intersection")
       if ( fail .eqv. .TRUE. ) then
         write (*,*) "[tet_intersector volumes] vol_libwm:",vol_libwm, &
           ", vol_fort:", vol_fort,", vol_fort_public:",vol_fort_public,&
-          ", vol_intersect_elements:",vol_intersect_elements,"."
+          ", vol_E_intersect_elements:",vol_E_intersect_elements, &
+          ", vol_F_intersect_elements:",vol_F_intersect_elements, &
+          ", vol_G_intersect_elements:",vol_G_intersect_elements,"."
       end if
       
 !    write(*,*) "test_tet_intersector: vol_libwm:",vol_libwm,", vol_fort:",vol_fort,", vol_fort_public:",vol_fort_public,", vol_intersect_elements:",vol_intersect_elements,"."

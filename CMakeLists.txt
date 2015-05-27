@@ -38,7 +38,7 @@ endif ()
 
 # make sure that the default is a RELEASE
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE DEBUG CACHE STRING
+  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -52,7 +52,7 @@ get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
-  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ftree-vectorize -march=native -fgcse-lm -fgcse-sm -fgcse-las -fgcse-after-reload -faggressive-loop-optimizations -fipa-cp -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ftree-vectorize -march=native -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=all -ffpe-trap=zero,overflow,underflow -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
   SET(_WARNING_COMPILE_FLAGS " ")
   SET(_WARNING_COMPILE_FLAGS_FORTRAN_DEBUG "-Wextra -Wall -Wimplicit-interface -Wno-surprising")
@@ -75,7 +75,7 @@ endif (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU")
   # gcc
-  set (CMAKE_C_FLAGS_RELEASE "-O3")
+  set (CMAKE_C_FLAGS_RELEASE "-O3 -march=native")
   set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
   SET(_WARNING_COMPILE_FLAGS_C "-Wextra -Wall")  
 elseif (CMAKE_C_COMPILER_ID MATCHES "Intel")
@@ -397,5 +397,6 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_quadrature.mod"          DEST
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_shape_functions.mod"     DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_sparse_tools.mod"        DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod"  DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection_module.mod"  DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_transform_elements.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_vector_tools.mod"       DESTINATION include)
