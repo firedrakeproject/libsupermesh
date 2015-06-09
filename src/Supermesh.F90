@@ -131,7 +131,7 @@ module libsupermesh_construction
       triA%v = positions_A_val
       triB%v = posB
 
-      call libsupermesh_intersect_tris_dt_public(triA%v, triB%v, trisC_real, n_C)
+      call libsupermesh_intersect_tris(triA%v, triB%v, trisC_real, n_C)
     else if ( ndimA == 3 ) then
       tetA%v = positions_A_val
       tetB%v = posB
@@ -170,7 +170,7 @@ module libsupermesh_construction
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
     call allocate(intersection_mesh, nonods, totele, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
-!    intersection_mesh%ndglno = (/ (i, i=1,totele) /)
+    intersection_mesh%ndglno = (/ (i, i=1,totele) /)
     intersection_mesh%continuity = -1
     call allocate(intersection, ndimA, intersection_mesh, "IntersectionCoordinates")
     if (nonods > 0) then

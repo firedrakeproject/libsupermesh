@@ -4,8 +4,8 @@ include(ExternalProject)
 ExternalProject_Add(
   libspud
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-#  CONFIGURE_COMMAND CXX=icpc CC=icc FC=ifort ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debugging
-  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure "CFLAGS=-O3 -march=native" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static
+#  CONFIGURE_COMMAND FCFLAGS="-fPIC" CXX=mpicxx CC=mpicc FC=mpif90 ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debugging
+  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static
   PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
   BUILD_COMMAND make 
 #  BUILD_DIR ${PROJECT_BINARY_DIR}

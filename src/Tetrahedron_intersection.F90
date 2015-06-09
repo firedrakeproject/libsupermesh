@@ -1,4 +1,4 @@
-#define BUF_SIZE 96
+#define BUF_SIZE 512
 #include "fdebug.h"
 
 module libsupermesh_tet_intersection_module
@@ -46,11 +46,15 @@ contains
     integer :: i, nonods
     real, dimension(3 * BUF_SIZE), save :: lnodesC = -huge(0.0)
     
+!write(*,*) "INSIDE tet_A%v:",tetA,",tet_B%v:",tetB
     call libsupermesh_cintersector_set_input(tetA, tetB, 3, 4)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, n_tetsC)
+!write(*,*) "INSIDE nonods:",nonods,"totele:",n_tetsC
     call libsupermesh_cintersector_get_output(nonods, n_tetsC, 3, 4, lnodesC, ndglnoC)
-
+    if ( nonods > 0 ) then
+!write(*,*) "lnodesC:",lnodesC
+    end if
     do i = 1, nonods
       nodesC(1, i) = lnodesC(i)
       nodesC(2, i) = lnodesC(i + nonods)

@@ -191,7 +191,11 @@ show :
   message (STATUS "petsc_lib_dir ${petsc_lib_dir}")
 
   macro (PETSC_FIND_LIBRARY suffix name)
+if(DEFINED ENV{ARCHER})
+# https://github.com/pism/pism/issues/316
+else()
     set (PETSC_LIBRARY_${suffix} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE) # Clear any stale value, if we got here, we need to find it again
+endif()
     if (WIN32)
       set (libname lib${name}) #windows expects "libfoo", linux expects "foo"
     else (WIN32)

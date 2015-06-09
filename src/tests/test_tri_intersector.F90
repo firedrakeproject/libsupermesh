@@ -16,7 +16,7 @@ subroutine test_tri_intersector
   
   type(tri_type) :: triA, triB
   type(tri_type), dimension(tri_buf_size) :: trisC
-  integer :: ntests, n_trisC, i, nonods, totele
+  integer :: ntests, n_trisC, i, nonods, totele, n_trisC_pre
   real, dimension(2, tri_buf_size) :: nodesC
   integer, dimension(3, tri_buf_size) :: ndglnoC
   real, dimension(2, 3, tri_buf_size) ::  trisC_real
@@ -45,6 +45,7 @@ subroutine test_tri_intersector
       do ele_C=1,n_trisC
         area_A_libwm_intersect = area_A_libwm_intersect + triangle_area(nodesC(:, ndglnoC(:, ele_C)))
       end do
+      n_trisC_pre = n_trisC
 
       ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
       call libsupermesh_intersect_tris_dt(triA, triB, trisC, n_trisC)
@@ -52,6 +53,21 @@ subroutine test_tri_intersector
       do ele_C=1,n_trisC
         area_B_fort = area_B_fort + triangle_area(trisC(ele_C)%v)
       end do
+      
+      if (n_trisC_pre .ne. n_trisC) then
+        write(*,*) "LibWM returned:",n_trisC_pre,", and tris returned:",n_trisC,"."
+        write(*,*) "Input triangles"
+        write(*,*) "A: ele_A:",ele_A,", triA:",ele_val(positionsA, ele_A),"."
+        write(*,*) "B: ele_B:",ele_B,", triB:",ele_val(positionsB, ele_B),"."
+        write(*,*) "Results:"
+        do ele_C=1,n_trisC_pre
+          write(*,*) "libWM:",nodesC(:, ndglnoC(:, ele_C)),"."
+        end do
+        do ele_C=1,n_trisC
+          write(*,*) "tris :",trisC(ele_C)%v,"."
+        end do
+        call exit(1)
+      end if
 
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
       call libsupermesh_intersect_tris_dt_public(triA%v, triB%v, trisC_real, n_trisC)
