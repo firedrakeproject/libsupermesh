@@ -1,7 +1,7 @@
 #define BUF_SIZE 4
 #include "fdebug.h"
 
-module libsupermesh_tri_intersection_3_module
+module libsupermesh_tri_intersection_2_module
 
   use libsupermesh_fldebug
   use libsupermesh_tri_intersection_module, only : tri_type
@@ -190,4 +190,4 @@ contains
 
   end function triangle_area
 
-end module libsupermesh_tri_intersection_3_module
+end module libsupermesh_tri_intersection_2_module
