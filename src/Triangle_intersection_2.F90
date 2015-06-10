@@ -96,6 +96,7 @@ contains
 
   end subroutine libsupermesh_intersect_tris_dt
 
+  ! Sutherland-Hodgman clipping algorithm
   subroutine clip(line, points, n_points)
     type(line_type), intent(in) :: line
     real, dimension(2, BUF_SIZE + 2), intent(in) :: points
