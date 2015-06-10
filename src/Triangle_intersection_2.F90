@@ -1,4 +1,4 @@
-#define BUF_SIZE 10
+#define BUF_SIZE 24
 #include "fdebug.h"
 
 module libsupermesh_tri_intersection_module
