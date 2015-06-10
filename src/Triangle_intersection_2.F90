@@ -1,10 +1,11 @@
-#define BUF_SIZE 4
+#define BUF_SIZE 10
 #include "fdebug.h"
 
-module libsupermesh_tri_intersection_2_module
+module libsupermesh_tri_intersection_module
 
   use libsupermesh_fldebug
-  use libsupermesh_tri_intersection_module, only : tri_type
+  use libsupermesh_tri_intersection_2_module, only : tri_type, libsupermesh_intersect_tris_libwm
+  use libsupermesh_tri_intersection_2_module, only : libwm_tri_buf_size => tri_buf_size
 
   use mpi
 
@@ -12,22 +13,24 @@ module libsupermesh_tri_intersection_2_module
 
   private
 
-  public :: tri_type, libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public
+  public :: tri_type, libsupermesh_intersect_tris, libsupermesh_intersect_tris_dt, &
+    & libsupermesh_intersect_tris_dt_public, libsupermesh_intersect_tris_libwm
 
   type line_type
     real, dimension(2) :: normal
     real, dimension(2) :: point
   end type line_type
 
-  interface libsupermesh_intersect_tris_dt
+  interface libsupermesh_intersect_tris
     module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public
-  end interface libsupermesh_intersect_tris_dt
+  end interface libsupermesh_intersect_tris
 
   interface get_lines
     module procedure get_lines_tri
   end interface get_lines
 
   integer, parameter, public :: tri_buf_size = BUF_SIZE
+  public :: libwm_tri_buf_size
   
   real, dimension(2, BUF_SIZE + 2), save :: points_tmp
   integer, save :: n_points_tmp
@@ -72,17 +75,15 @@ contains
 
     n_trisC = 0
     call clip(lines_b(1), points, n_points)
-    points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     if(n_points_tmp < 3) return
+    points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     n_points = n_points_tmp
     call clip(lines_b(2), points, n_points)
-    points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     if(n_points_tmp < 3) return
+    points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     n_points = n_points_tmp
     call clip(lines_b(3), points, n_points)
     if(n_points_tmp < 3) return
-!    points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
-!    n_points = n_points_tmp
 
     do i = 1, n_points_tmp - 2
       n_trisC = n_trisC + 1
@@ -142,7 +143,7 @@ contains
         f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0), 0.0)
         points_tmp(:, n_points_tmp) = p1 + f * (p2 - p1)
       !else
-      !  Full clip
+        ! Full clip
       end if
     end do
     
@@ -191,4 +192,4 @@ contains
 
   end function triangle_area
 
-end module libsupermesh_tri_intersection_2_module
+end module libsupermesh_tri_intersection_module
