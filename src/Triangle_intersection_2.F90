@@ -46,7 +46,7 @@ contains
 
     integer :: i
     type(tri_type) :: triA_t, triB_t
-    type(tri_type), dimension(BUF_SIZE) :: trisC_t
+    type(tri_type), dimension(BUF_SIZE), save :: trisC_t
 
     triA_t%V = triA
     triB_t%V = triB
@@ -66,7 +66,7 @@ contains
     integer :: i
     type(line_type), dimension(3) :: lines_b
 
-    real, dimension(2, BUF_SIZE + 2) :: points
+    real, dimension(2, BUF_SIZE + 2), save :: points
     integer :: n_points
     
     lines_b = get_lines(triB)
@@ -107,7 +107,7 @@ contains
     integer :: i
     real :: d1, d2, f
     real, dimension(2) :: p1, p2
-    real, dimension(BUF_SIZE + 2) :: d
+    real, dimension(BUF_SIZE + 2), save :: d
 
     do i = 1, n_points
       d(i) = dot_product(line%normal, points(:, i) - line%point)
