@@ -43,10 +43,10 @@ subroutine benchmark_tri_intersector
   type(mesh_type) :: intersection_meshLibWM, intersection_meshIntersect_Elements, new_mesh
   REAL :: num
 
-  integer :: index, ele, dimB, i, locB, loc, elementCount, n_count, nodeCount
+  integer :: index, ele, dimA, i, locA, loc, elementCount, n_count, nodeCount
   type(element_type) :: elementShape
   
-  real, dimension(:,:), allocatable :: positions_B_lib_val
+  real, dimension(:,:), allocatable :: positions_A_lib_val
   integer, dimension(3) :: counters
   
   integer :: nonods, totele, n_trisC_pre
@@ -140,7 +140,7 @@ subroutine benchmark_tri_intersector
       ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
       triB%v = ele_val(positionsB, ele_B)
 
-      call libsupermesh_intersect_tris_dt(triA, triB, trisC, n_trisC)
+      call libsupermesh_intersect_tris(triA, triB, trisC, n_trisC)
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_trisC
@@ -196,7 +196,7 @@ subroutine benchmark_tri_intersector
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
       triB%v = ele_val(positionsB, ele_B)
 
-      call libsupermesh_intersect_tris_dt_public(triA%v, triB%v, trisC_real, n_trisC)
+      call libsupermesh_intersect_tris(triA%v, triB%v, trisC_real, n_trisC)
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_trisC
@@ -217,20 +217,20 @@ subroutine benchmark_tri_intersector
       posA = ele_val(positionsA, ele_A)
       posB = ele_val(positionsB, ele_B)
       elementShape = ele_shape(positionsB, 1)
-      dimB = positionsB%dim
-      locB = ele_loc(positionsB, ele_B)
+      dimA = positionsA%dim
+      locA = ele_loc(positionsA, ele_A)
 
       t1 = MPI_Wtime();
-      call libsupermesh_cintersector_set_input(posB, posA, dimB, locB)
+      call libsupermesh_cintersector_set_input(posA, posB, dimA, locA)
       call libsupermesh_cintersector_drive
       call libsupermesh_cintersector_query(nonods, totele)
       call allocate(intersection_meshLibWM, nonods, totele, elementShape, "IntersectionMeshLibWM")
       intersection_meshLibWM%continuity = -1
-      call allocate(libwm_result, dimB, intersection_meshLibWM, "IntersectionCoordinatesLibWM")
+      call allocate(libwm_result, dimA, intersection_meshLibWM, "IntersectionCoordinatesLibWM")
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dimB, loc, nodes_tmp, intersection_meshLibWM%ndglno)
+        call libsupermesh_cintersector_get_output(nonods, totele, dimA, locA, nodes_tmp, intersection_meshLibWM%ndglno)
 
-        do i = 1, dimB
+        do i = 1, dimA
           libwm_result%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
         end do
       end if
@@ -254,30 +254,30 @@ subroutine benchmark_tri_intersector
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB) 
       ! E. Use *original/old* intersect_elements function directly and create temporary vector field      
-      dimB = positionsB%dim
+      dimA = positionsA%dim
       n_count = 0
-      select case(positionsB%field_type)
+      select case(positionsA%field_type)
       case(FIELD_TYPE_NORMAL)
 !        n_count = node_count(positionsB%mesh)
-        n_count = positionsB%mesh%shape%quadrature%vertices
-        allocate(positions_B_lib_val(dimB,n_count))
+        n_count = positionsA%mesh%shape%quadrature%vertices
+        allocate(positions_A_lib_val(dimA,n_count))
       case(FIELD_TYPE_CONSTANT)
-        allocate(positions_B_lib_val(dimB,1))
+        allocate(positions_A_lib_val(dimA,1))
       case(FIELD_TYPE_DEFERRED)
-        allocate(positions_B_lib_val(0,0))
+        allocate(positions_A_lib_val(0,0))
       end select
-      positions_B_lib_val = ele_val(positionsB, ele_B)
+      positions_A_lib_val = ele_val(positionsA, ele_A)
 
-      elementCount = ele_count(positionsB)
-      allocate(posB(positionsA%dim, ele_loc(positionsA, ele_A)))
-      posB = ele_val(positionsA, ele_A)
-      elementShape = ele_shape(positionsB, ele_B)
-      loc = ele_loc(positionsB, ele_B)
-      nodeCount = node_count(positionsB)
+      elementCount = ele_count(positionsA)
+      allocate(posB(positionsB%dim, ele_loc(positionsB, ele_B)))
+      posB = ele_val(positionsB, ele_B)
+      elementShape = ele_shape(positionsA, ele_A)
+      loc = ele_loc(positionsA, ele_A)
+      nodeCount = node_count(positionsA)
 
       t1 = MPI_Wtime();
       libsupermesh_intersect_elements_result = libsupermesh_intersect_elements_old( &
-        positions_B_lib_val, posB, loc, dimB, nodeCount, &
+        positions_A_lib_val, posB, loc, dimA, nodeCount, &
         elementShape%quadrature%vertices, elementShape%quadrature%dim, elementShape%quadrature%ngi, &
         elementShape%quadrature%degree, elementShape%loc, elementShape%dim, elementShape%degree)
       t2 = MPI_Wtime();
@@ -290,7 +290,7 @@ subroutine benchmark_tri_intersector
       triangle_counters(5, index) = ele_count(libsupermesh_intersect_elements_result)
       call deallocate(libsupermesh_intersect_elements_result)
       deallocate(posB)
-      deallocate(positions_B_lib_val)
+      deallocate(positions_A_lib_val)
     end do
   end do
 

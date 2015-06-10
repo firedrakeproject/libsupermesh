@@ -48,7 +48,7 @@ subroutine test_tri_intersector
       n_trisC_pre = n_trisC
 
       ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
-      call libsupermesh_intersect_tris_dt(triA, triB, trisC, n_trisC)
+      call libsupermesh_intersect_tris(triA, triB, trisC, n_trisC)
       area_B_fort = 0.0
       do ele_C=1,n_trisC
         area_B_fort = area_B_fort + triangle_area(trisC(ele_C)%v)
@@ -70,7 +70,7 @@ subroutine test_tri_intersector
       end if
 
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
-      call libsupermesh_intersect_tris_dt_public(triA%v, triB%v, trisC_real, n_trisC)
+      call libsupermesh_intersect_tris(triA%v, triB%v, trisC_real, n_trisC)
       area_C_fort_public = 0.0
       do ele_C=1,n_trisC
         area_C_fort_public = area_C_fort_public + triangle_area(trisC_real(:,:,ele_C))

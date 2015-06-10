@@ -4,7 +4,8 @@
 module libsupermesh_tri_intersection_module
 
   use libsupermesh_fldebug
-  use libsupermesh_tri_intersection_2_module, only : tri_type, libsupermesh_intersect_tris_libwm
+  use libsupermesh_tri_intersection_2_module, only : tri_type, &
+        & libsupermesh_intersect_tris_libwm, libsupermesh_intersect_tris_dt_old
   use libsupermesh_tri_intersection_2_module, only : libwm_tri_buf_size => tri_buf_size
 
   use mpi
@@ -13,8 +14,8 @@ module libsupermesh_tri_intersection_module
 
   private
 
-  public :: tri_type, libsupermesh_intersect_tris, libsupermesh_intersect_tris_dt, &
-    & libsupermesh_intersect_tris_dt_public, libsupermesh_intersect_tris_libwm
+  public :: tri_type, libsupermesh_intersect_tris, libsupermesh_intersect_tris_dt_old, &
+    & libsupermesh_intersect_tris_libwm
 
   type line_type
     real, dimension(2) :: normal

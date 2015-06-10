@@ -57,7 +57,7 @@
 ! d. Find the co-ordinates of I (NI = -ON + OI = l * ND = l * (-ON + OD)
 
 
-module libsupermesh_tri_intersection_module
+module libsupermesh_tri_intersection_2_module
 
   use libsupermesh_fldebug
 
@@ -489,4 +489,4 @@ contains
 
   end function distances_to_line
 
-end module libsupermesh_tri_intersection_module
+end module libsupermesh_tri_intersection_2_module
