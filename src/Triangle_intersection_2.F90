@@ -64,6 +64,7 @@ contains
     integer, intent(out) :: n_trisC
 
     integer :: i
+    real :: tol
     type(line_type), dimension(3) :: lines_b
 
     real, dimension(2, BUF_SIZE + 2) :: points
@@ -86,12 +87,13 @@ contains
     call clip(lines_b(3), points, n_points)
     if(n_points_tmp < 3) return
 
+    tol = 10.0 * min(spacing(triangle_area(triA)), spacing(triangle_area(triB)))
     do i = 1, n_points_tmp - 2
       n_trisC = n_trisC + 1
       trisC(n_trisC)%V(:, 1) = points_tmp(:, 1)
       trisC(n_trisC)%V(:, 2) = points_tmp(:, i + 1)
       trisC(n_trisC)%V(:, 3) = points_tmp(:, i + 2)
-      if(triangle_area(trisC(n_trisC)) < epsilon(0.0)) then
+      if(triangle_area(trisC(n_trisC)) < tol) then
         n_trisC = n_trisC - 1
       end if
     end do

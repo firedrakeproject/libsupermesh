@@ -429,6 +429,7 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_data_types.mod"   DEST
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fields_manipulation.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_futils.mod"              DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder_module.mod" DESTINATION include)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_integer_set_module.mod"  DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_linked_lists.mod"        DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_quadrature.mod"          DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_shape_functions.mod"     DESTINATION include)
