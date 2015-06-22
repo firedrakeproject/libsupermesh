@@ -74,6 +74,7 @@ contains
       mesh%name = "mesh"
     end if
     nullify(mesh%eelist)
+    continuity = 0
     
   end subroutine allocate_mesh
 
