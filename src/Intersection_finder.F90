@@ -3,20 +3,10 @@
 
 module libsupermesh_intersection_finder_module
 
-use libsupermesh_quadrature
-use libsupermesh_elements
-use libsupermesh_fields_base
-use libsupermesh_fields_data_types
-use libsupermesh_fields_allocates
-use libsupermesh_adjacency_lists
-use libsupermesh_linked_lists
-use libsupermesh_shape_functions, only: make_element_shape
-use libsupermesh_parallel_fields
-use libsupermesh_parallel_tools
-use libsupermesh_construction
-use libsupermesh_transform_elements
-use libsupermesh_data_structures
-use libsupermesh_sparse_tools
+ use fields_dummy
+ use libsupermesh_integer_hash_table_module
+ use libsupermesh_integer_set_module
+ use libsupermesh_linked_lists
 
 implicit none
 
@@ -153,10 +143,8 @@ contains
     !!< A simple wrapper to select an intersection finder
 
     integer :: i, dimA, dimB, nodesA, nodesB, verticesA, verticesB
-    type(element_type) :: shape
     type(mesh_type) :: mesh
     type(vector_field), target :: lpositionsA
-    type(quadrature_type) :: quad
     
     type(ilist) :: seeds
     type(inode), pointer :: node
@@ -177,11 +165,7 @@ contains
     verticesA = size(ndglnoA, 1)
     verticesB = size(ndglnoB, 1)
     
-    quad = make_quadrature(vertices = verticesA, dim = dimA, ngi = 0, degree = 0)
-    shape = make_element_shape(vertices = verticesA, dim = dimA, degree = 1, quad = quad)
-    call deallocate(quad)
-    call allocate(mesh, nodesA, size(ndglnoA, 2), shape)
-    call deallocate(shape)
+    call allocate(mesh, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
     do i = 1, size(ndglnoA, 2)
       mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
     end do
@@ -221,12 +205,12 @@ contains
     !!< Return whether the supplied coordinate field is connected. Uses a simple
     !!< element advancing front.
     
-    type(vector_field), intent(in) :: positions
+    type(vector_field), intent(inout) :: positions
     
     logical :: connected
     
     integer :: ele, i
-    type(csr_sparsity), pointer :: eelist
+    type(eelist_type), pointer :: eelist
     logical, dimension(:), allocatable :: tested
     integer, dimension(:), pointer :: neigh
     type(ilist) :: next
@@ -272,11 +256,11 @@ contains
     !!< Return a list of seeds for the advancing front intersection finder - one
     !!< seed per connected sub-domain.
 
-    type(vector_field), intent(in) :: positions
+    type(vector_field), intent(inout) :: positions
 
     type(ilist) :: seeds
     integer :: ele, first_ele, i
-    type(csr_sparsity), pointer :: eelist
+    type(eelist_type), pointer :: eelist
     logical, dimension(:), allocatable :: tested
     integer, dimension(:), pointer :: neigh
     type(ilist) :: next
@@ -356,10 +340,8 @@ contains
     type(ilist), dimension(size(ndglnoA, 2)) :: map_AB
 
     integer :: dimA, dimB, nodesA, nodesB, verticesA, verticesB
-    type(element_type) :: shape
     type(mesh_type) :: mesh
     type(vector_field), target :: lpositionsA, lpositionsB
-    type(quadrature_type) :: quad
 
     ! processed_neighbour maps an element to a neighbour that has already been processed (i.e. its clue)
     type(integer_hash_table) :: processed_neighbour
@@ -373,7 +355,7 @@ contains
     integer :: i, neighbour
     real, dimension(size(ndglnoB, 2), size(positionsB, 1), 2) :: bboxes_B
     integer, dimension(:), pointer :: neigh_A
-    type(csr_sparsity), pointer :: eelist_A, eelist_B
+    type(eelist_type), pointer :: eelist_A, eelist_B
 
     type(ilist) :: clues
 
@@ -389,11 +371,7 @@ contains
     verticesA = size(ndglnoA, 1)
     verticesB = size(ndglnoB, 1)
 
-    quad = make_quadrature(vertices = verticesA, dim = dimA, ngi = 0, degree = 0)
-    shape = make_element_shape(vertices = verticesA, dim = dimA, degree = 1, quad = quad)
-    call deallocate(quad)
-    call allocate(mesh, nodesA, size(ndglnoA, 2), shape)
-    call deallocate(shape)
+    call allocate(mesh, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
     do i = 1, size(ndglnoA, 2)
       mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
     end do
@@ -401,11 +379,7 @@ contains
     call deallocate(mesh)
     lpositionsA%val = positionsA
 
-    quad = make_quadrature(vertices = verticesB, dim = dimB, ngi = 0, degree = 0)
-    shape = make_element_shape(vertices = verticesB, dim = dimB, degree = 1, quad = quad)
-    call deallocate(quad)
-    call allocate(mesh, nodesB, size(ndglnoB, 2), shape)
-    call deallocate(shape)
+    call allocate(mesh, nodesB, size(ndglnoB, 2), size(ndglnoB, 1))
     do i = 1, size(ndglnoB, 2)
       mesh%ndglno((i - 1) * verticesB + 1:i * verticesB) = ndglnoB(:, i)
     end do
@@ -480,7 +454,7 @@ contains
         type(vector_field), intent(in), target :: positionsB
         type(ilist), intent(inout) :: clues
         real, dimension(:, :, :), intent(in) :: bboxes_B
-        type(csr_sparsity), intent(in) :: eelist_B
+        type(eelist_type), intent(in) :: eelist_B
 
         type(ilist) :: map
         integer, dimension(:), pointer :: neigh_B
@@ -631,8 +605,6 @@ contains
 
     type(mesh_type) :: mesh
     type(vector_field), target :: lpositionsA, lpositionsB
-    type(quadrature_type) :: quad
-    type(element_type) :: shape
 
     ewrite(1, *) "In libsupermesh_rtree_intersection_finder"
 
@@ -643,11 +615,7 @@ contains
     nodesB = size(positionsB, 2)
     verticesB = size(ndglnoB, 1)
 
-    quad = make_quadrature(vertices = verticesA, dim = dimA, ngi = 0, degree = 0)
-    shape = make_element_shape(vertices = verticesA, dim = dimA, degree = 1, quad = quad)
-    call deallocate(quad)
-    call allocate(mesh, nodesA, size(ndglnoA, 2), shape)
-    call deallocate(shape)
+    call allocate(mesh, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
     do i = 1, size(ndglnoA, 2)
       mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
     end do
@@ -655,11 +623,7 @@ contains
     call deallocate(mesh)
     lpositionsA%val = positionsA
     
-    quad = make_quadrature(vertices = verticesB, dim = dimB, ngi = 0, degree = 0)
-    shape = make_element_shape(vertices = verticesB, dim = dimB, degree = 1, quad = quad)
-    call deallocate(quad)
-    call allocate(mesh, nodesB, size(ndglnoB, 2), shape)
-    call deallocate(shape)
+    call allocate(mesh, nodesB, size(ndglnoB, 2), size(ndglnoB, 1))
     do i = 1, size(ndglnoB, 2)
       mesh%ndglno((i - 1) * verticesB + 1:i * verticesB) = ndglnoB(:, i)
     end do

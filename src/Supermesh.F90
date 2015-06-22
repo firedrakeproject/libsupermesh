@@ -1,18 +1,12 @@
 #include "fdebug.h"
 
 module libsupermesh_construction
-  use libsupermesh_fields
-  use libsupermesh_sparse_tools
-  use libsupermesh_futils
-!  use metric_tools			! IAKOVOS commented out
-  use libsupermesh_linked_lists
-!  use unify_meshes_module		! IAKOVOS commented out
-  use libsupermesh_transform_elements
+
+  use fields_dummy
   use libsupermesh_global_parameters, only : real_4, real_8
-!  use tetrahedron_intersection_module	! IAKOVOS commented out
-  use libsupermesh_tet_intersection_module
   use libsupermesh_tri_intersection_module
-  use libsupermesh_shape_functions, only: make_element_shape
+  use libsupermesh_tet_intersection_module
+  
   implicit none
   
   interface libsupermesh_cintersector_set_input
@@ -169,7 +163,7 @@ module libsupermesh_construction
     call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
-    call allocate(intersection_mesh, nonods, totele, shapeLoc, shapeDim, shapeDegree, quadVertices, quadDim, quadNgi, quadDegree, name="IntersectionMesh")
+    call allocate(intersection_mesh, nonods, totele, shapeLoc, name="IntersectionMesh")
     intersection_mesh%ndglno = (/ (i, i=1,totele) /)
     intersection_mesh%continuity = -1
     call allocate(intersection, ndimA, intersection_mesh, "IntersectionCoordinates")
