@@ -23,6 +23,15 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 #CMAKE_FORCE_C_COMPILER(gcc "GNU C Compiler")
 #CMAKE_FORCE_CXX_COMPILER(g++ "GNU C++ Compiler")
 #CMAKE_FORCE_Fortran_COMPILER(gfortran "GNU Fortran Compiler")
+#message("spatial CMAKE_C_FLAGS:       ${CMAKE_C_FLAGS}")
+#message("spatial CMAKE_CXX_FLAGS:     ${CMAKE_CXX_FLAGS}")
+#message("spatial CMAKE_Fortran_FLAGS: ${CMAKE_Fortran_FLAGS}")
+
+#message("spatial local_SUBPROJECTS_C_FLAGS:       ${local_SUBPROJECTS_C_FLAGS}")
+#message("spatial local_SUBPROJECTS_CXX_FLAGS:     ${local_SUBPROJECTS_CXX_FLAGS}")
+#message("spatial local_SUBPROJECTS_Fortran_FLAGS: ${local_SUBPROJECTS_Fortran_FLAGS}")
+
+
 
 #------------------------------------------------------------------------------
 # libspatialindex general settings

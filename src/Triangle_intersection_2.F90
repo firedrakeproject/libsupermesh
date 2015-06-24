@@ -5,7 +5,7 @@ module libsupermesh_tri_intersection_module
 
   use libsupermesh_fldebug
   use libsupermesh_tri_intersection_2_module, only : tri_type, &
-        & libsupermesh_intersect_tris_libwm, libsupermesh_intersect_tris_dt_old
+        & libsupermesh_intersect_tris_dt_old
   use libsupermesh_tri_intersection_2_module, only : libwm_tri_buf_size => tri_buf_size
 
   use mpi
@@ -14,8 +14,7 @@ module libsupermesh_tri_intersection_module
 
   private
 
-  public :: tri_type, libsupermesh_intersect_tris, libsupermesh_intersect_tris_dt_old, &
-    & libsupermesh_intersect_tris_libwm
+  public :: tri_type, libsupermesh_intersect_tris, libsupermesh_intersect_tris_dt_old
 
   type line_type
     real, dimension(2) :: normal
@@ -23,7 +22,8 @@ module libsupermesh_tri_intersection_module
   end type line_type
 
   interface libsupermesh_intersect_tris
-    module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public
+    module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public, &
+         & libsupermesh_intersect_tris_libwm
   end interface libsupermesh_intersect_tris
 
   interface get_lines
@@ -37,6 +37,28 @@ module libsupermesh_tri_intersection_module
   integer, save :: n_points_tmp
 
 contains
+
+  subroutine libsupermesh_intersect_tris_libwm(triA, triB, nodesC, ndglnoC, n_trisC)
+    real, dimension(2, 3), intent(in) :: triA
+    real, dimension(2, 3), intent(in) :: triB
+    real, dimension(2, BUF_SIZE), intent(out) :: nodesC
+    integer, dimension(3, BUF_SIZE), intent(out) :: ndglnoC
+    integer, intent(out) :: n_trisC
+
+    integer :: i, nonods
+    real, dimension(2 * BUF_SIZE), save :: lnodesC = -huge(0.0)
+    
+    call libsupermesh_cintersector_set_input(triA, triB, 2, 3)
+    call libsupermesh_cintersector_drive
+    call libsupermesh_cintersector_query(nonods, n_trisC)
+    call libsupermesh_cintersector_get_output(nonods, n_trisC, 2, 3, lnodesC, ndglnoC)
+
+    do i = 1, nonods
+      nodesC(1, i) = lnodesC(i)
+      nodesC(2, i) = lnodesC(i + nonods)
+    end do
+
+  end subroutine libsupermesh_intersect_tris_libwm
 
   subroutine libsupermesh_intersect_tris_dt_public(triA, triB, trisC, n_trisC)
     real, dimension(2, 3), intent(in) :: triA

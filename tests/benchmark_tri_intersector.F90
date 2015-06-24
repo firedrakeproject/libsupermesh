@@ -120,7 +120,7 @@ subroutine benchmark_tri_intersector
       ! A. Use libWM without creating temporary vector fields.
       triB%v = ele_val(positionsB, ele_B)
 
-      call libsupermesh_intersect_tris_libwm(triA%v, triB%v, nodesC, ndglnoC, n_trisC)
+      call libsupermesh_intersect_tris(triA%v, triB%v, nodesC, ndglnoC, n_trisC)
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_trisC

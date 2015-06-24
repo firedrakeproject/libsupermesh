@@ -40,7 +40,7 @@ subroutine test_tri_intersector
       triB%v = ele_val(positionsB, ele_B)
 
       ! A. Use libWM without creating temporary vector fields.
-      call libsupermesh_intersect_tris_libwm(triA%v, triB%v, nodesC, ndglnoC, n_trisC)
+      call libsupermesh_intersect_tris(triA%v, triB%v, nodesC, ndglnoC, n_trisC)
       area_A_libwm_intersect = 0.0
       do ele_C=1,n_trisC
         area_A_libwm_intersect = area_A_libwm_intersect + triangle_area(nodesC(:, ndglnoC(:, ele_C)))
