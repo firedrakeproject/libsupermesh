@@ -40,31 +40,168 @@ module libsupermesh_transform_elements
   
   implicit none
   
+  interface transform_to_physical
+!    module procedure transform_to_physical_full, transform_to_physical_detwei
+    module procedure transform_to_physical_detwei
+  end interface
+  
   interface transform_facet_to_physical
     module procedure transform_facet_to_physical_full
   end interface transform_facet_to_physical
   
+  interface retrieve_cached_transform
+!     module procedure retrieve_cached_transform_full, &
+!          retrieve_cached_transform_det
+     module procedure retrieve_cached_transform_det
+  end interface
+
   interface retrieve_cached_face_transform
      module procedure retrieve_cached_face_transform_full
   end interface
   
   private
-  public :: transform_facet_to_physical
+  public :: transform_to_physical, transform_facet_to_physical
   
   integer, parameter :: cyc3(1:5)=(/ 1, 2, 3, 1, 2 /)  
   
   logical, save :: cache_transform_elements=.true.
-  
+  real, dimension(:,:,:), allocatable, save :: invJ_cache
+  real, dimension(:,:,:), allocatable, save :: J_T_cache
+  real, dimension(:), allocatable, save :: detJ_cache
+
   real, dimension(:,:), allocatable, save :: face_normal_cache
   real, dimension(:), allocatable, save :: face_detJ_cache
   ! Record which element is on the other side of the last n/2 elements.
   integer, dimension(:), allocatable, save :: face_cache
   
   ! The reference count id of the positions mesh being cached.
+  integer, save :: position_id=-1
+  integer, save :: last_mesh_movement=-1
   integer, save :: face_position_id=-1
   integer, save :: face_last_mesh_movement=-1
   
 contains
+
+  function retrieve_cached_transform_det(X, ele, detJ_local) &
+       result (cache_valid)
+    !!< Determine whether the transform cache is valid for this operation.
+    !!< 
+    !!< If caching is applicable and the cache is not ready, set up the
+    !!< cache and then return true.
+    type(vector_field), intent(in) :: X
+    integer, intent(in) :: ele
+    !! Local version of the determinant of J
+    real, intent(out) :: detJ_local
+
+    logical :: cache_valid
+    
+    cache_valid=.true.
+
+    if (X%refcount%id/=position_id) then
+       cache_valid=.false.
+       if (X%name/="Coordinate") then
+          !!< If Someone is not calling this on the main Coordinate field
+          !!< then we're screwed anyway.
+          return
+       end if
+       
+!       ewrite(2,*) "Reference count identity of X has changed."
+    else if(eventcount(EVENT_MESH_MOVEMENT)/=last_mesh_movement) then
+!       ewrite(2,*) "Mesh has moved."
+       cache_valid=.false.
+
+    end if
+       
+    if (.not.cache_valid) then
+       call construct_cache(X)
+       cache_valid=.true.
+    end if
+    
+    detJ_local=detJ_cache(ele)    
+    
+  end function retrieve_cached_transform_det
+  
+  subroutine construct_cache(X)
+    !!< The cache is invalid so make a new one.
+    type(vector_field), intent(in) :: X
+    
+    integer :: elements, ele, i, k
+    !! Note that if X is not all linear simplices we are screwed. 
+    real, dimension(X%dim, ele_loc(X,1)) :: X_val
+    type(element_type), pointer :: X_shape
+
+!    ewrite(1,*) "Reconstructing element geometry cache."
+
+    call abort_if_in_parallel_region
+
+    position_id=X%refcount%id
+    last_mesh_movement=eventcount(EVENT_MESH_MOVEMENT)
+
+    if (allocated(invJ_cache)) then
+#ifdef HAVE_MEMORY_STATS
+       call register_deallocation("transform_cache", &
+            "real", size(invJ_cache)+size(J_T_cache)+size(detJ_cache))
+#endif
+       deallocate(invJ_cache, J_T_cache, detJ_cache)
+    end if
+
+    elements=element_count(X)
+    
+    allocate(invJ_cache(X%dim,X%dim,elements), &
+         J_T_cache(X%dim,X%dim,elements), &
+         detJ_cache(elements))
+#ifdef HAVE_MEMORY_STATS
+    call register_allocation("transform_cache", &
+         "real", size(invJ_cache)+size(J_T_cache)+size(detJ_cache))
+#endif
+
+    x_shape=>ele_shape(X,1)
+       
+    do ele=1,elements
+       X_val=ele_val(X, ele)
+       !     |- dx  dx  dx  -|
+       !     |  dL1 dL2 dL3  |
+       !     |               |
+       !     |  dy  dy  dy   |
+       ! J = |  dL1 dL2 dL3  |
+       !     |               |
+       !     |  dz  dz  dz   |
+       !     |- dL1 dL2 dL3 -|
+       
+       ! Form Jacobian.
+       ! Since X is linear we need only do this at quadrature point 1.
+       J_T_cache(:,:,ele)=matmul(X_val(:,:), x_shape%dn(:, 1, :))
+          
+       select case (X%dim)
+       case(1)
+          invJ_cache(:,:,ele)=1.0
+       case(2)
+          invJ_cache(:,:,ele)=reshape(&
+               (/ J_T_cache(2,2,ele),-J_T_cache(1,2,ele),&
+               & -J_T_cache(2,1,ele), J_T_cache(1,1,ele)/),(/2,2/))
+       case(3)
+          ! Calculate (scaled) inverse using recursive determinants.
+          forall (i=1:3,k=1:3) 
+             invJ_cache(i, k, ele)= &
+                  J_T_cache(cyc3(i+1),cyc3(k+1),ele)&
+                  &          *J_T_cache(cyc3(i+2),cyc3(k+2),ele) &
+                  -J_T_cache(cyc3(i+2),cyc3(k+1),ele)&
+                  &          *J_T_cache(cyc3(i+1),cyc3(k+2),ele)
+          end forall
+       case default
+          FLAbort("Unsupported dimension specified.  Universe is 3 dimensional (sorry Albert).")   
+       end select
+       
+       ! Form determinant by expanding minors.
+       detJ_cache(ele)=dot_product(J_T_cache(:,1,ele),invJ_cache(:,1,ele))
+       
+       ! Scale inverse by determinant.
+       invJ_cache(:,:,ele)=invJ_cache(:,:,ele)/detJ_cache(ele)
+   
+    end do
+    
+  end subroutine construct_cache
+
   function retrieve_cached_face_transform_full(X, face, &
        & normal_local, detJ_local) result (cache_valid)
     !!< Determine whether the transform cache is valid for this operation.
@@ -392,6 +529,128 @@ contains
     end do    
     
   end subroutine transform_facet_to_physical_full
+  
+  subroutine transform_to_physical_detwei(X, ele, detwei)
+    !!< Fast version of transform_to_physical that only calculates detwei
+      
+    !! Coordinate field
+    type(vector_field), intent(in) :: X
+    !! Current element
+    integer :: ele
+    !! Quadrature weights for physical coordinates.
+    real, dimension(:), intent(out):: detwei(:)
+
+    !! Shape function used for coordinate interpolation
+    type(element_type), pointer :: x_shape
+    !! Column n of X is the position of the nth node. (dim x x_shape%loc)
+    !! only need position of n nodes since Jacobian is only calculated once
+    real, dimension(X%dim,ele_loc(X,ele)) :: X_val
+
+    real :: J(X%dim, mesh_dim(X)), det
+    integer :: gi, dim, ldim
+    logical :: x_nonlinear, cache_valid
+
+    x_shape=>ele_shape(X, ele)
+
+    ! Optimisation checks. Optimisations apply to linear elements.
+    x_nonlinear= .not.(x_shape%degree==1 .and. x_shape%numbering%family==FAMILY_SIMPLEX)
+    
+    dim=X%dim ! dimension of space (n/o real coordinates)
+    ldim=size(x_shape%dn,3) ! dimension of element (n/o local coordinates)
+    if (dim==ldim) then
+       
+       if ((.not.x_nonlinear).and.cache_transform_elements) then
+          cache_valid=retrieve_cached_transform(X, ele, det)
+          
+          if (cache_valid) then
+             detwei=abs(det)*x_shape%quadrature%weight
+             return
+          end if
+          
+       end if
+
+!#ifdef DDEBUG
+!       if (ele==1) then
+!          ewrite(2,*) "Element geometry cache not used."
+!       end if
+!#endif
+
+       X_val=ele_val(X, ele)
+       
+       select case (dim)
+       case (1)
+         do gi=1, x_shape%ngi
+           J(1,1)=dot_product(X_val(1,:), x_shape%dn(:,gi,1))
+           detwei(gi)=abs(J(1,1))*x_shape%quadrature%weight(gi)
+         end do
+       case (2)
+         do gi=1, x_shape%ngi
+            if (x_nonlinear.or.gi==1) then
+               ! the Jacobian is the transpose of this
+               J=matmul(X_val(:,:), x_shape%dn(:, gi, :))
+               ! but that doesn't matter for determinant:
+               det=abs(J(1,1)*J(2,2)-J(1,2)*J(2,1))
+            end if
+           detwei(gi)=det*x_shape%quadrature%weight(gi)
+         end do
+       case (3)
+         do gi=1, x_shape%ngi
+            if (x_nonlinear.or.gi==1) then
+               ! the Jacobian is the transpose of this
+               J=matmul(X_val(:,:), x_shape%dn(:, gi, :))
+               ! but that doesn't matter for determinant:
+               det=abs( &
+                    J(1,1)*(J(2,2)*J(3,3)-J(2,3)*J(3,2)) &
+                    -J(1,2)*(J(2,1)*J(3,3)-J(2,3)*J(3,1)) &
+                    +J(1,3)*(J(2,1)*J(3,2)-J(2,2)*J(3,1)) &
+                    )
+            end if
+            detwei(gi)= det *x_shape%quadrature%weight(gi)
+         end do
+       case default
+          FLAbort("Unsupported dimension specified.  Universe is 3 dimensional (sorry Albert).")   
+       end select
+    else if (ldim<dim) then
+
+       X_val=ele_val(X, ele)
+      
+       ! lower dimensional element (ldim) embedded in higher dimensional space (dim)
+       select case (ldim)
+       case (1)
+          ! 1-dim element embedded in 'dim'-dimensional space:
+          do gi=1, x_shape%ngi
+             if (x_nonlinear.or.gi==1) then
+                ! J is 'dim'-dimensional vector:
+                J(:,1)=matmul(X_val(:,:), x_shape%dn(:,gi,1))
+                ! length of that
+                det=norm2(J(:,1))
+             end if
+             ! length of that times quad. weight
+             detwei(gi)=det*x_shape%quadrature%weight(gi)
+          end do
+       case (2)
+          ! 2-dim element embedded in 'dim'-dimensional space:
+          do gi=1, x_shape%ngi
+             if (x_nonlinear.or.gi==1) then
+                ! J is 2 columns of 2 'dim'-dimensional vectors:
+                J=matmul(X_val(:,:), x_shape%dn(:,gi,:))
+                ! outer product
+                det=abs( &
+                     J(2,1)*J(3,2)-J(3,1)*J(2,2) &
+                     -J(3,1)*J(1,2)+J(1,1)*J(3,2) &
+                     +J(1,1)*J(2,2)-J(2,1)*J(1,2))
+             end if
+             ! outer product times quad. weight
+             detwei(gi)=det *x_shape%quadrature%weight(gi)
+          end do
+       end select
+       
+    else
+       FLAbort("Don't know how to compute higher-dimensional elements in a lower-dimensional space.")
+       
+    end if
+    
+  end subroutine transform_to_physical_detwei
   
   function NORMGI(X, X_f, J)
     ! Calculate the normal at a given quadrature point,

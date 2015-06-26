@@ -11,7 +11,8 @@ subroutine test_tri_intersector
   type(vector_field) :: positionsA, positionsB
   integer :: ele_A, ele_B, ele_C
   real :: area_D_libwm, area_A_libwm_intersect, area_B_fort, area_C_fort_public, &
-     &  area_E_intersect_elements, area_F_intersect_elements, area_G_intersect_elements
+     &  area_E_intersect_elements, area_F_intersect_elements, area_G_intersect_elements, &
+     &  temp_area_A_libwm_intersect, temp_area_B_fort
   logical :: fail
   
   type(tri_type) :: triA, triB
@@ -56,17 +57,28 @@ subroutine test_tri_intersector
       
       if (n_trisC_pre .ne. n_trisC) then
         write(*,*) "LibWM returned:",n_trisC_pre,", and tris returned:",n_trisC,"."
-        write(*,*) "Input triangles"
-        write(*,*) "A: ele_A:",ele_A,", triA:",ele_val(positionsA, ele_A),"."
-        write(*,*) "B: ele_B:",ele_B,", triB:",ele_val(positionsB, ele_B),"."
-        write(*,*) "Results:"
         do ele_C=1,n_trisC_pre
-          write(*,*) "libWM:",nodesC(:, ndglnoC(:, ele_C)),"."
+          write(*,*) "libWM: area:",triangle_area(nodesC(:, ndglnoC(:, ele_C))),"."
+          temp_area_A_libwm_intersect = temp_area_A_libwm_intersect + triangle_area(nodesC(:, ndglnoC(:, ele_C)))
         end do
         do ele_C=1,n_trisC
-          write(*,*) "tris :",trisC(ele_C)%v,"."
+          write(*,*) "tris : area:",triangle_area(trisC(ele_C)%v),"."
+          temp_area_B_fort = temp_area_B_fort + triangle_area(trisC(ele_C)%v)
         end do
-        call exit(1)
+
+!        if ( abs(temp_area_B_fort - temp_area_A_libwm_intersect) > epsilon(0.0) ) then
+          write(*,*) "Input triangles"
+          write(*,*) "A: ele_A:",ele_A,", triA:",ele_val(positionsA, ele_A),"."
+          write(*,*) "B: ele_B:",ele_B,", triB:",ele_val(positionsB, ele_B),"."
+          write(*,*) "Results:"
+          do ele_C=1,n_trisC_pre
+            write(*,*) "libWM: area:",triangle_area(nodesC(:, ndglnoC(:, ele_C))),", nodes:",nodesC(:, ndglnoC(:, ele_C)),"."
+          end do
+          do ele_C=1,n_trisC
+            write(*,*) "tris : area:",triangle_area(trisC(ele_C)%v),",nodes:",trisC(ele_C)%v,"."
+          end do
+          call exit(1)
+!        end if
       end if
 
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)

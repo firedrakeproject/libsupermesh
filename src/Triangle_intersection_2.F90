@@ -91,7 +91,7 @@ contains
 
     real, dimension(2, BUF_SIZE + 2), save :: points
     integer :: n_points
-    
+
     lines_b = get_lines(triB)
 
     points(:, :3) = triA%v
@@ -148,7 +148,7 @@ contains
         p2 = points(:, i + 1)
         d2 = d(i + 1)
       end if
-      
+
       if(d1 <= 0.0) then
         if(d2 <= 0.0) then
           ! No clip

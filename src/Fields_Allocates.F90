@@ -1301,8 +1301,7 @@ contains
               FLExit("Provided element ownership information is incorrect")
             end if
           end if
-          FLAbort("add_faces_face_list: Code Commented out 1.")
-!          call register_external_surface_element(mesh, sele, ele, snodes)
+          call register_external_surface_element(mesh, sele, ele, snodes)
         else if (no_found==2 .and. present(element_owner)) then
           ! internal facet with element ownership infomation provided
           ! so we assume both of the coinciding internal facets are
@@ -1469,8 +1468,51 @@ contains
 ! IAKOVOS commented out
 !  subroutine register_internal_surface_element(mesh, sele, ele, neighbour_ele)
 
-! IAKOVOS commented out
-!  subroutine register_external_surface_element(mesh, sele, ele, snodes)
+  subroutine register_external_surface_element(mesh, sele, ele, snodes)
+    type(mesh_type), intent(inout):: mesh
+    integer, intent(in):: sele, ele
+    integer, dimension(:), intent(in):: snodes
+
+    integer, dimension(:), pointer:: neigh, faces, nodes
+    integer:: j, nloc
+
+    nloc = ele_loc(mesh, ele)
+    
+    mesh%faces%face_element_list(sele)=ele
+
+    ! for external facets the corresponding entry in neigh
+    ! is still zero, a negative value will be filled in
+    ! when it's registered
+    neigh=>row_m_ptr(mesh%faces%face_list, ele)
+    faces=>row_ival_ptr(mesh%faces%face_list, ele)
+    nodes => ele_nodes(mesh, ele)
+
+    ! find the matching boundary of ele
+    do j=1, mesh%shape%numbering%boundaries
+      ! also check negative entries to check for duplicate registrations
+      if (neigh(j)<=0) then
+        if (SetContains(snodes, nodes(boundary_numbering(mesh%shape%numbering, j)))) exit
+      end if
+    end do
+
+    if (j>mesh%shape%numbering%boundaries) then
+      ! not found a matching boundary, something's wrong
+      FLAbort("Something wrong with the mesh, sndgln, or mesh%nelist")
+    end if
+
+    if (neigh(j)/=0) then
+      ! this surface element is already registered
+      ! so apparently there's a duplicate element in the surface mesh
+      ewrite(0,*) 'Surface element:', faces(j),' and ',sele
+      ewrite(0,*) 'Both define the surface element:', snodes
+      FLAbort("Duplicate element in the surface mesh")
+    end if
+
+    ! register the surface element in face_list
+    faces(j)=sele
+    neigh(j)=-j ! negative number indicates exterior boundary
+
+  end subroutine register_external_surface_element
 
   subroutine add_faces_face_list_periodic_from_non_periodic_model( &
      mesh, model, periodic_face_map)

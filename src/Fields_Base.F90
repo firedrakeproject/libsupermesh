@@ -82,6 +82,12 @@ module libsupermesh_fields_base
      module procedure ele_shape_vector, ele_shape_mesh
   end interface
   
+  interface ele_ngi
+!     module procedure ele_ngi_scalar, ele_ngi_vector, ele_ngi_tensor,&
+!          & ele_ngi_mesh
+     module procedure ele_ngi_vector
+  end interface
+  
   interface face_loc
      module procedure face_loc_scalar, face_loc_vector, face_loc_tensor,&
           & face_loc_mesh
@@ -525,7 +531,17 @@ contains
     end if
   
   end function mesh_has_discontinuous_internal_boundaries
-  
+
+  pure function ele_ngi_vector(field, ele_number) result (ele_ngi)
+    ! Return the number of nodes of element ele_number.
+    integer :: ele_ngi
+    type(vector_field),intent(in) :: field
+    integer, intent(in) :: ele_number
+    
+    ele_ngi=field%mesh%shape%ngi
+    
+  end function ele_ngi_vector
+
   pure function face_loc_mesh(mesh, face_number) result (face_loc)
     ! Return the number of nodes of face face_number.
     integer :: face_loc

@@ -382,6 +382,12 @@ FILE(GLOB C_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.c)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
 FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90)
 FILE(GLOB FORTRAN_TEST_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tet_intersector.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_2d.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_3d.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_3d.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_periodic.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_SEEDS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_seeds.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
@@ -391,28 +397,51 @@ add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} 
 #add_dependencies(SuperMesh libspud spatialindex spatialindex_c libjudy)
 add_dependencies(SuperMesh libjudy libspud spatialindex spatialindex_c)
 
+set (UNITTESTS
+  test_tri_intersector
+  test_tet_intersector
+  test_intersection_finder_2d
+  test_intersection_finder_3d
+  test_intersection_finder_completeness
+  test_intersection_finder_completeness_3d
+  test_intersection_finder_periodic
+  test_intersection_finder_seeds
+)
+
+set (BENCHMARKTESTS
+  benchmark_tri_intersector
+  benchmark_tet_intersector
+)
+
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_tet_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TET_INTERSECTOR_FILES})
+add_executable (test_intersection_finder_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES})
+add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES})
+add_executable (test_intersection_finder_completeness ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES})
+add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES})
+add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES})
+add_executable (test_intersection_finder_seeds ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_SEEDS_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 #set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
-set_property(TARGET test_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
-set_property(TARGET test_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tet_intersector_")
-set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
-set_property(TARGET benchmark_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tet_intersector_")
+foreach (test ${UNITTESTS})
+ SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}_")
+endforeach()
+foreach (benchmark ${BENCHMARKTESTS})
+ SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_")
+endforeach()
+#set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
+#set_property(TARGET benchmark_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tet_intersector_")
 
 add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector)
 
-#add_custom_target(unittest DEPENDS test_tri_intersector)
+foreach (test ${UNITTESTS})
+ ADD_TEST("test_${test}" ${test})
+ SET_TESTS_PROPERTIES("test_${test}" PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
+endforeach()
 
-add_test (test_tri_intersector_test test_tri_intersector
-#  COMMAND cd unittests && ./test_tri_intersector && cd ..
-)
-set_tests_properties (test_tri_intersector_test 
-  PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:"
-)
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD
   COMMAND mkdir -p unittests/data
@@ -423,12 +452,6 @@ add_custom_command(TARGET test_tri_intersector
 #  COMMAND cd unittests && ./test_tri_intersector && cd ..
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 #  COMMENT "Running test_tri_intersector" VERBATIM
-)
-
-add_test(test_tet_intersector_test test_tet_intersector
-)
-set_tests_properties (test_tet_intersector_test 
-  PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:"
 )
 
 add_custom_target(distclean 
@@ -443,19 +466,23 @@ add_custom_target(distclean
 )
 
 if(UNIX AND NOT APPLE)
-    target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
+  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES} rt)
-    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-    target_link_libraries(test_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-    target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-    target_link_libraries(benchmark_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+  foreach (test ${UNITTESTS})
+    target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    target_link_libraries(${benchmark} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+  endforeach()
 else ()
-    target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
+  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES})
-    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-    target_link_libraries(test_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-    target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-    target_link_libraries(benchmark_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+  foreach (test ${UNITTESTS})
+    target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    target_link_libraries(${benchmark} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+  endforeach()
 endif()
 
 #get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
@@ -469,18 +496,22 @@ endif()
 
 if(MPI_Fortran_COMPILE_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-  set_target_properties(test_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  set_target_properties(test_tet_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  set_target_properties(benchmark_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  set_target_properties(benchmark_tet_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  foreach (test ${UNITTESTS})
+    set_target_properties(${test} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    set_target_properties(${benchmark} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  endforeach()
 endif()
 
 if(MPI_Fortran_LINK_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
-  set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  set_target_properties(test_tet_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  set_target_properties(benchmark_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  set_target_properties(benchmark_tet_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  foreach (test ${UNITTESTS})
+    set_target_properties(${test} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    set_target_properties(${benchmark} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  endforeach()
 endif()
 
 #if(CMAKE_THREAD_LIBS_INIT)

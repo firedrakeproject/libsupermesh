@@ -52,7 +52,7 @@ extern "C" {
 
 int main(int argc, char **argv) 
 {
-  int val = 0;
+//  int val = 0;				// IAKOVOS commented out
 
 //  set_global_debug_level_fc(&val);		// IAKOVOS commented out
 //  set_pseudo2d_domain_fc(&val);		// IAKOVOS commented out
