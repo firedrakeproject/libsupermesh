@@ -12,8 +12,9 @@ subroutine test_tri_intersector
   integer :: ele_A, ele_B, ele_C
   real :: area_D_libwm, area_A_libwm_intersect, area_B_fort, area_C_fort_public, &
      &  area_E_intersect_elements, area_F_intersect_elements, area_G_intersect_elements, &
-     &  temp_area_A_libwm_intersect, temp_area_B_fort
-  logical :: fail
+     &  area_H_intersect_old, &
+     &  temp_area_A_libwm_intersect, temp_area_B_fort, temp_area_H_intersect_old
+  logical :: fail, libWM_tri_failed = .FALSE.
   
   type(tri_type) :: triA, triB
   type(tri_type), dimension(tri_buf_size) :: trisC
@@ -77,8 +78,9 @@ subroutine test_tri_intersector
           do ele_C=1,n_trisC
             write(*,*) "tris : area:",triangle_area(trisC(ele_C)%v),",nodes:",trisC(ele_C)%v,"."
           end do
-          call exit(1)
+!          call exit(1)
 !        end if
+        libWM_tri_failed = .TRUE.
       end if
 
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
@@ -148,6 +150,42 @@ subroutine test_tri_intersector
         area_G_intersect_elements = area_G_intersect_elements + abs(simplex_volume(intersection, ele_C))
       end do
       call deallocate(intersection)
+      
+      ! H. Use the *OLD* libSuperMesh internal triangle intersector (using derived types as input)
+      call libsupermesh_intersect_tris_dt_old(triA, triB, trisC, n_trisC)
+      do ele_C=1,n_trisC
+          area_H_intersect_old = area_H_intersect_old + triangle_area(trisC(ele_C)%v)
+      end do
+
+      if (libWM_tri_failed .eqv. .TRUE.) then
+        write(*,*) "LibWM returned:",n_trisC_pre,", and tris_old returned:",n_trisC,"."
+        do ele_C=1,n_trisC_pre
+          write(*,*) "libWM  : area:",triangle_area(nodesC(:, ndglnoC(:, ele_C))),"."
+          temp_area_A_libwm_intersect = temp_area_A_libwm_intersect + triangle_area(nodesC(:, ndglnoC(:, ele_C)))
+        end do
+        do ele_C=1,n_trisC
+          write(*,*) "tris_old: area:",triangle_area(trisC(ele_C)%v),"."
+          temp_area_H_intersect_old = temp_area_H_intersect_old + triangle_area(trisC(ele_C)%v)
+        end do
+
+!        if ( abs(temp_area_H_intersect_old - temp_area_A_libwm_intersect) > epsilon(0.0) ) then
+          write(*,*) "Input triangles"
+          write(*,*) "A: ele_A:",ele_A,", triA:",ele_val(positionsA, ele_A),"."
+          write(*,*) "B: ele_B:",ele_B,", triB:",ele_val(positionsB, ele_B),"."
+          write(*,*) "Results:"
+          do ele_C=1,n_trisC_pre
+            write(*,*) "libWM:    area:",triangle_area(nodesC(:, ndglnoC(:, ele_C))),", nodes:",nodesC(:, ndglnoC(:, ele_C)),"."
+          end do
+          do ele_C=1,n_trisC
+            write(*,*) "tris_old: area:",triangle_area(trisC(ele_C)%v),",nodes:",trisC(ele_C)%v,"."
+          end do
+          
+          if (n_trisC_pre .ne. n_trisC) then
+            call exit(1)
+          end if
+          write (*,*)
+!        end if
+      end if
 
       fail = (area_A_libwm_intersect .fne. area_B_fort) &
          .OR. (area_E_intersect_elements .fne. area_C_fort_public ) &
@@ -168,6 +206,7 @@ subroutine test_tri_intersector
           ", area_G_intersect_elements:",area_G_intersect_elements,"."
       end if
 
+      libWM_tri_failed = .FALSE.
     end do
   end do
 

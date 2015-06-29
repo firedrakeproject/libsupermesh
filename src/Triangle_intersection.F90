@@ -75,10 +75,10 @@ module libsupermesh_tri_intersection_2_module
   type(tri_type), dimension(BUF_SIZE), save :: tri_array_tmp
   integer :: tri_cnt_tmp = 0
 
-  public :: tri_type, line_type, get_lines, libsupermesh_intersect_tris_dt_old
+  public :: tri_type, line_type, get_lines_old, libsupermesh_intersect_tris_dt_old
 
-  interface get_lines
-    module procedure get_lines_tri
+  interface get_lines_old
+    module procedure get_lines_tri_old
   end interface
 
   integer, parameter, public :: tri_buf_size = BUF_SIZE
@@ -94,7 +94,7 @@ contains
     integer :: i, j
     type(line_type), dimension(3) :: linesB
 
-    linesB = get_lines(triB)
+    linesB = get_lines_old(triB)
     n_trisC = 1
     trisC(1) = triA
     do i=1,size(linesB)
@@ -102,7 +102,7 @@ contains
       tri_cnt_tmp = 0
 
       do j=1,n_trisC
-        call clip(linesB(i), trisC(j))
+        call clip_old(linesB(i), trisC(j))
       end do
 
       if (i /= size(linesB)) then
@@ -119,7 +119,7 @@ contains
     end do
   end subroutine libsupermesh_intersect_tris_dt_old
   
-  subroutine clip(line, tri)
+  subroutine clip_old(line, tri)
   ! Clip tri against the plane
   ! and append any output to tri_array_tmp.
     type(line_type), intent(in) :: line
@@ -138,7 +138,7 @@ contains
 
     neg_cnt = 0
     pos_cnt = 0
-    dists = distances_to_line(line, tri)
+    dists = distances_to_line_old(line, tri)
 
     do i=1,3
       if (dists(i) <= 0.0) then
@@ -208,11 +208,11 @@ contains
         FLAbort("Error. Found more than three points.")
       end select
     end select
-  end subroutine clip
+  end subroutine clip_old
 
 ! Find the normals of all sides of triangle B (steps a and b).
 !  pure function get_lines_tri(tri) result(lines)
-  function get_lines_tri(tri) result(lines)
+  function get_lines_tri_old(tri) result(lines)
     type(tri_type), intent(in) :: tri
     type(line_type), dimension(3) :: lines
 
@@ -226,9 +226,9 @@ contains
     edge20 = tri%V(:, 3) - tri%V(:, 2); ! QR = ( Rx - Qx , Ry - Qy )
     edge30 = tri%V(:, 1) - tri%V(:, 3); ! RP = ( Px - Rx , Py - Ry )
 
-    lines(1)%normal = unit_cross(edge10) ! PQ normal = ( -PQy , PQx )
-    lines(2)%normal = unit_cross(edge20) ! QR normal = ( -QRy , QRx )
-    lines(3)%normal = unit_cross(edge30) ! PR normal = ( -PRy , PRx )
+    lines(1)%normal = unit_cross_old(edge10) ! PQ normal = ( -PQy , PQx )
+    lines(2)%normal = unit_cross_old(edge20) ! QR normal = ( -QRy , QRx )
+    lines(3)%normal = unit_cross_old(edge30) ! PR normal = ( -PRy , PRx )
 
     ! Transform the normals so that their direction is consistent (step b).
     det = dot_product(edge10, lines(3)%normal)
@@ -244,18 +244,18 @@ contains
       lines(i)%c = dot_product(tri%V(:, i), lines(i)%normal)
     end do
 
-  end function get_lines_tri
+  end function get_lines_tri_old
 
 ! Return a cross product (in 2D).  
-  pure function unit_cross(vecA) result(cross)
+  pure function unit_cross_old(vecA) result(cross)
     real, dimension(2), intent(in) :: vecA
     real, dimension(2) :: cross
     cross(1) = (-1) * vecA(2)
     cross(2) = vecA(1)
 
-  end function unit_cross
+  end function unit_cross_old
 
-  pure function distances_to_line(line, tri) result(dists)
+  pure function distances_to_line_old(line, tri) result(dists)
     type(line_type), intent(in) :: line
     type(tri_type), intent(in) :: tri
     real, dimension(3) :: dists
@@ -265,6 +265,6 @@ contains
       dists(i) = dot_product(line%normal, tri%V(:, i)) - line%c
     end forall
 
-  end function distances_to_line
+  end function distances_to_line_old
 
 end module libsupermesh_tri_intersection_2_module
