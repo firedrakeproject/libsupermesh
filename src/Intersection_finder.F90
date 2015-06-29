@@ -199,7 +199,7 @@ contains
       sub_map_AB = libsupermesh_advancing_front_intersection_finder( &
         & positionsA, ndglnoA, &
         & positionsB, ndglnoB, &
-        & seed = seed)
+        & seed = node%value)
       do i = 1, size(sub_map_AB)
         if(sub_map_AB(i)%length > 0) then
           assert(map_AB(i)%length == 0)
