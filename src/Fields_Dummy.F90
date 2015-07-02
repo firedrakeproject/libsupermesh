@@ -256,11 +256,9 @@ contains
                 stop 1
               end if
               eelist%v(eelist%n(i), i) = ele
-#ifndef NDEBUG
             else if(seen(ele) > sloc) then
               write(0, "(a)") "Invalid connectivity"
               stop 1
-#endif
             end if
           end if
         end do
