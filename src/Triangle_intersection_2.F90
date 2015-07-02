@@ -40,7 +40,7 @@ contains
   subroutine intersect_tris_dt_public(triA, triB, trisC, n_trisC)
     real, dimension(2, 3), intent(in) :: triA
     real, dimension(2, 3), intent(in) :: triB
-    real, dimension(2, 3, BUF_SIZE), intent(out) :: trisC
+    real, dimension(2, 3, BUF_SIZE), intent(inout) :: trisC
     integer, intent(out) :: n_trisC
 
     integer :: i
@@ -59,7 +59,7 @@ contains
   subroutine intersect_tris_dt(triA, triB, trisC, n_trisC)
     type(tri_type), intent(in) :: triA
     type(tri_type), intent(in) :: triB
-    type(tri_type), dimension(BUF_SIZE), intent(out) :: trisC
+    type(tri_type), dimension(BUF_SIZE), intent(inout) :: trisC
     integer, intent(out) :: n_trisC
 
     integer :: i

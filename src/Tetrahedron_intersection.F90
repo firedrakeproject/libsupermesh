@@ -1,4 +1,4 @@
-#define BUF_SIZE 512
+#define BUF_SIZE 729
 #include "fdebug.h"
 
 module libsupermesh_tet_intersection_module
@@ -23,7 +23,7 @@ module libsupermesh_tet_intersection_module
   end type plane_type
 
   type(tet_type), dimension(BUF_SIZE), save :: tet_array_tmp
-  integer :: tet_cnt_tmp = 0
+  integer, save :: tet_cnt_tmp = 0
   logical, save :: mesh_allocated = .false.
 
   interface intersect_tets
@@ -42,8 +42,8 @@ contains
   subroutine intersect_tets_libwm(tetA, tetB, nodesC, ndglnoC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
-    real, dimension(3, BUF_SIZE), intent(out) :: nodesC
-    integer, dimension(4, BUF_SIZE), intent(out) :: ndglnoC
+    real, dimension(3, BUF_SIZE), intent(inout) :: nodesC
+    integer, dimension(4, BUF_SIZE), intent(inout) :: ndglnoC
     integer, intent(out) :: n_tetsC
 
     integer :: i, nonods
@@ -64,12 +64,12 @@ contains
   subroutine intersect_tets_dt_real(tetA, tetB, tetsC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
-    real, dimension(3, 4, BUF_SIZE), intent(out) :: tetsC
+    real, dimension(3, 4, BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
 
     integer :: i
     type(tet_type) :: tetA_t, tetB_t
-    type(tet_type), dimension(BUF_SIZE) :: tetsC_t
+    type(tet_type), dimension(BUF_SIZE), save :: tetsC_t
 
     tetA_t%v = tetA
     tetB_t%v = tetB
@@ -84,7 +84,7 @@ contains
   subroutine intersect_tets_dt_public(tetA, tetB, tetsC, n_tetsC)
     type(tet_type), intent(in) :: tetA
     type(tet_type), intent(in) :: tetB
-    type(tet_type), dimension(BUF_SIZE), intent(out) :: tetsC
+    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
 
     call intersect_tets_dt(tetA, get_planes(tetB), tetsC, n_tetsC, volB = tet_volume(tetB))
@@ -94,7 +94,7 @@ contains
   subroutine intersect_tets_dt(tetA, planesB, tetsC, n_tetsC, volB)
     type(tet_type), intent(in) :: tetA
     type(plane_type), dimension(4), intent(in)  :: planesB
-    type(tet_type), dimension(BUF_SIZE), intent(out) :: tetsC
+    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
     real, optional, intent(in) :: volB
     
