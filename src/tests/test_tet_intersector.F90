@@ -1,8 +1,8 @@
 subroutine test_tet_intersector
 
   use libsupermesh_construction
-  use libsupermesh_fields
-  use libsupermesh_read_triangle
+  use libsupermesh_fields_dummy
+  use libsupermesh_read_triangle_2
   use libsupermesh_tet_intersection_module
   use libsupermesh_unittest_tools
   
@@ -24,16 +24,17 @@ subroutine test_tet_intersector
   integer :: i, nonods, totele
   type(vector_field) :: intersection, intersect_elements_result
   type(mesh_type) :: intersection_mesh, new_mesh
-  type(element_type) :: shape_lib
   
   ! I hope this is big enough ...
   real, dimension(1024) :: nodes_tmp
 
-  positionsA = read_triangle_files("data/plcC",quad_degree=4)!, mdim=3)
-  positionsB = read_triangle_files("data/plcD",quad_degree=4)!, mdim=3)
+  integer, parameter :: dim = 3, loc = 4
 
-  call libsupermesh_intersector_set_dimension(3)
-  call libsupermesh_intersector_set_exactness(.false.)
+  positionsA = read_triangle_files("data/plcC", dim)
+  positionsB = read_triangle_files("data/plcD", dim)
+
+  call intersector_set_dimension(dim)
+  call intersector_set_exactness(.false.)
 
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)
@@ -45,78 +46,72 @@ subroutine test_tet_intersector
       planes_B = get_planes(tet_B)
 
       ! A. Use libWM without creating temporary vector fields.
-      call libsupermesh_intersect_tets_libwm(tet_A%v, tet_B%v, nodesC, ndglnoC, n_tetsC)
+      call intersect_tets_libwm(tet_A%v, tet_B%v, nodesC, ndglnoC, n_tetsC)
       vol_libwm_intersect = 0.0
       do ele_C=1,n_tetsC
-        vol_libwm_intersect = vol_libwm_intersect + abs(tetvol_test(nodesC(:, ndglnoC(:, ele_C))))
+        vol_libwm_intersect = vol_libwm_intersect + tetrahedron_volume(nodesC(:, ndglnoC(:, ele_C)))
       end do
 
       ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
-      call libsupermesh_intersect_tets(tet_A, tet_B, tetsC, n_tetsC)
+      call intersect_tets(tet_A, tet_B, tetsC, n_tetsC)
       vol_fort = 0.0
       do ele_C=1,n_tetsC
-        vol_fort = vol_fort + abs(tetvol_test(tetsC(ele_C)%v))
+        vol_fort = vol_fort + tetrahedron_volume(tetsC(ele_C)%v)
       end do
 
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
-      call libsupermesh_intersect_tets(tet_A%v, tet_B%v, tetsC_real, n_tetsC)
+      call intersect_tets(tet_A%v, tet_B%v, tetsC_real, n_tetsC)
       vol_fort_public = 0.0
       do ele_C=1,n_tetsC
-        vol_fort_public = vol_fort_public + abs(tetvol_test(tetsC_real(:,:,ele_C)))
+        vol_fort_public = vol_fort_public + tetrahedron_volume(tetsC_real(:,:,ele_C))
       end do
 
       ! D. Use libWM directly and create temporary vector field
-      call libsupermesh_cintersector_set_input(ele_val(positionsA, ele_A), tet_B%v, positionsA%dim, ele_loc(positionsA, ele_A))
+      call libsupermesh_cintersector_set_input(ele_val(positionsA, ele_A), tet_B%v, dim, loc)
       call libsupermesh_cintersector_drive
       call libsupermesh_cintersector_query(nonods, totele)
-      call allocate(intersection_mesh, nonods, totele, ele_shape(positionsA, ele_A), "IntersectionMesh")
+      call allocate(intersection_mesh, nonods, totele, loc)
       intersection_mesh%continuity = -1
-      call allocate(intersection, positionsA%dim, intersection_mesh, "IntersectionCoordinates")
+      call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, positionsA%dim, ele_loc(positionsA, ele_A), nodes_tmp, intersection_mesh%ndglno)
-        do i = 1, positionsA%dim
+        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, nodes_tmp, intersection_mesh%ndglno)
+        do i = 1, dim
           intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
         end do
       end if
       vol_libwm = 0.0
       do ele_C=1,totele
-        vol_libwm = vol_libwm + abs(simplex_volume(intersection, ele_C))
+        vol_libwm = vol_libwm + tetrahedron_volume(ele_val(intersection, ele_C))
       end do
       call deallocate(intersection_mesh)
       call deallocate(intersection)
 
-      ! E. Use libWM directly and create temporary vector field      
-      shape_lib = ele_shape(positionsB, ele_B)
-      intersect_elements_result = libsupermesh_intersect_elements_old(tet_B%v, &
-        ele_val(positionsA, ele_A), &
-        ele_loc(positionsB, ele_B), positionsB%dim, &
-        node_count(positionsA), &
-        shape_lib%quadrature%vertices, shape_lib%quadrature%dim, shape_lib%quadrature%ngi, &
-        shape_lib%quadrature%degree, shape_lib%loc, shape_lib%dim, shape_lib%degree)
-        
+      ! E. Use libWM directly and create temporary vector field
+      intersect_elements_result = intersect_elements_old(tet_B%v, &
+        ele_val(positionsA, ele_A), loc, dim)
       vol_E_intersect_elements = 0.0
       do ele_C=1,ele_count(intersect_elements_result)
-        vol_E_intersect_elements = vol_E_intersect_elements + abs(simplex_volume(intersect_elements_result, ele_C))
+        vol_E_intersect_elements = vol_E_intersect_elements + tetrahedron_volume(ele_val(intersect_elements_result, ele_C))
       end do
       call deallocate(intersect_elements_result)
       
-      ! F. Use the new libsupermesh_intersect_elements and do NOT create vector field 
-      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
+      ! F. Use the new intersect_elements and do NOT create vector field
+      call intersect_elements(tet_A%v, tet_B%v, dim, n_tetsC, tetsC_real=tetsC_real)
       vol_F_intersect_elements = 0.0
       do ele_C=1,n_tetsC
-        vol_F_intersect_elements = vol_F_intersect_elements + abs(tetvol_test(tetsC_real(:,:,ele_C)))
+        vol_F_intersect_elements = vol_F_intersect_elements + tetrahedron_volume(tetsC_real(:,:,ele_C))
       end do
 
-      ! G. Use the new libsupermesh_intersect_elements and DO create vector field 
-      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
-      call allocate(new_mesh, n_tetsC * 4, n_tetsC, ele_shape(positionsA, ele_A))
+      ! G. Use the new intersect_elements and DO create vector field
+      call intersect_elements(tet_A%v, tet_B%v, dim, n_tetsC, tetsC_real=tetsC_real)
+      call allocate(new_mesh, n_tetsC * loc, n_tetsC, loc)
 
       if ( n_tetsC > 0 ) then
-        new_mesh%ndglno = (/ (i, i=1,4 * n_tetsC) /)
+        new_mesh%ndglno = (/ (i, i=1,loc * n_tetsC) /)
         new_mesh%continuity = -1
       end if
 
-      call allocate(intersection, positionsA%dim, new_mesh, "IntersectionCoordinates")
+      call allocate(intersection, dim, new_mesh)
       if ( n_tetsC > 0 ) then
         do i = 1, n_tetsC
           call set(intersection, ele_nodes(intersection, i), tetsC_real(:,:,i))
@@ -125,7 +120,7 @@ subroutine test_tet_intersector
       call deallocate(new_mesh)
       vol_G_intersect_elements = 0.0
       do ele_C=1,ele_count(intersection)
-        vol_G_intersect_elements = vol_G_intersect_elements + abs(simplex_volume(intersection, ele_C))
+        vol_G_intersect_elements = vol_G_intersect_elements + tetrahedron_volume(ele_val(intersection, ele_C))
       end do
       call deallocate(intersection)
 
@@ -155,39 +150,5 @@ subroutine test_tet_intersector
   
   call deallocate(positionsA)
   call deallocate(positionsB)
-
-contains
-
-  function tetvol_test(positions) result(t)
-    real, dimension(3, 4), intent(in) :: positions
-    real :: t
-
-    t = tetvol_test_old(positions(1, :), positions(2, :), positions(3, :))
-    
-  end function tetvol_test
-  
-  real function tetvol_test_old( x, y, z )
-
-    real x(4), y(4), z(4)
-    real vol, x12, x13, x14, y12, y13, y14, z12, z13, z14
-    !
-    x12 = x(2) - x(1)
-    x13 = x(3) - x(1)
-    x14 = x(4) - x(1)
-    y12 = y(2) - y(1)
-    y13 = y(3) - y(1)
-    y14 = y(4) - y(1)
-    z12 = z(2) - z(1)
-    z13 = z(3) - z(1)
-    z14 = z(4) - z(1)
-    !
-    vol = x12*( y13*z14 - y14*z13 )  &
-         + x13*( y14*z12 - y12*z14 ) &
-         + x14*( y12*z13 - y13*z12 )
-    !
-    tetvol_test_old = vol/6
-    !
-    return
-  end function tetvol_test_old
 
 end subroutine test_tet_intersector
