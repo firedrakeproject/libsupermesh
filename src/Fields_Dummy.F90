@@ -134,6 +134,7 @@ contains
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
 
+    ! Construct the node element list
     allocate(nelist(nnodes))
     call allocate(nelist)
     do i = 1, nelements
@@ -141,6 +142,7 @@ contains
         call insert(nelist(enlist(j, i)), i)
       end do
     end do
+    ! Copy the node element list into a ragged array for more efficient access
     allocate(inelist(nnodes))
     do i = 1, nnodes
       inelist(i)%n = key_count(nelist(i))
@@ -154,7 +156,8 @@ contains
 
     allocate(seen_eles(nelements), seen(nelements))
     seen = 0
-    nneigh_ele = loc  ! Linear simplex assumption here
+    nneigh_ele = loc  ! Linear simplex assumption here (works for more general
+                      ! cases, but less efficient)
     allocate(eelist%v(nneigh_ele, nelements), eelist%n(nelements))
     eelist%n = 0
     do i = 1, nelements
@@ -169,9 +172,15 @@ contains
               seen_eles(nseen_eles) = ele
             else if(seen(ele) == 2) then
               eelist%n(i) = eelist%n(i) + 1
+#ifdef NDEBUG
               eelist%v(eelist%n(i), i) = ele
               if(eelist%n(i) == nneigh_ele) exit loc_loop
-#ifndef NDEBUG
+#else
+              if(eelist%n(i) > nneigh_ele) then
+                write(0, "(a)") "Invalid connectivity"
+                stop 1
+              end if
+              eelist%v(eelist%n(i), i) = ele
             else
               write(0, "(a)") "Invalid connectivity"
               stop 1
@@ -205,13 +214,11 @@ contains
 
     type(eelist_type), pointer :: eelist
 
-    if(associated(mesh%eelist)) then
-      eelist => mesh%eelist
-    else
+    if(.not. associated(mesh%eelist)) then
       allocate(mesh%eelist)
-      call mesh_eelist(mesh%nnodes, reshape(mesh%ndglno, (/mesh%loc, mesh%nelements/)), eelist)
-      eelist => mesh%eelist
+      call mesh_eelist(mesh%nnodes, reshape(mesh%ndglno, (/mesh%loc, mesh%nelements/)), mesh%eelist)
     end if
+    eelist => mesh%eelist
 
   end function extract_eelist_mesh
 
