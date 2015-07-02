@@ -8,7 +8,7 @@ module libsupermesh_fields_dummy
 
   public :: mesh_type, vector_field, eelist_type, allocate, deallocate, &
     & extract_eelist, ele_count, node_count, ele_val, ele_loc, node_val, &
-    & row_m_ptr, ele_nodes, set, simplex_volume, triangle_area, &
+    & row_m_ptr, ele_nodes, set, set_ele_nodes, simplex_volume, triangle_area, &
     & tetrahedron_volume
 
   type mesh_type
@@ -76,8 +76,12 @@ module libsupermesh_fields_dummy
   end interface ele_nodes
 
   interface set
-    module procedure set_vector_field
+    module procedure set_vector_field_nodes, set_vector_field_node
   end interface set
+
+  interface set_ele_nodes
+    module procedure set_ele_nodes_mesh
+  end interface set_ele_nodes
 
 contains
 
@@ -155,7 +159,7 @@ contains
     type(integer_set), dimension(:), allocatable :: nelist
 
     integer, dimension(:), allocatable :: seen, seen_eles
-    integer :: nseen_eles
+    integer :: max_seen, nseen_eles
 
     type iarr
       integer, dimension(:), pointer :: v
@@ -188,6 +192,11 @@ contains
 
     allocate(seen_eles(nelements), seen(nelements))
     seen = 0
+    max_seen = 1  ! max_seen records the maximum number of nodes common between
+                  ! elements determined to be "adjacent". When this is increased
+                  ! previously "adjacent" elements are removed from the eelist.
+                  ! This works around the fact that the number of facet nodes is
+                  ! not known here.
     nneigh_ele = loc  ! Linear simplex assumption here (works for more general
                       ! cases, but less efficient)
     allocate(eelist%v(nneigh_ele, nelements), eelist%n(nelements))
@@ -202,21 +211,19 @@ contains
             if(seen(ele) == 1) then
               nseen_eles = nseen_eles + 1
               seen_eles(nseen_eles) = ele
-            else if(seen(ele) == 2) then
+            end if
+            if(seen(ele) > max_seen) then
+              eelist%n(:i) = 0
+              max_seen = seen(ele)
+            end if
+            if(seen(ele) == max_seen) then
               eelist%n(i) = eelist%n(i) + 1
-#ifdef NDEBUG
-              eelist%v(eelist%n(i), i) = ele
-              if(eelist%n(i) == nneigh_ele) exit loc_loop
-#else
               if(eelist%n(i) > nneigh_ele) then
-                write(0, "(a)") "Invalid connectivity"
-                stop 1
+                eelist%n(:i) = 0
+                max_seen = max_seen + 1
+              else
+                eelist%v(eelist%n(i), i) = ele
               end if
-              eelist%v(eelist%n(i), i) = ele
-            else
-              write(0, "(a)") "Invalid connectivity"
-              stop 1
-#endif
             end if
           end if
         end do
@@ -336,14 +343,35 @@ contains
 
   end function ele_nodes_vector_field
 
-  subroutine set_vector_field(field, nodes, val)
+  subroutine set_vector_field_nodes(field, nodes, val)
     type(vector_field), intent(inout) :: field
     integer, dimension(:), intent(in) :: nodes
+    ! dim x loc
     real, dimension(:, :), intent(in) :: val
 
     field%val(:, nodes) = val
 
-  end subroutine set_vector_field
+  end subroutine set_vector_field_nodes
+
+  subroutine set_vector_field_node(field, node, val)
+    type(vector_field), intent(inout) :: field
+    integer, intent(in) :: node
+    ! dim
+    real, dimension(:), intent(in) :: val
+
+    field%val(:, node) = val
+
+  end subroutine set_vector_field_node
+
+  subroutine set_ele_nodes_mesh(mesh, ele, nodes)
+    type(mesh_type), intent(inout) :: mesh
+    integer, intent(in) :: ele
+    ! loc
+    integer, dimension(:), intent(in) :: nodes
+
+    mesh%ndglno((ele - 1) * mesh%loc + 1:ele * mesh%loc) = nodes
+
+  end subroutine set_ele_nodes_mesh
 
   pure function simplex_volume(cell_coords) result(volume)
     ! dim x loc

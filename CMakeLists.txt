@@ -56,56 +56,162 @@ if (NOT CMAKE_BUILD_TYPE)
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 
-add_subdirectory(libspud)
-add_subdirectory(spatialindex-1.8.0)
-add_subdirectory(libjudy)
-
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
+if (CMAKE_C_FLAGS)
+# CMAKE_C_FLAGS has been defined by the USER. Do not modify his settings.
+  SET (local_IGNORE_ALL_C_FLAGS "TRUE")
+  MESSAGE ("CMAKE_C_FLAGS have been already set.")
+endif (CMAKE_C_FLAGS)
+
+if (CMAKE_CXX_FLAGS)
+# CMAKE_CXX_FLAGS has been defined by the USER. Do not modify his settings.
+  SET (local_IGNORE_ALL_CXX_FLAGS "TRUE")
+  MESSAGE ("CMAKE_CXX_FLAGS have been already set.")
+endif (CMAKE_CXX_FLAGS)
+
+if (CMAKE_Fortran_FLAGS)
+# CMAKE_Fortran_FLAGS has been defined by the USER. Do not modify his settings.
+  SET (local_IGNORE_ALL_Fortran_FLAGS "TRUE")
+  MESSAGE ("CMAKE_Fortran_FLAGS have been already set.")
+endif (CMAKE_Fortran_FLAGS)
+
+
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
-  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ftree-vectorize -march=native -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -ldl -lm -Wl,--export-dynamic -lnsl -lutil -g")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=all -ffpe-trap=zero,overflow,underflow -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fdefault-real-8 -fdefault-double-8 -fimplicit-none -fbacktrace -ldl -lm -Wl,--export-dynamic -lnsl -lutil")
-  SET(_WARNING_COMPILE_FLAGS " ")
-  SET(_WARNING_COMPILE_FLAGS_FORTRAN_DEBUG "-Wextra -Wall -Wimplicit-interface -Wno-surprising")
-  SET(_WARNING_COMPILE_FLAGS_RELEASE "")
+  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8 -fdefault-double-8 -ffree-line-length-0")
+    set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -ftree-vectorize -march=native -g")
+    set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=all -ffpe-trap=zero,overflow,underflow -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fimplicit-none -fbacktrace -Wextra -Wall -Wimplicit-interface -Wno-surprising")
+  endif ()
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   # ifort (untested)
-  set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O2 -xhost")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-f77rtl -O0 -g  -check noarg_temp_created -fpe0 -warn alignments -warn declarations -warn general -warn interfaces -warn truncated_source -warn uncalled -warn uninitialized -warn usage -common_args -warn unused -fp-stack-check -check bounds -check uninit -check format")
+  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ")
+    set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O2 -xhost -g")
+    set (CMAKE_Fortran_FLAGS_DEBUG   "-f77rtl -O0 -g  -check noarg_temp_created -fpe0 -warn alignments -warn declarations -warn general -warn interfaces -warn truncated_source -warn uncalled -warn uninitialized -warn usage -common_args -warn unused -fp-stack-check -check bounds -check uninit -check format")
+  endif ()
 elseif (Fortran_COMPILER_NAME MATCHES "g77")
   # g77
-  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O2 -m32")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -m32")
+  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ")
+    set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O2 -m32 -g")
+    set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -m32")
+  endif ()
 else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
   message ("CMAKE_Fortran_COMPILER full path: " ${CMAKE_Fortran_COMPILER})
   message ("Fortran compiler: " ${Fortran_COMPILER_NAME})
   message ("No optimized Fortran compiler flags are known, we just try -O2...")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O2")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
+  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ")
+    set (CMAKE_Fortran_FLAGS_RELEASE "-O2 -g")
+    set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
+  endif ()
 endif (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU")
   # gcc
-  set (CMAKE_C_FLAGS_RELEASE "-O2 -march=native -g") 
-  set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
-  SET(_WARNING_COMPILE_FLAGS_C "-Wextra -Wall")  
+  if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ")
+    set (CMAKE_C_FLAGS_RELEASE "-O2 -march=native -g") 
+    set (CMAKE_C_FLAGS_DEBUG   "-Og -g -Wextra -Wall")
+  endif ()
 elseif (CMAKE_C_COMPILER_ID MATCHES "Intel")
   # icc (untested)
-  set (CMAKE_C_FLAGS_RELEASE "-O2 -xhost")
-  set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
+  if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ")
+    set (CMAKE_C_FLAGS_RELEASE "-O2 -xhost -g")
+    set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
+  endif ()
 endif (CMAKE_C_COMPILER_ID MATCHES "GNU")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   # g++
-  set (CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -g ") 
-  set (CMAKE_CXX_FLAGS_DEBUG   "-Og -g")
+  if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
+    set (CMAKE_CXX_FLAGS_RELEASE "-O2 -march=native -g ") 
+    set (CMAKE_CXX_FLAGS_DEBUG   "-Og -g -Wextra -Wall")
+  endif ()
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   # icpc (untested)
-  set (CMAKE_C_FLAGS_RELEASE "-O2 -xhost")
-  set (CMAKE_C_FLAGS_DEBUG   "-Og -g")
+  if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
+    set (CMAKE_CXX_FLAGS_RELEASE "-O2 -xhost -g")
+    set (CMAKE_CXX_FLAGS_DEBUG   "-Og -g")
+  endif ()
 endif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+
+SET( SUBPROJECTS_C_FLAGS ${CMAKE_C_FLAGS})
+SET( SUBPROJECTS_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+SET( SUBPROJECTS_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
+
+set( SUBPROJECTS_debugging "NO")
+string( TOLOWER "${CMAKE_BUILD_TYPE}" lower_build_type)
+if (lower_build_type MATCHES release)
+  if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
+    set( SUBPROJECTS_C_FLAGS "${SUBPROJECTS_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
+  endif ()
+  
+  if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
+    set( SUBPROJECTS_CXX_FLAGS "${SUBPROJECTS_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+  endif ()
+
+  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
+    set( SUBPROJECTS_Fortran_FLAGS "${SUBPROJECTS_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE}")
+  endif ()
+elseif (lower_build_type MATCHES debug)
+  if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
+    set( SUBPROJECTS_C_FLAGS "${SUBPROJECTS_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
+  endif ()
+
+  if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
+    set( SUBPROJECTS_CXX_FLAGS "${SUBPROJECTS_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+  endif ()
+
+  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
+    set( SUBPROJECTS_Fortran_FLAGS "${SUBPROJECTS_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG}")
+  endif ()
+
+  set( SUBPROJECTS_debugging "YES")
+endif (lower_build_type MATCHES release)
+
+message ("MAIN CMAKE_C_FLAGS:${CMAKE_C_FLAGS}")
+message ("MAIN CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}")
+message ("MAIN CMAKE_Fortran_FLAGS:${CMAKE_Fortran_FLAGS}")
+
+message ("MAIN SUBPROJECTS_C_FLAGS:${SUBPROJECTS_C_FLAGS}")
+message ("MAIN SUBPROJECTS_CXX_FLAGS:${SUBPROJECTS_CXX_FLAGS}")
+message ("MAIN SUBPROJECTS_Fortran_FLAGS:${SUBPROJECTS_Fortran_FLAGS}")
+
+
+set( SUBPROJECTS_profilling      "")
+
+option (USE_PROFILE "Use profile flags" OFF)
+if (USE_PROFILE)
+  SET( CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} -pg -g")
+  SET( CMAKE_C_FLAGS               "${CMAKE_C_FLAGS} -pg -g" )
+  SET( CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} -pg -g")
+  SET( CMAKE_EXE_LINKER_FLAGS      "${CMAKE_EXE_LINKER_FLAGS} -pg -g" )
+  SET( CMAKE_SHARED_LINKER_FLAGS   "${CMAKE_SHARED_LINKER_FLAGS} -pg -g" )
+  SET( CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS} -pg -g" )
+  set( SUBPROJECTS_profilling      "-pg -g" )
+endif (USE_PROFILE)
+
+option (USE_PROFPROFILE "Use perftools profile flags" OFF)
+if (USE_PROFPROFILE)
+  SET( CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} -lprofiler -g")
+  SET( CMAKE_C_FLAGS               "${CMAKE_C_FLAGS} -lprofiler -g" )
+  SET( CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} -lprofiler -g")
+  SET( CMAKE_EXE_LINKER_FLAGS      "${CMAKE_EXE_LINKER_FLAGS} -lprofiler -g" )
+  SET( CMAKE_SHARED_LINKER_FLAGS   "${CMAKE_SHARED_LINKER_FLAGS} -lprofiler -g" )
+  SET( CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS} -lprofiler -g" )
+  set( SUBPROJECTS_profilling      "-lprofiler -g" )
+endif (USE_PROFPROFILE)
+
+add_subdirectory(libspud)
+add_subdirectory(spatialindex-1.8.0)
+add_subdirectory(libjudy)
 
 include_directories(${MPI_Fortran_INCLUDE_PATH} ${PETSC_INCLUDES})
 ADD_DEFINITIONS(${PETSC_DEFINITIONS})
@@ -132,14 +238,6 @@ configure_file (
   "${PROJECT_BINARY_DIR}/SuperMesh.pc"
   )
 
-SET( CMAKE_CXX_FLAGS_RELEASE     "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_C}" )
-SET( CMAKE_CXX_FLAGS_DEBUG       "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS_C}" )
-SET( CMAKE_C_FLAGS_RELEASE       "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_C}" )
-SET( CMAKE_C_FLAGS_DEBUG         "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS_C}" )
-#SET( CMAKE_Fortran_FLAGS         "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_FORTRAN}" )
-SET( CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} ${_WARNING_COMPILE_FLAGS_RELEASE}" )
-SET( CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} ${_WARNING_COMPILE_FLAGS_FORTRAN_DEBUG}" )
-
 # should we use our own LIBRARY?
 option (USE_MYLIB 
         "Use library implementation" OFF) 
@@ -151,30 +249,6 @@ if (USE_MYLIB)
 #  add_subdirectory (MathFunctions)
 #  set (EXTRA_LIBS ${EXTRA_LIBS} MathFunctions)
 endif (USE_MYLIB)
-
-
-option (USE_PROFILE "Use profile flags" OFF)
-if (USE_PROFILE)
-  SET( CMAKE_CXX_FLAGS_RELEASE     "${CMAKE_CXX_FLAGS_RELEASE} -pg -g")
-  SET( CMAKE_CXX_FLAGS_DEBUG       "${CMAKE_CXX_FLAGS_DEBUG} -pg -g" )
-  SET( CMAKE_C_FLAGS_RELEASE       "${CMAKE_C_FLAGS_RELEASE} -pg -g" )
-  SET( CMAKE_C_FLAGS_DEBUG         "${CMAKE_C_FLAGS_DEBUG} -pg -g" )
-  SET( CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -pg -g" )
-  SET( CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -pg -g" )
-  SET( CMAKE_EXE_LINKER_FLAGS      "${CMAKE_EXE_LINKER_FLAGS} -pg -g" )
-  SET (CMAKE_SHARED_LINKER_FLAGS   "${CMAKE_SHARED_LINKER_FLAGS} -pg -g" )
-  SET (CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS} -pg -g" )
-endif (USE_PROFILE)
-
-option (USE_PROFPROFILE "Use perftools profile flags" OFF)
-if (USE_PROFPROFILE)
-  SET( CMAKE_CXX_FLAGS_RELEASE     "${CMAKE_CXX_FLAGS_RELEASE} -lprofiler -g")
-  SET( CMAKE_CXX_FLAGS_DEBUG       "${CMAKE_CXX_FLAGS_DEBUG} -lprofiler -g" )
-  SET( CMAKE_C_FLAGS_RELEASE       "${CMAKE_C_FLAGS_RELEASE} -lprofiler -g" )
-  SET( CMAKE_C_FLAGS_DEBUG         "${CMAKE_C_FLAGS_DEBUG} -lprofiler -g" )
-  SET( CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -lprofiler -g" )
-  SET( CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -lprofiler -g" )
-endif (USE_PROFPROFILE)
 
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
@@ -308,6 +382,12 @@ FILE(GLOB C_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.c)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
 FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90)
 FILE(GLOB FORTRAN_TEST_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tet_intersector.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_2d.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_3d.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_3d.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_periodic.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_SEEDS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_seeds.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
@@ -317,28 +397,51 @@ add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} 
 #add_dependencies(SuperMesh libspud spatialindex spatialindex_c libjudy)
 add_dependencies(SuperMesh libjudy libspud spatialindex spatialindex_c)
 
+set (UNITTESTS
+  test_tri_intersector
+  test_tet_intersector
+  test_intersection_finder_2d
+  test_intersection_finder_3d
+  test_intersection_finder_completeness
+  test_intersection_finder_completeness_3d
+  test_intersection_finder_periodic
+  test_intersection_finder_seeds
+)
+
+set (BENCHMARKTESTS
+  benchmark_tri_intersector
+  benchmark_tet_intersector
+)
+
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_tet_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TET_INTERSECTOR_FILES})
+add_executable (test_intersection_finder_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES})
+add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES})
+add_executable (test_intersection_finder_completeness ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES})
+add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES})
+add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES})
+add_executable (test_intersection_finder_seeds ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_SEEDS_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 #set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
-set_property(TARGET test_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
-set_property(TARGET test_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tet_intersector_")
-set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
-set_property(TARGET benchmark_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tet_intersector_")
+foreach (test ${UNITTESTS})
+ SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}_")
+endforeach()
+foreach (benchmark ${BENCHMARKTESTS})
+ SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_")
+endforeach()
+#set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
+#set_property(TARGET benchmark_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tet_intersector_")
 
 add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector)
 
-#add_custom_target(unittest DEPENDS test_tri_intersector)
+foreach (test ${UNITTESTS})
+ ADD_TEST("test_${test}" ${test})
+ SET_TESTS_PROPERTIES("test_${test}" PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
+endforeach()
 
-add_test (test_tri_intersector_test test_tri_intersector
-#  COMMAND cd unittests && ./test_tri_intersector && cd ..
-)
-set_tests_properties (test_tri_intersector_test 
-  PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:"
-)
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD
   COMMAND mkdir -p unittests/data
@@ -351,35 +454,35 @@ add_custom_command(TARGET test_tri_intersector
 #  COMMENT "Running test_tri_intersector" VERBATIM
 )
 
-add_test(test_tet_intersector_test test_tet_intersector
-)
-set_tests_properties (test_tet_intersector_test 
-  PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:"
-)
-
 add_custom_target(distclean 
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && rm -rf tmp/ && make distclean
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ && make distclean
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && rm -rf tmp/ 
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ 
   COMMAND cd "${PROJECT_BINARY_DIR}/" && make clean
   COMMAND rm -rf unittests/
   COMMAND rm -rf data/
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && make distclean
+  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && make distclean
 #  COMMAND cd "${PROJECT_SOURCE_DIR}/libjud" && make distcleanlibjudy
 )
 
 if(UNIX AND NOT APPLE)
-    target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
+  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES} rt)
-    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-    target_link_libraries(test_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-    target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-    target_link_libraries(benchmark_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+  foreach (test ${UNITTESTS})
+    target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    target_link_libraries(${benchmark} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+  endforeach()
 else ()
-    target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
+  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
 #    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES})
-    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-    target_link_libraries(test_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-    target_link_libraries(benchmark_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-    target_link_libraries(benchmark_tet_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+  foreach (test ${UNITTESTS})
+    target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    target_link_libraries(${benchmark} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+  endforeach()
 endif()
 
 #get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
@@ -393,18 +496,22 @@ endif()
 
 if(MPI_Fortran_COMPILE_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-  set_target_properties(test_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  set_target_properties(test_tet_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  set_target_properties(benchmark_tri_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  set_target_properties(benchmark_tet_intersector PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  foreach (test ${UNITTESTS})
+    set_target_properties(${test} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    set_target_properties(${benchmark} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  endforeach()
 endif()
 
 if(MPI_Fortran_LINK_FLAGS)
   set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
-  set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  set_target_properties(test_tet_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  set_target_properties(benchmark_tri_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  set_target_properties(benchmark_tet_intersector PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  foreach (test ${UNITTESTS})
+    set_target_properties(${test} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  endforeach()
+  foreach (benchmark ${BENCHMARKTESTS})
+    set_target_properties(${benchmark} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  endforeach()
 endif()
 
 #if(CMAKE_THREAD_LIBS_INIT)

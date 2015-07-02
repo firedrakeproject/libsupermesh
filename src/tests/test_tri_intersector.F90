@@ -55,7 +55,7 @@ subroutine test_tri_intersector
         area_B_fort = area_B_fort + triangle_area(trisC(ele_C)%v)
       end do
       
-      if (n_trisC_pre .ne. n_trisC) then
+      if (n_trisC_pre < n_trisC) then
         write(*,*) "LibWM returned:",n_trisC_pre,", and tris returned:",n_trisC,"."
         write(*,*) "Input triangles"
         write(*,*) "A: ele_A:",ele_A,", triA:",ele_val(positionsA, ele_A),"."
