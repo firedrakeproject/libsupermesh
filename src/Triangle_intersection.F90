@@ -93,8 +93,8 @@ contains
   subroutine libsupermesh_intersect_tris_libwm(triA, triB, nodesC, ndglnoC, n_trisC)
     real, dimension(2, 3), intent(in) :: triA
     real, dimension(2, 3), intent(in) :: triB
-    real, dimension(2, BUF_SIZE), intent(out) :: nodesC
-    integer, dimension(3, BUF_SIZE), intent(out) :: ndglnoC
+    real, dimension(2, BUF_SIZE), intent(inout) :: nodesC
+    integer, dimension(3, BUF_SIZE), intent(inout) :: ndglnoC
     integer, intent(out) :: n_trisC
 
     integer :: i, nonods
@@ -115,12 +115,12 @@ contains
   subroutine libsupermesh_intersect_tris_dt_public(triA, triB, trisC, n_trisC)
     real, dimension(2, 3), intent(in) :: triA
     real, dimension(2, 3), intent(in) :: triB
-    real, dimension(2, 3, BUF_SIZE), intent(out) :: trisC
+    real, dimension(2, 3, BUF_SIZE), intent(inout) :: trisC
     integer, intent(out) :: n_trisC
 
     integer :: i
     type(tri_type) :: triA_t, triB_t
-    type(tri_type), dimension(BUF_SIZE) :: trisC_t
+    type(tri_type), dimension(BUF_SIZE), save :: trisC_t
 
     triA_t%v = triA
     triB_t%v = triB
@@ -134,7 +134,7 @@ contains
   subroutine libsupermesh_intersect_tris_dt_old(triA, triB, trisC, n_trisC)
     type(tri_type), intent(in) :: triA
     type(tri_type), intent(in) :: triB
-    type(tri_type), dimension(BUF_SIZE), intent(out) :: trisC
+    type(tri_type), dimension(BUF_SIZE), intent(inout) :: trisC
     integer, intent(out) :: n_trisC
 
     integer :: i, j
@@ -168,7 +168,7 @@ contains
   subroutine libsupermesh_intersect_tris_dt(triA, triB, trisC, n_trisC)
     type(tri_type), intent(in) :: triA
     type(tri_type), intent(in) :: triB
-    type(tri_type), dimension(BUF_SIZE), intent(out) :: trisC
+    type(tri_type), dimension(BUF_SIZE), intent(inout) :: trisC
     integer, intent(out) :: n_trisC
 
     integer :: i, j, dir, length
