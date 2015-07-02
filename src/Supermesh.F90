@@ -119,15 +119,6 @@ module libsupermesh_construction
   
     integer :: i, nonods, totele
 
-#ifdef DDEBUG
-    select case(ndimA)
-      case(2)
-        assert(shapeLoc == 3)
-      case(3)
-        assert(shapeLoc == 4)
-    end select
-#endif
-
     call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
