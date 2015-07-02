@@ -3,7 +3,7 @@
 
 module libsupermesh_intersection_finder_module
 
- use fields_dummy
+ use libsupermesh_fields_dummy
  use libsupermesh_integer_hash_table_module
  use libsupermesh_integer_set_module
  use libsupermesh_linked_lists
@@ -56,9 +56,9 @@ public :: rtree_intersection_finder_set_input, rtree_intersection_finder_find, &
   & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
 
 public :: bbox_predicate, intersection_tests, &
-  & reset_intersection_tests_counter, libsupermesh_intersection_finder, &
-  & advancing_front_intersection_finder_seeds, libsupermesh_advancing_front_intersection_finder, &
-  & libsupermesh_rtree_intersection_finder, brute_force_intersection_finder
+  & reset_intersection_tests_counter, intersection_finder, &
+  & advancing_front_intersection_finder_seeds, advancing_front_intersection_finder, &
+  & rtree_intersection_finder, brute_force_intersection_finder
   
 #ifdef COUNT_INTERSECTION_TESTS
 integer, save :: intersection_tests_count = 0
@@ -131,7 +131,7 @@ contains
 
   end subroutine reset_intersection_tests_counter
       
-  function libsupermesh_intersection_finder(positionsA, ndglnoA, positionsB, ndglnoB, seed) result(map_AB)
+  function intersection_finder(positionsA, ndglnoA, positionsB, ndglnoB, seed) result(map_AB)
     ! The positions and meshes of A and B
     real, dimension(:, :), intent(in) :: positionsA
     integer, dimension(:, :), intent(in) :: ndglnoA
@@ -150,7 +150,7 @@ contains
     type(inode), pointer :: node
     type(ilist), dimension(:), allocatable :: sub_map_AB
 
-    ewrite(1, *) "In libsupermesh_intersection_finder"
+    ewrite(1, *) "In intersection_finder"
 
     ! We cannot assume connectedness, so we may have to run the
     ! advancing front more than once (once per connected sub-domain)
@@ -180,7 +180,7 @@ contains
     allocate(sub_map_AB(size(map_AB)))
     node => seeds%firstnode
     do while(associated(node))
-      sub_map_AB = libsupermesh_advancing_front_intersection_finder( &
+      sub_map_AB = advancing_front_intersection_finder( &
         & positionsA, ndglnoA, &
         & positionsB, ndglnoB, &
         & seed = seed)
@@ -197,9 +197,9 @@ contains
     deallocate(sub_map_AB)
     call deallocate(seeds)
 
-    ewrite(1, *) "Exiting libsupermesh_intersection_finder"
+    ewrite(1, *) "Exiting intersection_finder"
   
-  end function libsupermesh_intersection_finder
+  end function intersection_finder
   
   function connected(positions)
     !!< Return whether the supplied coordinate field is connected. Uses a simple
@@ -330,7 +330,7 @@ contains
     
   end function advancing_front_intersection_finder_seeds
 
-  function libsupermesh_advancing_front_intersection_finder(positionsA, ndglnoA, positionsB, ndglnoB, seed) result(map_AB)
+  function advancing_front_intersection_finder(positionsA, ndglnoA, positionsB, ndglnoB, seed) result(map_AB)
     real, dimension(:, :), intent(in) :: positionsA
     integer, dimension(:, :), intent(in) :: ndglnoA
     real, dimension(:, :), intent(in) :: positionsB
@@ -359,7 +359,7 @@ contains
 
     type(ilist) :: clues
 
-    ewrite(1, *) "In libsupermesh_advancing_front_intersection_finder"
+    ewrite(1, *) "In advancing_front_intersection_finder"
 
     dimA = size(positionsA, 1)
     nodesA = size(positionsA, 2)
@@ -446,7 +446,7 @@ contains
     call deallocate(lpositionsA)
     call deallocate(lpositionsB)
 
-    ewrite(1, *) "Exiting libsupermesh_advancing_front_intersection_finder"
+    ewrite(1, *) "Exiting advancing_front_intersection_finder"
 
     contains
       function advance_front(posA, positionsB, clues, bboxes_B, eelist_B) result(map)
@@ -523,7 +523,7 @@ contains
 
         possible_size = 0
       end function advance_front
-  end function libsupermesh_advancing_front_intersection_finder
+  end function advancing_front_intersection_finder
   
   function brute_force_intersection_finder(positions_a, positions_b) result(map_ab)
     !!< As advancing_front_intersection_finder, but uses a brute force
@@ -587,7 +587,7 @@ contains
     
   end subroutine rtree_intersection_finder_find
   
-  function libsupermesh_rtree_intersection_finder(positionsA, ndglnoA, &
+  function rtree_intersection_finder(positionsA, ndglnoA, &
        positionsB, ndglnoB, npredicates) result(map_ab)
     !!< As advancing_front_intersection_finder, but uses an rtree algorithm. For
     !!< testing *only*. For practical applications, use the linear algorithm.
@@ -606,7 +606,7 @@ contains
     type(mesh_type) :: mesh
     type(vector_field), target :: lpositionsA, lpositionsB
 
-    ewrite(1, *) "In libsupermesh_rtree_intersection_finder"
+    ewrite(1, *) "In rtree_intersection_finder"
 
     dimA = size(positionsA, 1)
     nodesA = size(positionsA, 2)
@@ -645,12 +645,12 @@ contains
 
     if (present(npredicates)) npredicates = ntests
     
-    ewrite(1, *) "Exiting libsupermesh_rtree_intersection_finder"
+    ewrite(1, *) "Exiting rtree_intersection_finder"
     
     call deallocate(lpositionsA)
     call deallocate(lpositionsB)
     
-  end function libsupermesh_rtree_intersection_finder
+  end function rtree_intersection_finder
   
 ! IAKOVOS commented out
 !  subroutine verify_map(mesh_field_a, mesh_field_b, map_ab, map_ab_reference)

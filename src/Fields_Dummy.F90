@@ -1,29 +1,33 @@
-module fields_dummy
+module libsupermesh_fields_dummy
 
-  use libsupermesh_global_parameters, only : FIELD_NAME_LEN
   use libsupermesh_integer_set_module
 
   implicit none
 
   private
 
-  public :: mesh_type, vector_field, eelist_type, allocate, deallocate, extract_eelist, ele_count, node_count, ele_val, ele_loc, node_val, row_m_ptr
+  public :: mesh_type, vector_field, eelist_type, allocate, deallocate, &
+    & extract_eelist, ele_count, node_count, ele_val, ele_loc, node_val, &
+    & row_m_ptr, ele_nodes, set, simplex_volume, triangle_area, &
+    & tetrahedron_volume
 
   type mesh_type
-    character(len = FIELD_NAME_LEN) :: name
     integer :: nnodes
     integer :: nelements
     integer :: loc
     integer, dimension(:), pointer :: ndglno
     integer :: continuity
     type(eelist_type), pointer :: eelist
+    
+    integer, pointer :: refcount
   end type mesh_type
 
   type vector_field
-    character(len = FIELD_NAME_LEN) :: name
-    type(mesh_type), pointer :: mesh
+    type(mesh_type) :: mesh
     integer :: dim
     real, dimension(:, :), pointer :: val
+    
+    integer, pointer :: refcount
   end type vector_field
 
   type eelist_type
@@ -51,65 +55,93 @@ module fields_dummy
     module procedure node_count_vector_field
   end interface node_count
 
+  interface ele_val
+    module procedure ele_val_vector_field
+  end interface ele_val
+
   interface ele_loc
     module procedure ele_loc_vector_field
   end interface ele_loc
 
+  interface node_val
+    module procedure node_val_vector_field
+  end interface node_val
+
+  interface row_m_ptr
+    module procedure row_m_ptr_eelist
+  end interface row_m_ptr
+
+  interface ele_nodes
+    module procedure ele_nodes_vector_field
+  end interface ele_nodes
+
+  interface set
+    module procedure set_vector_field
+  end interface set
+
 contains
 
-  subroutine allocate_mesh(mesh, nnodes, nelements, loc, name)
+  subroutine allocate_mesh(mesh, nnodes, nelements, loc)
     type(mesh_type), intent(out) :: mesh
     integer, intent(in) :: nnodes
     integer, intent(in) :: nelements
     integer, intent(in) :: loc
-    character(len = *), optional, intent(in) :: name
 
     mesh%nnodes = nnodes
     mesh%nelements = nelements
     mesh%loc = loc
     allocate(mesh%ndglno(nelements * loc))
-    if(present(name)) then
-      mesh%name = name
-    else
-      mesh%name = "mesh"
-    end if
     nullify(mesh%eelist)
-    continuity = 0
+    mesh%continuity = 0
+    
+    allocate(mesh%refcount)
+    mesh%refcount = 1
     
   end subroutine allocate_mesh
 
   subroutine deallocate_mesh(mesh)
     type(mesh_type), intent(inout) :: mesh
 
-    deallocate(mesh%ndglno)
-    if(associated(mesh%eelist)) then
-      call deallocate(mesh%eelist)
-      deallocate(mesh%eelist)
+    mesh%refcount = mesh%refcount - 1
+    if(mesh%refcount == 0) then
+
+      deallocate(mesh%ndglno)
+      if(associated(mesh%eelist)) then
+        call deallocate(mesh%eelist)
+        deallocate(mesh%eelist)
+      end if
+
+      deallocate(mesh%refcount)
     end if
 
   end subroutine deallocate_mesh
 
-  subroutine allocate_vector_field(field, dim, mesh, name)
+  subroutine allocate_vector_field(field, dim, mesh)
     type(vector_field), intent(out) :: field
     integer, intent(in) :: dim
     type(mesh_type), target, intent(in) :: mesh
-    character(len = *), optional, intent(in) :: name
 
     field%dim = dim
     allocate(field%val(dim, mesh%nnodes))
-    field%mesh => mesh
-    if(present(name)) then
-      field%name = name
-    else
-      field%name = "field"
-    end if
+    field%mesh = mesh
+
+    mesh%refcount = mesh%refcount + 1
+    allocate(field%refcount)
+    field%refcount = 1
     
   end subroutine allocate_vector_field
 
   subroutine deallocate_vector_field(field)
     type(vector_field), intent(inout) :: field
 
-    deallocate(field%val)
+    field%refcount = field%refcount - 1
+    if(field%refcount == 0) then
+    
+      call deallocate(field%mesh)
+      deallocate(field%val)
+      
+      deallocate(field%refcount)      
+    end if
 
   end subroutine deallocate_vector_field
 
@@ -249,15 +281,20 @@ contains
 
   end function node_count_vector_field
 
-  pure function ele_val(field, ele)
+  pure function ele_val_vector_field(field, ele) result(ele_val)
     type(vector_field), intent(in) :: field
     integer, intent(in) :: ele
 
     real, dimension(field%dim, field%mesh%loc) :: ele_val
 
-    ele_val = field%val(:, field%mesh%ndglno((ele - 1) * field%mesh%loc + 1:ele * field%mesh%loc))
+    integer :: i, i_0
 
-  end function ele_val
+    i_0 = (ele - 1) * field%mesh%loc
+    do i = 1, field%mesh%loc
+      ele_val(:, i) = field%val(:, field%mesh%ndglno(i_0 + i))
+    end do
+
+  end function ele_val_vector_field
 
   pure function ele_loc_vector_field(field, ele) result(ele_loc)
     type(vector_field), intent(in) :: field
@@ -269,7 +306,7 @@ contains
 
   end function ele_loc_vector_field
 
-  pure function node_val(field, node)
+  pure function node_val_vector_field(field, node) result(node_val)
     type(vector_field), intent(in) :: field
     integer, intent(in) :: node
 
@@ -277,9 +314,9 @@ contains
 
     node_val = field%val(:, node)
 
-  end function node_val
+  end function node_val_vector_field
 
-  function row_m_ptr(eelist, i)
+  function row_m_ptr_eelist(eelist, i) result(row_m_ptr)
     type(eelist_type), intent(in) :: eelist
     integer, intent(in) :: i
 
@@ -287,6 +324,75 @@ contains
 
     row_m_ptr => eelist%v(:eelist%n(i), i)
 
-  end function row_m_ptr
+  end function row_m_ptr_eelist
 
-end module fields_dummy
+  function ele_nodes_vector_field(field, ele) result(nodes)
+    type(vector_field), intent(in) :: field
+    integer, intent(in) :: ele
+
+    integer, dimension(:), pointer :: nodes
+
+    nodes => field%mesh%ndglno((ele - 1) * field%mesh%loc + 1:ele * field%mesh%loc)
+
+  end function ele_nodes_vector_field
+
+  subroutine set_vector_field(field, nodes, val)
+    type(vector_field), intent(inout) :: field
+    integer, dimension(:), intent(in) :: nodes
+    real, dimension(:, :), intent(in) :: val
+
+    field%val(:, nodes) = val
+
+  end subroutine set_vector_field
+
+  pure function simplex_volume(cell_coords) result(volume)
+    ! dim x loc
+    real, dimension(:, :), intent(in) :: cell_coords
+
+    real :: volume
+
+    select case(size(cell_coords, 1))
+      case(1)
+        volume = abs(cell_coords(1, 2) - cell_coords(1, 1))
+      case(2)
+        volume = triangle_area(cell_coords)
+      case(3)
+        volume = tetrahedron_volume(cell_coords)
+      case default
+        volume = -huge(0.0)
+    end select
+  
+  end function simplex_volume
+
+  pure function triangle_area(cell_coords) result(area)
+    real, dimension(2, 3), intent(in) :: cell_coords
+
+    real :: area
+
+    real, dimension(2) :: e1, e2
+
+    e1 = cell_coords(:, 2) - cell_coords(:, 1)
+    e2 = cell_coords(:, 3) - cell_coords(:, 1)
+
+    area = 0.5 * abs(e1(1) * e2(2) - e1(2) * e2(1))
+
+  end function triangle_area
+
+  pure function tetrahedron_volume(cell_coords) result(volume)
+    real, dimension(3, 4), intent(in) :: cell_coords
+
+    real :: volume
+
+    real, dimension(3) :: e1, e2, e3
+
+    e1 = cell_coords(:, 2) - cell_coords(:, 1)
+    e2 = cell_coords(:, 3) - cell_coords(:, 1)
+    e3 = cell_coords(:, 4) - cell_coords(:, 1)
+
+    volume = (1.0 / 6.0) * abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
+                           & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
+                           & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
+    
+  end function tetrahedron_volume
+
+end module libsupermesh_fields_dummy
