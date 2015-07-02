@@ -159,7 +159,7 @@ contains
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
 
-    call allocate(mesh, nnodes, nelements, loc)
+    call allocate(mesh, dim, nnodes, nelements, loc)
     mesh%ndglno = reshape(enlist, (/loc * nelements/))
     deallocate(enlist)
     

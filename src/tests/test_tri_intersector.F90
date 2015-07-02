@@ -81,7 +81,7 @@ subroutine test_tri_intersector
       call libsupermesh_cintersector_set_input(ele_val(positionsA, ele_A), triB%v, dim, loc)
       call libsupermesh_cintersector_drive
       call libsupermesh_cintersector_query(nonods, totele)
-      call allocate(intersection_mesh, nonods, totele, loc)
+      call allocate(intersection_mesh, dim, nonods, totele, loc)
       intersection_mesh%continuity = -1
       call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
@@ -115,7 +115,7 @@ subroutine test_tri_intersector
 
       ! G. Use the new intersect_elements and DO create vector field
       call intersect_elements(triA%v, triB%v, dim, n_trisC, trisC_real=trisC_real)
-      call allocate(new_mesh, n_trisC * loc, n_trisC, loc)
+      call allocate(new_mesh, dim, n_trisC * loc, n_trisC, loc)
 
       if ( n_trisC > 0 ) then
         new_mesh%ndglno = (/ (i, i=1,loc * n_trisC) /)

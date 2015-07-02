@@ -165,7 +165,7 @@ contains
     verticesA = size(ndglnoA, 1)
     verticesB = size(ndglnoB, 1)
     
-    call allocate(mesh, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
+    call allocate(mesh, dimA, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
     do i = 1, size(ndglnoA, 2)
       mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
     end do
@@ -371,7 +371,7 @@ contains
     verticesA = size(ndglnoA, 1)
     verticesB = size(ndglnoB, 1)
 
-    call allocate(mesh, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
+    call allocate(mesh, dimA, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
     do i = 1, size(ndglnoA, 2)
       mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
     end do
@@ -379,7 +379,7 @@ contains
     call deallocate(mesh)
     lpositionsA%val = positionsA
 
-    call allocate(mesh, nodesB, size(ndglnoB, 2), size(ndglnoB, 1))
+    call allocate(mesh, dimB, nodesB, size(ndglnoB, 2), size(ndglnoB, 1))
     do i = 1, size(ndglnoB, 2)
       mesh%ndglno((i - 1) * verticesB + 1:i * verticesB) = ndglnoB(:, i)
     end do
@@ -615,7 +615,7 @@ contains
     nodesB = size(positionsB, 2)
     verticesB = size(ndglnoB, 1)
 
-    call allocate(mesh, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
+    call allocate(mesh, dimA, nodesA, size(ndglnoA, 2), size(ndglnoA, 1))
     do i = 1, size(ndglnoA, 2)
       mesh%ndglno((i - 1) * verticesA + 1:i * verticesA) = ndglnoA(:, i)
     end do
@@ -623,7 +623,7 @@ contains
     call deallocate(mesh)
     lpositionsA%val = positionsA
     
-    call allocate(mesh, nodesB, size(ndglnoB, 2), size(ndglnoB, 1))
+    call allocate(mesh, dimB, nodesB, size(ndglnoB, 2), size(ndglnoB, 1))
     do i = 1, size(ndglnoB, 2)
       mesh%ndglno((i - 1) * verticesB + 1:i * verticesB) = ndglnoB(:, i)
     end do

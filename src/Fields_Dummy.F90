@@ -12,9 +12,11 @@ module libsupermesh_fields_dummy
     & tetrahedron_volume
 
   type mesh_type
+    integer :: dim
     integer :: nnodes
     integer :: nelements
     integer :: loc
+    integer :: sloc
     integer, dimension(:), pointer :: ndglno
     integer :: continuity
     type(eelist_type), pointer :: eelist
@@ -85,15 +87,18 @@ module libsupermesh_fields_dummy
 
 contains
 
-  subroutine allocate_mesh(mesh, nnodes, nelements, loc)
+  subroutine allocate_mesh(mesh, dim, nnodes, nelements, loc)
     type(mesh_type), intent(out) :: mesh
+    integer, intent(in) :: dim
     integer, intent(in) :: nnodes
     integer, intent(in) :: nelements
     integer, intent(in) :: loc
 
+    mesh%dim = dim
     mesh%nnodes = nnodes
     mesh%nelements = nelements
     mesh%loc = loc
+    mesh%sloc = sloc(dim, loc)
     allocate(mesh%ndglno(nelements * loc))
     nullify(mesh%eelist)
     mesh%continuity = 0
@@ -102,6 +107,42 @@ contains
     mesh%refcount = 1
     
   end subroutine allocate_mesh
+  
+  pure function sloc(dim, loc)
+    integer, intent(in) :: dim
+    integer, intent(in) :: loc
+
+    integer :: sloc
+    
+    select case(dim)
+      case(1)
+        select case(loc)
+          case(2)
+            sloc = 1
+          case default
+            sloc = -1
+        end select
+      case(2)
+        select case(loc)
+          case(3, 4)
+            sloc = 2
+          case default
+            sloc = -1
+        end select
+      case(3)
+        select case(loc)
+          case(4)
+            sloc = 3
+          case(8)
+            sloc = 4
+          case default
+            sloc = -1
+        end select
+      case default
+        sloc = -1
+    end select
+
+  end function sloc
 
   subroutine deallocate_mesh(mesh)
     type(mesh_type), intent(inout) :: mesh
@@ -148,18 +189,19 @@ contains
     end if
 
   end subroutine deallocate_vector_field
-
-  subroutine mesh_eelist(nnodes, enlist, eelist)
+  
+  subroutine mesh_eelist(nnodes, enlist, sloc, eelist)
     integer, intent(in) :: nnodes
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
+    integer, intent(in) :: sloc
     type(eelist_type), intent(out) :: eelist
 
     integer :: ele, i, j, k, loc, nelements, nneigh_ele
     type(integer_set), dimension(:), allocatable :: nelist
-
+    
     integer, dimension(:), allocatable :: seen, seen_eles
-    integer :: max_seen, nseen_eles
+    integer :: nseen_eles
 
     type iarr
       integer, dimension(:), pointer :: v
@@ -192,11 +234,6 @@ contains
 
     allocate(seen_eles(nelements), seen(nelements))
     seen = 0
-    max_seen = 1  ! max_seen records the maximum number of nodes common between
-                  ! elements determined to be "adjacent". When this is increased
-                  ! previously "adjacent" elements are removed from the eelist.
-                  ! This works around the fact that the number of facet nodes is
-                  ! not known here.
     nneigh_ele = loc  ! Linear simplex assumption here (works for more general
                       ! cases, but less efficient)
     allocate(eelist%v(nneigh_ele, nelements), eelist%n(nelements))
@@ -212,18 +249,18 @@ contains
               nseen_eles = nseen_eles + 1
               seen_eles(nseen_eles) = ele
             end if
-            if(seen(ele) > max_seen) then
-              eelist%n(:i) = 0
-              max_seen = seen(ele)
-            end if
-            if(seen(ele) == max_seen) then
+            if(seen(ele) == sloc) then
               eelist%n(i) = eelist%n(i) + 1
               if(eelist%n(i) > nneigh_ele) then
-                eelist%n(:i) = 0
-                max_seen = max_seen + 1
-              else
-                eelist%v(eelist%n(i), i) = ele
+                write(0, "(a)") "Invalid connectivity"
+                stop 1
               end if
+              eelist%v(eelist%n(i), i) = ele
+#ifndef NDEBUG
+            else if(seen(ele) > sloc) then
+              write(0, "(a)") "Invalid connectivity"
+              stop 1
+#endif
             end if
           end if
         end do
@@ -238,7 +275,7 @@ contains
       deallocate(inelist(i)%v)
     end do
     deallocate(inelist)
-
+    
   end subroutine mesh_eelist
 
   subroutine deallocate_eelist(eelist)
@@ -255,7 +292,7 @@ contains
 
     if(.not. associated(mesh%eelist)) then
       allocate(mesh%eelist)
-      call mesh_eelist(mesh%nnodes, reshape(mesh%ndglno, (/mesh%loc, mesh%nelements/)), mesh%eelist)
+      call mesh_eelist(mesh%nnodes, reshape(mesh%ndglno, (/mesh%loc, mesh%nelements/)), mesh%sloc, mesh%eelist)
     end if
     eelist => mesh%eelist
 

@@ -48,7 +48,7 @@ subroutine test_intersection_finder_completeness
       ! Triangles (2D)
         call intersect_elements(ele_val(positionsA, ele_A), ele_val(positionsB, ele_B), &
                     dim, n_trisC, trisC_real=trisC_real)
-        call allocate(new_mesh, n_trisC * loc, n_trisC, loc)
+        call allocate(new_mesh, dim, n_trisC * loc, n_trisC, loc)
 
         if ( n_trisC > 0 ) then
           new_mesh%ndglno = (/ (i, i=1,loc * n_trisC) /)

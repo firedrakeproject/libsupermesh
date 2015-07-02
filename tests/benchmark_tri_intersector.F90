@@ -222,7 +222,7 @@ subroutine benchmark_tri_intersector
       call libsupermesh_cintersector_set_input(posA, posB, dim, loc)
       call libsupermesh_cintersector_drive
       call libsupermesh_cintersector_query(nonods, totele)
-      call allocate(intersection_meshLibWM, nonods, totele, loc)
+      call allocate(intersection_meshLibWM, dim, nonods, totele, loc)
       intersection_meshLibWM%continuity = -1
       call allocate(libwm_result, dim, intersection_meshLibWM)
       if (nonods > 0) then
@@ -307,7 +307,7 @@ subroutine benchmark_tri_intersector
       triB%v = ele_val(positionsB, ele_B)
 
       call intersect_elements(triA%v, triB%v, dim, n_trisC, trisC_real=trisC_real)
-      call allocate(new_mesh, n_trisC * loc, n_trisC, loc)
+      call allocate(new_mesh, dim, n_trisC * loc, n_trisC, loc)
 
       if ( n_trisC > 0 ) then
         new_mesh%ndglno = (/ (i, i=1,loc * n_trisC) /)

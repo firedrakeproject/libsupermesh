@@ -122,7 +122,7 @@ module libsupermesh_construction
     call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, totele)
-    call allocate(intersection_mesh, nonods, totele, ndimA + 1)
+    call allocate(intersection_mesh, ndimA, nonods, totele, ndimA + 1)
     intersection_mesh%ndglno = (/ (i, i=1,totele) /)
     intersection_mesh%continuity = -1
     call allocate(intersection, ndimA, intersection_mesh)

@@ -70,7 +70,7 @@ subroutine test_tet_intersector
       call libsupermesh_cintersector_set_input(ele_val(positionsA, ele_A), tet_B%v, dim, loc)
       call libsupermesh_cintersector_drive
       call libsupermesh_cintersector_query(nonods, totele)
-      call allocate(intersection_mesh, nonods, totele, loc)
+      call allocate(intersection_mesh, dim, nonods, totele, loc)
       intersection_mesh%continuity = -1
       call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
@@ -104,7 +104,7 @@ subroutine test_tet_intersector
 
       ! G. Use the new intersect_elements and DO create vector field
       call intersect_elements(tet_A%v, tet_B%v, dim, n_tetsC, tetsC_real=tetsC_real)
-      call allocate(new_mesh, n_tetsC * loc, n_tetsC, loc)
+      call allocate(new_mesh, dim, n_tetsC * loc, n_tetsC, loc)
 
       if ( n_tetsC > 0 ) then
         new_mesh%ndglno = (/ (i, i=1,loc * n_tetsC) /)

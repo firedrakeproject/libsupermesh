@@ -46,7 +46,7 @@ subroutine test_intersection_finder_seeds
   type(mesh_type) :: mesh
   type(vector_field) :: positions
   
-  call allocate(mesh, nnodes = 6, nelements = 4, loc = 2)
+  call allocate(mesh, dim = 1, nnodes = 6, nelements = 4, loc = 2)
   call set_ele_nodes(mesh, 1, (/1, 2/))
   call set_ele_nodes(mesh, 2, (/2, 3/))
   call set_ele_nodes(mesh, 3, (/4, 5/))

@@ -47,7 +47,7 @@ subroutine test_intersection_finder_completeness_3d
       ! Tets (3D)
         call intersect_elements(ele_val(positionsA, ele_A), ele_val(positionsB, ele_B), &
                 dim, n_tetsC, tetsC_real=tetsC_real )
-        call allocate(intersection_mesh, n_tetsC * loc, n_tetsC, loc)
+        call allocate(intersection_mesh, dim, n_tetsC * loc, n_tetsC, loc)
         intersection_mesh%continuity = -1
 
         if ( n_tetsC > 0 ) then
