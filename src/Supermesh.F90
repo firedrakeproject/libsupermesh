@@ -4,7 +4,7 @@ module libsupermesh_construction
 
   use libsupermesh_fldebug
   use libsupermesh_fields_dummy
-  use libsupermesh_global_parameters, only : real_4, real_8
+  use libsupermesh_global_parameters, only : real_8
   use libsupermesh_tri_intersection_module
   use libsupermesh_tet_intersection_module
   

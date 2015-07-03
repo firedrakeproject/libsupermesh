@@ -107,40 +107,22 @@ contains
     mesh%refcount = 1
     
   end subroutine allocate_mesh
-  
+
   pure function sloc(dim, loc)
     integer, intent(in) :: dim
     integer, intent(in) :: loc
 
     integer :: sloc
-    
-    select case(dim)
-      case(1)
-        select case(loc)
-          case(2)
-            sloc = 1
-          case default
-            sloc = -1
-        end select
-      case(2)
-        select case(loc)
-          case(3, 4)
-            sloc = 2
-          case default
-            sloc = -1
-        end select
-      case(3)
-        select case(loc)
-          case(4)
-            sloc = 3
-          case(8)
-            sloc = 4
-          case default
-            sloc = -1
-        end select
-      case default
-        sloc = -1
-    end select
+
+    if(loc == dim + 1) then
+      ! Simplex
+      sloc = loc - 1
+    else if(loc == 2 ** dim) then
+      ! Cubic
+      sloc = loc / 2
+    else
+      sloc = -1
+    end if
 
   end function sloc
 
