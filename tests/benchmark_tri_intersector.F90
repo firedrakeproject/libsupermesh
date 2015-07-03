@@ -302,7 +302,7 @@ subroutine benchmark_tri_intersector
       ! F. Use the new libsupermesh_intersect_elements and do NOT create vector field 
       triB%v = ele_val(positionsB, ele_B)
 
-      call libsupermesh_intersect_elements(triA%v, triB%v, positionsA%dim, n_trisC, trisC_real=trisC_real)
+      call libsupermesh_intersect_elements(triA%v, triB%v, n_trisC, trisC_real)
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_trisC
@@ -322,7 +322,7 @@ subroutine benchmark_tri_intersector
       ! G. Use the new libsupermesh_intersect_elements and DO create vector field 
       triB%v = ele_val(positionsB, ele_B)
 
-      call libsupermesh_intersect_elements(triA%v, triB%v, positionsA%dim, n_trisC, trisC_real=trisC_real)
+      call libsupermesh_intersect_elements(triA%v, triB%v, n_trisC, trisC_real)
       call allocate(new_mesh, n_trisC * 3, n_trisC, ele_shape(positionsA, ele_A))
 
       if ( n_trisC > 0 ) then

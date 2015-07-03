@@ -101,14 +101,14 @@ subroutine test_tet_intersector
       call deallocate(intersect_elements_result)
       
       ! F. Use the new libsupermesh_intersect_elements and do NOT create vector field 
-      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
+      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, n_tetsC, tetsC_real)
       vol_F_intersect_elements = 0.0
       do ele_C=1,n_tetsC
         vol_F_intersect_elements = vol_F_intersect_elements + abs(tetvol_test(tetsC_real(:,:,ele_C)))
       end do
 
       ! G. Use the new libsupermesh_intersect_elements and DO create vector field 
-      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
+      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, n_tetsC, tetsC_real)
       call allocate(new_mesh, n_tetsC * 4, n_tetsC, ele_shape(positionsA, ele_A))
 
       if ( n_tetsC > 0 ) then

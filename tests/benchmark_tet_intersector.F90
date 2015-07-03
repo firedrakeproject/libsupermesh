@@ -91,15 +91,13 @@ subroutine benchmark_tet_intersector
   positionsB = read_triangle_files("plcD_temp", quad_degree=4)
   
   do ele_A=1,ele_count(positionsA)
+    tet_A%v = ele_val(positionsA, ele_A)
+    t1 = MPI_Wtime();
     do ele_B=1,ele_count(positionsB)
       ! A. Use libWM without creating temporary vector fields.
-      tet_A%v = ele_val(positionsA, ele_A)
       tet_B%v = ele_val(positionsB, ele_B)
 
-      t1 = MPI_Wtime();
       call libsupermesh_intersect_tets_libwm(tet_A%v, tet_B%v, nodesC, ndglnoC, n_tetsC)
-      t2 = MPI_Wtime();
-      dt_A_vol_libwm_intersect = dt_A_vol_libwm_intersect + ( t2 -t1 )
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_tetsC
@@ -107,26 +105,38 @@ subroutine benchmark_tet_intersector
       end do
       tets_counters(1, index) = n_tetsC
     end do
+    t2 = MPI_Wtime();
+    dt_A_vol_libwm_intersect = dt_A_vol_libwm_intersect + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
+    tet_A%v = ele_val(positionsA, ele_A)
+    t1 = MPI_Wtime();
     do ele_B=1,ele_count(positionsB)
       ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
-      tet_A%v = ele_val(positionsA, ele_A)
       tet_B%v = ele_val(positionsB, ele_B)
-      
-      t1 = MPI_Wtime();
+
       call libsupermesh_intersect_tets_dt_public(tet_A, tet_B, tetsC, n_tetsC)
-      t2 = MPI_Wtime();
-      dt_B_vol_fort = dt_B_vol_fort + ( t2 -t1 )
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_tetsC
         vol_B_fort(index) = vol_B_fort(index) + abs(tetvol_test(tetsC(ele_C)%v))
-!        vol_A_libwm_intersect(index) = vol_B_fort(index)   ! HACK REMOVE
       end do
       tets_counters(2, index) = n_tetsC
+    end do
+    t2 = MPI_Wtime();
+    dt_B_vol_fort = dt_B_vol_fort + ( t2 -t1 )
+  end do
+
+  
+  ! Use only for the counters
+  do ele_A=1,ele_count(positionsA)
+    tet_A%v = ele_val(positionsA, ele_A)
+    do ele_B=1,ele_count(positionsB)
+      tet_B%v = ele_val(positionsB, ele_B)
+
+      call libsupermesh_intersect_tets_dt_public(tet_A, tet_B, tetsC, n_tetsC)
 
       if(n_tetsC == 0) then
         counters(1) = counters(1) + 1
@@ -140,15 +150,13 @@ subroutine benchmark_tet_intersector
 
 
   do ele_A=1,ele_count(positionsA)
+    tet_A%v = ele_val(positionsA, ele_A)
+    t1 = MPI_Wtime();    
     do ele_B=1,ele_count(positionsB)
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
-      tet_A%v = ele_val(positionsA, ele_A)
       tet_B%v = ele_val(positionsB, ele_B)
-      
-      t1 = MPI_Wtime();
+
       call libsupermesh_intersect_tets_dt_real(tet_A%v, tet_B%v, tetsC_real, n_tetsC)
-      t2 = MPI_Wtime();
-      dt_C_vol_fort_public = dt_C_vol_fort_public + ( t2 -t1 )
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_tetsC
@@ -156,16 +164,18 @@ subroutine benchmark_tet_intersector
       end do
       tets_counters(3, index) = n_tetsC
     end do
+    t2 = MPI_Wtime();
+    dt_C_vol_fort_public = dt_C_vol_fort_public + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
+    tet_A%v = ele_val(positionsA, ele_A)
+    t1 = MPI_Wtime();
     do ele_B=1,ele_count(positionsB)
       ! D. Use libWM directly and create temporary vector field
-      tet_A%v = ele_val(positionsA, ele_A)
       tet_B%v = ele_val(positionsB, ele_B)
 
-      t1 = MPI_Wtime();
       call libsupermesh_cintersector_set_input(tet_A%v, tet_B%v, positionsA%dim, ele_loc(positionsA, ele_A))
       call libsupermesh_cintersector_drive
       call libsupermesh_cintersector_query(nonods, totele)
@@ -178,8 +188,6 @@ subroutine benchmark_tet_intersector
           intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
         end do
       end if
-      t2 = MPI_Wtime();
-      dt_D_vol_libwm = dt_D_vol_libwm + ( t2 -t1 )
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,totele
@@ -189,6 +197,8 @@ subroutine benchmark_tet_intersector
       call deallocate(intersection_mesh)
       call deallocate(intersection)
     end do
+    t2 = MPI_Wtime();
+    dt_D_vol_libwm = dt_D_vol_libwm + ( t2 -t1 )
   end do
 
 
@@ -217,15 +227,13 @@ subroutine benchmark_tet_intersector
 
 
   do ele_A=1,ele_count(positionsA)
+    tet_A%v = ele_val(positionsA, ele_A)
+    t1 = MPI_Wtime();
     do ele_B=1,ele_count(positionsB)
       ! F. Use the new libsupermesh_intersect_elements and do NOT create vector field 
-      tet_A%v = ele_val(positionsA, ele_A)
       tet_B%v = ele_val(positionsB, ele_B)
 
-      t1 = MPI_Wtime();
-      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
-      t2 = MPI_Wtime();
-      dt_F_vol_intersect_elements = dt_F_vol_intersect_elements + ( t2 -t1 )
+      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, n_tetsC, tetsC_real)
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,n_tetsC
@@ -233,17 +241,19 @@ subroutine benchmark_tet_intersector
       end do
       tets_counters(6, index) = n_tetsC
     end do
+    t2 = MPI_Wtime();
+    dt_F_vol_intersect_elements = dt_F_vol_intersect_elements + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
+    tet_A%v = ele_val(positionsA, ele_A)  
+    t1 = MPI_Wtime();
     do ele_B=1,ele_count(positionsB)
       ! G. Use the new libsupermesh_intersect_elements and DO create vector field 
-      tet_A%v = ele_val(positionsA, ele_A)
       tet_B%v = ele_val(positionsB, ele_B)
 
-      t1 = MPI_Wtime();
-      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, positionsA%dim, n_tetsC, tetsC_real=tetsC_real)
+      call libsupermesh_intersect_elements(tet_A%v, tet_B%v, n_tetsC, tetsC_real)
       call allocate(new_mesh, n_tetsC * 4, n_tetsC, ele_shape(positionsA, ele_A))
 
       if ( n_tetsC > 0 ) then
@@ -258,8 +268,6 @@ subroutine benchmark_tet_intersector
         end do
       end if
       call deallocate(new_mesh)
-      t2 = MPI_Wtime();
-      dt_G_vol_intersect_elements = dt_G_vol_intersect_elements + ( t2 -t1 )
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,ele_count(intersection)
@@ -268,6 +276,8 @@ subroutine benchmark_tet_intersector
       tets_counters(7, index) = ele_count(intersection)
       call deallocate(intersection)
     end do
+    t2 = MPI_Wtime();
+    dt_G_vol_intersect_elements = dt_G_vol_intersect_elements + ( t2 -t1 )
   end do
 
 
@@ -277,16 +287,16 @@ subroutine benchmark_tet_intersector
       do i = 1, 8
         tets_totals(i) = tets_totals(i) + tets_counters(i, index)
       end do
-      fail = (vol_A_libwm_intersect(index) .fne. vol_B_fort(index)) &
-         .OR. (vol_E_intersect_elements(index) .fne. vol_C_fort_public(index) ) &
-         .OR. (vol_E_intersect_elements(index) .fne. vol_B_fort(index)) &
-         .OR. (vol_A_libwm_intersect(index) .fne. vol_D_libwm(index)) &
-         .OR. (vol_A_libwm_intersect(index) .fne. vol_C_fort_public(index) ) &
-         .OR. (vol_F_intersect_elements(index) .fne. vol_A_libwm_intersect(index) ) &
-         .OR. (vol_F_intersect_elements(index) .fne. vol_D_libwm(index) ) &
-         .OR. (vol_G_intersect_elements(index) .fne. vol_B_fort(index)) &
-         .OR. (vol_G_intersect_elements(index) .fne. vol_D_libwm(index) )
-      
+      fail = ( (abs(vol_A_libwm_intersect(index) - vol_B_fort(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_E_intersect_elements(index) - vol_C_fort_public(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_E_intersect_elements(index) - vol_B_fort(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_A_libwm_intersect(index) - vol_D_libwm(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_A_libwm_intersect(index) - vol_C_fort_public(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_F_intersect_elements(index) - vol_A_libwm_intersect(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_F_intersect_elements(index) - vol_D_libwm(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_G_intersect_elements(index) - vol_B_fort(index)) > 400 * epsilon(0.0)) &
+         .OR. (abs(vol_G_intersect_elements(index) - vol_D_libwm(index)) > 400 * epsilon(0.0)) )
+
       if ( fail ) then
         write (*,*) "benchmark_tet_intersector: index:",index, &
           & ", vol_A_libwm_intersect:",vol_A_libwm_intersect(index),&
@@ -295,11 +305,13 @@ subroutine benchmark_tet_intersector
           & ", vol_E_intersect_elements:",vol_E_intersect_elements(index), &
           & ", vol_F_intersect_elements:",vol_F_intersect_elements(index), &
           & ", vol_G_intersect_elements:",vol_G_intersect_elements(index),"."
+        write (*,*) "benchmark_tet_intersector: diff:",abs(vol_A_libwm_intersect(index)-vol_B_fort(index)),"."
         write (*,*) "benchmark_tet_intersector: index:",index,     &
           & ", ele_A:",ele_A,", tetA:",ele_val(positionsA, ele_A), &
           & ", ele_B:",ele_B,", tet_B:",ele_val(positionsB, ele_B),"."
         totalFail = .TRUE.
         call report_test("[benchmark_tet_intersector areas]", fail, .false., "Should give the same volumes of intersection")
+        call exit(1)
       end if
     end do
   end do

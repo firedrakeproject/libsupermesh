@@ -1,4 +1,4 @@
-#define BUF_SIZE 512
+#define BUF_SIZE 729
 #include "fdebug.h"
 
 module libsupermesh_tet_intersection_module
@@ -18,7 +18,7 @@ module libsupermesh_tet_intersection_module
   end type plane_type
 
   type(tet_type), dimension(BUF_SIZE), save :: libsupermesh_tet_array_tmp
-  integer :: libsupermesh_tet_cnt_tmp = 0
+  integer, save :: libsupermesh_tet_cnt_tmp = 0
   logical, save :: libsupermesh_mesh_allocated = .false.
 
   public :: tet_type, plane_type, libsupermesh_intersect_tets, get_planes
@@ -39,22 +39,17 @@ contains
   subroutine libsupermesh_intersect_tets_libwm(tetA, tetB, nodesC, ndglnoC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
-    real, dimension(3, BUF_SIZE), intent(out) :: nodesC
-    integer, dimension(4, BUF_SIZE), intent(out) :: ndglnoC
+    real, dimension(3, BUF_SIZE), intent(inout) :: nodesC
+    integer, dimension(4, BUF_SIZE), intent(inout) :: ndglnoC
     integer, intent(out) :: n_tetsC
 
     integer :: i, nonods
     real, dimension(3 * BUF_SIZE), save :: lnodesC = -huge(0.0)
-    
-!write(*,*) "INSIDE tet_A%v:",tetA,",tet_B%v:",tetB
+
     call libsupermesh_cintersector_set_input(tetA, tetB, 3, 4)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, n_tetsC)
-!write(*,*) "INSIDE nonods:",nonods,"totele:",n_tetsC
     call libsupermesh_cintersector_get_output(nonods, n_tetsC, 3, 4, lnodesC, ndglnoC)
-    if ( nonods > 0 ) then
-!write(*,*) "lnodesC:",lnodesC
-    end if
     do i = 1, nonods
       nodesC(1, i) = lnodesC(i)
       nodesC(2, i) = lnodesC(i + nonods)
@@ -66,12 +61,12 @@ contains
   subroutine libsupermesh_intersect_tets_dt_real(tetA, tetB, tetsC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
-    real, dimension(3, 4, BUF_SIZE), intent(out) :: tetsC
+    real, dimension(3, 4, BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
 
     integer :: i
     type(tet_type) :: tetA_t, tetB_t
-    type(tet_type), dimension(BUF_SIZE) :: tetsC_t
+    type(tet_type), dimension(BUF_SIZE), save :: tetsC_t
 
     tetA_t%v = tetA
     tetB_t%v = tetB
@@ -86,7 +81,7 @@ contains
   subroutine libsupermesh_intersect_tets_dt_public(tetA, tetB, tetsC, n_tetsC)
     type(tet_type), intent(in) :: tetA
     type(tet_type), intent(in) :: tetB
-    type(tet_type), dimension(BUF_SIZE), intent(out) :: tetsC
+    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
     type(plane_type), dimension(4) :: planesB
 
@@ -99,7 +94,7 @@ contains
   subroutine libsupermesh_intersect_tets_dt(tetA, planesB, tetsC, n_tetsC)
     type(tet_type), intent(in) :: tetA
     type(plane_type), dimension(4), intent(in)  :: planesB
-    type(tet_type), dimension(BUF_SIZE), intent(out) :: tetsC
+    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
     
     integer :: colour_tmp, i, j

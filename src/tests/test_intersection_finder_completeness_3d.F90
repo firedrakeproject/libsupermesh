@@ -60,7 +60,7 @@ subroutine test_intersection_finder_completeness_3d
         if ( ele_loc(positionsA, ele_A) == 3 ) then
         ! Triangles (2D)
           call libsupermesh_intersect_elements(ele_val(positionsA, ele_A), ele_val(positionsB, ele_B), &
-                     positionsA%dim, n_trisC, trisC_real=trisC_real)
+                     n_trisC, trisC_real)
           call allocate(new_mesh, n_trisC * 3, n_trisC, ele_shape(positionsA, ele_A))
  
           if ( n_trisC > 0 ) then
@@ -86,7 +86,7 @@ subroutine test_intersection_finder_completeness_3d
       else if ( positionsA%dim == 3 ) then
       ! Tets (3D)
         call libsupermesh_intersect_elements(ele_val(positionsA, ele_A), ele_val(positionsB, ele_B), &
-                positionsA%dim, n_tetsC, tetsC_real=tetsC_real )
+                n_tetsC, tetsC_real )
         call allocate(intersection_mesh, n_tetsC * 4, n_tetsC, ele_shape(positionsB, ele_B))
         intersection_mesh%continuity = -1
 
