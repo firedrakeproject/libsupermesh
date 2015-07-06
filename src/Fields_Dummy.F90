@@ -1,7 +1,5 @@
 module libsupermesh_fields_dummy
 
-  use libsupermesh_integer_set_module
-
   implicit none
 
   private
@@ -171,7 +169,7 @@ contains
     end if
 
   end subroutine deallocate_vector_field
-  
+
   subroutine mesh_eelist(nnodes, enlist, sloc, eelist)
     integer, intent(in) :: nnodes
     ! loc x nelements
@@ -179,40 +177,42 @@ contains
     integer, intent(in) :: sloc
     type(eelist_type), intent(out) :: eelist
 
-    integer :: ele, i, j, k, loc, nelements, nneigh_ele
-    type(integer_set), dimension(:), allocatable :: nelist
-    
+    integer :: ele, i, j, k, k_max, k_min, loc, nelements, nneigh_ele
+
+    integer, dimension(:), allocatable :: nelist_n
+    ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
+    !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
+    integer, dimension(:), allocatable :: nelist_indices, nelist_indptr
+
     integer, dimension(:), allocatable :: seen, seen_eles
     integer :: nseen_eles
-
-    type iarr
-      integer, dimension(:), pointer :: v
-      integer :: n
-    end type iarr
-    type(iarr), dimension(:), allocatable :: inelist
 
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
 
-    ! Construct the node element list
-    allocate(nelist(nnodes))
-    call allocate(nelist)
+    ! Construct the node element list. Based on NODELE in Fluidity
+    ! femtools/Adjacency_Lists.F90 (see e.g. Fluidity version 4.1.11). Code
+    ! first added 05/07/2015.
+    allocate(nelist_n(nnodes), nelist_indptr(nnodes + 1))
+    nelist_n = 0
     do i = 1, nelements
       do j = 1, loc
-        call insert(nelist(enlist(j, i)), i)
+        nelist_n(enlist(j, i)) = nelist_n(enlist(j, i)) + 1
       end do
     end do
-    ! Copy the node element list into a ragged array for more efficient access
-    allocate(inelist(nnodes))
+    nelist_indptr(1) = 1
     do i = 1, nnodes
-      inelist(i)%n = key_count(nelist(i))
-      allocate(inelist(i)%v(inelist(i)%n))
-      do j = 1, inelist(i)%n
-        inelist(i)%v(j) = fetch(nelist(i), j)
-      end do
-      call deallocate(nelist(i))
+      nelist_indptr(i + 1) = nelist_indptr(i) + nelist_n(i)
     end do
-    deallocate(nelist)
+    allocate(nelist_indices(nelist_indptr(nnodes + 1) - 1))
+    nelist_n = 0
+    do i = 1, nelements
+      do j = 1, loc
+        nelist_indices(nelist_indptr(enlist(j, i)) + nelist_n(enlist(j, i))) = i
+        nelist_n(enlist(j, i)) = nelist_n(enlist(j, i)) + 1
+      end do
+    end do
+    deallocate(nelist_n)
 
     allocate(seen_eles(nelements), seen(nelements))
     seen = 0
@@ -223,8 +223,10 @@ contains
     do i = 1, nelements
       nseen_eles = 0
       loc_loop: do j = 1, loc
-        do k = 1, inelist(enlist(j, i))%n
-          ele = inelist(enlist(j, i))%v(k)
+        k_min = nelist_indptr(enlist(j, i))
+        k_max = nelist_indptr(enlist(j, i) + 1) - 1
+        do k = k_min, k_max
+          ele = nelist_indices(k)
           if(ele /= i) then
             seen(ele) = seen(ele) + 1
             if(seen(ele) == 1) then
@@ -233,14 +235,20 @@ contains
             end if
             if(seen(ele) == sloc) then
               eelist%n(i) = eelist%n(i) + 1
+#ifndef NDEBUG
               if(eelist%n(i) > nneigh_ele) then
                 write(0, "(a)") "Invalid connectivity"
                 stop 1
               end if
+#endif
               eelist%v(eelist%n(i), i) = ele
+#ifdef NDEBUG
+              if(eelist%n(i) == nneigh_ele) exit loc_loop
+#else
             else if(seen(ele) > sloc) then
               write(0, "(a)") "Invalid connectivity"
               stop 1
+#endif
             end if
           end if
         end do
@@ -249,13 +257,8 @@ contains
         seen(seen_eles(j)) = 0
       end do
     end do
-    deallocate(seen_eles, seen)
+    deallocate(nelist_indices, nelist_indptr, seen_eles, seen)
 
-    do i = 1, nnodes
-      deallocate(inelist(i)%v)
-    end do
-    deallocate(inelist)
-    
   end subroutine mesh_eelist
 
   subroutine deallocate_eelist(eelist)
