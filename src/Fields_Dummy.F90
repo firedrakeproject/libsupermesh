@@ -17,7 +17,7 @@ module libsupermesh_fields_dummy
     integer :: sloc
     integer, dimension(:), pointer :: ndglno
     integer :: continuity
-    type(eelist_type), pointer :: eelist
+    type(eelist_ptr), pointer :: eelist
     
     integer, pointer :: refcount
   end type mesh_type
@@ -34,6 +34,10 @@ module libsupermesh_fields_dummy
     integer, dimension(:, :), pointer :: v
     integer, dimension(:), pointer :: n
   end type eelist_type
+
+  type eelist_ptr
+    type(eelist_type), pointer :: ptr
+  end type eelist_ptr
 
   interface allocate
     module procedure allocate_mesh, allocate_vector_field
@@ -98,7 +102,8 @@ contains
     mesh%loc = loc
     mesh%sloc = sloc(dim, loc)
     allocate(mesh%ndglno(nelements * loc))
-    nullify(mesh%eelist)
+    allocate(mesh%eelist)
+    nullify(mesh%eelist%ptr)
     mesh%continuity = 0
     
     allocate(mesh%refcount)
@@ -131,10 +136,11 @@ contains
     if(mesh%refcount == 0) then
 
       deallocate(mesh%ndglno)
-      if(associated(mesh%eelist)) then
-        call deallocate(mesh%eelist)
-        deallocate(mesh%eelist)
+      if(associated(mesh%eelist%ptr)) then
+        call deallocate(mesh%eelist%ptr)
+        deallocate(mesh%eelist%ptr)
       end if
+      deallocate(mesh%eelist)
 
       deallocate(mesh%refcount)
     end if
@@ -273,11 +279,11 @@ contains
 
     type(eelist_type), pointer :: eelist
 
-    if(.not. associated(mesh%eelist)) then
-      allocate(mesh%eelist)
-      call mesh_eelist(mesh%nnodes, reshape(mesh%ndglno, (/mesh%loc, mesh%nelements/)), mesh%sloc, mesh%eelist)
+    if(.not. associated(mesh%eelist%ptr)) then
+      allocate(mesh%eelist%ptr)
+      call mesh_eelist(mesh%nnodes, reshape(mesh%ndglno, (/mesh%loc, mesh%nelements/)), mesh%sloc, mesh%eelist%ptr)
     end if
-    eelist => mesh%eelist
+    eelist => mesh%eelist%ptr
 
   end function extract_eelist_mesh
 
