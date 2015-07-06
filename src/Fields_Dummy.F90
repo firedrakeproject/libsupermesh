@@ -196,7 +196,7 @@ contains
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
 
-    ! Construct the node element list. Based on NODELE in Fluidity
+    ! Construct the node-element list. Based on NODELE in Fluidity
     ! femtools/Adjacency_Lists.F90 (see e.g. Fluidity version 4.1.11). Code
     ! first added 05/07/2015.
     allocate(nelist_n(nnodes), nelist_indptr(nnodes + 1))

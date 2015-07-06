@@ -106,7 +106,7 @@ contains
     tetsC(1) = tetA
 
     if(present(volB)) then
-      tol = 10.0 * max(spacing(tet_volume(tetA)), spacing(volB))
+      tol = 10.0 * min(spacing(tet_volume(tetA)), spacing(volB))
     else
       tol = 10.0 * spacing(tet_volume(tetA))
     end if
