@@ -89,7 +89,7 @@ module libsupermesh_fields_dummy
 
 contains
 
-  subroutine allocate_mesh(mesh, dim, nnodes, nelements, loc)
+  pure subroutine allocate_mesh(mesh, dim, nnodes, nelements, loc)
     type(mesh_type), intent(out) :: mesh
     integer, intent(in) :: dim
     integer, intent(in) :: nnodes
@@ -111,25 +111,7 @@ contains
     
   end subroutine allocate_mesh
 
-  pure function sloc(dim, loc)
-    integer, intent(in) :: dim
-    integer, intent(in) :: loc
-
-    integer :: sloc
-
-    if(loc == dim + 1) then
-      ! Simplex
-      sloc = loc - 1
-    else if(loc == 2 ** dim) then
-      ! Cubic
-      sloc = loc / 2
-    else
-      sloc = -1
-    end if
-
-  end function sloc
-
-  subroutine deallocate_mesh(mesh)
+  pure subroutine deallocate_mesh(mesh)
     type(mesh_type), intent(inout) :: mesh
 
     mesh%refcount = mesh%refcount - 1
@@ -150,7 +132,7 @@ contains
   subroutine allocate_vector_field(field, dim, mesh)
     type(vector_field), intent(out) :: field
     integer, intent(in) :: dim
-    type(mesh_type), target, intent(in) :: mesh
+    type(mesh_type), intent(in) :: mesh
 
     field%dim = dim
     allocate(field%val(dim, mesh%nnodes))
@@ -162,7 +144,7 @@ contains
     
   end subroutine allocate_vector_field
 
-  subroutine deallocate_vector_field(field)
+  pure subroutine deallocate_vector_field(field)
     type(vector_field), intent(inout) :: field
 
     field%refcount = field%refcount - 1
@@ -267,7 +249,25 @@ contains
 
   end subroutine mesh_eelist
 
-  subroutine deallocate_eelist(eelist)
+  pure function sloc(dim, loc)
+    integer, intent(in) :: dim
+    integer, intent(in) :: loc
+
+    integer :: sloc
+
+    if(loc == dim + 1) then
+      ! Simplex
+      sloc = loc - 1
+    else if(loc == 2 ** dim) then
+      ! Cubic
+      sloc = loc / 2
+    else
+      sloc = -1
+    end if
+
+  end function sloc
+
+  pure subroutine deallocate_eelist(eelist)
     type(eelist_type), intent(inout) :: eelist
 
     deallocate(eelist%v, eelist%n)
@@ -369,7 +369,7 @@ contains
 
   end function ele_nodes_vector_field
 
-  subroutine set_vector_field_nodes(field, nodes, val)
+  pure subroutine set_vector_field_nodes(field, nodes, val)
     type(vector_field), intent(inout) :: field
     integer, dimension(:), intent(in) :: nodes
     ! dim x loc
@@ -379,7 +379,7 @@ contains
 
   end subroutine set_vector_field_nodes
 
-  subroutine set_vector_field_node(field, node, val)
+  pure subroutine set_vector_field_node(field, node, val)
     type(vector_field), intent(inout) :: field
     integer, intent(in) :: node
     ! dim
@@ -389,7 +389,7 @@ contains
 
   end subroutine set_vector_field_node
 
-  subroutine set_ele_nodes_mesh(mesh, ele, nodes)
+  pure subroutine set_ele_nodes_mesh(mesh, ele, nodes)
     type(mesh_type), intent(inout) :: mesh
     integer, intent(in) :: ele
     ! loc
