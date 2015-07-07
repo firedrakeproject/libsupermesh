@@ -26,79 +26,19 @@
     USA
 */
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include "c++debug.h"
 
-#include <algorithm>
-#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
-#include <map>
-#include <set>
-#include <string>
-#include <vector>
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-
 #ifdef _GNU_SOURCE
 #include <execinfo.h>
 #endif
 
 using namespace std;
 
-static std::map<int, double> totaltime;
-static std::map<int, double> starttime;
-
-void print_backtrace(){
-#ifdef _GNU_SOURCE
-  cerr<<"Backtrace will follow if it is available:\n";
-  
-  void *bt[40];
-  size_t btsize = backtrace(bt, 40);
-  
-  char **symbls = backtrace_symbols (bt, btsize);
-  if(symbls!=NULL){
-    for(size_t i=0;i<btsize;i++){
-      cerr<<symbls[i]<<endl;
-    }
-    free(symbls);
-  }
-  
-  cerr<<"Use addr2line -e <binary> <address> to decipher.\n";
-#endif
-  return;
-}
-
-void FLAbort(const char *ErrorStr, const char *FromFile, int LineNumber){
-  cerr<<"*** FLUIDITY ERROR ***\n"
-      <<"Source location: ("<<FromFile<<", "<<LineNumber<<")\n"
-      <<"Error message: "<<ErrorStr<<endl;
-  
-  print_backtrace();
-  
-  cerr<<"Error is terminal.";
-#ifdef HAVE_MPI
-  MPI::COMM_WORLD.Abort(MPI::ERR_OTHER);
-#endif
-}
-
-void FLExit(const char *ErrorStr, const char *FromFile, int LineNumber){
-  cerr<<"*** ERROR ***\n"
-#ifndef NDEBUG
-      <<"Source location: ("<<FromFile<<", "<<LineNumber<<")\n"
-#endif
-      <<"Error message: "<<ErrorStr<<endl;
-#ifdef HAVE_MPI
-  MPI::COMM_WORLD.Abort(MPI::ERR_OTHER);
-#endif
-}
-
 extern "C"{
-  void fprint_backtrace_fc(){
+  void libsupermesh_print_backtrace(){
 #ifdef _GNU_SOURCE
     void *bt[40];
     size_t btsize = backtrace(bt, 40);
@@ -113,6 +53,5 @@ extern "C"{
     return;
 #endif
   }
-
 }
 

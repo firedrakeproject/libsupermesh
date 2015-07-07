@@ -29,18 +29,8 @@
 #ifndef CXXDEBUG_H
 #define CXXDEBUG_H
 
-#include <string>
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
-void FLAbort(const char*, const char *, int);
-void FLExit(const char*, const char *, int);
-
-void print_backtrace();
-
 extern "C"{
-  void set_global_debug_level_fc(const int* level);
+  void libsupermesh_print_backtrace();
 }
 
 #endif

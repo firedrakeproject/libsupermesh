@@ -34,24 +34,13 @@ module libsupermesh_fldebug
   
   implicit none
 
-  interface
-    subroutine FLAbort(ErrorStr, FromFile, LineNumber) bind(c)
-      use iso_c_binding
+  interface print_backtrace
+    subroutine libsupermesh_print_backtrace() bind(c)
       implicit none
-      character(kind = c_char) :: ErrorStr(*)
-      character(kind = c_char) :: FromFile(*)
-      integer(kind = c_int) :: LineNumber
-    end subroutine FLAbort
-  end interface
-
-  interface fprint_backtrace
-    subroutine fprint_backtrace_fc() bind(c)
-      implicit none
-    end subroutine fprint_backtrace_fc
-  end interface fprint_backtrace
+    end subroutine libsupermesh_print_backtrace
+  end interface print_backtrace
 
   interface write_minmax
-!    module procedure write_minmax_real_array, write_minmax_integer_array
     module procedure write_minmax_real_array
   end interface
 
@@ -101,7 +90,7 @@ contains
     ewrite(-1,FMT='(3A,I5,A)') "Source location: (",FromFile,",",LineNumber,")"
     ewrite(-1,FMT='(2A)') "Error message: ",ErrorStr
     ewrite(-1,FMT='(A)') "Backtrace will follow if it is available:"
-    call fprint_backtrace()
+    call print_backtrace()
     ewrite(-1,FMT='(A)') "Use addr2line -e <binary> <address> to decipher."
     ewrite(-1,FMT='(A)') "Error is terminal."
 #ifdef HAVE_MPI
@@ -111,7 +100,7 @@ contains
     END IF
 #endif
     
-    STOP
+    STOP 1
   END SUBROUTINE FLAbort_pinpoint
 
   SUBROUTINE FLExit_pinpoint(ErrorStr, FromFile, LineNumber)
@@ -151,15 +140,5 @@ contains
     ewrite(2,*) "Min, max of "//array_expression//" = ",minval(array), maxval(array)
 
   end subroutine write_minmax_real_array
-  
-!  subroutine write_minmax_integer_array(array, array_expression)
-!    ! the array to print its min and max of
-!    integer, dimension(:), intent(in):: array
-!    ! the actual array expression in the code
-!    character(len=*), intent(in):: array_expression
-
-!    ewrite(2,*) "Min, max of "//array_expression//" = ",minval(array), maxval(array)
-
-!  end subroutine write_minmax_integer_array
 
 end module libsupermesh_fldebug
