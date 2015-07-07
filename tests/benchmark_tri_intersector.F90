@@ -109,6 +109,7 @@ subroutine benchmark_tri_intersector
   positionsB = read_triangle_files("plcD_temp", dim)
   
   counters = 0
+  triangle_totals = 0
 
   do ele_A=1,ele_count(positionsA)
     triA%v = ele_val(positionsA, ele_A)
