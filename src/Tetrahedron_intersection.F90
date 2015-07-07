@@ -48,17 +48,11 @@ contains
     integer, intent(out) :: n_tetsC
 
     integer :: i, nonods
-    real, dimension(3 * BUF_SIZE), save :: lnodesC = -huge(0.0)
     
     call libsupermesh_cintersector_set_input(tetA, tetB, 3, 4)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, n_tetsC)
-    call libsupermesh_cintersector_get_output(nonods, n_tetsC, 3, 4, lnodesC, ndglnoC)
-    do i = 1, nonods
-      nodesC(1, i) = lnodesC(i)
-      nodesC(2, i) = lnodesC(i + nonods)
-      nodesC(3, i) = lnodesC(i + 2 * nonods)
-    end do
+    call libsupermesh_cintersector_get_output(nonods, n_tetsC, 3, 4, nodesC, ndglnoC)
 
   end subroutine intersect_tets_libwm
   

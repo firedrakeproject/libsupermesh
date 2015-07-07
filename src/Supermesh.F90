@@ -9,27 +9,12 @@ module libsupermesh_construction
   use libsupermesh_tet_intersection_module
   
   implicit none
-  
-  ! I hope this is big enough ...
-  real, dimension(1024) :: nodes_tmp
-  logical :: intersector_exactness = .false.
-  type(mesh_type), save :: intersection_mesh
-  logical, save :: mesh_allocated = .false.
 
-  public :: intersect_elements, intersect_elements_old, &
-          &    finalise_libsupermesh
-  public :: intersector_exactness
+  public :: intersect_elements, intersect_elements_old
   
   private
  
   contains
-  
-  subroutine finalise_libsupermesh
-    if (mesh_allocated) then
-      call deallocate(intersection_mesh)
-      mesh_allocated = .false.
-    end if
-  end subroutine finalise_libsupermesh
   
   subroutine intersect_elements(positions_A_val, &
         posB, n_C, simplexC_real)
@@ -117,6 +102,7 @@ module libsupermesh_construction
     real, dimension(:, :), intent(in) :: posB
   
     integer :: i, nonods, totele
+    type(mesh_type) :: intersection_mesh
 
     call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
     call libsupermesh_cintersector_drive
@@ -129,29 +115,11 @@ module libsupermesh_construction
 #ifdef DDEBUG
       intersection_mesh%ndglno = -1
 #endif
-      call libsupermesh_cintersector_get_output(nonods, totele, ndimA, locA, nodes_tmp, intersection_mesh%ndglno)
-
-      do i = 1, ndimA
-        intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
-      end do
+      call libsupermesh_cintersector_get_output(nonods, totele, ndimA, locA, intersection%val, intersection_mesh%ndglno)
     end if
 
     call deallocate(intersection_mesh)
     
   end function intersect_elements_old
-  
-  subroutine intersector_set_exactness(exactness)
-    logical, intent(in) :: exactness
-    integer :: exact
-
-    if (exactness) then
-      exact = 1
-    else
-      exact = 0
-    end if
-    intersector_exactness = exactness
-
-    call libsupermesh_cintersector_set_exactness(exact)
-  end subroutine intersector_set_exactness
   
 end module libsupermesh_construction

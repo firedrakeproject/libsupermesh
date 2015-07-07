@@ -233,32 +233,6 @@ namespace LibSupermesh
        Intersector2d* intersection;
   };
 
-  class ElementIntersectorCGAL2D : public ElementIntersector
-  {
-    public:
-      ElementIntersectorCGAL2D();
-      virtual ~ElementIntersectorCGAL2D();
-      
-      inline virtual unsigned int GetDim() const
-      {
-        return 2;
-      }
-      
-      inline virtual void SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
-      {
-        assert(dim == 2);
-        assert(loc == 3 || loc == 4);
-        ElementIntersector::SetInput(positionsA, positionsB, dim, loc);
-      
-        return;
-      }
-      virtual void Intersect();
-      virtual void QueryOutput(int& nnodes, int& nelms) const; 
-      virtual void GetOutput(double*& positions, int*& enlist) const;
-      
-    protected:
-  };
-
   class ElementIntersector3D : public ElementIntersector
   {
     public:
@@ -309,45 +283,6 @@ namespace LibSupermesh
       IntrTetrahedron3Tetrahedron3* intersection;
       std::vector<GEOM_REAL>* volumes;
       int nodes, elements;
-  };
-
-  class ElementIntersectorCGAL3D : public ElementIntersector3D
-  {
-    public:
-      ElementIntersectorCGAL3D();
-      virtual ~ElementIntersectorCGAL3D();
-      
-      inline virtual unsigned int GetDim() const
-      {
-        return 3;
-      }
-
-      inline virtual void SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
-      {
-        assert(loc == 4);
-        ElementIntersector3D::SetInput(positionsA, positionsB, dim, loc);
-        
-        return;
-      }
-
-      virtual void Intersect();
-      virtual void QueryOutput(int& nnodes, int& nelms) const; 
-      virtual void GetOutput(double*& positions, int*& enlist) const;
-      
-#ifdef HAVE_LIBCGAL
-      typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
-      typedef CGAL::Triangulation_3< Kernel > Triangulation;
-      typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
-      typedef Kernel::Point_3 Point_3;
-      typedef CGAL::Nef_polyhedron_3<Kernel> Nef_polyhedron;
-      typedef Triangulation::Point_iterator Point_iterator;
-      typedef Triangulation::Finite_cells_iterator Finite_cells_iterator;
-#endif
-      
-    protected:
-#ifdef HAVE_LIBCGAL
-       Triangulation* triangulation;
-#endif
   };
 }
 

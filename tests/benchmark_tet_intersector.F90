@@ -44,9 +44,6 @@ subroutine benchmark_tet_intersector
   type(mesh_type) :: intersection_mesh, new_mesh
   type(vector_field) :: intersection, intersect_elements_result
   integer, dimension(3) :: counters = 0
-  
-  ! I hope this is big enough ...
-  real, dimension(1024) :: nodes_tmp
 
   integer, parameter :: dim = 3, loc = 4
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
@@ -184,10 +181,7 @@ subroutine benchmark_tet_intersector
       intersection_mesh%continuity = -1
       call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, nodes_tmp, intersection_mesh%ndglno)
-        do i = 1, dim
-          intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
-        end do
+        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, intersection%val, intersection_mesh%ndglno)
       end if
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
@@ -327,6 +321,5 @@ subroutine benchmark_tet_intersector
   call deallocate(positionsB)
   
   call libsupermesh_cintersection_finder_reset(n_tetsC)
-  call finalise_libsupermesh()
 
 end subroutine benchmark_tet_intersector

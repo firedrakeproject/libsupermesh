@@ -91,17 +91,11 @@ contains
     integer, intent(out) :: n_trisC
 
     integer :: i, nonods
-    real, dimension(2 * BUF_SIZE), save :: lnodesC = -huge(0.0)
     
     call libsupermesh_cintersector_set_input(triA, triB, 2, 3)
     call libsupermesh_cintersector_drive
     call libsupermesh_cintersector_query(nonods, n_trisC)
-    call libsupermesh_cintersector_get_output(nonods, n_trisC, 2, 3, lnodesC, ndglnoC)
-
-    do i = 1, nonods
-      nodesC(1, i) = lnodesC(i)
-      nodesC(2, i) = lnodesC(i + nonods)
-    end do
+    call libsupermesh_cintersector_get_output(nonods, n_trisC, 2, 3, nodesC, ndglnoC)
 
   end subroutine intersect_tris_libwm
 

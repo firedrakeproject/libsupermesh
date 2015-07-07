@@ -49,9 +49,6 @@ subroutine benchmark_tri_intersector
   integer, dimension(3) :: counters
   
   integer :: nonods, totele, n_trisC_pre
-  
-  ! I hope this is big enough ...
-  real, dimension(1024) :: nodes_tmp
 
   integer, parameter :: dim = 2, loc = 3
 
@@ -225,11 +222,7 @@ subroutine benchmark_tri_intersector
       intersection_meshLibWM%continuity = -1
       call allocate(libwm_result, dim, intersection_meshLibWM)
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, nodes_tmp, intersection_meshLibWM%ndglno)
-
-        do i = 1, dim
-          libwm_result%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
-        end do
+        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, libwm_result%val, intersection_meshLibWM%ndglno)
       end if
       t2 = MPI_Wtime();
       dt_D_area_libwm = dt_D_area_libwm + ( t2 -t1 )
@@ -407,6 +400,5 @@ subroutine benchmark_tri_intersector
   call deallocate(positionsB)
   
   call libsupermesh_cintersection_finder_reset(ntests)
-  call finalise_libsupermesh()
 
 end subroutine benchmark_tri_intersector

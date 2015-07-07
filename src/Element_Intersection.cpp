@@ -428,69 +428,6 @@ void ElementIntersector::SetInput(double*& positionsA, double*& positionsB, cons
   return;
 }
 
-ElementIntersectorCGAL2D::ElementIntersectorCGAL2D()
-{
-}
-
-ElementIntersectorCGAL2D::~ElementIntersectorCGAL2D()
-{
-
-}
-
-void ElementIntersectorCGAL2D::Intersect()
-{
-  cerr << "Cannot compute 2D element intersections without CGAL" << endl;
-  exit(-1);
-}
-
-void ElementIntersectorCGAL2D::QueryOutput(int& nnodes, int& nelms) const
-{
-  cerr << "Cannot compute 2D element intersections without CGAL" << endl;
-  exit(-1);
- 
-  return;
-}
-
-void ElementIntersectorCGAL2D::GetOutput(double*& positions, int*& enlist) const
-{
-  cerr << "Cannot compute 2D element intersections without CGAL" << endl;
-  exit(-1);
-
-  return;
-}
-
-ElementIntersectorCGAL3D::ElementIntersectorCGAL3D()
-{
-}
-
-ElementIntersectorCGAL3D::~ElementIntersectorCGAL3D()
-{
-}
-
-void ElementIntersectorCGAL3D::Intersect()
-{
-  cerr << "Cannot compute element intersections without CGAL" << endl;
-  exit(-1);
-
-  return;
-}
-
-void ElementIntersectorCGAL3D::QueryOutput(int& nnodes, int& nelms) const
-{
-  cerr << "Cannot compute 3D element intersections without CGAL" << endl;
-  exit(-1);
-  
-  return;
-}
-
-void ElementIntersectorCGAL3D::GetOutput(double*& positions, int*& enlist) const
-{
-  cerr << "Cannot compute element intersections without CGAL" << endl;
-  exit(-1);
-
-  return;
-}
-
 ElementIntersector1D::ElementIntersector1D()
 {  
   intersection = false;
@@ -680,8 +617,8 @@ void ElementIntersector2D::GetOutput(double*& positions, int*& enlist) const
   for (int node = 0; node < nnodes; node++)
   {
     Vector2 V = intersection->GetPoint(node);
-    positions[node] = V[0];
-    positions[node + nnodes] = V[1];
+    positions[node * 2] = V[0];
+    positions[node * 2 + 1] = V[1];
   }
   
   for (int ele = 0; ele < intersection->GetQuantity() - 2; ele++)
@@ -852,9 +789,9 @@ void WmElementIntersector3D::GetOutput(double*& positions, int*& enlist) const
       for (vector_idx = 0; vector_idx < 4; vector_idx++, pos_index++)
       {
         cur_vector = (*tet).V[vector_idx];
-        positions[pos_index] = cur_vector[0];
-        positions[pos_index + nodes] = cur_vector[1];
-        positions[pos_index + 2 * nodes] = cur_vector[2];
+        positions[pos_index * 3] = cur_vector[0];
+        positions[pos_index * 3 + 1] = cur_vector[1];
+        positions[pos_index * 3 + 2] = cur_vector[2];
       }
     }
   }

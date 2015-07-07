@@ -24,9 +24,6 @@ subroutine test_tri_intersector
   type(vector_field) :: intersection
   type(mesh_type) :: intersection_mesh, new_mesh
 
-  ! I hope this is big enough ...
-  real, dimension(1024) :: nodes_tmp
-
   integer, parameter :: dim = 2, loc = 3
   
   positionsA = read_triangle_files("data/plcA", dim = dim)
@@ -97,10 +94,7 @@ subroutine test_tri_intersector
       intersection_mesh%continuity = -1
       call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, nodes_tmp, intersection_mesh%ndglno)
-        do i = 1, dim
-          intersection%val(i,:) = nodes_tmp((i - 1) * nonods + 1:i * nonods)
-        end do
+        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, intersection%val, intersection_mesh%ndglno)
       end if
       area_D_libwm = 0.0
       do ele_C=1,totele
@@ -207,7 +201,6 @@ subroutine test_tri_intersector
   end do
 
   call libsupermesh_cintersection_finder_reset(ntests)
-  call finalise_libsupermesh()
   
   call deallocate(positionsA)
   call deallocate(positionsB)
