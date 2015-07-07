@@ -228,7 +228,7 @@ IData* ExpandedMeshDataStream::getNext()
   for(int i = 0;i < dim;i++)
   {
     assert(high[i] > low[i]);
-    double expansion = max((high[i] - low[i]) * expansionFactor, 100.0 * numeric_limits<flfloat_t>::epsilon());
+    double expansion = max((high[i] - low[i]) * expansionFactor, 100.0 * numeric_limits<double>::epsilon());
     high[i] += expansion;
     low[i] -= expansion;
   }

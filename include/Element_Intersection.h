@@ -56,7 +56,6 @@
 #endif
 
 #include "MeshDataStream.h"
-#include "Precision.h"
 
 #define GEOM_REAL double
 
