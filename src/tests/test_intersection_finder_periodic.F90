@@ -1,8 +1,8 @@
 subroutine test_intersection_finder_periodic
 
   use libsupermesh_intersection_finder_module
-  use libsupermesh_fields
-  use libsupermesh_read_triangle
+  use libsupermesh_fields_dummy
+  use libsupermesh_read_triangle_2
   use libsupermesh_unittest_tools
   use libsupermesh_linked_lists
   implicit none
@@ -11,14 +11,16 @@ subroutine test_intersection_finder_periodic
   type(ilist), dimension(1) :: map_AB
   logical :: fail
 
+  integer, parameter :: dim = 2
+
   ! A has one element
   ! B has two disconnected elements
 
-  posA = read_triangle_files("data/intersection_finder_periodic_A", quad_degree=4)
-  posB = read_triangle_files("data/intersection_finder_periodic_B", quad_degree=4)
+  posA = read_triangle_files("data/intersection_finder_periodic_A", dim)
+  posB = read_triangle_files("data/intersection_finder_periodic_B", dim)
 
 !  map_AB = intersection_finder(posA, posB)
-  map_AB = libsupermesh_intersection_finder( &
+  map_AB = intersection_finder( &
       & posA%val, reshape(posA%mesh%ndglno, (/ele_loc(posA, 1), ele_count(posA)/)), &
       & posB%val, reshape(posB%mesh%ndglno, (/ele_loc(posB, 1), ele_count(posB)/)) )
 

@@ -5,8 +5,7 @@ module libsupermesh_tri_intersection_module
 
   use libsupermesh_fldebug
   use libsupermesh_tri_intersection_2_module, only : tri_type, &
-        & libsupermesh_intersect_tris_dt_old
-  use libsupermesh_tri_intersection_2_module, only : libwm_tri_buf_size => tri_buf_size
+        & intersect_tris_dt_old
 
   use mpi
 
@@ -14,31 +13,30 @@ module libsupermesh_tri_intersection_module
 
   private
 
-  public :: tri_type, libsupermesh_intersect_tris, libsupermesh_intersect_tris_dt_old
+  public :: tri_type, intersect_tris, intersect_tris_dt_old
 
   type line_type
     real, dimension(2) :: normal
     real, dimension(2) :: point
   end type line_type
 
-  interface libsupermesh_intersect_tris
-    module procedure libsupermesh_intersect_tris_dt, libsupermesh_intersect_tris_dt_public, &
-         & libsupermesh_intersect_tris_libwm
-  end interface libsupermesh_intersect_tris
+  interface intersect_tris
+    module procedure intersect_tris_dt, intersect_tris_dt_public, &
+         & intersect_tris_libwm
+  end interface intersect_tris
 
   interface get_lines
     module procedure get_lines_tri
   end interface get_lines
 
   integer, parameter, public :: tri_buf_size = BUF_SIZE
-  public :: libwm_tri_buf_size
   
   real, dimension(2, BUF_SIZE + 2), save :: points_tmp
   integer, save :: n_points_tmp
 
 contains
 
-  subroutine libsupermesh_intersect_tris_libwm(triA, triB, nodesC, ndglnoC, n_trisC)
+  subroutine intersect_tris_libwm(triA, triB, nodesC, ndglnoC, n_trisC)
     real, dimension(2, 3), intent(in) :: triA
     real, dimension(2, 3), intent(in) :: triB
     real, dimension(2, BUF_SIZE), intent(out) :: nodesC
@@ -58,9 +56,9 @@ contains
       nodesC(2, i) = lnodesC(i + nonods)
     end do
 
-  end subroutine libsupermesh_intersect_tris_libwm
+  end subroutine intersect_tris_libwm
 
-  subroutine libsupermesh_intersect_tris_dt_public(triA, triB, trisC, n_trisC)
+  subroutine intersect_tris_dt_public(triA, triB, trisC, n_trisC)
     real, dimension(2, 3), intent(in) :: triA
     real, dimension(2, 3), intent(in) :: triB
     real, dimension(2, 3, BUF_SIZE), intent(out) :: trisC
@@ -72,14 +70,14 @@ contains
 
     triA_t%V = triA
     triB_t%V = triB
-    call libsupermesh_intersect_tris_dt(triA_t, triB_t, trisC_t, n_trisC)
+    call intersect_tris_dt(triA_t, triB_t, trisC_t, n_trisC)
     do i = 1, n_trisC
       trisC(:, :, i) = trisC_t(i)%V
     end do
 
-  end subroutine libsupermesh_intersect_tris_dt_public
+  end subroutine intersect_tris_dt_public
 
-  subroutine libsupermesh_intersect_tris_dt(triA, triB, trisC, n_trisC)
+  subroutine intersect_tris_dt(triA, triB, trisC, n_trisC)
     type(tri_type), intent(in) :: triA
     type(tri_type), intent(in) :: triB
     type(tri_type), dimension(BUF_SIZE), intent(out) :: trisC
@@ -91,7 +89,7 @@ contains
 
     real, dimension(2, BUF_SIZE + 2), save :: points
     integer :: n_points
-
+    
     lines_b = get_lines(triB)
 
     points(:, :3) = triA%v
@@ -120,7 +118,7 @@ contains
       end if
     end do
 
-  end subroutine libsupermesh_intersect_tris_dt
+  end subroutine intersect_tris_dt
 
   ! Sutherland-Hodgman clipping algorithm
   subroutine clip(line, points, n_points)
@@ -148,7 +146,7 @@ contains
         p2 = points(:, i + 1)
         d2 = d(i + 1)
       end if
-
+      
       if(d1 <= 0.0) then
         if(d2 <= 0.0) then
           ! No clip

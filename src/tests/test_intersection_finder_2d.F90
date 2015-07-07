@@ -1,8 +1,8 @@
 subroutine test_intersection_finder_2d
 
   use libsupermesh_intersection_finder_module
-  use libsupermesh_fields
-  use libsupermesh_read_triangle
+  use libsupermesh_fields_dummy
+  use libsupermesh_read_triangle_2
   use libsupermesh_unittest_tools
   use libsupermesh_linked_lists
   
@@ -15,12 +15,14 @@ subroutine test_intersection_finder_2d
 
   integer :: i
   logical :: fail
+
+  integer, parameter :: dim = 2, loc = 3
   
-  positionsA = read_triangle_files("data/triangle.1", quad_degree=4)
-  positionsB = read_triangle_files("data/triangle.1", quad_degree=4)
-  map_AB = libsupermesh_advancing_front_intersection_finder( &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)) )
+  positionsA = read_triangle_files("data/triangle.1", dim)
+  positionsB = read_triangle_files("data/triangle.1", dim)
+  map_AB = advancing_front_intersection_finder( &
+      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
+      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)) )
 
   fail = (map_AB(1)%length /= 1)
   call report_test("[intersection finder: length]", fail, .false., "There shall be only one")
@@ -30,19 +32,19 @@ subroutine test_intersection_finder_2d
   call report_test("[intersection finder: correct]", fail, .false., "The answer should be one")
 
   call deallocate(positionsB)
-  positionsB = read_triangle_files("data/triangle.2", quad_degree=4)
-  map_AB = libsupermesh_advancing_front_intersection_finder( &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)) )
+  positionsB = read_triangle_files("data/triangle.2", dim)
+  map_AB = advancing_front_intersection_finder( &
+      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
+      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)) )
 
   fail = (map_AB(1)%length /= 3)
   call report_test("[intersection finder: length]", fail, .false., "There shall be three elements")
 
   call deallocate(positionsA)
-  positionsA = read_triangle_files("data/triangle.2", quad_degree=4)
-  bigger_map_AB = libsupermesh_advancing_front_intersection_finder( &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)) )
+  positionsA = read_triangle_files("data/triangle.2", dim)
+  bigger_map_AB = advancing_front_intersection_finder( &
+      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
+      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)) )
   do i=1,ele_count(positionsA)
     fail = (bigger_map_AB(i)%length < 1)
     call report_test("[intersection finder: length]", fail, .false., "There shall be only one")

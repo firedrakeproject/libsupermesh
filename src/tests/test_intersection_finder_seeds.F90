@@ -30,39 +30,29 @@
 subroutine test_intersection_finder_seeds
 
   use libsupermesh_intersection_finder_module
-  use libsupermesh_fields
-  use libsupermesh_read_triangle
+  use libsupermesh_fields_dummy
+  use libsupermesh_read_triangle_2
   use libsupermesh_unittest_tools
   use libsupermesh_linked_lists
-  use libsupermesh_elements
-  use libsupermesh_quadrature
-  use libsupermesh_shape_functions, only : make_element_shape
   
   implicit none
   
   integer :: i
   integer, dimension(2) :: seeds_vec
   logical, dimension(4) :: ele_found
-  type(element_type) :: shape
   type(ilist) :: seeds
   type(ilist), dimension(4) :: map
   type(inode), pointer :: node
   type(mesh_type) :: mesh
-  type(quadrature_type) :: quad
   type(vector_field) :: positions
   
-  quad = make_quadrature(vertices = 2, dim  = 1, degree = 1)
-  shape = make_element_shape(vertices = 2, dim  = 1, degree = 1, quad = quad)
-  call deallocate(quad)
-  
-  call allocate(mesh, nodes = 6, elements = 4, shape = shape, name = "CoordinateMesh")
-  call deallocate(shape)
+  call allocate(mesh, dim = 1, nnodes = 6, nelements = 4, loc = 2)
   call set_ele_nodes(mesh, 1, (/1, 2/))
   call set_ele_nodes(mesh, 2, (/2, 3/))
   call set_ele_nodes(mesh, 3, (/4, 5/))
   call set_ele_nodes(mesh, 4, (/5, 6/))
     
-  call allocate(positions, 1, mesh, "Coordinate")
+  call allocate(positions, 1, mesh)
   call deallocate(mesh)
   do i = 1, node_count(positions)
     call set(positions, i, spread(float(i), 1, 1))
@@ -75,7 +65,7 @@ subroutine test_intersection_finder_seeds
   call report_test("[seed]", seeds_vec(1) /= 1, .false., "Incorrect seed")
   call report_test("[seed]", seeds_vec(2) /= 3, .false., "Incorrect seed")
   
-  map = libsupermesh_advancing_front_intersection_finder( &
+  map = advancing_front_intersection_finder( &
       & positions%val, reshape(positions%mesh%ndglno, (/ele_loc(positions, 1), ele_count(positions)/)), &
       & positions%val, reshape(positions%mesh%ndglno, (/ele_loc(positions, 1), ele_count(positions)/)), &
       & seeds_vec(1))
@@ -93,7 +83,7 @@ subroutine test_intersection_finder_seeds
     call deallocate(map(i))
   end do
   
-  map = libsupermesh_advancing_front_intersection_finder( &
+  map = advancing_front_intersection_finder( &
       & positions%val, reshape(positions%mesh%ndglno, (/ele_loc(positions, 1), ele_count(positions)/)), &
       & positions%val, reshape(positions%mesh%ndglno, (/ele_loc(positions, 1), ele_count(positions)/)), &
       & seeds_vec(2))
@@ -113,7 +103,5 @@ subroutine test_intersection_finder_seeds
   
   call deallocate(seeds)
   call deallocate(positions)
-  
-  call report_test_no_references()
   
 end subroutine test_intersection_finder_seeds

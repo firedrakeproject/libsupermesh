@@ -75,7 +75,7 @@ module libsupermesh_tri_intersection_2_module
   type(tri_type), dimension(BUF_SIZE), save :: tri_array_tmp
   integer :: tri_cnt_tmp = 0
 
-  public :: tri_type, line_type, get_lines_old, libsupermesh_intersect_tris_dt_old
+  public :: tri_type, line_type, get_lines_old, intersect_tris_dt_old
 
   interface get_lines_old
     module procedure get_lines_tri_old
@@ -85,7 +85,7 @@ module libsupermesh_tri_intersection_2_module
 
 contains
 
-  subroutine libsupermesh_intersect_tris_dt_old(triA, triB, trisC, n_trisC)
+  subroutine intersect_tris_dt_old(triA, triB, trisC, n_trisC)
     type(tri_type), intent(in) :: triA
     type(tri_type), intent(in) :: triB
     type(tri_type), dimension(BUF_SIZE), intent(out) :: trisC
@@ -117,7 +117,7 @@ contains
         end do
       end if
     end do
-  end subroutine libsupermesh_intersect_tris_dt_old
+  end subroutine intersect_tris_dt_old
   
   subroutine clip_old(line, tri)
   ! Clip tri against the plane
