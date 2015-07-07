@@ -25,6 +25,8 @@
 !    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !    USA
 
+#include "fdebug.h"
+
 module libsupermesh_fldebug
   !!< This module allows pure fortran programs to use the fdebug.h headers.
 
@@ -43,8 +45,6 @@ module libsupermesh_fldebug
   interface write_minmax
     module procedure write_minmax_real_array
   end interface
-
-#include "fdebug.h"
   
 contains
   
