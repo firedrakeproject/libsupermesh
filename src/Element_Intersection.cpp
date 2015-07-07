@@ -394,11 +394,6 @@ ElementIntersector::~ElementIntersector()
   return;
 }
 
-unsigned int ElementIntersector::GetExactness() const
-{
-  return exactness;
-}
-
 void ElementIntersector::SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
 {
   assert(positionsA);
@@ -435,7 +430,6 @@ void ElementIntersector::SetInput(double*& positionsA, double*& positionsB, cons
 
 ElementIntersectorCGAL2D::ElementIntersectorCGAL2D()
 {
-  exactness = 1;
 }
 
 ElementIntersectorCGAL2D::~ElementIntersectorCGAL2D()
@@ -467,7 +461,6 @@ void ElementIntersectorCGAL2D::GetOutput(double*& positions, int*& enlist) const
 
 ElementIntersectorCGAL3D::ElementIntersectorCGAL3D()
 {
-  exactness = 1;
 }
 
 ElementIntersectorCGAL3D::~ElementIntersectorCGAL3D()
@@ -499,9 +492,7 @@ void ElementIntersectorCGAL3D::GetOutput(double*& positions, int*& enlist) const
 }
 
 ElementIntersector1D::ElementIntersector1D()
-{
-  exactness = 0;
-  
+{  
   intersection = false;
 
   return;
@@ -567,7 +558,6 @@ void ElementIntersector1D::GetOutput(double*& positions, int*& enlist) const{
 ElementIntersector2D::ElementIntersector2D()
 {
   intersection = NULL;
-  exactness = 0;
   
   return;
 }
@@ -710,7 +700,6 @@ WmElementIntersector3D::WmElementIntersector3D()
   volumes = NULL;
   elements = -1;
   nodes = -1;
-  exactness = 0;
   
   return;
 }
@@ -915,76 +904,6 @@ extern "C"
       case 3:
         intersector_3 = new WmElementIntersector3D();
         elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_3;
-        break;
-      default:
-        cerr << "Invalid element intersector dimension" << endl;
-        exit(-1);
-    }
-    
-    return;
-  }
-
-  void cLibSuperMeshIntersectorSetExactness(const int* exact)
-  {
-    /*Sets the exactness (whether we're using cgal or not)
-    exact = 0 means inexact (not using cgal)
-    exact = 1 means exact (using cgal)*/
-
-    int dim;
-    
-    assert(elementIntersector_LibSuperMesh);
-    dim = elementIntersector_LibSuperMesh->GetDim();
-    if((int) elementIntersector_LibSuperMesh->GetExactness() == *exact)
-    {
-      return;
-    }
-    else
-    {
-      delete elementIntersector_LibSuperMesh;
-    }
-    
-    ElementIntersector1D* intersector_1_inexact;
-    ElementIntersector2D* intersector_2_inexact;
-    ElementIntersectorCGAL2D* intersector_2_exact;
-    ElementIntersector3D* intersector_3_inexact;
-    ElementIntersectorCGAL3D* intersector_3_exact;
-
-    switch(dim)
-    {
-      case 1:
-        if (*exact == 0)
-        {
-          intersector_1_inexact = new ElementIntersector1D();
-          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_1_inexact;
-        }
-        else{
-          cerr << "Exact intersector not available in 1D" << endl;
-          exit(-1);
-        }
-        break;
-      case 2:
-        if (*exact == 0)
-        {
-          intersector_2_inexact = new ElementIntersector2D();
-          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_2_inexact;
-        }
-        else
-        {
-          intersector_2_exact = new ElementIntersectorCGAL2D();
-          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_2_exact;
-        }
-        break;
-      case 3:
-        if (*exact == 0)
-        {
-          intersector_3_inexact = new WmElementIntersector3D();
-          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_3_inexact;
-        }
-        else
-        {
-          intersector_3_exact = new ElementIntersectorCGAL3D();
-          elementIntersector_LibSuperMesh = (ElementIntersector*)intersector_3_exact;
-        }
         break;
       default:
         cerr << "Invalid element intersector dimension" << endl;

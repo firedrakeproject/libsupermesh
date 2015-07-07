@@ -55,8 +55,7 @@ subroutine benchmark_tri_intersector
 
   integer, parameter :: dim = 2, loc = 3
 
-  call intersector_set_dimension(dim)
-  call intersector_set_exactness(.false.)
+  call libsupermesh_cintersector_set_dimension(dim)
   
   open (unit = 20, file = "plcC_temp.node")
   open (unit = 21, file = "plcC_temp.ele")

@@ -25,19 +25,37 @@
 !    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !    USA
 
-#include "fdebug.h"
-
 module libsupermesh_fldebug
   !!< This module allows pure fortran programs to use the fdebug.h headers.
 
+  use iso_c_binding
+      
   use libsupermesh_fldebug_parameters
   
   implicit none
+
+  interface
+    subroutine FLAbort(ErrorStr, FromFile, LineNumber) bind(c)
+      use iso_c_binding
+      implicit none
+      character(kind = c_char) :: ErrorStr(*)
+      character(kind = c_char) :: FromFile(*)
+      integer(kind = c_int) :: LineNumber
+    end subroutine FLAbort
+  end interface
+
+  interface fprint_backtrace
+    subroutine fprint_backtrace_fc() bind(c)
+      implicit none
+    end subroutine fprint_backtrace_fc
+  end interface fprint_backtrace
 
   interface write_minmax
 !    module procedure write_minmax_real_array, write_minmax_integer_array
     module procedure write_minmax_real_array
   end interface
+
+#include "fdebug.h"
   
 contains
   

@@ -11,41 +11,46 @@ module libsupermesh_intersection_finder_module
 implicit none
 
 interface crtree_intersection_finder_set_input
-  subroutine libsupermesh_cintersection_finder_set_input(positions, enlist, ndim, loc, nnodes, nelements)
+  subroutine libsupermesh_cintersection_finder_set_input(positions, enlist, ndim, loc, nnodes, nelements) bind(c)
+    use iso_c_binding
     implicit none
-    integer, intent(in) :: ndim, loc, nnodes, nelements
-    real, intent(in), dimension(nnodes * ndim) :: positions
-    integer, intent(in), dimension(nelements * loc) :: enlist
+    integer(kind = c_int), intent(in) :: ndim, loc, nnodes, nelements
+    real(kind = c_double), intent(in), dimension(nnodes * ndim) :: positions
+    integer(kind = c_int), intent(in), dimension(nelements * loc) :: enlist
   end subroutine libsupermesh_cintersection_finder_set_input
 end interface crtree_intersection_finder_set_input
 
 interface crtree_intersection_finder_find
-  subroutine libsupermesh_cintersection_finder_find(positions, ndim, loc)
+  subroutine libsupermesh_cintersection_finder_find(positions, ndim, loc) bind(c)
+    use iso_c_binding
     implicit none
-    integer, intent(in) :: ndim, loc
-    real, dimension(ndim * loc) :: positions
+    integer(kind = c_int), intent(in) :: ndim, loc
+    real(kind = c_double), dimension(ndim * loc) :: positions
   end subroutine libsupermesh_cintersection_finder_find
 end interface crtree_intersection_finder_find
 
 interface rtree_intersection_finder_query_output
-  subroutine libsupermesh_cintersection_finder_query_output(nelems)
+  subroutine libsupermesh_cintersection_finder_query_output(nelems) bind(c)
+    use iso_c_binding
     implicit none
-    integer, intent(out) :: nelems
+    integer(kind = c_int), intent(out) :: nelems
   end subroutine libsupermesh_cintersection_finder_query_output
 end interface rtree_intersection_finder_query_output
 
 interface rtree_intersection_finder_get_output
-  subroutine libsupermesh_cintersection_finder_get_output(id, nelem)
+  subroutine libsupermesh_cintersection_finder_get_output(id, nelem) bind(c)
+    use iso_c_binding
     implicit none
-    integer, intent(out) :: id
-    integer, intent(in) :: nelem
+    integer(kind = c_int), intent(out) :: id
+    integer(kind = c_int), intent(in) :: nelem
   end subroutine libsupermesh_cintersection_finder_get_output
 end interface rtree_intersection_finder_get_output
 
 interface rtree_intersection_finder_reset
-  subroutine libsupermesh_cintersection_finder_reset(ntests)
+  subroutine libsupermesh_cintersection_finder_reset(ntests) bind(c)
+    use iso_c_binding
     implicit none
-    integer, intent(out) :: ntests
+    integer(kind = c_int), intent(out) :: ntests
   end subroutine libsupermesh_cintersection_finder_reset
 end interface rtree_intersection_finder_reset
 
@@ -274,7 +279,7 @@ contains
     do while(first_ele /= 0)
       ele = first_ele
       assert(ele > 0)
-      assert(ele <= elementCountA)
+      assert(ele <= ele_count(positions))
       assert(.not. tested(ele))
       
       call insert(seeds, ele)

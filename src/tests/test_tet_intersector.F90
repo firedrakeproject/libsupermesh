@@ -3,6 +3,7 @@ subroutine test_tet_intersector
   use libsupermesh_construction
   use libsupermesh_fields_dummy
   use libsupermesh_read_triangle_2
+  use libsupermesh_tri_intersection_module
   use libsupermesh_tet_intersection_module
   use libsupermesh_unittest_tools
   
@@ -33,8 +34,7 @@ subroutine test_tet_intersector
   positionsA = read_triangle_files("data/plcC", dim)
   positionsB = read_triangle_files("data/plcD", dim)
 
-  call intersector_set_dimension(dim)
-  call intersector_set_exactness(.false.)
+  call libsupermesh_cintersector_set_dimension(dim)
 
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)

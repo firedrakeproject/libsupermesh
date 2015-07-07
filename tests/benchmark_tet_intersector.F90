@@ -5,6 +5,7 @@ subroutine benchmark_tet_intersector
   use libsupermesh_construction
   use libsupermesh_fields_dummy
   use libsupermesh_read_triangle_2
+  use libsupermesh_tri_intersection_module
   use libsupermesh_tet_intersection_module
   use libsupermesh_unittest_tools
   
@@ -50,8 +51,7 @@ subroutine benchmark_tet_intersector
   integer, parameter :: dim = 3, loc = 4
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
 
-  call intersector_set_dimension(dim)
-  call intersector_set_exactness(.false.)
+  call libsupermesh_cintersector_set_dimension(dim)
   
   open (unit = 20, file = "plcC_temp.node")
   open (unit = 21, file = "plcC_temp.ele")

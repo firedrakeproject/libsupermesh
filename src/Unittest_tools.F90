@@ -2,20 +2,15 @@
 
 module libsupermesh_unittest_tools
 !!< This module contains utility functions for the unit testing framework.
-  use libsupermesh_vector_tools
-  use libsupermesh_sparse_tools
   use libsupermesh_fldebug
-  use libsupermesh_reference_counting
-  use libsupermesh_ieee_arithmetic
   implicit none
 
   private
   public operator(.flt.), operator(.fgt.), operator(.feq.), operator(.fne.), &
     fequals, fnequals, write_vector, report_test,  write_matrix, &
-    is_nan, mat_is_symmetric, mat_zero, mat_diag, random_vector, random_matrix, &
-    random_symmetric_matrix, random_posdef_matrix, random_sparse_matrix, &
-    get_mat_diag, get_matrix_identity, mat_clean, vec_clean, flt, fgt, &
-    report_test_no_references
+    mat_is_symmetric, mat_zero, mat_diag, random_vector, random_matrix, &
+    random_symmetric_matrix, &
+    get_mat_diag, get_matrix_identity, mat_clean, vec_clean, flt, fgt
   
   interface operator(.flt.)
     module procedure flt_op
@@ -34,17 +29,12 @@ module libsupermesh_unittest_tools
   end interface
 
   interface fequals
-    module procedure fequals_scalar, fequals_array, fequals_array_scalar, fequals_matrix, fequals_matrix_scalar, dcsr_fequals
+    module procedure fequals_scalar, fequals_array, fequals_array_scalar, fequals_matrix, fequals_matrix_scalar
   end interface
 
   interface fnequals
     module procedure fne_scalar, fne_array, fne_array_scalar, fne_matrix, fne_matrix_scalar
   end interface
-  
-  interface is_nan
-    module procedure is_nan_scalar, is_nan_vector, is_nan_tensor2, &
-      & is_nan_tensor3
-  end interface is_nan
   
   interface write_vector
     module procedure write_vector_real, write_vector_integer
@@ -72,21 +62,6 @@ module libsupermesh_unittest_tools
     end if
 
   end subroutine report_test
-
-  subroutine report_test_no_references()
-    !!< Report the output of a test for the absence of references
-  
-    logical :: fail
-    
-    fail = associated(refcount_list%next)
-    
-    call report_test("[No references]", fail, .false., "Have references remaining")
-    if(fail) then
-      ewrite(0, *) "References remaining:"
-      call print_references(0)
-    end if
-    
-  end subroutine report_test_no_references  
 
   pure function fequals_scalar_op(float1, float2) result(equals)
     real, intent(in) :: float1
@@ -343,41 +318,6 @@ module libsupermesh_unittest_tools
 
   end function fne_matrix_scalar
 
-  function dcsr_fequals(A, B, tol)
-    !!< Checks if the dynamic matrices A and B are the same
-    logical dcsr_fequals
-    type(dynamic_csr_matrix), intent(in):: A, B
-    real, intent(in), optional :: tol
-    
-    integer, dimension(:), pointer:: cols
-    integer i, j
-    
-    if (size(A,1)/=size(B,1) .or. size(A,2)/=size(B,2)) then
-      dcsr_fequals=.false.
-      return
-    end if
-    
-    do i=1, size(A,1)
-      cols => row_m_ptr(A, i)
-      if (size(cols)/=row_length(B,i)) then
-        dcsr_fequals=.false.
-        return
-      end if
-      
-      do j=1, size(cols)
-        if (.not. &
-          fequals( val(A, i, cols(j)), val(B, i, cols(j)) , tol) &
-          ) then
-          dcsr_fequals=.false.
-          return
-        end if
-      end do
-    end do
-    
-    dcsr_fequals=.true.
-    
-  end function dcsr_fequals
-
   function flt_op(float1, float2) result(less_than)
     real, intent(in) :: float1, float2
     logical :: less_than
@@ -433,62 +373,6 @@ module libsupermesh_unittest_tools
     end if
 
   end function fgt
-
-  function is_nan_scalar(float1) result(nan)
-    !!< This function checks if float1 is NaN.
-    
-    real, intent(in) :: float1
-    
-    logical :: nan
-
-    nan = ieee_is_nan(float1)
-    
-  end function is_nan_scalar
-  
-  function is_nan_vector(float1) result(nan)
-    !!< This function checks if float1 is NaN.
-    
-    real, dimension(:), intent(in) :: float1
-    
-    logical, dimension(size(float1)) :: nan
-    
-    integer :: i
-    
-    do i = 1, size(float1)
-      nan(i) = is_nan(float1(i))
-    end do
-    
-  end function is_nan_vector
-  
-  function is_nan_tensor2(float1) result(nan)
-    !!< This function checks if float1 is NaN.
-    
-    real, dimension(:, :), intent(in) :: float1
-    
-    logical, dimension(size(float1, 1), size(float1, 2)) :: nan
-    
-    integer :: i
-    
-    do i = 1, size(float1, 1)
-      nan(i, :) = is_nan(float1(i, :))
-    end do
-    
-  end function is_nan_tensor2
-  
-  function is_nan_tensor3(float1) result(nan)
-    !!< This function checks if float1 is NaN.
-    
-    real, dimension(:, :, :), intent(in) :: float1
-    
-    logical, dimension(size(float1, 1), size(float1, 2), size(float1, 3)) :: nan
-    
-    integer :: i
-    
-    do i = 1, size(float1, 1)
-      nan(i, :, :) = is_nan(float1(i, :, :))
-    end do
-    
-  end function is_nan_tensor3
 
   function mat_is_symmetric(mat) result(symmetric)
     !!< This function checks if mat is a symmetric matrix.
@@ -616,47 +500,6 @@ module libsupermesh_unittest_tools
     end do
 
   end function random_symmetric_matrix
-  
-  function random_posdef_matrix(dim) result(mat)
-    !!< This function generates a random symmetric positive definite matrix of dimension dim.
-
-    integer, intent(in) :: dim
-    real, dimension(dim, dim) :: mat, evecs
-    real, dimension(dim) :: evals
-    integer :: i
-
-    mat = random_symmetric_matrix(dim)
-    call eigendecomposition_symmetric(mat, evecs, evals)
-    do i=1,dim
-      evals(i) = max(0.1, abs(evals(i)))
-    end do
-    call eigenrecomposition(mat, evecs, evals)
-
-    end function random_posdef_matrix
-
-    function random_sparse_matrix(rows, cols, nnz) result(mat)
-      !!< This function returns a random rows x cols sparse_matrix 
-      !!<  with at most nnz entries.
-    type(dynamic_csr_matrix) mat
-    integer, intent(in):: rows, cols, nnz
-    
-      integer i, row, col
-      real val, rand
-      
-      FLAbort("random_sparse_matrix: removed content")
-      
-!      call allocate(mat, rows, cols)
-!      do i=1, nnz
-!        call random_number(rand)
-!        row=floor(rand*rows)+1
-!        call random_number(rand)
-!        col=floor(rand*cols)+1
-!        call random_number(rand)
-!        val=(rand-0.5)*1e10
-!        call set(mat, row, col, val)
-!      end do
-      
-    end function random_sparse_matrix
 
     function get_mat_diag(vec) result(mat)
       !!< This function returns the matrix whose diagonal is vec.

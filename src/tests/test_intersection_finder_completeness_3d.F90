@@ -1,5 +1,3 @@
-#include "confdefs.h"
-
 subroutine test_intersection_finder_completeness_3d
   
   use libsupermesh_intersection_finder_module
@@ -7,9 +5,8 @@ subroutine test_intersection_finder_completeness_3d
   use libsupermesh_read_triangle_2
   use libsupermesh_unittest_tools
   use libsupermesh_linked_lists
-  use libsupermesh_elements
   use libsupermesh_construction
-  use libsupermesh_tri_intersection_module, only : tri_buf_size
+  use libsupermesh_tri_intersection_module
   use libsupermesh_tet_intersection_module, only : tet_buf_size
 
   implicit none
@@ -35,7 +32,7 @@ subroutine test_intersection_finder_completeness_3d
   map_BA = advancing_front_intersection_finder( &
       & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), &
       & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)) )
-  call intersector_set_dimension(dim)
+  call libsupermesh_cintersector_set_dimension(dim)
 
   do ele_B=1,ele_count(positionsB)
     vol_B = tetrahedron_volume(ele_val(positionsB, ele_B))

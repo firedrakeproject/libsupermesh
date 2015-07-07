@@ -1,5 +1,4 @@
 #include "Judy.h"
-#include "confdefs.h"
 #include "stdio.h"
 #include "assert.h"
 

@@ -25,13 +25,11 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
     USA
 */
-#include "confdefs.h"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
-#include "fmangle.h"
 #include "c++debug.h"
 
 #include <algorithm>

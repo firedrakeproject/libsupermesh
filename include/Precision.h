@@ -29,12 +29,6 @@
 #ifndef PRECISION_H
 #define PRECISION_H
 
-#include "confdefs.h"
-
-#ifdef DOUBLEP
-  typedef double flfloat_t;
-#else
-  typedef float flfloat_t;
-#endif
+typedef double flfloat_t;
 
 #endif

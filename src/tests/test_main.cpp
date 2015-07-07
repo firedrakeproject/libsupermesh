@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "confdefs.h"
-#include "fmangle.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif

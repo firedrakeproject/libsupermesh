@@ -5,8 +5,6 @@
 #include <string>
 #include <limits>
 
-#include "confdefs.h"
-
 void report_test(const std::string& title, const bool& fail, const bool& warn, const std::string& msg);
 
 extern "C" {

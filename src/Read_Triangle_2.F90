@@ -1,7 +1,9 @@
+#include "fdebug.h"
+
 module libsupermesh_read_triangle_2
 
   use libsupermesh_fields_dummy
-  use libsupermesh_futils, only : free_unit
+  use libsupermesh_fldebug
 
   implicit none
 
@@ -10,6 +12,25 @@ module libsupermesh_read_triangle_2
   public :: read_triangle_files
 
 contains
+  function free_unit()
+    !!< Find a free unit number. Start from unit 10 in order to ensure that
+    !!< we skip any preconnected units which may not be correctly identified
+    !!< on some compilers.
+    integer :: free_unit
+
+    logical :: connected
+
+    do free_unit=10, 99
+
+       inquire(unit=free_unit, opened=connected)
+
+       if (.not.connected) return
+
+    end do
+
+    FLAbort("No free unit numbers avalable")
+
+  end function
 
   ! Read Triangle .node file, as described at:
   !   https://www.cs.cmu.edu/~quake/triangle.node.html
@@ -38,20 +59,16 @@ contains
 
     read(unit, *) nnodes, ldim, nattrs, nbm
     if(nnodes < 0) then
-      write(0, "(a)") "Invalid number of vertices"
-      stop 1
+      FLAbort("Invalid number of vertices")
     end if
     if(ldim /= dim) then
-      write(0, "(a)") "Invalid dimension"
-      stop 1
+      FLAbort("Invalid dimension")
     end if
     if(nattrs < 0) then
-      write(0, "(a)") "Invalid number of attributes"
-      stop 1
+      FLAbort("Invalid number of attributes")
     end if
     if(nbm < 0 .or. nbm > 1) then
-      write(0, "(a)") "Invalid number of boundary markers"
-      stop 1
+      FLAbort("Invalid number of boundary markers")
     end if
 
     allocate(coords(dim, nnodes))
@@ -62,8 +79,7 @@ contains
     do i = 1, nnodes
       read(unit, *) ind, coord, attribute, boundary_marker
       if(i /= ind) then
-        write(0, "(a)") "Invalid vertex number"
-        stop 1
+        FLAbort("Invalid vertex number")
       end if
       coords(:, i) = coord
       if(present(attributes) .and. nattrs > 0) attributes(:, i) = attribute
@@ -101,16 +117,13 @@ contains
 
     read(unit, *) nelements, ncell_nodes, nattrs
     if(nelements < 0) then
-      write(0, "(a)") "Invalid number of simplices"
-      stop 1
+      FLAbort("Invalid number of simplices")
     end if
     if(ncell_nodes /= dim + 1) then
-      write(0, "(a)") "Invalid number of nodes per simplex"
-      stop 1
+      FLAbort( "Invalid number of nodes per simplex")
     end if
     if(nattrs < 0) then
-      write(0, "(a)") "Invalid number of attributes"
-      stop 1
+      FLAbort("Invalid number of attributes")
     end if
 
     allocate(enlist(ncell_nodes, nelements))
@@ -120,17 +133,14 @@ contains
     do i = 1, nelements
       read(unit, *) ind, cell_nodes, attribute
       if(i /= ind) then
-        write(0, "(a)") "Invalid simplex number"
-        stop 1
+        FLAbort("Invalid simplex number")
       end if
       if(any(cell_nodes < 1)) then
-        write(0, "(a)") "Invalid node"
-        stop 1
+        FLAbort("Invalid node")
       end if
       if(present(nnodes)) then
         if(any(cell_nodes > nnodes)) then
-          write(0, "(a)") "Invalid node"
-          stop 1
+          FLAbort("Invalid node")
         end if
       end if
       enlist(:, i) = cell_nodes

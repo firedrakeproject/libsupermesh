@@ -32,8 +32,7 @@ subroutine test_tri_intersector
   positionsA = read_triangle_files("data/plcA", dim = dim)
   positionsB = read_triangle_files("data/plcB", dim = dim)
 
-  call intersector_set_dimension(dim)
-  call intersector_set_exactness(.false.)
+  call libsupermesh_cintersector_set_dimension(dim)
 
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)

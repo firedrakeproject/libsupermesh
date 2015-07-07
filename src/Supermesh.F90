@@ -10,51 +10,6 @@ module libsupermesh_construction
   
   implicit none
   
-  interface libsupermesh_cintersector_set_input  
-    subroutine libsupermesh_cintersector_set_input(nodes_A, nodes_B, ndim, loc)
-      use libsupermesh_global_parameters, only : real_8
-      implicit none
-      real(kind = real_8), dimension(ndim, loc), intent(in) :: nodes_A, nodes_B
-      integer, intent(in) :: ndim, loc
-    end subroutine libsupermesh_cintersector_set_input
-  end interface libsupermesh_cintersector_set_input
-  
-  interface 
-    subroutine libsupermesh_cintersector_drive
-    end subroutine libsupermesh_cintersector_drive
-  end interface
-
-  interface
-    subroutine libsupermesh_cintersector_query(nonods, totele)
-      implicit none
-      integer, intent(out) :: nonods, totele
-    end subroutine libsupermesh_cintersector_query
-  end interface
-
-  interface libsupermesh_cintersector_get_output  
-    subroutine libsupermesh_cintersector_get_output(nonods, totele, ndim, loc, nodes, enlist)
-      use libsupermesh_global_parameters, only : real_8
-      implicit none
-      integer, intent(in) :: nonods, totele, ndim, loc
-      real(kind = real_8), dimension(nonods * ndim), intent(out) :: nodes
-      integer, dimension(totele * loc), intent(out) :: enlist
-    end subroutine libsupermesh_cintersector_get_output
-  end interface libsupermesh_cintersector_get_output
-  
-  interface intersector_set_dimension
-    subroutine libsupermesh_cintersector_set_dimension(ndim)
-      implicit none
-      integer, intent(in) :: ndim
-    end subroutine libsupermesh_cintersector_set_dimension
-  end interface intersector_set_dimension
-  
-  interface 
-    subroutine libsupermesh_cintersector_set_exactness(exact)
-      implicit none
-      integer, intent(in) :: exact
-    end subroutine libsupermesh_cintersector_set_exactness
-  end interface
-  
   ! I hope this is big enough ...
   real, dimension(1024) :: nodes_tmp
   logical :: intersector_exactness = .false.
@@ -62,8 +17,7 @@ module libsupermesh_construction
   logical, save :: mesh_allocated = .false.
 
   public :: intersect_elements, intersect_elements_old, &
-          &    intersector_set_dimension, &
-          &    intersector_set_exactness, finalise_libsupermesh
+          &    finalise_libsupermesh
   public :: intersector_exactness
   
   private

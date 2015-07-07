@@ -29,14 +29,10 @@
 #ifndef CXXDEBUG_H
 #define CXXDEBUG_H
 
-#include "confdefs.h"
-
 #include <string>
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-
-#include "fmangle.h"
 
 void FLAbort(const char*, const char *, int);
 void FLExit(const char*, const char *, int);

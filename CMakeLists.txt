@@ -209,7 +209,6 @@ if (USE_PROFPROFILE)
   set( SUBPROJECTS_profilling      "-lprofiler -g" )
 endif (USE_PROFPROFILE)
 
-add_subdirectory(libspud)
 add_subdirectory(spatialindex-1.8.0)
 add_subdirectory(libjudy)
 
@@ -253,8 +252,6 @@ endif (USE_MYLIB)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
 include_directories ("${PROJECT_SOURCE_DIR}/libwm/")
-include_directories ("${PROJECT_SOURCE_DIR}/libspud/")
-include_directories ("${PROJECT_SOURCE_DIR}/libspud/include")
 include_directories ("${PROJECT_SOURCE_DIR}/libjudy/src/")
 
 set(CPP_WM4_FILES "")
@@ -265,19 +262,6 @@ set(CPP_WM4_FILES
   ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector3.cpp
   ${PROJECT_SOURCE_DIR}/libwm/Wm4Math.cpp
 )
-set (CPP_LIBSPUD_O_FILES "")
-set (CPP_LIBSPUD_O_FILES
-  ${PROJECT_SOURCE_DIR}/libspud/fspud.o
-  ${PROJECT_SOURCE_DIR}/libspud/spud_interfaces.o
-  ${PROJECT_SOURCE_DIR}/libspud/spud.o
-  ${PROJECT_SOURCE_DIR}/libspud/tinystr.o
-  ${PROJECT_SOURCE_DIR}/libspud/tinyxmlerror.o
-  ${PROJECT_SOURCE_DIR}/libspud/tinyxml.o
-  ${PROJECT_SOURCE_DIR}/libspud/tinyxmlparser.o
-)
-foreach (test ${CPP_LIBSPUD_O_FILES})
- SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
-endforeach()
 
 set (CPP_SPATIALINDEX_O_FILES "")
 set (CPP_SPATIALINDEX_O_FILES
@@ -392,10 +376,10 @@ FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/be
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
-add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_WM4_FILES} ${CPP_LIBSPUD_O_FILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
+add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_WM4_FILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
 
-#add_dependencies(SuperMesh libspud spatialindex spatialindex_c libjudy)
-add_dependencies(SuperMesh libjudy libspud spatialindex spatialindex_c)
+#add_dependencies(SuperMesh spatialindex spatialindex_c libjudy)
+add_dependencies(SuperMesh libjudy spatialindex spatialindex_c)
 
 set (UNITTESTS
   test_tri_intersector
@@ -455,12 +439,10 @@ add_custom_command(TARGET test_tri_intersector
 )
 
 add_custom_target(distclean 
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && rm -rf tmp/ 
   COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ 
   COMMAND cd "${PROJECT_BINARY_DIR}/" && make clean
   COMMAND rm -rf unittests/
   COMMAND rm -rf data/
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libspud" && make distclean
   COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && make distclean
 #  COMMAND cd "${PROJECT_SOURCE_DIR}/libjud" && make distcleanlibjudy
 )

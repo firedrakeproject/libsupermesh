@@ -29,8 +29,6 @@
 #ifndef MESHDATASTREAM_H
 #define MESHDATASTREAM_H
 
-#include "confdefs.h"
-
 #include <strings.h>
 #include <spatialindex/SpatialIndex.h>
 
