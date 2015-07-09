@@ -13,14 +13,13 @@ subroutine test_intersection_finder_completeness_3d
 
   type(vector_field) :: positionsA, positionsB
   type(ilist), dimension(:), allocatable :: map_BA
-  integer :: ele_A, ele_B, ele_C, n_trisC, n_tetsC, i
+  integer :: ele_A, ele_B, ele_C, n_tetsC, i
   real :: vol_B, vols_C
   logical :: fail
   type(inode), pointer :: llnode
   type(vector_field) :: intersection
-  real, dimension(2, 3, tri_buf_size) ::  trisC_real
   real, dimension(3, 4, tet_buf_size) ::  tetsC_real
-  type(mesh_type) :: new_mesh, intersection_mesh
+  type(mesh_type) :: intersection_mesh
 
   integer, parameter :: dim = 3, loc = 4
 
@@ -41,14 +40,15 @@ subroutine test_intersection_finder_completeness_3d
     vols_C = 0.0
     do while(associated(llnode))
       ele_A = llnode%value
+write(*,*) "test_intersection_finder_completeness_3d: ele_A:",ele_A,"."
       ! Tets (3D)
         call intersect_elements(ele_val(positionsA, ele_A), ele_val(positionsB, ele_B), &
                 n_tetsC, tetsC_real )
         call allocate(intersection_mesh, dim, n_tetsC * loc, n_tetsC, loc)
-        intersection_mesh%continuity = -1
 
         if ( n_tetsC > 0 ) then
           intersection_mesh%ndglno = (/ (i, i=1,loc * n_tetsC) /)
+          intersection_mesh%continuity = -1
         end if
  
         call allocate(intersection, dim, intersection_mesh)
@@ -62,6 +62,7 @@ subroutine test_intersection_finder_completeness_3d
       do ele_C=1,ele_count(intersection)
         vols_C = vols_C + tetrahedron_volume(ele_val(intersection, ele_C))
       end do
+      call deallocate(intersection)
       llnode => llnode%next
     end do
 
@@ -73,5 +74,13 @@ subroutine test_intersection_finder_completeness_3d
       write(0,*) "vols_C: ", vols_C
     end if
   end do
+  
+  call deallocate(positionsA)
+  call deallocate(positionsB)
+  
+  do i=1,size(map_BA)
+    call flush_list(map_BA(i))
+  end do
+  deallocate(map_BA)
     
 end subroutine test_intersection_finder_completeness_3d

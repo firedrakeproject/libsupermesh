@@ -7,20 +7,18 @@ subroutine test_intersection_finder_completeness
   use libsupermesh_linked_lists
   use libsupermesh_construction
   use libsupermesh_tri_intersection_module
-  use libsupermesh_tet_intersection_module, only : tet_buf_size
 
   implicit none
 
   type(vector_field) :: positionsA, positionsB
   type(ilist), dimension(:), allocatable :: map_BA
-  integer :: ele_A, ele_B, ele_C, n_trisC, n_tetsC, i
+  integer :: ele_A, ele_B, ele_C, n_trisC, i
   real :: vol_B, vols_C
   logical :: fail
   type(inode), pointer :: llnode
   type(vector_field) :: intersection
   real, dimension(2, 3, tri_buf_size) ::  trisC_real
-  real, dimension(3, 4, tet_buf_size) ::  tetsC_real
-  type(mesh_type) :: new_mesh, intersection_mesh
+  type(mesh_type) :: intersection_mesh
 
   integer, parameter :: dim = 2, loc = 3
 
@@ -45,24 +43,25 @@ subroutine test_intersection_finder_completeness
       ! Triangles (2D)
         call intersect_elements(ele_val(positionsA, ele_A), ele_val(positionsB, ele_B), &
                     n_trisC, trisC_real)
-        call allocate(new_mesh, dim, n_trisC * loc, n_trisC, loc)
+        call allocate(intersection_mesh, dim, n_trisC * loc, n_trisC, loc)
 
         if ( n_trisC > 0 ) then
-          new_mesh%ndglno = (/ (i, i=1,loc * n_trisC) /)
-          new_mesh%continuity = -1
+          intersection_mesh%ndglno = (/ (i, i=1,loc * n_trisC) /)
+          intersection_mesh%continuity = -1
         end if
 
-        call allocate(intersection, dim, new_mesh)
+        call allocate(intersection, dim, intersection_mesh)
         if ( n_trisC > 0 ) then
           do i = 1, n_trisC
             call set(intersection, ele_nodes(intersection, i), trisC_real(:,:,i))
           end do
         end if
-        call deallocate(new_mesh)
+        call deallocate(intersection_mesh)
 
       do ele_C=1,ele_count(intersection)
         vols_C = vols_C + triangle_area(ele_val(intersection, ele_C))
       end do
+      call deallocate(intersection)
       llnode => llnode%next
     end do
 
@@ -73,7 +72,13 @@ subroutine test_intersection_finder_completeness
       write(0,*) "vol_B: ", vol_B
       write(0,*) "vols_C: ", vols_C
     end if
-    call deallocate(intersection)
   end do
-    
+  
+  call deallocate(positionsA)
+  call deallocate(positionsB)
+  
+  do i=1,size(map_BA)
+    call flush_list(map_BA(i))
+  end do
+
 end subroutine test_intersection_finder_completeness

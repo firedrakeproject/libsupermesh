@@ -12,6 +12,7 @@ subroutine test_intersection_finder_periodic
   logical :: fail
 
   integer, parameter :: dim = 2
+  integer :: i = 0
 
   ! A has one element
   ! B has two disconnected elements
@@ -26,5 +27,12 @@ subroutine test_intersection_finder_periodic
 
   fail = (map_AB(1)%length /= 2)
   call report_test("[intersection finder periodic]", fail, .false., "")
+  
+  call deallocate(posA)
+  call deallocate(posB)
+  
+  do i=1,size(map_AB)
+    call flush_list(map_AB(i))
+  end do
 
 end subroutine test_intersection_finder_periodic

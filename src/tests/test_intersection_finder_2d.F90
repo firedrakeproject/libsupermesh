@@ -30,6 +30,10 @@ subroutine test_intersection_finder_2d
   i = fetch(map_AB(1), 1)
   fail = (i /= 1)
   call report_test("[intersection finder: correct]", fail, .false., "The answer should be one")
+  
+  do i=1,size(map_AB)
+    call flush_list(map_AB(i))
+  end do
 
   call deallocate(positionsB)
   positionsB = read_triangle_files("data/triangle.2", dim)
@@ -51,6 +55,17 @@ subroutine test_intersection_finder_2d
 
     fail = (.not. has_value(bigger_map_AB(i), i))
     call report_test("[intersection finder: correct]", fail, .false., "The answer should be correct")
+  end do
+
+  call deallocate(positionsA)
+  call deallocate(positionsB)
+
+  do i=1,size(map_AB)
+    call flush_list(map_AB(i))
+  end do
+  
+  do i=1,size(bigger_map_AB)
+    call flush_list(bigger_map_AB(i))
   end do
 
 end subroutine test_intersection_finder_2d

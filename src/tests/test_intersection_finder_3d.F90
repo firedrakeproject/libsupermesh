@@ -28,5 +28,12 @@ subroutine test_intersection_finder_3d
   i = fetch(map_AB(1), 1)
   fail = (i /= 1)
   call report_test("[intersection finder: correct]", fail, .false., "The answer should be one")
+  
+  call deallocate(positionsA)
+  call deallocate(positionsB)
+  
+  do i=1,size(map_AB)
+    call flush_list(map_AB(i))
+  end do
 
 end subroutine test_intersection_finder_3d
