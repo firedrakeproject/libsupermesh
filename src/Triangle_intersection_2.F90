@@ -40,8 +40,8 @@ module libsupermesh_tri_intersection_module
     subroutine libsupermesh_cintersector_set_input(nodes_A, nodes_B, ndim, loc) bind(c)
       use iso_c_binding
       implicit none
-      real(kind = c_double), dimension(ndim, loc), intent(in) :: nodes_A, nodes_B
       integer(kind = c_int), intent(in) :: ndim, loc
+      real(kind = c_double), dimension(ndim, loc), intent(in) :: nodes_A, nodes_B
     end subroutine libsupermesh_cintersector_set_input
     
     subroutine libsupermesh_cintersector_drive() bind(c)

@@ -77,7 +77,15 @@ contains
 
     allocate(attribute(nattrs), boundary_marker(nbm))
     do i = 1, nnodes
-      read(unit, *) ind, coord, attribute, boundary_marker
+      if (present(attributes)) then
+        if (present(boundary_markers)) then
+          read(unit, *) ind, coord, attribute, boundary_marker
+        else
+          read(unit, *) ind, coord, attribute
+        end if
+      else
+        read(unit, *) ind, coord
+      end if
       if(i /= ind) then
         FLAbort("Invalid vertex number")
       end if
@@ -131,7 +139,11 @@ contains
 
     allocate(cell_nodes(ncell_nodes), attribute(nattrs))
     do i = 1, nelements
-      read(unit, *) ind, cell_nodes, attribute
+      if (present(attributes)) then
+        read(unit, *) ind, cell_nodes, attribute
+      else
+        read(unit, *) ind, cell_nodes
+      end if
       if(i /= ind) then
         FLAbort("Invalid simplex number")
       end if
