@@ -9,9 +9,9 @@ module libsupermesh_fields_dummy
   private
 
   public :: mesh_type, vector_field, eelist_type, allocate, deallocate, &
-    & extract_eelist, ele_count, node_count, ele_val, ele_loc, node_val, &
-    & row_m_ptr, ele_nodes, set, set_ele_nodes, simplex_volume, triangle_area, &
-    & tetrahedron_volume
+    & mesh_eelist, extract_eelist, ele_count, node_count, ele_val, ele_loc, &
+    & node_val, row_m_ptr, ele_nodes, set, set_ele_nodes, simplex_volume, &
+    & triangle_area, tetrahedron_volume
 
   type mesh_type
     integer :: dim
