@@ -77,12 +77,14 @@ contains
 
     allocate(attribute(nattrs), boundary_marker(nbm))
     do i = 1, nnodes
-      if (present(attributes)) then
-        if (present(boundary_markers)) then
+      if(nattrs > 0) then
+        if(nbm > 0) then
           read(unit, *) ind, coord, attribute, boundary_marker
         else
           read(unit, *) ind, coord, attribute
         end if
+      else if(nbm > 0) then
+        read(unit, *) ind, coord, boundary_marker
       else
         read(unit, *) ind, coord
       end if
@@ -139,7 +141,7 @@ contains
 
     allocate(cell_nodes(ncell_nodes), attribute(nattrs))
     do i = 1, nelements
-      if (present(attributes)) then
+      if(nattrs > 0) then
         read(unit, *) ind, cell_nodes, attribute
       else
         read(unit, *) ind, cell_nodes
