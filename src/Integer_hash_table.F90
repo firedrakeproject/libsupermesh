@@ -1,7 +1,7 @@
 #include "fdebug.h"
 
 module libsupermesh_integer_hash_table_module
-  ! Don't use this directly, use data_structures
+
   use iso_c_binding, only: c_ptr
   use libsupermesh_fldebug
   type integer_hash_table
