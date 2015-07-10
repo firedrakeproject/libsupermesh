@@ -51,6 +51,7 @@ subroutine benchmark_tri_intersector
   integer :: nonods, totele, n_trisC_pre
 
   integer, parameter :: dim = 2, loc = 3
+  real, parameter :: tol = 1.0e3 * epsilon(0.0)
 
   call libsupermesh_cintersector_set_dimension(dim)
   
@@ -163,10 +164,10 @@ subroutine benchmark_tri_intersector
       end if
 
       if (  triangle_counters(2, index) .ne.  triangle_counters(1, index) ) then
-        if ( abs(area_A_intersect_libwm(index) - area_B_fort(index)) .le. epsilon(0.0) ) then
+        if ( abs(area_A_intersect_libwm(index) - area_B_fort(index)) .le. tol ) then
           cycle
         end if
-        if ( abs(area_A_intersect_libwm(index) - area_B_fort(index)) .gt. epsilon(0.0) ) then
+        if ( abs(area_A_intersect_libwm(index) - area_B_fort(index)) .gt. tol ) then
           write (*,*) "!!!!!!!! Different areas as well"
         end if
         write(*,*) "LibWM returned:", triangle_counters(1, index),", and tris returned:", triangle_counters(2, index),"."
