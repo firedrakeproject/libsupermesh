@@ -116,7 +116,7 @@ module libsupermesh_construction
       intersection_mesh%ndglno = -1
 #endif
       allocate(ndglno(ndimA + 1, totele))
-      call cintersector_get_output(nonods, totele, ndimA, locA, intersection%val, ndglno)
+      call cintersector_get_output(nonods, totele, ndimA, ndimA + 1, intersection%val, ndglno)
       intersection_mesh%ndglno = reshape(ndglno, (/(ndimA + 1) * totele/))
       deallocate(ndglno)
     end if
