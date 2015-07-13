@@ -49,10 +49,10 @@ contains
 
     integer :: i, nonods
     
-    call libsupermesh_cintersector_set_input(tetA, tetB, 3, 4)
-    call libsupermesh_cintersector_drive
-    call libsupermesh_cintersector_query(nonods, n_tetsC)
-    call libsupermesh_cintersector_get_output(nonods, n_tetsC, 3, 4, nodesC, ndglnoC)
+    call cintersector_set_input(tetA, tetB, 3, 4)
+    call cintersector_drive
+    call cintersector_query(nonods, n_tetsC)
+    call cintersector_get_output(nonods, n_tetsC, 3, 4, nodesC, ndglnoC)
 
   end subroutine intersect_tets_libwm
   

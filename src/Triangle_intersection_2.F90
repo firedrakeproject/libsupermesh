@@ -36,50 +36,58 @@ module libsupermesh_tri_intersection_module
   real, dimension(2, BUF_SIZE + 2), save :: points_tmp
   integer, save :: n_points_tmp
 
-  interface
+  interface cintersector_set_input
     subroutine libsupermesh_cintersector_set_input(nodes_A, nodes_B, ndim, loc) bind(c)
       use iso_c_binding
       implicit none
       integer(kind = c_int), intent(in) :: ndim, loc
       real(kind = c_double), dimension(ndim, loc), intent(in) :: nodes_A, nodes_B
     end subroutine libsupermesh_cintersector_set_input
-    
+  end interface cintersector_set_input
+
+  interface cintersector_drive
     subroutine libsupermesh_cintersector_drive() bind(c)
       implicit none
     end subroutine libsupermesh_cintersector_drive
+  end interface cintersector_drive
 
+  interface cintersector_query
     subroutine libsupermesh_cintersector_query(nonods, totele) bind(c)
       use iso_c_binding
       implicit none
       integer(kind = c_int), intent(out) :: nonods, totele
     end subroutine libsupermesh_cintersector_query
+  end interface cintersector_query
 
+  interface cintersector_get_output
     subroutine libsupermesh_cintersector_get_output(nonods, totele, ndim, loc, nodes, enlist) bind(c)
       use iso_c_binding
       implicit none
       integer(kind = c_int), intent(in) :: nonods, totele, ndim, loc
-      real(kind = c_double), dimension(nonods * ndim), intent(out) :: nodes
-      integer(kind = c_int), dimension(totele * loc), intent(out) :: enlist
+      real(kind = c_double), dimension(ndim, nonods), intent(out) :: nodes
+      integer(kind = c_int), dimension(loc, totele), intent(out) :: enlist
     end subroutine libsupermesh_cintersector_get_output
-    
+  end interface cintersector_get_output
+
+  interface cintersector_set_dimension
     subroutine libsupermesh_cintersector_set_dimension(ndim) bind(c)
       use iso_c_binding
       implicit none
       integer(kind = c_int), intent(in) :: ndim
     end subroutine libsupermesh_cintersector_set_dimension
+  end interface cintersector_set_dimension
 
+  interface cintersection_finder_reset
     subroutine libsupermesh_cintersection_finder_reset(ntests) bind(c)
       use iso_c_binding
       implicit none
       integer(kind = c_int), intent(out) :: ntests
     end subroutine libsupermesh_cintersection_finder_reset
-  end interface
+  end interface cintersection_finder_reset
 
-  public :: libsupermesh_cintersector_set_input, &
-    & libsupermesh_cintersector_drive, libsupermesh_cintersector_query, &
-    & libsupermesh_cintersector_get_output, &
-    & libsupermesh_cintersector_set_dimension, &
-    & libsupermesh_cintersection_finder_reset
+  public :: cintersector_set_input, cintersector_drive, cintersector_query, &
+    & cintersector_get_output, cintersector_set_dimension, &
+    & cintersection_finder_reset
 
 contains
 

@@ -23,6 +23,7 @@ subroutine test_tet_intersector
   integer, dimension(4, tet_buf_size) :: ndglnoC
   real, dimension(3, 4, tet_buf_size) ::  tetsC_real
   integer :: i, nonods, totele
+  integer, dimension(:, :), allocatable :: ndglno
   type(vector_field) :: intersection, intersect_elements_result
   type(mesh_type) :: intersection_mesh, new_mesh
 
@@ -31,7 +32,7 @@ subroutine test_tet_intersector
   positionsA = read_triangle_files("data/plcC", dim)
   positionsB = read_triangle_files("data/plcD", dim)
 
-  call libsupermesh_cintersector_set_dimension(dim)
+  call cintersector_set_dimension(dim)
 
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)
@@ -64,14 +65,17 @@ subroutine test_tet_intersector
       end do
 
       ! D. Use libWM directly and create temporary vector field
-      call libsupermesh_cintersector_set_input(ele_val(positionsA, ele_A), tet_B%v, dim, loc)
-      call libsupermesh_cintersector_drive
-      call libsupermesh_cintersector_query(nonods, totele)
+      call cintersector_set_input(ele_val(positionsA, ele_A), tet_B%v, dim, loc)
+      call cintersector_drive
+      call cintersector_query(nonods, totele)
       call allocate(intersection_mesh, dim, nonods, totele, loc)
       intersection_mesh%continuity = -1
       call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, intersection%val, intersection_mesh%ndglno)
+        allocate(ndglno(loc, totele))
+        call cintersector_get_output(nonods, totele, dim, loc, intersection%val, ndglno)
+        intersection_mesh%ndglno = reshape(ndglno, (/loc * totele/))
+        deallocate(ndglno)
       end if
       vol_libwm = 0.0
       do ele_C=1,totele
@@ -140,7 +144,7 @@ subroutine test_tet_intersector
     end do
   end do
 
-  call libsupermesh_cintersection_finder_reset(ntests)
+  call cintersection_finder_reset(ntests)
   
   call deallocate(positionsA)
   call deallocate(positionsB)

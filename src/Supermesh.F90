@@ -101,11 +101,12 @@ module libsupermesh_construction
     real, dimension(:, :), intent(in) :: posB
   
     integer :: i, nonods, totele
+    integer, dimension(:, :), allocatable :: ndglno
     type(mesh_type) :: intersection_mesh
 
-    call libsupermesh_cintersector_set_input(positions_A_val, posB, ndimA, locA)
-    call libsupermesh_cintersector_drive
-    call libsupermesh_cintersector_query(nonods, totele)
+    call cintersector_set_input(positions_A_val, posB, ndimA, locA)
+    call cintersector_drive
+    call cintersector_query(nonods, totele)
     call allocate(intersection_mesh, ndimA, nonods, totele, ndimA + 1)
     intersection_mesh%ndglno = (/ (i, i=1,totele) /)
     intersection_mesh%continuity = -1
@@ -114,7 +115,10 @@ module libsupermesh_construction
 #ifdef DDEBUG
       intersection_mesh%ndglno = -1
 #endif
-      call libsupermesh_cintersector_get_output(nonods, totele, ndimA, locA, intersection%val, intersection_mesh%ndglno)
+      allocate(ndglno(ndimA + 1, totele))
+      call cintersector_get_output(nonods, totele, ndimA, locA, intersection%val, ndglno)
+      intersection_mesh%ndglno = reshape(ndglno, (/(ndimA + 1) * totele/))
+      deallocate(ndglno)
     end if
 
     call deallocate(intersection_mesh)

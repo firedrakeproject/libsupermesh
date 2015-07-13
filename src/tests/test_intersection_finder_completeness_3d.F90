@@ -31,7 +31,7 @@ subroutine test_intersection_finder_completeness_3d
   map_BA = advancing_front_intersection_finder( &
       & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), &
       & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)) )
-  call libsupermesh_cintersector_set_dimension(dim)
+  call cintersector_set_dimension(dim)
 
   do ele_B=1,ele_count(positionsB)
     vol_B = tetrahedron_volume(ele_val(positionsB, ele_B))

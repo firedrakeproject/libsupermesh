@@ -18,6 +18,7 @@ subroutine test_tri_intersector
   type(tri_type) :: triA, triB
   type(tri_type), dimension(tri_buf_size) :: trisC
   integer :: ntests, n_trisC, i, nonods, totele, n_trisC_pre
+  integer, dimension(:, :), allocatable :: ndglno
   real, dimension(2, tri_buf_size) :: nodesC
   integer, dimension(3, tri_buf_size) :: ndglnoC
   real, dimension(2, 3, tri_buf_size) ::  trisC_real
@@ -29,7 +30,7 @@ subroutine test_tri_intersector
   positionsA = read_triangle_files("data/plcA", dim = dim)
   positionsB = read_triangle_files("data/plcB", dim = dim)
 
-  call libsupermesh_cintersector_set_dimension(dim)
+  call cintersector_set_dimension(dim)
 
   do ele_A=1,ele_count(positionsA)
     do ele_B=1,ele_count(positionsB)
@@ -87,14 +88,17 @@ subroutine test_tri_intersector
       end do
 
       ! D. Use libWM directly and create temporary vector field
-      call libsupermesh_cintersector_set_input(ele_val(positionsA, ele_A), triB%v, dim, loc)
-      call libsupermesh_cintersector_drive
-      call libsupermesh_cintersector_query(nonods, totele)
+      call cintersector_set_input(ele_val(positionsA, ele_A), triB%v, dim, loc)
+      call cintersector_drive
+      call cintersector_query(nonods, totele)
       call allocate(intersection_mesh, dim, nonods, totele, loc)
       intersection_mesh%continuity = -1
       call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, intersection%val, intersection_mesh%ndglno)
+        allocate(ndglno(loc, totele))
+        call cintersector_get_output(nonods, totele, dim, loc, intersection%val, ndglno)
+        intersection_mesh%ndglno = reshape(ndglno, (/loc * totele/))
+        deallocate(ndglno)
       end if
       area_D_libwm = 0.0
       do ele_C=1,totele
@@ -200,7 +204,7 @@ subroutine test_tri_intersector
     end do
   end do
 
-  call libsupermesh_cintersection_finder_reset(ntests)
+  call cintersection_finder_reset(ntests)
   
   call deallocate(positionsA)
   call deallocate(positionsB)
