@@ -100,10 +100,10 @@ contains
 
     integer :: i, nonods
     
-    call libsupermesh_cintersector_set_input(triA, triB, 2, 3)
-    call libsupermesh_cintersector_drive
-    call libsupermesh_cintersector_query(nonods, n_trisC)
-    call libsupermesh_cintersector_get_output(nonods, n_trisC, 2, 3, nodesC, ndglnoC)
+    call cintersector_set_input(triA, triB, 2, 3)
+    call cintersector_drive
+    call cintersector_query(nonods, n_trisC)
+    call cintersector_get_output(nonods, n_trisC, 2, 3, nodesC, ndglnoC)
 
   end subroutine intersect_tris_libwm
 

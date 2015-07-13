@@ -35,6 +35,7 @@ subroutine benchmark_tet_intersector
   & dt_C_vol_fort_public = 0.0, dt_D_vol_libwm = 0.0, dt_E_vol_intersect_elements = 0.0, &
   & dt_F_vol_intersect_elements = 0.0, dt_G_vol_intersect_elements = 0.0
   integer :: nonods, totele
+  integer, dimension(:, :), allocatable :: ndglno
   
   real, dimension(3, 4, tet_buf_size) ::  tetsC_real
   integer :: n_tetsC
@@ -48,7 +49,7 @@ subroutine benchmark_tet_intersector
   integer, parameter :: dim = 3, loc = 4
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
 
-  call libsupermesh_cintersector_set_dimension(dim)
+  call cintersector_set_dimension(dim)
   
   open (unit = 20, file = "plcC_temp.node")
   open (unit = 21, file = "plcC_temp.ele")
@@ -174,14 +175,17 @@ subroutine benchmark_tet_intersector
       ! D. Use libWM directly and create temporary vector field
       tet_B%v = ele_val(positionsB, ele_B)
 
-      call libsupermesh_cintersector_set_input(tet_A%v, tet_B%v, positionsA%dim, ele_loc(positionsA, ele_A))
-      call libsupermesh_cintersector_drive
-      call libsupermesh_cintersector_query(nonods, totele)
+      call cintersector_set_input(tet_A%v, tet_B%v, positionsA%dim, ele_loc(positionsA, ele_A))
+      call cintersector_drive
+      call cintersector_query(nonods, totele)
       call allocate(intersection_mesh, dim, nonods, totele, loc)
       intersection_mesh%continuity = -1
       call allocate(intersection, dim, intersection_mesh)
       if (nonods > 0) then
-        call libsupermesh_cintersector_get_output(nonods, totele, dim, loc, intersection%val, intersection_mesh%ndglno)
+        allocate(ndglno(loc, totele))
+        call cintersector_get_output(nonods, totele, dim, loc, intersection%val, ndglno)
+        intersection_mesh%ndglno = reshape(ndglno, (/loc * totele/))
+        deallocate(ndglno)
       end if
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
@@ -320,6 +324,6 @@ subroutine benchmark_tet_intersector
   call deallocate(positionsA)
   call deallocate(positionsB)
   
-  call libsupermesh_cintersection_finder_reset(n_tetsC)
+  call cintersection_finder_reset(n_tetsC)
 
 end subroutine benchmark_tet_intersector
