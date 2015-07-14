@@ -1,6 +1,6 @@
 subroutine test_intersection_finder_2d
 
-  use libsupermesh_intersection_finder_module
+  use libsupermesh_intersection_finder
   use libsupermesh_fields_dummy
   use libsupermesh_read_triangle_2
   use libsupermesh_unittest_tools
@@ -20,9 +20,9 @@ subroutine test_intersection_finder_2d
   
   positionsA = read_triangle_files("data/triangle.1", dim)
   positionsB = read_triangle_files("data/triangle.1", dim)
-  map_AB = advancing_front_intersection_finder( &
+  call intersection_finder( &
       & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)) )
+      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), map_AB)
 
   fail = (map_AB(1)%length /= 1)
   call report_test("[intersection finder: length]", fail, .false., "There shall be only one")
@@ -37,18 +37,18 @@ subroutine test_intersection_finder_2d
 
   call deallocate(positionsB)
   positionsB = read_triangle_files("data/triangle.2", dim)
-  map_AB = advancing_front_intersection_finder( &
+  call intersection_finder( &
       & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)) )
+      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), map_AB)
 
   fail = (map_AB(1)%length /= 3)
   call report_test("[intersection finder: length]", fail, .false., "There shall be three elements")
 
   call deallocate(positionsA)
   positionsA = read_triangle_files("data/triangle.2", dim)
-  bigger_map_AB = advancing_front_intersection_finder( &
+  call intersection_finder( &
       & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)) )
+      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), bigger_map_AB)
   do i=1,ele_count(positionsA)
     fail = (bigger_map_AB(i)%length < 1)
     call report_test("[intersection finder: length]", fail, .false., "There shall be only one")

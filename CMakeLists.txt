@@ -392,7 +392,6 @@ FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/te
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_3d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_periodic.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_SEEDS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_seeds.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
@@ -416,7 +415,6 @@ set (UNITTESTS
   test_intersection_finder_completeness
   test_intersection_finder_completeness_3d
   test_intersection_finder_periodic
-  test_intersection_finder_seeds
 )
 
 set (BENCHMARKTESTS
@@ -432,7 +430,6 @@ add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_T
 add_executable (test_intersection_finder_completeness ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES})
 add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES})
 add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES})
-add_executable (test_intersection_finder_seeds ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_SEEDS_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 

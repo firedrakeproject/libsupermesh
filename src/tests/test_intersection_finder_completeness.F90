@@ -1,6 +1,6 @@
 subroutine test_intersection_finder_completeness
 
-  use libsupermesh_intersection_finder_module
+  use libsupermesh_intersection_finder
   use libsupermesh_fields_dummy
   use libsupermesh_read_triangle_2
   use libsupermesh_unittest_tools
@@ -27,9 +27,9 @@ subroutine test_intersection_finder_completeness
 
   allocate(map_BA(ele_count(positionsB)))
 
-  map_BA = advancing_front_intersection_finder( &
+  call intersection_finder( &
       & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)) )
+      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), map_BA)
   call cintersector_set_dimension(dim)
 
   do ele_B=1,ele_count(positionsB)
