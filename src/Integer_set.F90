@@ -1,9 +1,14 @@
 #include "fdebug.h"
 
-module libsupermesh_integer_set_module
+module libsupermesh_integer_set
 
-  use iso_c_binding, only: c_ptr
+  use iso_c_binding
   use libsupermesh_fldebug
+
+  implicit none
+  
+  private
+  
   type integer_set
     type(c_ptr) :: address
   end type integer_set
@@ -14,93 +19,99 @@ module libsupermesh_integer_set_module
 
   interface
     subroutine integer_set_create_c(i) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(out) :: i
     end subroutine integer_set_create_c
 
     subroutine integer_set_delete_c(i) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(inout) :: i
     end subroutine integer_set_delete_c
 
     subroutine integer_set_insert_c(i, v, c) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(inout) :: i
-      integer, intent(in) :: v
-      integer, intent(out) :: c
+      integer(kind = c_int), intent(in) :: v
+      integer(kind = c_int), intent(out) :: c
     end subroutine integer_set_insert_c
 
     pure subroutine integer_set_length_c(i, l) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(out) :: l
+      integer(kind = c_int), intent(out) :: l
     end subroutine integer_set_length_c
 
     subroutine integer_set_fetch_c(i, idx, val) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(in) :: idx
-      integer, intent(out) :: val
+      integer(kind = c_int), intent(in) :: idx
+      integer(kind = c_int), intent(out) :: val
     end subroutine integer_set_fetch_c
 
     subroutine integer_set_remove_c(i, idx, stat) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(in) :: idx
-      integer, intent(out) :: stat
+      integer(kind = c_int), intent(in) :: idx
+      integer(kind = c_int), intent(out) :: stat
     end subroutine integer_set_remove_c
 
     subroutine integer_set_has_value_c(i, val, bool) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(in) :: val
-      integer, intent(out) :: bool
+      integer(kind = c_int), intent(in) :: val
+      integer(kind = c_int), intent(out) :: bool
     end subroutine integer_set_has_value_c
   end interface
 
   interface allocate
     module procedure integer_set_allocate_single, integer_set_allocate_vector
-  end interface
+  end interface allocate
 
   interface insert
     module procedure integer_set_insert, integer_set_insert_multiple, &
       integer_set_insert_set
-  end interface
+  end interface insert
 
   interface deallocate
     module procedure integer_set_delete_single, integer_set_delete_vector
-  end interface
+  end interface deallocate
 
   interface has_value
     module procedure integer_set_has_value, integer_set_has_value_multiple
-  end interface
+  end interface has_value
 
   interface key_count
     module procedure integer_set_length_single, integer_set_length_vector
-  end interface
+  end interface key_count
 
   interface fetch
     module procedure integer_set_fetch
-  end interface
+  end interface fetch
 
   interface remove
     module procedure integer_set_remove
-  end interface
+  end interface remove
   
   interface copy
     module procedure integer_set_copy, integer_set_copy_multiple
-  end interface
+  end interface copy
   
   interface set_intersection
     module procedure set_intersection_two, set_intersection_multiple
-  end interface
+  end interface set_intersection
   
-  private
-  public :: integer_set, allocate, deallocate, has_value, key_count, fetch, insert, &
-          & set_complement, set2vector, set_intersection, set_minus, remove, copy, &
-          & integer_set_vector
+  public :: integer_set, allocate, deallocate, has_value, key_count, fetch, &
+    & insert, set_complement, set2vector, set_intersection, set_minus, remove, &
+    & copy, integer_set_vector
 
-  contains 
+contains 
   
   subroutine integer_set_allocate_single(iset)
     type(integer_set), intent(out) :: iset
@@ -331,4 +342,4 @@ module libsupermesh_integer_set_module
     end do
   end function set2vector
 
-end module libsupermesh_integer_set_module
+end module libsupermesh_integer_set

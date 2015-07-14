@@ -4,8 +4,8 @@
 module libsupermesh_intersection_finder_module
 
  use libsupermesh_fields_dummy
- use libsupermesh_integer_hash_table_module
- use libsupermesh_integer_set_module
+ use libsupermesh_integer_hash_table
+ use libsupermesh_integer_set
  use libsupermesh_linked_lists
 
 implicit none

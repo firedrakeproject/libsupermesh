@@ -1,110 +1,122 @@
 #include "fdebug.h"
 
-module libsupermesh_integer_hash_table_module
+module libsupermesh_integer_hash_table
 
-  use iso_c_binding, only: c_ptr
+  use iso_c_binding
   use libsupermesh_fldebug
+
+  implicit none
+
+  private
+  
   type integer_hash_table
     type(c_ptr) :: address
   end type integer_hash_table
 
   interface
     subroutine integer_hash_table_create_c(i) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(out) :: i
     end subroutine integer_hash_table_create_c
 
     subroutine integer_hash_table_delete_c(i) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(inout) :: i
     end subroutine integer_hash_table_delete_c
 
     subroutine integer_hash_table_insert_c(i, k, v) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(inout) :: i
-      integer, intent(in) :: k, v
+      integer(kind = c_int), intent(in) :: k, v
     end subroutine integer_hash_table_insert_c
 
     pure subroutine integer_hash_table_length_c(i, l) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(out) :: l
+      integer(kind = c_int), intent(out) :: l
     end subroutine integer_hash_table_length_c
 
     subroutine integer_hash_table_fetch_c(i, key, val) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(in) :: key
-      integer, intent(out) :: val
+      integer(kind = c_int), intent(in) :: key
+      integer(kind = c_int), intent(out) :: val
     end subroutine integer_hash_table_fetch_c
 
     subroutine integer_hash_table_remove_c(i, key, stat) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(inout) :: i
-      integer, intent(in) :: key
-      integer, intent(out) :: stat
+      integer(kind = c_int), intent(in) :: key
+      integer(kind = c_int), intent(out) :: stat
     end subroutine integer_hash_table_remove_c
 
     subroutine integer_hash_table_has_key_c(i, val, bool) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(in) :: val
-      integer, intent(out) :: bool
+      integer(kind = c_int), intent(in) :: val
+      integer(kind = c_int), intent(out) :: bool
     end subroutine integer_hash_table_has_key_c
 
     subroutine integer_hash_table_fetch_pair_c(i, idx, key, val) bind(c)
-      use iso_c_binding, only: c_ptr
+      use iso_c_binding
+      implicit none
       type(c_ptr), intent(in) :: i
-      integer, intent(in) :: idx
-      integer, intent(out) :: key, val
+      integer(kind = c_int), intent(in) :: idx
+      integer(kind = c_int), intent(out) :: key, val
     end subroutine integer_hash_table_fetch_pair_c
   end interface
 
   interface allocate
     module procedure integer_hash_table_allocate
-  end interface
+  end interface allocate
 
   interface insert
     module procedure integer_hash_table_insert
-  end interface
+  end interface insert
 
   interface remove
     module procedure integer_hash_table_remove
-  end interface
+  end interface remove
 
   interface deallocate
     module procedure integer_hash_table_delete
-  end interface
+  end interface deallocate
 
   interface has_key
     module procedure integer_hash_table_has_key
-  end interface
+  end interface has_key
 
   interface key_count
     module procedure integer_hash_table_length
-  end interface
+  end interface key_count
 
   interface fetch
     module procedure integer_hash_table_fetch, integer_hash_table_fetch_v
-  end interface
+  end interface fetch
 
   interface fetch_pair
     module procedure integer_hash_table_fetch_pair
-  end interface
+  end interface fetch_pair
 
   interface print
     module procedure print_hash_table
-  end interface
+  end interface print
 
   interface copy
     module procedure integer_hash_table_copy
-  end interface
+  end interface copy
 
-  private
-  public :: integer_hash_table, allocate, deallocate, has_key, key_count, fetch, insert, &
-            fetch_pair, print, remove, copy
+  public :: integer_hash_table, allocate, deallocate, has_key, key_count, &
+    & fetch, insert, fetch_pair, print, remove, copy
 
-  contains 
+contains 
 
   subroutine integer_hash_table_copy(ihash_copy, ihash)
     type(integer_hash_table), intent(out) :: ihash_copy
@@ -207,4 +219,4 @@ module libsupermesh_integer_hash_table_module
       ewrite(priority,*) key, " --> ", val
     end do
   end subroutine print_hash_table
-end module libsupermesh_integer_hash_table_module
+end module libsupermesh_integer_hash_table
