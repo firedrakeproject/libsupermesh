@@ -115,7 +115,7 @@ subroutine benchmark_tri_intersector
 
   do ele_A=1,ele_count(positionsA)
     triA%v = ele_val(positionsA, ele_A)
-    t1 = MPI_Wtime();
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB)  
       ! A. Use libWM without creating temporary vector fields.
       triB%v = ele_val(positionsB, ele_B)
@@ -128,14 +128,14 @@ subroutine benchmark_tri_intersector
       end do
       triangle_counters(1, index) = n_trisC
     end do
-    t2 = MPI_Wtime();
+    t2 = MPI_Wtime()
     dt_A_area_intersect_libwm = dt_A_area_intersect_libwm + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
     triA%v = ele_val(positionsA, ele_A)
-    t1 = MPI_Wtime();
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB) 
       ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
       triB%v = ele_val(positionsB, ele_B)
@@ -148,7 +148,7 @@ subroutine benchmark_tri_intersector
       end do
       triangle_counters(2, index) = n_trisC
     end do
-    t2 = MPI_Wtime();
+    t2 = MPI_Wtime()
     dt_B_LibSuperMeshTriIntersector = dt_B_LibSuperMeshTriIntersector + ( t2 -t1 )
    end do
    
@@ -191,7 +191,7 @@ subroutine benchmark_tri_intersector
 
   do ele_A=1,ele_count(positionsA)
     triA%v = ele_val(positionsA, ele_A)
-    t1 = MPI_Wtime();
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB) 
       ! C. Use the libSuperMesh internal triangle intersector (using only reals as input)
       triB%v = ele_val(positionsB, ele_B)
@@ -204,20 +204,21 @@ subroutine benchmark_tri_intersector
       end do
       triangle_counters(3, index) = n_trisC
     end do
-    t2 = MPI_Wtime();
+    t2 = MPI_Wtime()
     dt_C_area_fort_public = dt_C_area_fort_public + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
+    allocate(posA(dim, loc))
+    posA = ele_val(positionsA, ele_A)
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB) 
       ! D. Use libWM directly and create temporary vector field
-      allocate(posA(dim, loc))
+      
       allocate(posB(dim, loc))
-      posA = ele_val(positionsA, ele_A)
       posB = ele_val(positionsB, ele_B)
 
-      t1 = MPI_Wtime();
       call cintersector_set_input(posA, posB, dim, loc)
       call cintersector_drive
       call cintersector_query(nonods, totele)
@@ -230,11 +231,7 @@ subroutine benchmark_tri_intersector
         intersection_meshLibWM%ndglno = reshape(ndglno, (/loc * totele/))
         deallocate(ndglno)
       end if
-      t2 = MPI_Wtime();
-      dt_D_area_libwm = dt_D_area_libwm + ( t2 -t1 )
 
-      deallocate(posA)
-      deallocate(posB)
       call deallocate(intersection_meshLibWM)
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
@@ -243,27 +240,32 @@ subroutine benchmark_tri_intersector
       end do
       triangle_counters(4, index) = ele_count(libwm_result)
       call deallocate(libwm_result)
+
+      deallocate(posB)
     end do
+    
+    deallocate(posA)
+    t2 = MPI_Wtime()
+    dt_D_area_libwm = dt_D_area_libwm + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
+    allocate(positions_A_lib_val(dim, loc))
+    positions_A_lib_val = ele_val(positionsA, ele_A)
+
+    elementCount = ele_count(positionsA)
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB) 
       ! E. Use *original/old* intersect_elements function directly and create temporary vector field      
       n_count = 0
-      allocate(positions_A_lib_val(dim, loc))
-      positions_A_lib_val = ele_val(positionsA, ele_A)
-
-      elementCount = ele_count(positionsA)
       allocate(posB(dim, loc))
       posB = ele_val(positionsB, ele_B)
       nodeCount = node_count(positionsA)
 
-      t1 = MPI_Wtime();
+      
       intersect_elements_result = intersect_elements_old( &
         positions_A_lib_val, posB, loc, dim)
-      t2 = MPI_Wtime();
-      dt_E_area_intersect_elements = dt_E_area_intersect_elements + ( t2 -t1 )
 
       index = (ele_A-1)*BUF_SIZE_B + ele_B
       do ele_C=1,ele_count(intersect_elements_result)
@@ -271,15 +273,19 @@ subroutine benchmark_tri_intersector
       end do
       triangle_counters(5, index) = ele_count(intersect_elements_result)
       call deallocate(intersect_elements_result)
+
       deallocate(posB)
-      deallocate(positions_A_lib_val)
     end do
+
+    deallocate(positions_A_lib_val)
+    t2 = MPI_Wtime()
+    dt_E_area_intersect_elements = dt_E_area_intersect_elements + ( t2 -t1 )    
   end do
 
 
   do ele_A=1,ele_count(positionsA)
     triA%v = ele_val(positionsA, ele_A)  
-    t1 = MPI_Wtime();
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB) 
       ! F. Use the new intersect_elements and do NOT create vector field
       triB%v = ele_val(positionsB, ele_B)
@@ -292,19 +298,20 @@ subroutine benchmark_tri_intersector
       end do
       triangle_counters(6, index) = n_trisC
     end do
-    t2 = MPI_Wtime();
+    t2 = MPI_Wtime()
     dt_F_area_intersect_elements = dt_F_area_intersect_elements + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
     triA%v = ele_val(positionsA, ele_A)
-    t1 = MPI_Wtime();
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB) 
       ! G. Use the new intersect_elements and DO create vector field
       triB%v = ele_val(positionsB, ele_B)
 
-      call intersect_elements(triA%v, triB%v, n_trisC, trisC_real)
+!      call intersect_elements(triA%v, triB%v, n_trisC, trisC_real)
+      call intersect_tris(triA, triB, trisC, n_trisC)
       call allocate(new_mesh, dim, n_trisC * loc, n_trisC, loc)
 
       if ( n_trisC > 0 ) then
@@ -327,14 +334,14 @@ subroutine benchmark_tri_intersector
       triangle_counters(7, index) = ele_count(intersection)
       call deallocate(intersection)
     end do
-    t2 = MPI_Wtime();
+    t2 = MPI_Wtime()
     dt_G_area_intersect_elements = dt_G_area_intersect_elements + ( t2 -t1 )
   end do
 
 
   do ele_A=1,ele_count(positionsA)
     triA%v = ele_val(positionsA, ele_A)
-    t1 = MPI_Wtime();
+    t1 = MPI_Wtime()
     do ele_B=1,ele_count(positionsB) 
       ! H. Use the *OLD* libSuperMesh internal triangle intersector (using derived types as input)
       triB%v = ele_val(positionsB, ele_B)
@@ -347,7 +354,7 @@ subroutine benchmark_tri_intersector
       end do
       triangle_counters(8, index) = n_trisC
     end do
-    t2 = MPI_Wtime();
+    t2 = MPI_Wtime()
     dt_H_area_intersect_old = dt_H_area_intersect_old + ( t2 -t1 )
    end do
 
