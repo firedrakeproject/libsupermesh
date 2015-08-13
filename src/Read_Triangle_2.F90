@@ -9,7 +9,7 @@ module libsupermesh_read_triangle_2
 
   private
 
-  public :: read_triangle_files
+  public :: read_triangle_files, read_halo_files
 
 contains
   function free_unit()
@@ -39,7 +39,7 @@ contains
   !
   ! Expected format differs from that in the Triangle documentation, in that
   ! arbitrary dimensional nodal data is supported.
-  subroutine read_node(filename, dim, coords, attributes, boundary_markers)
+  subroutine read_node(filename, dim, coords, attributes, boundary_markers, nodes)
     character(len = *), intent(in) :: filename
     integer, intent(in) :: dim
     ! dim x nnodes
@@ -48,6 +48,8 @@ contains
     real, dimension(:, :), allocatable, optional, intent(out) :: attributes
     ! nbm x nnodes
     integer, dimension(:, :), allocatable, optional, intent(out) :: boundary_markers
+    ! number of nodes to read
+    integer, optional, intent(in) :: nodes
 
     integer :: i, ind, nnodes, ldim, nattrs, nbm, unit
     integer, dimension(:), allocatable :: boundary_marker
@@ -71,6 +73,7 @@ contains
       FLAbort("Invalid number of boundary markers")
     end if
 
+    if(present(nodes)) nnodes=nodes
     allocate(coords(dim, nnodes))
     if(present(attributes)) allocate(attributes(nattrs, nnodes))
     if(present(boundary_markers)) allocate(boundary_markers(nbm, nnodes))
@@ -118,9 +121,12 @@ contains
     real, dimension(:, :), allocatable, optional, intent(out) :: attributes
     integer, optional, intent(in) :: nnodes
 
-    integer :: i, ind, ncell_nodes, nelements, nattrs, unit
+    integer :: i, ind, ncell_nodes, nelements, nattrs, unit, my_elements
     integer, dimension(:), allocatable :: cell_nodes
     real, dimension(:), allocatable :: attribute
+
+    integer, dimension(:, :), allocatable :: enlist_temp
+    real, dimension(:, :), allocatable    :: attributes_temp
 
     unit = free_unit()
     open(unit = unit, file = trim(filename), status = "old", action = "read")
@@ -136,10 +142,26 @@ contains
       FLAbort("Invalid number of attributes")
     end if
 
-    allocate(enlist(ncell_nodes, nelements))
-    if(present(attributes)) allocate(attributes(nattrs, nelements))
+    if(present(nnodes)) then
+      allocate(enlist_temp(ncell_nodes,nnodes*10))
+    else
+      allocate(enlist_temp(ncell_nodes,nelements))
+    end if
+!    allocate(enlist(ncell_nodes, nelements))
+!    if(present(attributes)) allocate(attributes(nattrs, nelements))
+    if(present(attributes)) then
+      if(present(nnodes)) then
+        allocate(attributes_temp(nattrs,nnodes*10))
+      else
+        allocate(attributes_temp(nattrs,nelements))
+      end if
+    end if
+
+    enlist_temp = 0
+    if(present(attributes)) attributes_temp = 0.0
 
     allocate(cell_nodes(ncell_nodes), attribute(nattrs))
+    my_elements = 0
     do i = 1, nelements
       if(nattrs > 0) then
         read(unit, *) ind, cell_nodes, attribute
@@ -154,21 +176,69 @@ contains
       end if
       if(present(nnodes)) then
         if(any(cell_nodes > nnodes)) then
-          FLAbort("Invalid node")
+!!          FLAbort("Invalid node")
+           cycle
         end if
       end if
-      enlist(:, i) = cell_nodes
-      if(present(attributes) .and. nattrs > 0) attributes(:, i) = attribute
+      my_elements = my_elements + 1
+      enlist_temp(:, my_elements) = cell_nodes
+!  ToDo TODO todo FIX HACK
+      write (*,*) "read_ele: i:",i,", my_elements:",my_elements,", cell_nodes:", cell_nodes
+      if(present(attributes) .and. nattrs > 0) attributes_temp(:, my_elements) = attribute
     end do
     deallocate(cell_nodes, attribute)
+    
+    allocate(enlist(ncell_nodes, my_elements))
+    if(present(attributes)) allocate(attributes(nattrs, my_elements))
+    do i = 1, my_elements
+      enlist(:, i) = enlist_temp(:, i)
+      if(present(attributes) .and. nattrs > 0) attributes(:, i) = attributes_temp(:, i)
+    end do
+    
+    deallocate(enlist_temp)
+    if(present(attributes)) deallocate(attributes_temp)
+!  ToDo TODO todo FIX HACK
+    print "(a,I5,a,I5,a)", "read_ele: my_elements:", my_elements,", all elements:",nelements,"."
 
     close(unit)
 
   end subroutine read_ele
+  
+  subroutine read_halo(filename, nodes)
+    character(len = *), intent(in) :: filename
+    integer, intent(out) :: nodes
 
-  function read_triangle_files(filename, dim) result(positions)
+    character(len=1000) :: buffer
+    integer :: unit, ios = 0, line = 0, pos = 0
+  
+    unit = free_unit()
+    open(unit = unit, file = trim(filename), status = "old", action = "read")
+
+    do while (ios == 0)
+      read(unit, '(A)', iostat=ios) buffer
+      if (ios == 0) then
+        line = line + 1
+        pos = 0
+
+        ! Find the first instance of n_private_nodes=.
+        pos = index(buffer, 'n_private_nodes')
+
+        if ( pos .gt. 1 ) then
+          buffer = buffer(pos+1+16:)
+          pos = index(buffer, '"')
+          buffer = buffer(:pos-1)
+          read (buffer,'(I10)') nodes
+        end if
+
+      end if
+    end do
+
+  end subroutine read_halo
+
+  function read_triangle_files(filename, dim, nodes) result(positions)
     character(len = *), intent(in) :: filename
     integer, intent(in) :: dim
+    integer, optional, intent(in) :: nodes
     
     type(vector_field) :: positions
 
@@ -177,11 +247,15 @@ contains
     real, dimension(:, :), allocatable :: coords
     type(mesh_type) :: mesh
 
-    call read_node(trim(filename) // ".node", dim, coords)
+    call read_node(trim(filename) // ".node", dim, coords, nodes = nodes)
     nnodes = size(coords, 2)
+!  ToDo TODO todo FIX HACK
+    print "(a,I5)", "read_triangle_files: nnodes (cells):", nnodes
     call read_ele(trim(filename) // ".ele", dim, enlist, nnodes = nnodes)
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
+!  ToDo TODO todo FIX HACK
+    print "(a,I5)", "read_triangle_files: elements (tris):", nelements
 
     call allocate(mesh, dim, nnodes, nelements, loc)
     mesh%ndglno = reshape(enlist, (/loc * nelements/))
@@ -193,5 +267,12 @@ contains
     call deallocate(mesh)
     
   end function read_triangle_files
+  
+  function read_halo_files(filename) result(nodes)
+    character(len = *), intent(in) :: filename
+    integer :: nodes
+    
+    call read_halo(trim(filename) // ".halo", nodes)
+  end function read_halo_files
 
 end module libsupermesh_read_triangle_2

@@ -40,7 +40,7 @@ subroutine benchmark_tri_intersector
     &  dt_F_area_intersect_elements = 0.0, dt_G_area_intersect_elements = 0.0, &
     &  dt_H_area_intersect_old = 0.0
   real, dimension(:, :), allocatable :: posB, posA
-  type(mesh_type) :: intersection_meshLibWM, intersection_meshIntersect_Elements, new_mesh
+  type(mesh_type) :: intersection_meshLibWM, new_mesh
   REAL :: num
 
   integer :: index, ele, i, elementCount, n_count, nodeCount

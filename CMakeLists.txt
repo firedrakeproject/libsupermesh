@@ -197,15 +197,6 @@ elseif (lower_build_type MATCHES debug)
   set( SUBPROJECTS_debugging "YES")
 endif (lower_build_type MATCHES release)
 
-message ("MAIN CMAKE_C_FLAGS:${CMAKE_C_FLAGS}")
-message ("MAIN CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}")
-message ("MAIN CMAKE_Fortran_FLAGS:${CMAKE_Fortran_FLAGS}")
-
-message ("MAIN SUBPROJECTS_C_FLAGS:${SUBPROJECTS_C_FLAGS}")
-message ("MAIN SUBPROJECTS_CXX_FLAGS:${SUBPROJECTS_CXX_FLAGS}")
-message ("MAIN SUBPROJECTS_Fortran_FLAGS:${SUBPROJECTS_Fortran_FLAGS}")
-
-
 set( SUBPROJECTS_profilling      "")
 
 option (USE_PROFILE "Use profile flags" OFF)
@@ -229,6 +220,15 @@ if (USE_PROFPROFILE)
   SET( CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS} -lprofiler -g" )
   set( SUBPROJECTS_profilling      "-lprofiler -g" )
 endif (USE_PROFPROFILE)
+
+message ("MAIN CMAKE_C_FLAGS:${CMAKE_C_FLAGS}")
+message ("MAIN CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}")
+message ("MAIN CMAKE_Fortran_FLAGS:${CMAKE_Fortran_FLAGS}")
+
+message ("MAIN SUBPROJECTS_C_FLAGS:${SUBPROJECTS_C_FLAGS}")
+message ("MAIN SUBPROJECTS_CXX_FLAGS:${SUBPROJECTS_CXX_FLAGS}")
+message ("MAIN SUBPROJECTS_Fortran_FLAGS:${SUBPROJECTS_Fortran_FLAGS}")
+
 
 add_subdirectory(spatialindex-1.8.0)
 add_subdirectory(libjudy)
@@ -394,6 +394,7 @@ FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURC
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_periodic.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
+FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
 foreach (file ${FORTRAN_SRCFILES})
@@ -420,6 +421,7 @@ set (UNITTESTS
 set (BENCHMARKTESTS
   benchmark_tri_intersector
   benchmark_tet_intersector
+  benchmark_parallel
 )
 
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
@@ -432,6 +434,7 @@ add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES
 add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
+add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 #set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
 foreach (test ${UNITTESTS})
@@ -443,7 +446,7 @@ endforeach()
 #set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
 #set_property(TARGET benchmark_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tet_intersector_")
 
-add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector)
+add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel)
 
 foreach (test ${UNITTESTS})
  ADD_TEST("test_${test}" ${test})
@@ -457,6 +460,7 @@ add_custom_command(TARGET test_tri_intersector
   COMMAND mkdir -p data
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" ./
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" unittests/
+  COMMAND cp -r "${PROJECT_SOURCE_DIR}/tests/data/" ./
 #  COMMAND cd unittests && ./test_tri_intersector && cd ..
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 #  COMMENT "Running test_tri_intersector" VERBATIM
