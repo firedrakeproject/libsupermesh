@@ -3,7 +3,7 @@
 subroutine benchmark_tri_intersector
 
   use libsupermesh_construction
-  use libsupermesh_fields_dummy
+  use libsupermesh_fields
   use libsupermesh_read_triangle_2
   use libsupermesh_tri_intersection_module
   use libsupermesh_unittest_tools

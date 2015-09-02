@@ -27,6 +27,7 @@
 
 #ifndef DEBUG_H
 #define DEBUG_H
+#include "confdefs.h"
 
 #define NDEBUG
 #undef DDEBUG

@@ -4,8 +4,9 @@
 module libsupermesh_intersection_finder
 
   use iso_c_binding
-  use libsupermesh_fields_dummy
+  use libsupermesh_fields
   use libsupermesh_linked_lists
+  use libsupermesh_mpi_interfaces
 
   implicit none
 
@@ -55,9 +56,10 @@ module libsupermesh_intersection_finder
     end subroutine libsupermesh_cintersection_finder_reset
   end interface rtree_intersection_finder_reset
 
-  public :: rtree_intersection_finder_set_input, &
+  public :: rtree_intersection_finder_set_input, bbbox, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
-    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
+    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset, &
+    & libsupermesh_MPI_BARRIER
 
 !   interface
 !     function mpi_wtime()
@@ -173,6 +175,33 @@ contains
     end do
 
   end function bbox
+  
+  function bbbox(field) result(box)
+    type(vector_field)                         :: field
+    ! Xmin, Xmax, Ymin, Ymax
+    real, dimension(field%dim, 2)              :: box
+
+    real, dimension(field%dim, field%mesh%loc) :: ele_val_
+
+    integer :: i, j, k
+
+    ele_val_ = ele_val(field, 1)
+    box(1, 1) = ele_val_(1,1)
+    box(1, 2) = ele_val_(1,1)
+
+    do k = 1, ele_count(field)
+      ele_val_ = ele_val(field, k)
+      do i = 1, field%dim
+        box(i, 1) = min(ele_val_(i,1), box(i,1))
+        box(i, 2) = max(ele_val_(i,2), box(i,2))
+        do j = 2, field%mesh%loc
+          box(i, 1) = min(ele_val_(i,j), box(i,1))
+          box(i, 2) = max(ele_val_(i,j), box(i,2))
+        end do
+      end do
+    end do
+
+  end function bbbox
 
   pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
     ! 2 x dim
@@ -643,5 +672,12 @@ contains
     deallocate(lmap_ab)
 
   end subroutine brute_force_intersection_finder_lists
+  
+  subroutine libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    integer, intent(in)       :: MPI_COMM_WORLD
+    integer, intent(inout)    :: mpi_my_error
+    
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  end subroutine libsupermesh_MPI_BARRIER
 
 end module libsupermesh_intersection_finder

@@ -6,6 +6,10 @@ project (SUPERMESH C CXX Fortran)
 enable_language (Fortran)
 enable_testing ()
 
+if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+   message(SEND_ERROR "In-source builds are not allowed.")
+endif("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
 
 if(DEFINED ENV{ARCHER})
@@ -250,13 +254,33 @@ set (SuperMesh_VERSION_MINOR_CHANGE 1)
 # to the source code
 configure_file (
   "${PROJECT_SOURCE_DIR}/include/SuperMeshConfig.h.in"
-  "${PROJECT_BINARY_DIR}/SuperMeshConfig.h"
+  "${PROJECT_BINARY_DIR}/include/SuperMeshConfig.h"
   )
 
 configure_file (
   "${PROJECT_SOURCE_DIR}/config/SuperMesh.pc.in"
-  "${PROJECT_BINARY_DIR}/SuperMesh.pc"
+  "${PROJECT_BINARY_DIR}/include/SuperMesh.pc"
   )
+
+set (SuperMesh_HAVE_MPI 1)
+if (lower_build_type MATCHES debug)
+  set (SuperMesh_DEBUG 1)
+else ()
+  set (SuperMesh_DEBUG 0)
+endif (lower_build_type MATCHES debug)
+if (PETSC_FOUND)
+  set (SuperMesh_HAVE_PETSC 1)
+else ()
+  set (SuperMesh_HAVE_PETSC 0)
+endif (PETSC_FOUND)
+
+configure_file (
+  "${PROJECT_SOURCE_DIR}/include/confdefs.h.in"
+  "${PROJECT_BINARY_DIR}/include/confdefs.h"
+  )
+# add the binary tree/include to the search path for include files
+# so that we will find the files
+include_directories("${PROJECT_BINARY_DIR}/include")
 
 # should we use our own LIBRARY?
 option (USE_MYLIB 
@@ -392,9 +416,12 @@ FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/te
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_3d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_periodic.F90)
+FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_A_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_a.F90)
+FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_B_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_b.F90)
+FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel.F90)
+#FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
 foreach (file ${FORTRAN_SRCFILES})
@@ -416,12 +443,15 @@ set (UNITTESTS
   test_intersection_finder_completeness
   test_intersection_finder_completeness_3d
   test_intersection_finder_periodic
+  test_parallel_partition_a
+  test_parallel_partition_b
+  test_parallel_partition_ab
 )
 
 set (BENCHMARKTESTS
   benchmark_tri_intersector
   benchmark_tet_intersector
-  benchmark_parallel
+#  benchmark_parallel
 )
 
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
@@ -432,26 +462,27 @@ add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_T
 add_executable (test_intersection_finder_completeness ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES})
 add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES})
 add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES})
+add_executable (test_parallel_partition_a ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_A_FILES})
+add_executable (test_parallel_partition_b ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_B_FILES})
+add_executable (test_parallel_partition_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
-
-#set_property(SOURCE ${CPP_TEST_SOURCE_FILES} PROPERTY COMPILE_DEFINITIONS "TESTNAME=test_tri_intersector_")
-foreach (test ${UNITTESTS})
- SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}_")
-endforeach()
-foreach (benchmark ${BENCHMARKTESTS})
- SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_")
-endforeach()
-#set_property(TARGET benchmark_tri_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tri_intersector_")
-#set_property(TARGET benchmark_tet_intersector PROPERTY COMPILE_DEFINITIONS "TESTNAME=benchmark_tet_intersector_")
-
-add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel)
+#add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 foreach (test ${UNITTESTS})
- ADD_TEST("test_${test}" ${test})
+ SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}_;HAVE_MPI")
+ if (test MATCHES parallel)
+   ADD_TEST("test_${test}" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${test})
+ else()
+   ADD_TEST("test_${test}" ${test})
+ endif (test MATCHES parallel)
  SET_TESTS_PROPERTIES("test_${test}" PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
 endforeach()
+foreach (benchmark ${BENCHMARKTESTS})
+ SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_;HAVE_MPI")
+endforeach()
+
+add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector) # benchmark_parallel)
 
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD
@@ -477,7 +508,7 @@ add_custom_target(distclean
 
 if(UNIX AND NOT APPLE)
   target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
-#    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES} rt)
+
   foreach (test ${UNITTESTS})
     target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
   endforeach()
@@ -486,7 +517,7 @@ if(UNIX AND NOT APPLE)
   endforeach()
 else ()
   target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
-#    target_link_libraries(test_tri_intersector SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} ${PYTHON_LIBRARIES})
+
   foreach (test ${UNITTESTS})
     target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
   endforeach()
@@ -541,4 +572,5 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_linked_lists.mod"        DEST
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod"  DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection_module.mod"  DESTINATION include)
+# ToDo FIX: If PKG_CONFIG_PATH has more than one entry; the following line will fail!!
 install (FILES "${PROJECT_BINARY_DIR}/SuperMesh.pc"                         DESTINATION $ENV{PKG_CONFIG_PATH})

@@ -1,7 +1,7 @@
 subroutine test_intersection_finder_completeness
 
   use libsupermesh_intersection_finder
-  use libsupermesh_fields_dummy
+  use libsupermesh_fields
   use libsupermesh_read_triangle_2
   use libsupermesh_unittest_tools
   use libsupermesh_linked_lists

@@ -1,0 +1,8 @@
+#ifndef CONFDEFS_H
+#define CONFDEFS_H
+
+#define HAVE_MPI @SuperMesh_HAVE_MPI@
+#define NDEBUG @SuperMesh_DEBUG@
+#define HAVE_PETSC @SuperMesh_HAVE_PETSC@
+
+#endif

@@ -1,6 +1,6 @@
 #include "fdebug.h"
 
-module libsupermesh_fields_dummy
+module libsupermesh_fields
 
   use libsupermesh_fldebug
 
@@ -451,4 +451,4 @@ contains
     
   end function tetrahedron_volume
 
-end module libsupermesh_fields_dummy
+end module libsupermesh_fields

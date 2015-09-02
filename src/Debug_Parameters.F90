@@ -26,6 +26,8 @@
 !    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !    USA
 
+#include "confdefs.h"
+
 module libsupermesh_fldebug_parameters
   !!< Debug specific global parameters
 
