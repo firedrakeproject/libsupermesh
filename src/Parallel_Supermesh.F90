@@ -22,10 +22,11 @@ contains
         integer, intent(out) :: ndata
       end subroutine donor_ele_data
       
-      subroutine unpack_donor_ele_data(ele, data, ndata, ele_data, nele_data)
+      subroutine unpack_donor_ele_data(ele, proc, data, ndata, ele_data, nele_data)
         use iso_c_binding, only : c_ptr
         implicit none
         integer, intent(in) :: ele
+        integer, intent(in) :: proc
         type(c_ptr), intent(in) :: data
         integer, intent(in) :: ndata
         type(c_ptr), intent(out) :: ele_data
