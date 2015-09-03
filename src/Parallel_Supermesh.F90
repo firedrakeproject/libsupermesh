@@ -52,7 +52,7 @@ contains
         end interface
       end subroutine target_cell_data
 
-      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, proc_b, ele_data_a, ele_ndata_a, ele_data_b, ele_ndata_b)
+      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, ele_ndata_a, ele_data_b, ele_ndata_b)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x (loc_c x nelements_c)
@@ -60,7 +60,6 @@ contains
         integer, intent(in) :: ele_a
         integer, intent(in) :: proc_a
         integer, intent(in) :: ele_b
-        integer, intent(in) :: proc_b
         type(c_ptr), intent(in) :: ele_data_a
         integer, intent(in) :: ele_ndata_a
         type(c_ptr), intent(in) :: ele_data_b
