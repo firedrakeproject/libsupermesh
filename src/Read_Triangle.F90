@@ -1,6 +1,6 @@
 #include "fdebug.h"
 
-module libsupermesh_read_triangle_2
+module libsupermesh_read_triangle
 
   use libsupermesh_fields
   use libsupermesh_fldebug
@@ -492,4 +492,4 @@ call FLUSH()
     call read_halo(trim(filename) // ".halo", nnodes, nodes)
   end subroutine read_halo_files
 
-end module libsupermesh_read_triangle_2
+end module libsupermesh_read_triangle
