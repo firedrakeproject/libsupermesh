@@ -4,7 +4,7 @@ module libsupermesh_parallel_supermesh
 
 contains
 
-  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_ele_data, target_ele_data, unpack_target_ele_data, intersection_calculation)
+  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_ele_data, unpack_donor_ele_data, target_ele_data, unpack_target_ele_data, intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
