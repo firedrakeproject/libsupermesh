@@ -4,7 +4,7 @@ module libsupermesh_parallel_supermesh
 
 contains
 
-  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_cell_data, target_cell_data, intersection_calculation)
+  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_ele_data, target_ele_data, unpack_target_ele_data, intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
@@ -14,43 +14,41 @@ contains
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     interface
-      subroutine donor_cell_data(eles, data, ndata, cell_data)
+      subroutine donor_ele_data(eles, data, ndata)
         use iso_c_binding, only : c_ptr
         implicit none
         integer, dimension(:), intent(in) :: eles
         type(c_ptr), intent(out) :: data
         integer, intent(out) :: ndata
-        interface
-          subroutine cell_data(ele, data, ndata, ele_data, nele_data)
-            use iso_c_binding, only : c_ptr
-            implicit none
-            integer, intent(in) :: ele
-            type(c_ptr), intent(in) :: data
-            integer, intent(in) :: ndata
-            type(c_ptr), intent(out) :: ele_data
-            integer, intent(out) :: nele_data
-          end subroutine cell_data
-        end interface
-      end subroutine donor_cell_data
+      end subroutine donor_ele_data
       
-      subroutine target_cell_data(eles, data, ndata, cell_data)
+      subroutine unpack_donor_ele_data(ele, data, ndata, ele_data, nele_data)
+        use iso_c_binding, only : c_ptr
+        implicit none
+        integer, intent(in) :: ele
+        type(c_ptr), intent(in) :: data
+        integer, intent(in) :: ndata
+        type(c_ptr), intent(out) :: ele_data
+        integer, intent(out) :: nele_data
+      end subroutine unpack_donor_ele_data
+      
+      subroutine target_ele_data(eles, data, ndata)
         use iso_c_binding, only : c_ptr
         implicit none
         integer, dimension(:), intent(in) :: eles
         type(c_ptr), intent(out) :: data
         integer, intent(out) :: ndata
-        interface
-          subroutine cell_data(ele, data, ndata, ele_data, nele_data)
-            use iso_c_binding, only : c_ptr
-            implicit none
-            integer, intent(in) :: ele
-            type(c_ptr), intent(in) :: data
-            integer, intent(in) :: ndata
-            type(c_ptr), intent(out) :: ele_data
-            integer, intent(out) :: nele_data
-          end subroutine cell_data
-        end interface
-      end subroutine target_cell_data
+      end subroutine target_ele_data
+
+      subroutine unpack_target_ele_data(ele, data, ndata, ele_data, nele_data)
+        use iso_c_binding, only : c_ptr
+        implicit none
+        integer, intent(in) :: ele
+        type(c_ptr), intent(in) :: data
+        integer, intent(in) :: ndata
+        type(c_ptr), intent(out) :: ele_data
+        integer, intent(out) :: nele_data
+      end subroutine unpack_target_ele_data
 
       subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, ele_ndata_a, ele_data_b, ele_ndata_b)
         use iso_c_binding, only : c_ptr
