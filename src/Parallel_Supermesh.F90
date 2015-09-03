@@ -50,7 +50,7 @@ contains
         integer, intent(out) :: nele_data
       end subroutine unpack_target_ele_data
 
-      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, ele_ndata_a, ele_data_b, ele_ndata_b)
+      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, nele_data_a, ele_data_b, nele_data_b)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x loc_c x nelements_c
@@ -59,9 +59,9 @@ contains
         integer, intent(in) :: proc_a
         integer, intent(in) :: ele_b
         type(c_ptr), intent(in) :: ele_data_a
-        integer, intent(in) :: ele_ndata_a
+        integer, intent(in) :: nele_data_a
         type(c_ptr), intent(in) :: ele_data_b
-        integer, intent(in) :: ele_ndata_b
+        integer, intent(in) :: nele_data_b
       end subroutine intersection_calculation
     end interface
 
