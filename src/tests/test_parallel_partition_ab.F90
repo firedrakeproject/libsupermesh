@@ -3,7 +3,7 @@ subroutine test_parallel_partition_ab
   use libsupermesh_unittest_tools
   use libsupermesh_construction
   use libsupermesh_fields
-  use libsupermesh_read_triangle_2
+  use libsupermesh_read_triangle
   use libsupermesh_tri_intersection_module
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder

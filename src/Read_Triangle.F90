@@ -12,25 +12,6 @@ module libsupermesh_read_triangle_2
   public :: read_triangle_files, read_halo_files
 
 contains
-  function free_unit()
-    !!< Find a free unit number. Start from unit 10 in order to ensure that
-    !!< we skip any preconnected units which may not be correctly identified
-    !!< on some compilers.
-    integer :: free_unit
-
-    logical :: connected
-
-    do free_unit=10, 99
-
-       inquire(unit=free_unit, opened=connected)
-
-       if (.not.connected) return
-
-    end do
-
-    FLAbort("No free unit numbers avalable")
-
-  end function
 
   ! Read Triangle .node file, as described at:
   !   https://www.cs.cmu.edu/~quake/triangle.node.html
@@ -59,8 +40,7 @@ contains
     real, dimension(:), allocatable :: attribute
     logical                         :: found_match
 
-    unit = free_unit()
-    open(unit = unit, file = trim(filename), status = "old", action = "read")
+    open(newunit = unit, file = trim(filename), status = "old", action = "read")
 
     read(unit, *) nnodes_local, ldim, nattrs, nbm
     if(nnodes_local < 0) then
@@ -162,8 +142,7 @@ contains
     real, dimension(:, :), allocatable    :: attributes_temp
     logical, dimension(:), allocatable    :: found_match
 
-    unit = free_unit()
-    open(unit = unit, file = trim(filename), status = "old", action = "read")
+    open(newunit = unit, file = trim(filename), status = "old", action = "read")
 
     read(unit, *) nelements, ncell_nodes, nattrs
     if(nelements < 0) then
@@ -267,8 +246,7 @@ call FLUSH()
     ios = 0; line = 0; pos = 0; halo_data_process_pos = 0; halo_level_end_pos = -1;
     halo_data_process_end_pos = -1; halo_data_receive_pos = 0; count_i = 0; count_pos = 1;
     count_nwords = 0; temp_value = 0; my_node = 0; other_node = 0; i = 0
-    unit = free_unit()
-    open(unit = unit, file = trim(filename), status = "old", action = "read")
+    open(newunit = unit, file = trim(filename), status = "old", action = "read")
 
     do while (ios == 0)
       read(unit, '(A)', iostat=ios) buffer
