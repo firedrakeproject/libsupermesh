@@ -4,7 +4,7 @@ module libsupermesh_parallel_supermesh
 
 contains
 
-  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_ele_data, unpack_donor_ele_data, target_ele_data, unpack_target_ele_data, intersection_calculation)
+  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_ele_data, unpack_donor_ele_data, intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
@@ -31,26 +31,8 @@ contains
         type(c_ptr), intent(out) :: ele_data
         integer, intent(out) :: nele_data
       end subroutine unpack_donor_ele_data
-      
-      subroutine target_ele_data(eles, data, ndata)
-        use iso_c_binding, only : c_ptr
-        implicit none
-        integer, dimension(:), intent(in) :: eles
-        type(c_ptr), intent(out) :: data
-        integer, intent(out) :: ndata
-      end subroutine target_ele_data
 
-      subroutine unpack_target_ele_data(ele, data, ndata, ele_data, nele_data)
-        use iso_c_binding, only : c_ptr
-        implicit none
-        integer, intent(in) :: ele
-        type(c_ptr), intent(in) :: data
-        integer, intent(in) :: ndata
-        type(c_ptr), intent(out) :: ele_data
-        integer, intent(out) :: nele_data
-      end subroutine unpack_target_ele_data
-
-      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, nele_data_a, ele_data_b, nele_data_b)
+      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, nele_data_a)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x loc_c x nelements_c
@@ -60,8 +42,6 @@ contains
         integer, intent(in) :: ele_b
         type(c_ptr), intent(in) :: ele_data_a
         integer, intent(in) :: nele_data_a
-        type(c_ptr), intent(in) :: ele_data_b
-        integer, intent(in) :: nele_data_b
       end subroutine intersection_calculation
     end interface
 
@@ -71,7 +51,7 @@ contains
 
     ! 3. Pack non-culled mesh data for communication, calling user specified data functions
 
-    ! 4. Communicate mesh and mesh data
+    ! 4. Communicate donor mesh and mesh data
 
     ! 5. Supermesh and call user specified element unpack and calculation functions
     
