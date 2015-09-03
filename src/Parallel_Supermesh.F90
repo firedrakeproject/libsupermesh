@@ -4,13 +4,13 @@ module libsupermesh_parallel_supermesh
 
 contains
 
-  subroutine parallel_supermesh(coords_a, enlist_a, coords_b, enlist_b, donor_cell_data, target_cell_data, intersection_calculation)
+  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_cell_data, target_cell_data, intersection_calculation)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: coords_a
+    real, dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: coords_b
+    real, dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     interface
@@ -52,11 +52,11 @@ contains
         end interface
       end subroutine target_cell_data
 
-      subroutine intersection_calculation(coords_c, ele_a, proc_a, ele_b, proc_b, ele_data_a, ele_ndata_a, ele_data_b, ele_ndata_b)
+      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, proc_b, ele_data_a, ele_ndata_a, ele_data_b, ele_ndata_b)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x (loc_c x nelements_c)
-        real, dimension(:, :), intent(in) :: coords_c
+        real, dimension(:, :), intent(in) :: positions_c
         integer, intent(in) :: ele_a
         integer, intent(in) :: proc_a
         integer, intent(in) :: ele_b
