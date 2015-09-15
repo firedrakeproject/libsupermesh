@@ -55,7 +55,7 @@
 #define assert
 #endif
 
-namespace Fluidity{
+namespace LibSupermesh {
 
   enum HaloReadError{
     HALO_READ_SUCCESS = 0,
@@ -74,53 +74,25 @@ namespace Fluidity{
     * \return 0 on success, non-zero on failure
     */
   HaloReadError ReadHalos(const std::string& filename, int& process, int& nprocs, std::map<int, int>& npnodes, std::map<int, std::vector<std::vector<int> > >& send, std::map<int, std::vector<std::vector<int> > >& recv);
-
-  //* Write halo information.
-  /** Write to a halo file.
-    * \param filename Halo file name
-    * \param npnodes Number of private nodes, by tag
-    * \param send Sends, by tag and process
-    * \param recv Receives, by tag and process
-    * \return 0 on success, non-zero on failure
-    */
-  int WriteHalos(const std::string& filename, const unsigned int& process, const unsigned int& nprocs, const std::map<int, int>& npnodes, const std::map<int, std::vector<std::vector<int> > >& send, const std::map<int, std::vector<std::vector<int> > >& recv);
   
   struct HaloData{
       int process, nprocs;
       std::map<int, int> npnodes;
       std::map<int, std::vector<std::vector<int> > > send, recv;
   };
+  
+  extern HaloData* readHaloData;
 }
 
-extern Fluidity::HaloData* readHaloData;
-extern Fluidity::HaloData* writeHaloData;
-
 extern "C"{
-#define cHaloReaderReset F77_FUNC(chalo_reader_reset, CHALO_READER_RESET)
-  void cHaloReaderReset();
+  void cLibSuperMesh_halo_reader_reset();
   
-#define cHaloReaderSetInput F77_FUNC(chalo_reader_set_input, CHALO_READER_SET_INPUT)
-  int cHaloReaderSetInput(char* filename, int* filename_len, int* process, int* nprocs);
+  int cLibSuperMesh_halo_reader_set_input(char* filename, int* filename_len, int* process, int* nprocs);
 
-#define cHaloReaderQueryOutput F77_FUNC(chalo_reader_query_output, CHALO_READER_QUERY_OUTPUT)
-  void cHaloReaderQueryOutput(int* level, int* nprocs, int* nsends, int* nreceives);
+  void cLibSuperMesh_halo_reader_query_output(int* level, int* nprocs, int* nsends, int* nreceives);
 
-#define cHaloReaderGetOutput F77_FUNC(chalo_reader_get_output, CHALO_READER_GET_OUTPUT)
-  void cHaloReaderGetOutput(int* level, int* nprocs, int* nsends, int* nreceives,
+  void cLibSuperMesh_halo_reader_get_output(int* level, int* nprocs, int* nsends, int* nreceives,
     int* npnodes, int* send, int* recv);
-    
-#define cHaloWriterReset F77_FUNC(chalo_writer_reset, CHALO_WRITER_RESET)
-  void cHaloWriterReset();
-  
-#define cHaloWriterInitialise F77_FUNC(chalo_writer_initialise, CHALO_WRITER_INITIALISE)
-  void cHaloWriterInitialise(int* process, int* nprocs);
-  
-#define cHaloWriterSetInput F77_FUNC(chalo_writer_set_input, CHALO_WRITER_SET_INPUT)
-  void cHaloWriterSetInput(int* level, int* nprocs, int* nsends, int* nreceives,
-    int* npnodes, int* send, int* recv);
-  
-#define cHaloWriterWrite F77_FUNC(chalo_writer_write, CHALO_WRITER_WRITE)
-  int cHaloWriterWrite(char* filename, int* filename_len);
 }
 
 #endif

@@ -32,6 +32,9 @@
 #define NDEBUG
 #undef DDEBUG
 
+#undef NDEBUG
+#define DDEBUG
+
 #ifndef __FILE__
 #error __FILE__ does not work
 #endif

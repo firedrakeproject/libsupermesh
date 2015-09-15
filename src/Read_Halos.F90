@@ -1,6 +1,6 @@
 #include "fdebug.h"
 
-module read_halos
+module libsupermesh_read_halos
 
   use iso_c_binding
 
@@ -50,6 +50,8 @@ module read_halos
   end type
   
   type halo_type
+    integer :: level
+    integer :: process
     integer :: nprocs
     integer :: npnodes
     type(int_array), dimension(:), pointer :: send
@@ -67,33 +69,37 @@ contains
     type(halo_type), intent(out) :: halo
     integer, optional, intent(in) :: level
     
-    integer(kind = c_int) :: errorCount, llevel
+    integer(kind = c_int) :: errorCount
     integer(kind = c_int), dimension(:), allocatable :: nsends, nreceives, send, recv
-    integer :: i, ierr, index, process
+    integer :: i, ierr, index
     
-    call MPI_Comm_rank(MPI_COMM_WORLD, process, ierr)
+    call MPI_Comm_rank(MPI_COMM_WORLD, halo%process, ierr)
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to determine process number")
     end if
-    errorCount = halo_reader_set_input(trim(filename), len_trim(filename), process, halo%nprocs)
+    call MPI_Comm_size(MPI_COMM_WORLD, halo%nprocs, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to determine number of processes")
+    end if
+    errorCount = halo_reader_set_input(trim(filename), len_trim(filename), halo%process, halo%nprocs)
     if(errorCount /= 0) then
       FLExit("Unable to read halo file '" // trim(filename) // "'")
     end if
     
     if(present(level)) then
-      llevel = level
+      halo%level = level
     else
-      llevel = 2
+      halo%level = 2
     end if
     allocate(nsends(halo%nprocs), nreceives(halo%nprocs))
-    call halo_reader_query_output(llevel, halo%nprocs, nsends, nreceives)
+    call halo_reader_query_output(halo%level, halo%nprocs, nsends, nreceives)
     allocate(halo%send(halo%nprocs), halo%recv(halo%nprocs))
     do i = 1, halo%nprocs
       allocate(halo%send(i)%val(nsends(i)), halo%recv(i)%val(nreceives(i)))
     end do
     
     allocate(send(sum(nsends)), recv(sum(nreceives)))
-    call halo_reader_get_output(llevel, halo%nprocs, nsends, nreceives, halo%npnodes, send, recv)
+    call halo_reader_get_output(halo%level, halo%nprocs, nsends, nreceives, halo%npnodes, send, recv)
     index = 1
     do i = 1, halo%nprocs
       halo%send(i)%val = send(index:index + nsends(i) - 1)
@@ -120,4 +126,4 @@ contains
     
   end subroutine deallocate_halo
   
-end module read_halos
+end module libsupermesh_read_halos
