@@ -111,6 +111,7 @@ contains
       index = index + nreceives(i)
     end do
     deallocate(nsends, nreceives, send, recv)
+    call halo_reader_reset()
     
   end subroutine read_halo
   
