@@ -11,7 +11,7 @@ subroutine test_parallel_partition_a
   use libsupermesh_halo_ownership
   
   implicit none
-  
+
 #include <finclude/petsc.h90>
 
   integer :: i, nnodes, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
@@ -110,6 +110,7 @@ subroutine test_parallel_partition_a
       call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_owner)
       parallel_ele_A = count(ele_owner == mpi_my_id)
       call deallocate(halo)
+
       filenameB = trim(adjustl("data/square_0_1_"))//trim(adjustl(mpi_my_id_character))
       positionsB = read_triangle_files("data/square_0_1", dim)
       parallel_ele_B = ele_count(positionsB) 

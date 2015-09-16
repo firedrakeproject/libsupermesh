@@ -7,9 +7,11 @@ subroutine test_parallel_partition_b
   use libsupermesh_tri_intersection_module
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
-  
+  use libsupermesh_read_halos
+  use libsupermesh_halo_ownership
+
   implicit none
-  
+
 #include <finclude/petsc.h90>
 
   integer :: i, nnodes, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
@@ -25,9 +27,11 @@ subroutine test_parallel_partition_b
   integer, parameter :: dim = 2, loc = 3
   character(len=9999) :: filenameA, filenameB
   integer, parameter :: mpi_my_root = 0
-  integer, dimension(:), allocatable :: nodes
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
   logical :: fail = .FALSE.
+
+  integer, dimension(:), allocatable :: ele_owner
+  type(halo_type) :: halo
 
 !  call MPI_INIT ( mpi_my_error ); CHKERRQ(mpi_my_error)
 
@@ -98,11 +102,14 @@ subroutine test_parallel_partition_b
       parallel_ele_A = ele_count(positionsA)
 
 
-      nnodes = 0
       filenameB = trim(adjustl("data/square_0_1_"))//trim(adjustl(mpi_my_id_character))
-      call read_halo_files(trim(filenameB), nnodes, nodes)
-      positionsB = read_triangle_files(trim(filenameB), dim, nnodes = nnodes, nodes = nodes)
-      parallel_ele_B = ele_count(positionsB) 
+      positionsB = read_triangle_files(trim(filenameB), dim)
+
+      call read_halo("data/square_0_1", halo, level = 2)
+      allocate(ele_owner(ele_count(positionsB)))
+      call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_owner)
+      parallel_ele_B = count(ele_owner == mpi_my_id)
+      call deallocate(halo)
 
       mesh_parallel = mpi_wtime() - t_0
 
@@ -120,6 +127,7 @@ subroutine test_parallel_partition_b
         tri_A%v = ele_val(positionsA, ele_A)
         do ele_B=1,ele_count(positionsB) 
           ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
+          if(ele_owner(ele_B) /= mpi_my_id) cycle
           tri_B%v = ele_val(positionsB, ele_B)
 
           call intersect_tris(tri_A, tri_B, trisC, n_trisC)
