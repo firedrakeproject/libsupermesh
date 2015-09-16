@@ -20,7 +20,7 @@
 #include "Wm4Intersector.h"
 #include "Wm4Tetrahedron3.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 template <class Real>

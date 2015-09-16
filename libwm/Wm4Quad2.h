@@ -19,7 +19,7 @@
 #include "Wm4FoundationLIB.h"
 #include "Wm4Vector2.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 template <class Real>

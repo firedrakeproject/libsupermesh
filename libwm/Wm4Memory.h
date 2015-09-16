@@ -31,7 +31,7 @@
 #include "Wm4FoundationLIB.h"
 #include "Wm4Platforms.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 class WM4_FOUNDATION_ITEM Memory

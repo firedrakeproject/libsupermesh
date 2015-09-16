@@ -15,7 +15,7 @@
 
 #include "Wm4FoundationPCH.h"
 #include "Wm4Command.h"
-using namespace Wm4;
+using namespace LibSupermesh_Wm4;
 
 char Command::ms_acOptionNotFound[] = "option not found";
 char Command::ms_acArgumentRequired[] = "option requires an argument";

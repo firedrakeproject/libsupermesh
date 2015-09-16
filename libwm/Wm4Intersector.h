@@ -21,7 +21,7 @@
 #include "Wm4Vector2.h"
 #include "Wm4Vector3.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 template <class Real, class TVector>

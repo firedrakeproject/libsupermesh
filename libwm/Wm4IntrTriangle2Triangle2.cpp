@@ -21,7 +21,7 @@ inline int imod(int i, int j)
   return (i % j) < 0 ? (i % j) + (j < 0 ? -j : j) : i % j;
 }
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 //----------------------------------------------------------------------------
 template <class Real>

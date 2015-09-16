@@ -25,7 +25,7 @@
 //   TYPE::TYPE (const TYPE&);
 //   TYPE& TYPE::operator= (const TYPE&)
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 template <int DIMENSION, class TYPE>

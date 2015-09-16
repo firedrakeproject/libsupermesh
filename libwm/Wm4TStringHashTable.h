@@ -25,7 +25,7 @@
 
 #include "Wm4System.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 template <class TVALUE>

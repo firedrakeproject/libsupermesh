@@ -16,7 +16,7 @@
 #include "Wm4FoundationPCH.h"
 #include "Wm4Math.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 template<> const float Math<float>::EPSILON = FLT_EPSILON;
 template<> const float Math<float>::ZERO_TOLERANCE = 1e-06f;

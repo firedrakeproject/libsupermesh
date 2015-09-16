@@ -15,7 +15,7 @@
 
 #include "Wm4FoundationPCH.h"
 #include "Wm4Vector2.h"
-using namespace Wm4;
+using namespace LibSupermesh_Wm4;
 
 template<> const Vector2<float> Vector2<float>::ZERO(0.0f,0.0f);
 template<> const Vector2<float> Vector2<float>::UNIT_X(1.0f,0.0f);

@@ -222,12 +222,12 @@ namespace LibSupermesh
       virtual void QueryOutput(int& nnodes, int& nelms) const; 
       virtual void GetOutput(double*& positions, int*& enlist) const;
       
-      typedef Wm4::IntrTriangle2Triangle2<GEOM_REAL> IntrTriangle2Triangle2;
-      typedef Wm4::Triangle2<GEOM_REAL> Triangle2;
-      typedef Wm4::Vector2<GEOM_REAL> Vector2;
-      typedef Wm4::IntrQuad2Quad2<GEOM_REAL> IntrQuad2Quad2;
-      typedef Wm4::Quad2<GEOM_REAL> Quad2;
-      typedef Wm4::Intersector<GEOM_REAL, Vector2> Intersector2d;
+      typedef LibSupermesh_Wm4::IntrTriangle2Triangle2<GEOM_REAL> IntrTriangle2Triangle2;
+      typedef LibSupermesh_Wm4::Triangle2<GEOM_REAL> Triangle2;
+      typedef LibSupermesh_Wm4::Vector2<GEOM_REAL> Vector2;
+      typedef LibSupermesh_Wm4::IntrQuad2Quad2<GEOM_REAL> IntrQuad2Quad2;
+      typedef LibSupermesh_Wm4::Quad2<GEOM_REAL> Quad2;
+      typedef LibSupermesh_Wm4::Intersector<GEOM_REAL, Vector2> Intersector2d;
 
     protected:
        Intersector2d* intersection;
@@ -276,9 +276,9 @@ namespace LibSupermesh
       virtual void QueryOutput(int& nnodes, int& nelms) const; 
       virtual void GetOutput(double*& positions, int*& enlist) const;
       
-      typedef Wm4::IntrTetrahedron3Tetrahedron3<GEOM_REAL> IntrTetrahedron3Tetrahedron3;
-      typedef Wm4::Tetrahedron3<GEOM_REAL> Tetrahedron3;
-      typedef Wm4::Vector3<GEOM_REAL> Vector3;
+      typedef LibSupermesh_Wm4::IntrTetrahedron3Tetrahedron3<GEOM_REAL> IntrTetrahedron3Tetrahedron3;
+      typedef LibSupermesh_Wm4::Tetrahedron3<GEOM_REAL> Tetrahedron3;
+      typedef LibSupermesh_Wm4::Vector3<GEOM_REAL> Vector3;
     protected:
       IntrTetrahedron3Tetrahedron3* intersection;
       std::vector<GEOM_REAL>* volumes;

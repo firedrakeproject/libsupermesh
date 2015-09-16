@@ -21,7 +21,7 @@
 #include "Wm4Intersector1.h"
 #include "Wm4Triangle2.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 template <class Real>

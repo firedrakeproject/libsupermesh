@@ -535,7 +535,7 @@ void ElementIntersector2D::Intersect()
       vec[i] = (GEOM_REAL) positionsA[4 + i];
     Vector2 pointA3(vec);
     
-    Wm4::Triangle2<GEOM_REAL> triA = Triangle2(pointA1, pointA2, pointA3);
+    LibSupermesh_Wm4::Triangle2<GEOM_REAL> triA = Triangle2(pointA1, pointA2, pointA3);
     triA.Orient();
   
     for (int i = 0; i < 2; i++)
@@ -550,10 +550,10 @@ void ElementIntersector2D::Intersect()
       vec[i] = (GEOM_REAL) positionsB[4 + i];
     Vector2 pointB3(vec);
     
-    Wm4::Triangle2<GEOM_REAL> triB = Triangle2(pointB1, pointB2, pointB3);
+    LibSupermesh_Wm4::Triangle2<GEOM_REAL> triB = Triangle2(pointB1, pointB2, pointB3);
     triB.Orient();
 
-    intersection = new Wm4::IntrTriangle2Triangle2<GEOM_REAL>(triA, triB);
+    intersection = new LibSupermesh_Wm4::IntrTriangle2Triangle2<GEOM_REAL>(triA, triB);
     intersection->Find();
   }
   else if (loc == 4)

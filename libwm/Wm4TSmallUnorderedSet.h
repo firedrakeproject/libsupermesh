@@ -30,7 +30,7 @@
 //   T::T (const T&);
 //   T& T::operator= (const T&)
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 
 template <class T>

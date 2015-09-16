@@ -16,7 +16,7 @@
 #include "Wm4FoundationPCH.h"
 #include "Wm4Intersector.h"
 
-namespace Wm4
+namespace LibSupermesh_Wm4
 {
 //----------------------------------------------------------------------------
 template <class Real, class TVector>

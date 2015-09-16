@@ -15,7 +15,7 @@
 
 #include "Wm4FoundationPCH.h"
 #include "Wm4System.h"
-using namespace Wm4;
+using namespace LibSupermesh_Wm4;
 
 // support for Load
 #include <sys/stat.h>
