@@ -31,14 +31,14 @@
 #include "Index.h"
 #include "Leaf.h"
 
-using namespace SpatialIndex;
-using namespace SpatialIndex::MVRTree;
+using namespace LibSupermesh_SpatialIndex;
+using namespace LibSupermesh_SpatialIndex::MVRTree;
 
 Leaf::~Leaf()
 {
 }
 
-Leaf::Leaf(SpatialIndex::MVRTree::MVRTree* pTree, id_type id): Node(pTree, id, 0, pTree->m_leafCapacity)
+Leaf::Leaf(LibSupermesh_SpatialIndex::MVRTree::MVRTree* pTree, id_type id): Node(pTree, id, 0, pTree->m_leafCapacity)
 {
 }
 
@@ -80,7 +80,7 @@ void Leaf::split(
 			rstarSplit(dataLength, pData, mbr, id, g1, g2, mbr2, id2, bInsertMbr2);
 			break;
 		default:
-			throw Tools::NotSupportedException("Leaf::split: Tree variant not supported.");
+			throw LibSupermesh_Tools::NotSupportedException("Leaf::split: Tree variant not supported.");
 	}
 
 	pLeft = m_pTree->m_leafPool.acquire();

@@ -28,7 +28,7 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	namespace StorageManager
 	{
@@ -52,7 +52,7 @@ namespace SpatialIndex
             void (*deleteByteArrayCallback)( const void* context, const id_type page, int* errorCode );
         };
 
-        class CustomStorageManager : public SpatialIndex::IStorageManager
+        class CustomStorageManager : public LibSupermesh_SpatialIndex::IStorageManager
         {
         public:
             // I'd like this to be an enum, but casting between enums and ints is not nice
@@ -60,7 +60,7 @@ namespace SpatialIndex
             static const int InvalidPageError = 1;
             static const int IllegalStateError = 2;
 
-	        CustomStorageManager(Tools::PropertySet&);
+	        CustomStorageManager(LibSupermesh_Tools::PropertySet&);
 
 	        virtual ~CustomStorageManager();
 
@@ -76,7 +76,7 @@ namespace SpatialIndex
         }; // CustomStorageManager
 
         // factory function
-        IStorageManager* returnCustomStorageManager(Tools::PropertySet& in);
+        IStorageManager* returnCustomStorageManager(LibSupermesh_Tools::PropertySet& in);
     }
 }
 

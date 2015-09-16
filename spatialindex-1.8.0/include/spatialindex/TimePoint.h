@@ -27,15 +27,15 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	class SIDX_DLL TimePoint : public Point, public ITimeShape
 	{
 	public:
 		TimePoint();
-		TimePoint(const double* pCoords, const Tools::IInterval& ti, uint32_t dimension);
+		TimePoint(const double* pCoords, const LibSupermesh_Tools::IInterval& ti, uint32_t dimension);
 		TimePoint(const double* pCoords, double tStart, double tEnd, uint32_t dimension);
-		TimePoint(const Point& p, const Tools::IInterval& ti);
+		TimePoint(const Point& p, const LibSupermesh_Tools::IInterval& ti);
 		TimePoint(const Point& p, double tStart, double tEnd);
 		TimePoint(const TimePoint& p);
 		virtual ~TimePoint();
@@ -59,27 +59,27 @@ namespace SpatialIndex
 		// ITimeShape interface
 		//
 		virtual bool intersectsShapeInTime(const ITimeShape& in) const;
-		virtual bool intersectsShapeInTime(const Tools::IInterval& ivI, const ITimeShape& in) const;
+		virtual bool intersectsShapeInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& in) const;
 		virtual bool containsShapeInTime(const ITimeShape& in) const;
-		virtual bool containsShapeInTime(const Tools::IInterval& ivI, const ITimeShape& in) const;
+		virtual bool containsShapeInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& in) const;
 		virtual bool touchesShapeInTime(const ITimeShape& in) const;
-		virtual bool touchesShapeInTime(const Tools::IInterval& ivI, const ITimeShape& in) const;
+		virtual bool touchesShapeInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& in) const;
 		virtual double getAreaInTime() const;
-		virtual double getAreaInTime(const Tools::IInterval& ivI) const;
+		virtual double getAreaInTime(const LibSupermesh_Tools::IInterval& ivI) const;
 		virtual double getIntersectingAreaInTime(const ITimeShape& r) const;
-		virtual double getIntersectingAreaInTime(const Tools::IInterval& ivI, const ITimeShape& r) const;
+		virtual double getIntersectingAreaInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& r) const;
 
 		//
 		// IInterval interface
 		//
-		virtual Tools::IInterval& operator=(const Tools::IInterval&);
+		virtual LibSupermesh_Tools::IInterval& operator=(const LibSupermesh_Tools::IInterval&);
 		virtual double getLowerBound() const;
 		virtual double getUpperBound() const;
 		virtual void setBounds(double, double);
-		virtual bool intersectsInterval(const Tools::IInterval& ti) const;
-		virtual bool intersectsInterval(Tools::IntervalType t, const double start, const double end) const;
-		virtual bool containsInterval(const Tools::IInterval& ti) const;
-		virtual Tools::IntervalType getIntervalType() const;
+		virtual bool intersectsInterval(const LibSupermesh_Tools::IInterval& ti) const;
+		virtual bool intersectsInterval(LibSupermesh_Tools::IntervalType t, const double start, const double end) const;
+		virtual bool containsInterval(const LibSupermesh_Tools::IInterval& ti) const;
+		virtual LibSupermesh_Tools::IntervalType getIntervalType() const;
 
 		virtual void makeInfinite(uint32_t dimension);
 		virtual void makeDimension(uint32_t dimension);

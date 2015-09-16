@@ -29,10 +29,10 @@
 
 #include "Node.h"
 
-namespace Tools
+namespace LibSupermesh_Tools
 {
-	using namespace SpatialIndex;
-	template<> class PointerPool<SpatialIndex::TPRTree::Node>
+	using namespace LibSupermesh_SpatialIndex;
+	template<> class PointerPool<LibSupermesh_SpatialIndex::TPRTree::Node>
 	{
 	public:
 		explicit PointerPool(uint32_t capacity) : m_capacity(capacity)

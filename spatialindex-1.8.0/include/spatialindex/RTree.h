@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	namespace RTree
 	{
@@ -55,7 +55,7 @@ namespace SpatialIndex
 			IntersectionQuery = 0x2
 		};
 
-		class SIDX_DLL Data : public IData, public Tools::ISerializable
+		class SIDX_DLL Data : public IData, public LibSupermesh_Tools::ISerializable
 		{
 		public:
 			Data(uint32_t len, byte* pData, Region& r, id_type id);
@@ -75,7 +75,7 @@ namespace SpatialIndex
 			uint32_t m_dataLength;
 		}; // Data
 
-		SIDX_DLL ISpatialIndex* returnRTree(IStorageManager& ind, Tools::PropertySet& in);
+		SIDX_DLL ISpatialIndex* returnRTree(IStorageManager& ind, LibSupermesh_Tools::PropertySet& in);
 		SIDX_DLL ISpatialIndex* createNewRTree(
 			IStorageManager& sm,
 			double fillFactor,
@@ -100,7 +100,7 @@ namespace SpatialIndex
 			BulkLoadMethod m,
 			IDataStream& stream,
 			IStorageManager& sm,
-			Tools::PropertySet& ps,
+			LibSupermesh_Tools::PropertySet& ps,
 			id_type& indexIdentifier
 		);
 		SIDX_DLL ISpatialIndex* loadRTree(IStorageManager& in, id_type indexIdentifier);

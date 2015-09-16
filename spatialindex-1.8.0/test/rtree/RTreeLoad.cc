@@ -32,7 +32,7 @@
 // include library header file.
 #include <spatialindex/SpatialIndex.h>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 #define INSERT 1
 #define DELETE 0
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
 		// Create a new, empty, RTree with dimensionality 2, minimum load 70%, using "file" as
 		// the StorageManager and the RSTAR splitting policy.
 		id_type indexIdentifier;
-		ISpatialIndex* tree = RTree::createNewRTree(*file, 0.7, atoi(argv[3]), atoi(argv[3]), 2, SpatialIndex::RTree::RV_RSTAR, indexIdentifier);
+		ISpatialIndex* tree = RTree::createNewRTree(*file, 0.7, atoi(argv[3]), atoi(argv[3]), 2, LibSupermesh_SpatialIndex::RTree::RV_RSTAR, indexIdentifier);
 
 		size_t count = 0;
 		id_type id;
@@ -203,7 +203,7 @@ int main(int argc, char** argv)
 			// delete the buffer first, then the storage manager
 			// (otherwise the the buffer will fail trying to write the dirty entries).
 	}
-	catch (Tools::Exception& e)
+	catch (LibSupermesh_Tools::Exception& e)
 	{
 		std::cerr << "******ERROR******" << std::endl;
 		std::string s = e.what();

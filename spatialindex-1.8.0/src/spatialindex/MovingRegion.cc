@@ -36,7 +36,7 @@
 
 #include <spatialindex/SpatialIndex.h>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 MovingRegion::MovingRegion()
 	: TimeRegion(), m_pVLow(0), m_pVHigh(0)
@@ -65,7 +65,7 @@ MovingRegion::MovingRegion(
 	const IInterval& ivT)
 {
 	if (low.m_dimension != high.m_dimension || low.m_dimension != vlow.m_dimension || vlow.m_dimension != vhigh.m_dimension)
-		throw Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
+		throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
 
 	initialize(
 		low.m_pCoords, high.m_pCoords, vlow.m_pCoords, vhigh.m_pCoords,
@@ -78,7 +78,7 @@ MovingRegion::MovingRegion(
 	double tStart, double tEnd)
 {
 	if (low.m_dimension != high.m_dimension || low.m_dimension != vlow.m_dimension || vlow.m_dimension != vhigh.m_dimension)
-		throw Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
+		throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
 
 	initialize(
 		low.m_pCoords, high.m_pCoords, vlow.m_pCoords, vhigh.m_pCoords,
@@ -89,7 +89,7 @@ MovingRegion::MovingRegion(
 	const Region& mbr, const Region& vbr, const IInterval& ivT)
 {
 	if (mbr.m_dimension != vbr.m_dimension)
-		throw Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
+		throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
 
 	initialize(mbr.m_pLow, mbr.m_pHigh, vbr.m_pLow, vbr.m_pHigh, ivT.getLowerBound(), ivT.getUpperBound(), mbr.m_dimension);
 }
@@ -98,7 +98,7 @@ MovingRegion::MovingRegion(
 	const Region& mbr, const Region& vbr, double tStart, double tEnd)
 {
 	if (mbr.m_dimension != vbr.m_dimension)
-		throw Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
+		throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
 
 	initialize(mbr.m_pLow, mbr.m_pHigh, vbr.m_pLow, vbr.m_pHigh, tStart, tEnd, mbr.m_dimension);
 }
@@ -111,9 +111,9 @@ MovingRegion::MovingRegion(const MovingPoint& low, const MovingPoint& high)
 	m_pLow = 0; m_pHigh = 0;
 	m_pVLow = 0; m_pVHigh = 0;
 
-	if (m_endTime <= m_startTime) throw Tools::IllegalArgumentException("MovingRegion: Cannot support degenerate time intervals.");
+	if (m_endTime <= m_startTime) throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: Cannot support degenerate time intervals.");
 
-	if (low.m_dimension != high.m_dimension) throw Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
+	if (low.m_dimension != high.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: arguments have different number of dimensions.");
 
 	try
 	{
@@ -180,12 +180,12 @@ void MovingRegion::initialize(
 	m_pLow = 0; m_pHigh = 0;
 	m_pVLow = 0; m_pVHigh = 0;
 
-	if (m_endTime <= m_startTime) throw Tools::IllegalArgumentException("MovingRegion: Cannot support degenerate time intervals.");
+	if (m_endTime <= m_startTime) throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: Cannot support degenerate time intervals.");
 
 #ifndef NDEBUG
 	for (uint32_t cDim = 0; cDim < m_dimension; ++cDim)
 	{
-		if (pLow[cDim] > pHigh[cDim]) throw Tools::IllegalArgumentException("MovingRegion: Low point has larger coordinates than High point.");
+		if (pLow[cDim] > pHigh[cDim]) throw LibSupermesh_Tools::IllegalArgumentException("MovingRegion: Low point has larger coordinates than High point.");
 	}
 #endif
 
@@ -273,7 +273,7 @@ bool MovingRegion::isShrinking() const
 // assumes that the region is not moving before and after start and end time.
 double MovingRegion::getLow(uint32_t d, double t) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	if (t > m_endTime) return m_pLow[d] + m_pVLow[d] * (m_endTime - m_startTime);
 	else if (t < m_startTime) return m_pLow[d];
@@ -283,7 +283,7 @@ double MovingRegion::getLow(uint32_t d, double t) const
 // assumes that the region is not moving before and after start and end time.
 double MovingRegion::getHigh(uint32_t d, double t) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	if (t > m_endTime) return m_pHigh[d] + m_pVHigh[d] * (m_endTime - m_startTime);
 	else if (t < m_startTime) return m_pHigh[d];
@@ -293,7 +293,7 @@ double MovingRegion::getHigh(uint32_t d, double t) const
 // assuming that the region kept moving.
 double MovingRegion::getExtrapolatedLow(uint32_t d, double t) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	return m_pLow[d] + m_pVLow[d] * (t - m_startTime);
 }
@@ -301,28 +301,28 @@ double MovingRegion::getExtrapolatedLow(uint32_t d, double t) const
 // assuming that the region kept moving.
 double MovingRegion::getExtrapolatedHigh(uint32_t d, double t) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	return m_pHigh[d] + m_pVHigh[d] * (t - m_startTime);
 }
 
 double MovingRegion::getVLow(uint32_t d) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	return m_pVLow[d];
 }
 
 double MovingRegion::getVHigh(uint32_t d) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	return m_pVHigh[d];
 }
 
 bool MovingRegion::intersectsRegionInTime(const MovingRegion& r) const
 {
-	Tools::Interval ivOut;
+	LibSupermesh_Tools::Interval ivOut;
 	return intersectsRegionInTime(r, ivOut);
 }
 
@@ -345,7 +345,7 @@ bool MovingRegion::intersectsRegionInTime(const MovingRegion& r, IInterval& ivOu
 // 3. either the upper or lower boundary of one region intersects a boundary of the other.
 bool MovingRegion::intersectsRegionInTime(const IInterval& ivPeriod, const MovingRegion& r, IInterval& ivOut) const
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("intersectsRegionInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("intersectsRegionInTime: MovingRegions have different number of dimensions.");
 
 	assert(m_startTime < m_endTime);
 	assert(r.m_startTime < r.m_endTime);
@@ -443,7 +443,7 @@ bool MovingRegion::containsRegionInTime(const MovingRegion& r) const
 // finds if during the intersecting time-interval of r and ivPeriod, r is completely contained in *this.
 bool MovingRegion::containsRegionInTime(const IInterval& ivPeriod, const MovingRegion& r) const
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("containsRegionInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("containsRegionInTime: MovingRegions have different number of dimensions.");
 
 	assert(isShrinking() == false && r.isShrinking() == false);
 
@@ -492,7 +492,7 @@ bool MovingRegion::containsRegionInTime(const IInterval& ivPeriod, const MovingR
 
 bool MovingRegion::containsRegionAfterTime(double t, const MovingRegion& r) const
 {
-	Tools::Interval ivT(t, r.m_endTime);
+	LibSupermesh_Tools::Interval ivT(t, r.m_endTime);
 	return containsRegionInTime(ivT, r);
 }
 
@@ -551,7 +551,7 @@ double MovingRegion::getProjectedSurfaceAreaInTime(const IInterval& ivI) const
 	}
 	else
 	{
-		throw Tools::IllegalStateException("getProjectedSurfaceAreaInTime: unsupported dimensionality.");
+		throw LibSupermesh_Tools::IllegalStateException("getProjectedSurfaceAreaInTime: unsupported dimensionality.");
 	}
 }
 
@@ -563,7 +563,7 @@ double MovingRegion::getCenterDistanceInTime(const MovingRegion& r) const
 
 double MovingRegion::getCenterDistanceInTime(const IInterval& ivI, const MovingRegion& r) const
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("getCenterDistanceInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("getCenterDistanceInTime: MovingRegions have different number of dimensions.");
 
 	assert(m_startTime < m_endTime);
 	assert(r.m_startTime < r.m_endTime);
@@ -629,7 +629,7 @@ double MovingRegion::getCenterDistanceInTime(const IInterval& ivI, const MovingR
 // does not work with degenerate time-intervals.
 bool MovingRegion::intersectsRegionAtTime(double t, const MovingRegion& r) const
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("intersectsRegionAtTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("intersectsRegionAtTime: MovingRegions have different number of dimensions.");
 
 	// do they contain the time instant?
 	if (! (m_startTime <= t && t < m_endTime && r.m_startTime <= t && t < r.m_endTime)) return false;
@@ -645,7 +645,7 @@ bool MovingRegion::intersectsRegionAtTime(double t, const MovingRegion& r) const
 // does not work with degenerate time-intervals.
 bool MovingRegion::containsRegionAtTime(double t, const MovingRegion& r) const
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("containsRegionAtTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("containsRegionAtTime: MovingRegions have different number of dimensions.");
 
 	// do they contain the time instant?
 	if (! (m_startTime <= t && t < m_endTime && r.m_startTime <= t && t < r.m_endTime)) return false;
@@ -659,7 +659,7 @@ bool MovingRegion::containsRegionAtTime(double t, const MovingRegion& r) const
 
 bool MovingRegion::intersectsPointInTime(const MovingPoint& p) const
 {
-	Tools::Interval ivOut;
+	LibSupermesh_Tools::Interval ivOut;
 	return intersectsPointInTime(p, ivOut);
 }
 
@@ -677,7 +677,7 @@ bool MovingRegion::intersectsPointInTime(const MovingPoint& p, IInterval& ivOut)
 // in that case the point trajectory intersects the region area!
 bool MovingRegion::intersectsPointInTime(const IInterval& ivPeriod, const MovingPoint& p, IInterval& ivOut) const
 {
-	if (m_dimension != p.m_dimension) throw Tools::IllegalArgumentException("intersectsPointInTime: MovingPoint has different number of dimensions.");
+	if (m_dimension != p.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("intersectsPointInTime: MovingPoint has different number of dimensions.");
 
 	assert(m_startTime < m_endTime);
 	assert(p.m_startTime < p.m_endTime);
@@ -762,7 +762,7 @@ bool MovingRegion::containsPointInTime(const MovingPoint& p) const
 // finds if during the intersecting time-interval of p and ivPeriod, p is completely contained in *this.
 bool MovingRegion::containsPointInTime(const IInterval& ivPeriod, const MovingPoint& p) const
 {
-	if (m_dimension != p.m_dimension) throw Tools::IllegalArgumentException("containsPointInTime: MovingPoint has different number of dimensions.");
+	if (m_dimension != p.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("containsPointInTime: MovingPoint has different number of dimensions.");
 
 	assert(isShrinking() == false);
 
@@ -807,7 +807,7 @@ bool MovingRegion::containsPointInTime(const IInterval& ivPeriod, const MovingPo
 
 void MovingRegion::combineRegionInTime(const MovingRegion& r)
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("combineRegionInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("combineRegionInTime: MovingRegions have different number of dimensions.");
 
 	for (uint32_t cDim = 0; cDim < m_dimension; ++cDim)
 	{
@@ -825,7 +825,7 @@ void MovingRegion::combineRegionInTime(const MovingRegion& r)
 
 void MovingRegion::getCombinedRegionInTime(MovingRegion& out, const MovingRegion& in) const
 {
-	if (m_dimension != in.m_dimension) throw Tools::IllegalArgumentException("getCombinedProjectedRegionInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != in.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("getCombinedProjectedRegionInTime: MovingRegions have different number of dimensions.");
 
 	out = *this;
 	out.combineRegionInTime(in);
@@ -833,7 +833,7 @@ void MovingRegion::getCombinedRegionInTime(MovingRegion& out, const MovingRegion
 
 void MovingRegion::combineRegionAfterTime(double t, const MovingRegion& r)
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("combineRegionInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("combineRegionInTime: MovingRegions have different number of dimensions.");
 
 	for (uint32_t cDim = 0; cDim < m_dimension; ++cDim)
 	{
@@ -852,7 +852,7 @@ void MovingRegion::combineRegionAfterTime(double t, const MovingRegion& r)
 
 void MovingRegion::getCombinedRegionAfterTime(double t, MovingRegion& out, const MovingRegion& in) const
 {
-	if (m_dimension != in.m_dimension) throw Tools::IllegalArgumentException("getCombinedProjectedRegionInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != in.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("getCombinedProjectedRegionInTime: MovingRegions have different number of dimensions.");
 
 	out = *this;
 	out.combineRegionAfterTime(t, in);
@@ -865,7 +865,7 @@ double MovingRegion::getIntersectingAreaInTime(const MovingRegion& r) const
 
 double MovingRegion::getIntersectingAreaInTime(const IInterval& ivI, const MovingRegion& r) const
 {
-	if (m_dimension != r.m_dimension) throw Tools::IllegalArgumentException("getIntersectingAreaInTime: MovingRegions have different number of dimensions.");
+	if (m_dimension != r.m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("getIntersectingAreaInTime: MovingRegions have different number of dimensions.");
 
 	assert(m_startTime < m_endTime);
 	assert(r.m_startTime < r.m_endTime);
@@ -887,8 +887,8 @@ double MovingRegion::getIntersectingAreaInTime(const IInterval& ivI, const Movin
 	assert(tmax < std::numeric_limits<double>::max());
 	assert(tmin > -std::numeric_limits<double>::max());
 
-	Tools::Interval ivIn(tmin, tmax);
-	Tools::Interval ivOut(ivIn);
+	LibSupermesh_Tools::Interval ivIn(tmin, tmax);
+	LibSupermesh_Tools::Interval ivOut(ivIn);
 
 	if (! intersectsRegionInTime(ivIn, r, ivOut)) return 0.0;
 
@@ -993,7 +993,7 @@ double MovingRegion::getIntersectingAreaInTime(const IInterval& ivI, const Movin
 #endif
 
 		// needed in case two consecutive points have the same intersection time.
-		if (c.m_t > tmin) area += x.getAreaInTime(Tools::Interval(tmin, c.m_t));
+		if (c.m_t > tmin) area += x.getAreaInTime(LibSupermesh_Tools::Interval(tmin, c.m_t));
 
 		if (c.m_boundary == 0)
 		{
@@ -1010,7 +1010,7 @@ double MovingRegion::getIntersectingAreaInTime(const IInterval& ivI, const Movin
    }
 
    // ... and the last piece
-   if (tmax > tmin) area += x.getAreaInTime(Tools::Interval(tmin, tmax));
+   if (tmax > tmin) area += x.getAreaInTime(LibSupermesh_Tools::Interval(tmin, tmax));
 
    return area;
 }
@@ -1150,7 +1150,7 @@ double MovingRegion::getAreaInTime(const IInterval& ivI) const
 	}
 	else
 	{
-		throw Tools::NotSupportedException("getAreaInTime: unsupported dimensionality.");
+		throw LibSupermesh_Tools::NotSupportedException("getAreaInTime: unsupported dimensionality.");
 	}
 }
 
@@ -1164,7 +1164,7 @@ double MovingRegion::getIntersectingAreaInTime(const IInterval& ivI, const ITime
 	const MovingRegion* pr = dynamic_cast<const MovingRegion*>(&in);
 	if (pr != 0) return getIntersectingAreaInTime(*pr);
 
-	throw Tools::IllegalStateException("getIntersectingAreaInTime: Not implemented yet!");
+	throw LibSupermesh_Tools::IllegalStateException("getIntersectingAreaInTime: Not implemented yet!");
 }
 
 void MovingRegion::makeInfinite(uint32_t dimension)
@@ -1201,7 +1201,7 @@ void MovingRegion::makeDimension(uint32_t dimension)
 	}
 }
 
-std::ostream& SpatialIndex::operator<<(std::ostream& os, const MovingRegion& r)
+std::ostream& LibSupermesh_SpatialIndex::operator<<(std::ostream& os, const MovingRegion& r)
 {
 	uint32_t i;
 

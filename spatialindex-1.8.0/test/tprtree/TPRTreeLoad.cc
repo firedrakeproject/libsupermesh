@@ -34,7 +34,7 @@
 
 #include <limits>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 using namespace std;
 
 #define INSERT 1
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
 		// Create a new, empty, TPRTree with dimensionality 2, minimum load 70%, horizon 20 time instants, using "file" as
 		// the StorageManager and the TPRSTAR splitting policy.
 		id_type indexIdentifier;
-		ISpatialIndex* tree = TPRTree::createNewTPRTree(*file, 0.7, atoi(argv[3]), atoi(argv[3]), 2, SpatialIndex::TPRTree::TPRV_RSTAR, 20, indexIdentifier);
+		ISpatialIndex* tree = TPRTree::createNewTPRTree(*file, 0.7, atoi(argv[3]), atoi(argv[3]), 2, LibSupermesh_SpatialIndex::TPRTree::TPRV_RSTAR, 20, indexIdentifier);
 
 		size_t count = 0;
 		id_type id;
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 				phigh[0] = ax; phigh[1] = ay;
 				pvlow[0] = vx; pvlow[1] = vy;
 				pvhigh[0] = vx; pvhigh[1] = vy;
-				Tools::Interval ivT(ct, std::numeric_limits<double>::max());
+				LibSupermesh_Tools::Interval ivT(ct, std::numeric_limits<double>::max());
 
 				MovingRegion r = MovingRegion(plow, phigh, pvlow, pvhigh, ivT, 2);
 
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 				phigh[0] = ax; phigh[1] = ay;
 				pvlow[0] = vx; pvlow[1] = vy;
 				pvhigh[0] = vx; pvhigh[1] = vy;
-				Tools::Interval ivT(rt, ct);
+				LibSupermesh_Tools::Interval ivT(rt, ct);
 
 				MovingRegion r = MovingRegion(plow, phigh, pvlow, pvhigh, ivT, 2);
 
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
 				pvlow[0] = 0.0; pvlow[1] = 0.0;
 				pvhigh[0] = 0.0; pvhigh[1] = 0.0;
 
-				Tools::Interval ivT(ct, rt);
+				LibSupermesh_Tools::Interval ivT(ct, rt);
 
 				MovingRegion r = MovingRegion(plow, phigh, pvlow, pvhigh, ivT, 2);
 				MyVisitor vis;
@@ -186,7 +186,7 @@ int main(int argc, char** argv)
 			// delete the buffer first, then the storage manager
 			// (otherwise the the buffer will fail trying to write the dirty entries).
 	}
-	catch (Tools::Exception& e)
+	catch (LibSupermesh_Tools::Exception& e)
 	{
 		cerr << "******ERROR******" << endl;
 		std::string s = e.what();

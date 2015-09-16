@@ -30,7 +30,7 @@
 
 #include <spatialindex/SpatialIndex.h>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 TimePoint::TimePoint()
 	: Point(), m_startTime(-std::numeric_limits<double>::max()), m_endTime(std::numeric_limits<double>::max())
@@ -158,12 +158,12 @@ bool TimePoint::intersectsShapeInTime(const ITimeShape& in) const
 	const TimeRegion* pr = dynamic_cast<const TimeRegion*>(&in);
 	if (pr != 0) return pr->containsPointInTime(*this);
 
-	throw Tools::IllegalStateException("intersectsShapeInTime: Not implemented yet!");
+	throw LibSupermesh_Tools::IllegalStateException("intersectsShapeInTime: Not implemented yet!");
 }
 
 bool TimePoint::intersectsShapeInTime(const IInterval& ivI, const ITimeShape& in) const
 {
-	throw Tools::IllegalStateException("intersectsShapeInTime: Not implemented yet!");
+	throw LibSupermesh_Tools::IllegalStateException("intersectsShapeInTime: Not implemented yet!");
 }
 
 bool TimePoint::containsShapeInTime(const ITimeShape& in) const
@@ -178,12 +178,12 @@ bool TimePoint::containsShapeInTime(const IInterval& ivI, const ITimeShape& in) 
 
 bool TimePoint::touchesShapeInTime(const ITimeShape& in) const
 {
-	throw Tools::IllegalStateException("touchesShapeInTime: Not implemented yet!");
+	throw LibSupermesh_Tools::IllegalStateException("touchesShapeInTime: Not implemented yet!");
 }
 
 bool TimePoint::touchesShapeInTime(const IInterval& ivI, const ITimeShape& in) const
 {
-	throw Tools::IllegalStateException("touchesShapeInTime: Not implemented yet!");
+	throw LibSupermesh_Tools::IllegalStateException("touchesShapeInTime: Not implemented yet!");
 }
 
 double TimePoint::getAreaInTime() const
@@ -209,7 +209,7 @@ double TimePoint::getIntersectingAreaInTime(const IInterval& ivI, const ITimeSha
 //
 // IInterval interface
 //
-Tools::IInterval& TimePoint::operator=(const Tools::IInterval& i)
+LibSupermesh_Tools::IInterval& TimePoint::operator=(const LibSupermesh_Tools::IInterval& i)
 {
 	if (this != &i)
 	{
@@ -243,7 +243,7 @@ bool TimePoint::intersectsInterval(const IInterval& ti) const
 	return intersectsInterval(ti.getIntervalType(), ti.getLowerBound(), ti.getUpperBound());
 }
 
-bool TimePoint::intersectsInterval(Tools::IntervalType t, const double start, const double end) const
+bool TimePoint::intersectsInterval(LibSupermesh_Tools::IntervalType t, const double start, const double end) const
 {
 	//if (m_startTime != start &&
 	//		(m_startTime >= end || m_endTime <= start)) return false;
@@ -258,9 +258,9 @@ bool TimePoint::containsInterval(const IInterval& ti) const
 	return false;
 }
 
-Tools::IntervalType TimePoint::getIntervalType() const
+LibSupermesh_Tools::IntervalType TimePoint::getIntervalType() const
 {
-	return Tools::IT_RIGHTOPEN;
+	return LibSupermesh_Tools::IT_RIGHTOPEN;
 }
 
 void TimePoint::makeInfinite(uint32_t dimension)
@@ -288,7 +288,7 @@ void TimePoint::makeDimension(uint32_t dimension)
 	}
 }
 
-std::ostream& SpatialIndex::operator<<(std::ostream& os, const TimePoint& pt)
+std::ostream& LibSupermesh_SpatialIndex::operator<<(std::ostream& os, const TimePoint& pt)
 {
 	uint32_t i;
 

@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	namespace RTree
 	{
@@ -43,8 +43,8 @@ namespace SpatialIndex
 				
 				bool operator<(const Record& r) const;
 
-				void storeToFile(Tools::TemporaryFile& f);
-				void loadFromFile(Tools::TemporaryFile& f);
+				void storeToFile(LibSupermesh_Tools::TemporaryFile& f);
+				void loadFromFile(LibSupermesh_Tools::TemporaryFile& f);
 
 				struct SortAscending : public std::binary_function<Record* const, Record* const, bool>
 				{
@@ -95,8 +95,8 @@ namespace SpatialIndex
 			bool m_bInsertionPhase;
 			uint32_t m_u32PageSize;
 			uint32_t m_u32BufferPages;
-			Tools::SmartPointer<Tools::TemporaryFile> m_sortedFile;
-			std::list<Tools::SmartPointer<Tools::TemporaryFile> > m_runs;
+			LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile> m_sortedFile;
+			std::list<LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile> > m_runs;
 			std::vector<Record*> m_buffer;
 			uint64_t m_u64TotalEntries;
 			uint32_t m_stI;
@@ -117,12 +117,12 @@ namespace SpatialIndex
 		protected:
 			void createLevel(
 				RTree* pTree,
-				Tools::SmartPointer<ExternalSorter> es,
+				LibSupermesh_Tools::SmartPointer<ExternalSorter> es,
 				uint32_t dimension,
 				uint32_t indexSize,
 				uint32_t leafSize,
 				uint32_t level,
-				Tools::SmartPointer<ExternalSorter> es2,
+				LibSupermesh_Tools::SmartPointer<ExternalSorter> es2,
 				uint32_t pageSize,
 				uint32_t numberOfPages
 			);

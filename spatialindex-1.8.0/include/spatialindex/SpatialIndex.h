@@ -33,7 +33,7 @@
 #define M_PI_2 1.57079632679489661922
 #endif
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	class Point;
 	class Region;
@@ -48,7 +48,7 @@ namespace SpatialIndex
 		CT_NODEWRITE
 	};
 
-	class SIDX_DLL InvalidPageException : public Tools::Exception
+	class SIDX_DLL InvalidPageException : public LibSupermesh_Tools::Exception
 	{
 	public:
 		InvalidPageException(id_type id);
@@ -63,7 +63,7 @@ namespace SpatialIndex
 	// Interfaces
 	//
 
-	class SIDX_DLL IShape : public Tools::ISerializable
+	class SIDX_DLL IShape : public LibSupermesh_Tools::ISerializable
 	{
 	public:
 		virtual bool intersectsShape(const IShape& in) const = 0;
@@ -77,19 +77,19 @@ namespace SpatialIndex
 		virtual ~IShape() {}
 	}; // IShape
 
-	class SIDX_DLL ITimeShape : public Tools::IInterval
+	class SIDX_DLL ITimeShape : public LibSupermesh_Tools::IInterval
 	{
 	public:
 		virtual bool intersectsShapeInTime(const ITimeShape& in) const = 0;
-		virtual bool intersectsShapeInTime(const Tools::IInterval& ivI, const ITimeShape& in) const = 0;
+		virtual bool intersectsShapeInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& in) const = 0;
 		virtual bool containsShapeInTime(const ITimeShape& in) const = 0;
-		virtual bool containsShapeInTime(const Tools::IInterval& ivI, const ITimeShape& in) const = 0;
+		virtual bool containsShapeInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& in) const = 0;
 		virtual bool touchesShapeInTime(const ITimeShape& in) const = 0;
-		virtual bool touchesShapeInTime(const Tools::IInterval& ivI, const ITimeShape& in) const = 0;
+		virtual bool touchesShapeInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& in) const = 0;
 		virtual double getAreaInTime() const = 0;
-		virtual double getAreaInTime(const Tools::IInterval& ivI) const = 0;
+		virtual double getAreaInTime(const LibSupermesh_Tools::IInterval& ivI) const = 0;
 		virtual double getIntersectingAreaInTime(const ITimeShape& r) const = 0;
-		virtual double getIntersectingAreaInTime(const Tools::IInterval& ivI, const ITimeShape& r) const = 0;
+		virtual double getIntersectingAreaInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& r) const = 0;
 		virtual ~ITimeShape() {}
 	}; // ITimeShape
 
@@ -101,7 +101,7 @@ namespace SpatialIndex
 		virtual ~IEvolvingShape() {}
 	}; // IEvolvingShape
 
-	class SIDX_DLL IEntry : public Tools::IObject
+	class SIDX_DLL IEntry : public LibSupermesh_Tools::IObject
 	{
 	public:
 		virtual id_type getIdentifier() const = 0;
@@ -109,7 +109,7 @@ namespace SpatialIndex
 		virtual ~IEntry() {}
 	}; // IEntry
 
-	class SIDX_DLL INode : public IEntry, public Tools::ISerializable
+	class SIDX_DLL INode : public IEntry, public LibSupermesh_Tools::ISerializable
 	{
 	public:
 		virtual uint32_t getChildrenCount() const = 0;
@@ -129,7 +129,7 @@ namespace SpatialIndex
 		virtual ~IData() {}
 	}; // IData
 
-	class SIDX_DLL IDataStream : public Tools::IObjectStream
+	class SIDX_DLL IDataStream : public LibSupermesh_Tools::IObjectStream
 	{
 	public:
 		virtual IData* getNext() = 0;
@@ -198,7 +198,7 @@ namespace SpatialIndex
 		virtual void nearestNeighborQuery(uint32_t k, const IShape& query, IVisitor& v) = 0;
 		virtual void selfJoinQuery(const IShape& s, IVisitor& v) = 0;
 		virtual void queryStrategy(IQueryStrategy& qs) = 0;
-		virtual void getIndexProperties(Tools::PropertySet& out) const = 0;
+		virtual void getIndexProperties(LibSupermesh_Tools::PropertySet& out) const = 0;
 		virtual void addCommand(ICommand* in, CommandType ct) = 0;
 		virtual bool isIndexValid() = 0;
 		virtual void getStatistics(IStatistics** out) const = 0;
@@ -222,14 +222,14 @@ namespace SpatialIndex
 			virtual ~IBuffer() {}
 		}; // IBuffer
 
-		SIDX_DLL  IStorageManager* returnMemoryStorageManager(Tools::PropertySet& in);
+		SIDX_DLL  IStorageManager* returnMemoryStorageManager(LibSupermesh_Tools::PropertySet& in);
 		SIDX_DLL  IStorageManager* createNewMemoryStorageManager();
 
-		SIDX_DLL  IStorageManager* returnDiskStorageManager(Tools::PropertySet& in);
+		SIDX_DLL  IStorageManager* returnDiskStorageManager(LibSupermesh_Tools::PropertySet& in);
 		SIDX_DLL  IStorageManager* createNewDiskStorageManager(std::string& baseName, uint32_t pageSize);
 		SIDX_DLL  IStorageManager* loadDiskStorageManager(std::string& baseName);
 
-		SIDX_DLL  IBuffer* returnRandomEvictionsBuffer(IStorageManager& ind, Tools::PropertySet& in);
+		SIDX_DLL  IBuffer* returnRandomEvictionsBuffer(IStorageManager& ind, LibSupermesh_Tools::PropertySet& in);
 		SIDX_DLL  IBuffer* createNewRandomEvictionsBuffer(IStorageManager& in, uint32_t capacity, bool bWriteThrough);
 	}
 

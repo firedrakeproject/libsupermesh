@@ -28,28 +28,28 @@
 
 #include <spatialindex/capi/sidx_impl.h>
 
-using namespace SpatialIndex;
-using namespace SpatialIndex::StorageManager;
+using namespace LibSupermesh_SpatialIndex;
+using namespace LibSupermesh_SpatialIndex::StorageManager;
 
 
-IStorageManager* SpatialIndex::StorageManager::returnCustomStorageManager(Tools::PropertySet& ps)
+IStorageManager* LibSupermesh_SpatialIndex::StorageManager::returnCustomStorageManager(LibSupermesh_Tools::PropertySet& ps)
 {
 	IStorageManager* sm = new CustomStorageManager(ps);
 	return sm;
 }
 
-CustomStorageManager::CustomStorageManager(Tools::PropertySet& ps)
+CustomStorageManager::CustomStorageManager(LibSupermesh_Tools::PropertySet& ps)
 {
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 	var = ps.getProperty("CustomStorageCallbacks");
 
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_PVOID)
-			throw Tools::IllegalArgumentException("CustomStorageManager: Property CustomStorageCallbacks must be Tools::VT_PVOID");
+		if (var.m_varType != LibSupermesh_Tools::VT_PVOID)
+			throw LibSupermesh_Tools::IllegalArgumentException("CustomStorageManager: Property CustomStorageCallbacks must be Tools::VT_PVOID");
 
         if (!var.m_val.pvVal)
-			throw Tools::IllegalArgumentException("CustomStorageManager: Property CustomStorageCallbacks must not be 0.");
+			throw LibSupermesh_Tools::IllegalArgumentException("CustomStorageManager: Property CustomStorageCallbacks must not be 0.");
 
         // we already checked for validity in IndexProperty_SetCustomStorageCallbacks
         CustomStorageManagerCallbacks* callbackArray = static_cast<CustomStorageManagerCallbacks*>(var.m_val.pvVal);
@@ -108,10 +108,10 @@ inline void CustomStorageManager::processErrorCode(int errorCode, const id_type 
     break;
 
     case IllegalStateError:
-        throw Tools::IllegalStateException( "CustomStorageManager: Error in user implementation." );
+        throw LibSupermesh_Tools::IllegalStateException( "CustomStorageManager: Error in user implementation." );
     break;
 
     default:
-        throw Tools::IllegalStateException( "CustomStorageManager: Unknown error." );
+        throw LibSupermesh_Tools::IllegalStateException( "CustomStorageManager: Unknown error." );
     }
 }

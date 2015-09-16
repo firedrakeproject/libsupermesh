@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	class SIDX_DLL MovingRegion : public TimeRegion, public IEvolvingShape
 	{
@@ -44,7 +44,7 @@ namespace SpatialIndex
 		MovingRegion(
 			const double* pLow, const double* pHigh,
 			const double* pVLow, const double* pVHigh,
-			const Tools::IInterval& ti, uint32_t dimension);
+			const LibSupermesh_Tools::IInterval& ti, uint32_t dimension);
 		MovingRegion(
 			const double* pLow, const double* pHigh,
 			const double* pVLow, const double* pVHigh,
@@ -52,12 +52,12 @@ namespace SpatialIndex
 		MovingRegion(
 			const Point& low, const Point& high,
 			const Point& vlow, const Point& vhigh,
-			const Tools::IInterval& ti);
+			const LibSupermesh_Tools::IInterval& ti);
 		MovingRegion(
 			const Point& low, const Point& high,
 			const Point& vlow, const Point& vhigh,
 			double tStart, double tEnd);
-		MovingRegion(const Region& mbr, const Region& vbr, const Tools::IInterval& ivI);
+		MovingRegion(const Region& mbr, const Region& vbr, const LibSupermesh_Tools::IInterval& ivI);
 		MovingRegion(const Region& mbr, const Region& vbr, double tStart, double tEnd);
 		MovingRegion(const MovingPoint& low, const MovingPoint& high);
 		MovingRegion(const MovingRegion& in);
@@ -76,26 +76,26 @@ namespace SpatialIndex
 		virtual double getVHigh(uint32_t index) const;
 
 		virtual bool intersectsRegionInTime(const MovingRegion& r) const;
-		virtual bool intersectsRegionInTime(const MovingRegion& r, Tools::IInterval& out) const;
-		virtual bool intersectsRegionInTime(const Tools::IInterval& ivI, const MovingRegion& r, Tools::IInterval& ret) const;
+		virtual bool intersectsRegionInTime(const MovingRegion& r, LibSupermesh_Tools::IInterval& out) const;
+		virtual bool intersectsRegionInTime(const LibSupermesh_Tools::IInterval& ivI, const MovingRegion& r, LibSupermesh_Tools::IInterval& ret) const;
 		virtual bool containsRegionInTime(const MovingRegion& r) const;
-		virtual bool containsRegionInTime(const Tools::IInterval& ivI, const MovingRegion& r) const;
+		virtual bool containsRegionInTime(const LibSupermesh_Tools::IInterval& ivI, const MovingRegion& r) const;
 		virtual bool containsRegionAfterTime(double t, const MovingRegion& r) const;
 
 		virtual double getProjectedSurfaceAreaInTime() const;
-		virtual double getProjectedSurfaceAreaInTime(const Tools::IInterval& ivI) const;
+		virtual double getProjectedSurfaceAreaInTime(const LibSupermesh_Tools::IInterval& ivI) const;
 
 		virtual double getCenterDistanceInTime(const MovingRegion& r) const;
-		virtual double getCenterDistanceInTime(const Tools::IInterval& ivI, const MovingRegion& r) const;
+		virtual double getCenterDistanceInTime(const LibSupermesh_Tools::IInterval& ivI, const MovingRegion& r) const;
 
 		virtual bool intersectsRegionAtTime(double t, const MovingRegion& r) const;
 		virtual bool containsRegionAtTime(double t, const MovingRegion& r) const;
 
 		virtual bool intersectsPointInTime(const MovingPoint& p) const;
-		virtual bool intersectsPointInTime(const MovingPoint& p, Tools::IInterval& out) const;
-		virtual bool intersectsPointInTime(const Tools::IInterval& ivI, const MovingPoint& p, Tools::IInterval& out) const;
+		virtual bool intersectsPointInTime(const MovingPoint& p, LibSupermesh_Tools::IInterval& out) const;
+		virtual bool intersectsPointInTime(const LibSupermesh_Tools::IInterval& ivI, const MovingPoint& p, LibSupermesh_Tools::IInterval& out) const;
 		virtual bool containsPointInTime(const MovingPoint& p) const;
-		virtual bool containsPointInTime(const Tools::IInterval& ivI, const MovingPoint& p) const;
+		virtual bool containsPointInTime(const LibSupermesh_Tools::IInterval& ivI, const MovingPoint& p) const;
 
 		//virtual bool intersectsPointAtTime(double t, const MovingRegion& in) const;
 		//virtual bool containsPointAtTime(double t, const MovingRegion& in) const;
@@ -106,7 +106,7 @@ namespace SpatialIndex
 		virtual void getCombinedRegionAfterTime(double t, MovingRegion& out, const MovingRegion& in) const;
 
 		virtual double getIntersectingAreaInTime(const MovingRegion& r) const;
-		virtual double getIntersectingAreaInTime(const Tools::IInterval& ivI, const MovingRegion& r) const;
+		virtual double getIntersectingAreaInTime(const LibSupermesh_Tools::IInterval& ivI, const MovingRegion& r) const;
 
 		//
 		// IObject interface
@@ -130,9 +130,9 @@ namespace SpatialIndex
 		// ITimeShape interface
 		//
 		virtual double getAreaInTime() const;
-		virtual double getAreaInTime(const Tools::IInterval& ivI) const;
+		virtual double getAreaInTime(const LibSupermesh_Tools::IInterval& ivI) const;
 		virtual double getIntersectingAreaInTime(const ITimeShape& r) const;
-		virtual double getIntersectingAreaInTime(const Tools::IInterval& ivI, const ITimeShape& r) const;
+		virtual double getIntersectingAreaInTime(const LibSupermesh_Tools::IInterval& ivI, const ITimeShape& r) const;
 
 		virtual void makeInfinite(uint32_t dimension);
 		virtual void makeDimension(uint32_t dimension);
@@ -165,6 +165,6 @@ namespace SpatialIndex
 		friend SIDX_DLL std::ostream& operator<<(std::ostream& os, const MovingRegion& r);
 	}; // MovingRegion
 
-	typedef Tools::PoolPointer<MovingRegion> MovingRegionPtr;
+	typedef LibSupermesh_Tools::PoolPointer<MovingRegion> MovingRegionPtr;
 	SIDX_DLL std::ostream& operator<<(std::ostream& os, const MovingRegion& r);
 }

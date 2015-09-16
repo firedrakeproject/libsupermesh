@@ -30,7 +30,7 @@
 // include library header file.
 #include <spatialindex/SpatialIndex.h>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 #define INSERT 1
 #define DELETE 0
@@ -44,7 +44,7 @@ public:
 		m_fin.open(inputFile.c_str());
 
 		if (! m_fin)
-			throw Tools::IllegalArgumentException("Input file not found.");
+			throw LibSupermesh_Tools::IllegalArgumentException("Input file not found.");
 
 		readNextEntry();
 	}
@@ -71,7 +71,7 @@ public:
 
 	virtual uint32_t size()
 	{
-		throw Tools::NotSupportedException("Operation not supported.");
+		throw LibSupermesh_Tools::NotSupportedException("Operation not supported.");
 	}
 
 	virtual void rewind()
@@ -97,7 +97,7 @@ public:
 		if (m_fin.good())
 		{
 			if (op != INSERT)
-				throw Tools::IllegalArgumentException(
+				throw LibSupermesh_Tools::IllegalArgumentException(
 					"The data input should contain insertions only."
 				);
 
@@ -140,7 +140,7 @@ int main(int argc, char** argv)
 		// the StorageManager and the RSTAR splitting policy.
 		id_type indexIdentifier;
 		ISpatialIndex* tree = RTree::createAndBulkLoadNewRTree(
-			RTree::BLM_STR, stream, *file, utilization, atoi(argv[3]), atoi(argv[3]), 2, SpatialIndex::RTree::RV_RSTAR, indexIdentifier);
+			RTree::BLM_STR, stream, *file, utilization, atoi(argv[3]), atoi(argv[3]), 2, LibSupermesh_SpatialIndex::RTree::RV_RSTAR, indexIdentifier);
 
 		std::cerr << *tree;
 		std::cerr << "Buffer hits: " << file->getHits() << std::endl;
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
 			// delete the buffer first, then the storage manager
 			// (otherwise the the buffer will fail trying to write the dirty entries).
 	}
-	catch (Tools::Exception& e)
+	catch (LibSupermesh_Tools::Exception& e)
 	{
 		std::cerr << "******ERROR******" << std::endl;
 		std::string s = e.what();

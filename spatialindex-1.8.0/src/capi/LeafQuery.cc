@@ -33,14 +33,14 @@ LeafQuery::LeafQuery()
 
 }
 
-LeafQueryResult get_results(const SpatialIndex::INode* n)
+LeafQueryResult get_results(const LibSupermesh_SpatialIndex::INode* n)
 {
 	LeafQueryResult result (n->getIdentifier());
 
-	SpatialIndex::IShape* ps;
+	LibSupermesh_SpatialIndex::IShape* ps;
 	n->getShape(&ps);
-	SpatialIndex::Region* pr = dynamic_cast<SpatialIndex::Region*>(ps);
-	std::vector<SpatialIndex::id_type> ids;
+	LibSupermesh_SpatialIndex::Region* pr = dynamic_cast<LibSupermesh_SpatialIndex::Region*>(ps);
+	std::vector<LibSupermesh_SpatialIndex::id_type> ids;
 	for (size_t cChild = 0; cChild < n->getChildrenCount(); cChild++)
 	{
 		ids.push_back(n->getChildIdentifier(cChild));
@@ -52,12 +52,12 @@ LeafQueryResult get_results(const SpatialIndex::INode* n)
 	
 	return result;
 }
-void LeafQuery::getNextEntry(	const SpatialIndex::IEntry& entry, 
-								SpatialIndex::id_type& nextEntry, 
+void LeafQuery::getNextEntry(	const LibSupermesh_SpatialIndex::IEntry& entry, 
+								LibSupermesh_SpatialIndex::id_type& nextEntry, 
 								bool& hasNext) 
 {
 
-	const SpatialIndex::INode* n = dynamic_cast<const SpatialIndex::INode*>(&entry);
+	const LibSupermesh_SpatialIndex::INode* n = dynamic_cast<const LibSupermesh_SpatialIndex::INode*>(&entry);
 
 	// traverse only index nodes at levels 2 and higher.
 	if (n != 0 && n->getLevel() > 0)
@@ -84,24 +84,24 @@ void LeafQuery::getNextEntry(	const SpatialIndex::IEntry& entry,
 }
 
 
-std::vector<SpatialIndex::id_type> const& LeafQueryResult::GetIDs() const
+std::vector<LibSupermesh_SpatialIndex::id_type> const& LeafQueryResult::GetIDs() const
 {
     return ids;
 }
 
-void LeafQueryResult::SetIDs(std::vector<SpatialIndex::id_type>& v) 
+void LeafQueryResult::SetIDs(std::vector<LibSupermesh_SpatialIndex::id_type>& v) 
 {
     ids.resize(v.size());
     std::copy(v.begin(), v.end(), ids.begin());
 }
-const SpatialIndex::Region*  LeafQueryResult::GetBounds() const
+const LibSupermesh_SpatialIndex::Region*  LeafQueryResult::GetBounds() const
 {
     return bounds;
 }
 
-void LeafQueryResult::SetBounds(const SpatialIndex::Region*  b) 
+void LeafQueryResult::SetBounds(const LibSupermesh_SpatialIndex::Region*  b) 
 {
-    bounds = new SpatialIndex::Region(*b);
+    bounds = new LibSupermesh_SpatialIndex::Region(*b);
 }
 
 LeafQueryResult::LeafQueryResult(LeafQueryResult const& other)

@@ -30,14 +30,14 @@
 
 BoundsQuery::BoundsQuery() 
 {
-	m_bounds = new SpatialIndex::Region;
+	m_bounds = new LibSupermesh_SpatialIndex::Region;
 }
 
-void BoundsQuery::getNextEntry( const SpatialIndex::IEntry& entry, 
-								SpatialIndex::id_type& nextEntry, 
+void BoundsQuery::getNextEntry( const LibSupermesh_SpatialIndex::IEntry& entry, 
+								LibSupermesh_SpatialIndex::id_type& nextEntry, 
 								bool& hasNext) 
 {
-	SpatialIndex::IShape* ps;
+	LibSupermesh_SpatialIndex::IShape* ps;
 	entry.getShape(&ps);
 	ps->getMBR(*m_bounds);
 	delete ps;

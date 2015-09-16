@@ -28,7 +28,7 @@
 
 #include "Element_Intersection.h"
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 using namespace std;
 
@@ -145,7 +145,7 @@ IData* MeshDataStream::getNext()
     }
   }
       
-  SpatialIndex::Region region = SpatialIndex::Region(low, high, dim);
+  LibSupermesh_SpatialIndex::Region region = LibSupermesh_SpatialIndex::Region(low, high, dim);
   IData* data = new RTree::Data(0, 0, region, ++index);
 
   return data;
@@ -233,7 +233,7 @@ IData* ExpandedMeshDataStream::getNext()
     low[i] -= expansion;
   }
       
-  SpatialIndex::Region region = SpatialIndex::Region(low, high, dim);
+  LibSupermesh_SpatialIndex::Region region = LibSupermesh_SpatialIndex::Region(low, high, dim);
   IData* data = new RTree::Data(0, 0, region, ++index);
 
   return data;
@@ -281,7 +281,7 @@ void ElementIntersectionFinder::SetInput(const double*& positions, const int& nn
                         enlist, nelements, loc);  
   // As in regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0
   id_type id = 1;
-  rTree = RTree::createAndBulkLoadNewRTree(RTree::BLM_STR, stream, *storageManager, fillFactor, indexCapacity, leafCapacity, dim, SpatialIndex::RTree::RV_RSTAR, id);
+  rTree = RTree::createAndBulkLoadNewRTree(RTree::BLM_STR, stream, *storageManager, fillFactor, indexCapacity, leafCapacity, dim, LibSupermesh_SpatialIndex::RTree::RV_RSTAR, id);
 
   predicateCount += stream.getPredicateCount();
   
@@ -316,7 +316,7 @@ void ElementIntersectionFinder::SetTestElement(const double*& positions, const i
     }
   }
   
-  SpatialIndex::Region* region = new SpatialIndex::Region(low, high, dim);
+  LibSupermesh_SpatialIndex::Region* region = new LibSupermesh_SpatialIndex::Region(low, high, dim);
   rTree->intersectsWithQuery(*region, visitor);
   
   delete region;

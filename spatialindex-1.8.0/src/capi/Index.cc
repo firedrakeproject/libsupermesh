@@ -28,19 +28,19 @@
 
 #include <spatialindex/capi/sidx_impl.h>
 
-SpatialIndex::ISpatialIndex* Index::CreateIndex() 
+LibSupermesh_SpatialIndex::ISpatialIndex* Index::CreateIndex() 
 {
-	using namespace SpatialIndex;
+	using namespace LibSupermesh_SpatialIndex;
 	
 	ISpatialIndex* index = 0;
 	
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 
 	if (GetIndexType() == RT_RTree) {
 
 		try {
 			index = RTree::returnRTree(	 *m_buffer, m_properties); 
-		} catch (Tools::Exception& e) {
+		} catch (LibSupermesh_Tools::Exception& e) {
 			std::ostringstream os;
 			os << "Spatial Index Error: " << e.what();
 			throw std::runtime_error(os.str());
@@ -51,7 +51,7 @@ SpatialIndex::ISpatialIndex* Index::CreateIndex()
 
 		try {
 			index = MVRTree::returnMVRTree(	 *m_buffer, m_properties); 
-		} catch (Tools::Exception& e) {
+		} catch (LibSupermesh_Tools::Exception& e) {
 			std::ostringstream os;
 			os << "Spatial Index Error: " << e.what();
 			throw std::runtime_error(os.str());
@@ -62,7 +62,7 @@ SpatialIndex::ISpatialIndex* Index::CreateIndex()
 
 		try {
 			index = TPRTree::returnTPRTree(	 *m_buffer,m_properties); 
-		} catch (Tools::Exception& e) {
+		} catch (LibSupermesh_Tools::Exception& e) {
 			std::ostringstream os;
 			os << "Spatial Index Error: " << e.what();
 			throw std::runtime_error(os.str());
@@ -73,7 +73,7 @@ SpatialIndex::ISpatialIndex* Index::CreateIndex()
 }
 
 
-Index::Index(const Tools::PropertySet& poProperties) 
+Index::Index(const LibSupermesh_Tools::PropertySet& poProperties) 
 {
 	Setup();
 	
@@ -94,15 +94,15 @@ Index::~Index()
 
 }
 
-Index::Index(	const Tools::PropertySet& poProperties, 
-				int (*readNext)(SpatialIndex::id_type *id, 
+Index::Index(	const LibSupermesh_Tools::PropertySet& poProperties, 
+				int (*readNext)(LibSupermesh_SpatialIndex::id_type *id, 
 								double **pMin, 
 								double **pMax, 
 								uint32_t *nDimension, 
 								const uint8_t **pData, 
 								uint32_t *nDataLength)) 
 {
-	using namespace SpatialIndex;
+	using namespace LibSupermesh_SpatialIndex;
 		
 	Setup();
 	
@@ -117,17 +117,17 @@ Index::Index(	const Tools::PropertySet& poProperties,
 	uint32_t nIdxCapacity = 100;
 	uint32_t nIdxLeafCap = 100;
 	uint32_t nIdxDimension = 2;
-	SpatialIndex::RTree::RTreeVariant eVariant = SpatialIndex::RTree::RV_RSTAR;
-	SpatialIndex::id_type m_IdxIdentifier;
+	LibSupermesh_SpatialIndex::RTree::RTreeVariant eVariant = LibSupermesh_SpatialIndex::RTree::RV_RSTAR;
+	LibSupermesh_SpatialIndex::id_type m_IdxIdentifier;
 
 	// Fetch a bunch of properties.	 We can't bulk load an rtree using merely 
 	// properties, we have to use the helper method(s).
 
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 	var = m_properties.getProperty("FillFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_DOUBLE)
+		if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE)
 			throw std::runtime_error("Index::Index (streaming):"
 									 " Property FillFactor must be Tools::VT_DOUBLE");
 		
@@ -135,9 +135,9 @@ Index::Index(	const Tools::PropertySet& poProperties,
 	}
 	
 	var = m_properties.getProperty("IndexCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
 			throw std::runtime_error("Index::Index (streaming): "
 									 "Property IndexCapacity must be Tools::VT_ULONG");
 		
@@ -145,9 +145,9 @@ Index::Index(	const Tools::PropertySet& poProperties,
 	}
 
 	var = m_properties.getProperty("LeafCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
 			throw std::runtime_error("Index::Index (streaming): "
 									 "Property LeafCapacity must be Tools::VT_ULONG");
 		
@@ -155,9 +155,9 @@ Index::Index(	const Tools::PropertySet& poProperties,
 	}
 
 	var = m_properties.getProperty("Dimension");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
 			throw std::runtime_error("Index::Index (streaming): "
 									 "Property Dimension must be Tools::VT_ULONG");
 		
@@ -165,26 +165,26 @@ Index::Index(	const Tools::PropertySet& poProperties,
 	}
 
 	var = m_properties.getProperty("TreeVariant");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_LONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_LONG)
 			throw std::runtime_error("Index::Index (streaming): "
 									 "Property TreeVariant must be Tools::VT_LONG");
 		
-		eVariant = static_cast<SpatialIndex::RTree::RTreeVariant>(var.m_val.lVal);
+		eVariant = static_cast<LibSupermesh_SpatialIndex::RTree::RTreeVariant>(var.m_val.lVal);
 	}
 
 	var = m_properties.getProperty("IndexIdentifier");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_LONGLONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_LONGLONG)
 			throw std::runtime_error("Index::Index (streaming): "
 									 "Property IndexIdentifier must be Tools::VT_LONGLONG");
 		
 		m_IdxIdentifier = var.m_val.llVal;
 	}
 	
-	m_rtree = RTree::createAndBulkLoadNewRTree(	  SpatialIndex::RTree::BLM_STR,
+	m_rtree = RTree::createAndBulkLoadNewRTree(LibSupermesh_SpatialIndex::RTree::BLM_STR,
 												  ds,
 												  *m_buffer,
 												  dFillFactor,
@@ -196,15 +196,15 @@ Index::Index(	const Tools::PropertySet& poProperties,
 }
 	
 
-SpatialIndex::StorageManager::IBuffer* Index::CreateIndexBuffer(SpatialIndex::IStorageManager& storage)
+LibSupermesh_SpatialIndex::StorageManager::IBuffer* Index::CreateIndexBuffer(LibSupermesh_SpatialIndex::IStorageManager& storage)
 {
-	using namespace SpatialIndex::StorageManager;
+	using namespace LibSupermesh_SpatialIndex::StorageManager;
 	IBuffer* buffer = 0;
 	try {
 		if ( m_storage == 0 ) 
 			throw std::runtime_error("Storage was invalid to create index buffer");
 		buffer = returnRandomEvictionsBuffer(storage, m_properties);
-	} catch (Tools::Exception& e) {
+	} catch (LibSupermesh_Tools::Exception& e) {
 		std::ostringstream os;
 		os << "Spatial Index Error: " << e.what();
 		throw std::runtime_error(os.str());
@@ -213,19 +213,19 @@ SpatialIndex::StorageManager::IBuffer* Index::CreateIndexBuffer(SpatialIndex::IS
 }
 
 
-SpatialIndex::IStorageManager* Index::CreateStorage()
+LibSupermesh_SpatialIndex::IStorageManager* Index::CreateStorage()
 {
-	using namespace SpatialIndex::StorageManager;
+	using namespace LibSupermesh_SpatialIndex::StorageManager;
 	
-	SpatialIndex::IStorageManager* storage = 0;
+	LibSupermesh_SpatialIndex::IStorageManager* storage = 0;
 	std::string filename("");
 	
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 	var = m_properties.getProperty("FileName");
 
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_PCHAR)
+		if (var.m_varType != LibSupermesh_Tools::VT_PCHAR)
 			throw std::runtime_error("Index::CreateStorage: "
 									 "Property FileName must be Tools::VT_PCHAR");
 		
@@ -242,7 +242,7 @@ SpatialIndex::IStorageManager* Index::CreateStorage()
 			try {
 				storage = returnDiskStorageManager(m_properties);
 				return storage;
-			} catch (Tools::Exception& e) {
+			} catch (LibSupermesh_Tools::Exception& e) {
 				std::ostringstream os;
 				os << "Spatial Index Error: " << e.what();
 				throw std::runtime_error(os.str());
@@ -253,7 +253,7 @@ SpatialIndex::IStorageManager* Index::CreateStorage()
 		try {
 			storage = returnMemoryStorageManager(m_properties);
 			return storage;
-		} catch (Tools::Exception& e) {
+		} catch (LibSupermesh_Tools::Exception& e) {
 			std::ostringstream os;
 			os << "Spatial Index Error: " << e.what();
 			throw std::runtime_error(os.str());
@@ -264,7 +264,7 @@ SpatialIndex::IStorageManager* Index::CreateStorage()
 		try {
             storage = returnCustomStorageManager(m_properties);
 			return storage;
-		} catch (Tools::Exception& e) {
+		} catch (LibSupermesh_Tools::Exception& e) {
 			std::ostringstream os;
 			os << "Spatial Index Error: " << e.what();
 			throw std::runtime_error(os.str());
@@ -294,12 +294,12 @@ void Index::Setup()
 
 RTIndexType Index::GetIndexType() 
 {
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 	var = m_properties.getProperty("IndexType");
 
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
 			throw std::runtime_error("Index::GetIndexType: "
 									 "Property IndexType must be Tools::VT_ULONG");
 		
@@ -312,8 +312,8 @@ RTIndexType Index::GetIndexType()
 }
 void Index::SetIndexType(RTIndexType v)
 {
-	Tools::Variant var;
-	var.m_varType = Tools::VT_ULONG;
+	LibSupermesh_Tools::Variant var;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = v;
 	m_properties.setProperty("IndexType", var);
 }
@@ -321,12 +321,12 @@ void Index::SetIndexType(RTIndexType v)
 RTStorageType Index::GetIndexStorage()
 {
 
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 	var = m_properties.getProperty("IndexStorageType");
 
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
 			throw std::runtime_error("Index::GetIndexStorage: "
 									 "Property IndexStorageType must be Tools::VT_ULONG");
 		
@@ -339,8 +339,8 @@ RTStorageType Index::GetIndexStorage()
 
 void Index::SetIndexStorage(RTStorageType v)
 {
-	Tools::Variant var;
-	var.m_varType = Tools::VT_ULONG;
+	LibSupermesh_Tools::Variant var;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = v;
 	m_properties.setProperty("IndexStorageType", var);
 }
@@ -348,12 +348,12 @@ void Index::SetIndexStorage(RTStorageType v)
 RTIndexVariant Index::GetIndexVariant()
 {
 
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 	var = m_properties.getProperty("TreeVariant");
 
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
 			throw std::runtime_error("Index::GetIndexVariant: "
 									 "Property TreeVariant must be Tools::VT_ULONG");
 		
@@ -366,8 +366,8 @@ RTIndexVariant Index::GetIndexVariant()
 
 void Index::SetIndexVariant(RTStorageType v)
 {
-	using namespace SpatialIndex;
-	Tools::Variant var;
+	using namespace LibSupermesh_SpatialIndex;
+	LibSupermesh_Tools::Variant var;
 
 	if (GetIndexType() == RT_RTree) {
 		var.m_val.ulVal = static_cast<RTree::RTreeVariant>(v);

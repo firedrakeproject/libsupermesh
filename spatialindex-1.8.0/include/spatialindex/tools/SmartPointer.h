@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace Tools
+namespace LibSupermesh_Tools
 {
 	template <class X> class SmartPointer
 	{

@@ -28,19 +28,19 @@
 
 #pragma once
 
-class BoundsQuery : public SpatialIndex::IQueryStrategy
+class BoundsQuery : public LibSupermesh_SpatialIndex::IQueryStrategy
 {
 private:
-    SpatialIndex::Region* m_bounds;
+    LibSupermesh_SpatialIndex::Region* m_bounds;
     
 public:
 
     BoundsQuery();
     ~BoundsQuery() { if (m_bounds != 0) delete m_bounds; }
-    void getNextEntry(  const SpatialIndex::IEntry& entry, 
-                        SpatialIndex::id_type& nextEntry, 
+    void getNextEntry(  const LibSupermesh_SpatialIndex::IEntry& entry, 
+                        LibSupermesh_SpatialIndex::id_type& nextEntry, 
                         bool& hasNext);
     
-    SpatialIndex::Region* GetBounds() const { return m_bounds; }
+    LibSupermesh_SpatialIndex::Region* GetBounds() const { return m_bounds; }
 };
 

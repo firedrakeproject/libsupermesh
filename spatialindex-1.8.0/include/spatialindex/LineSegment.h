@@ -27,9 +27,9 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
-	class SIDX_DLL LineSegment : public Tools::IObject, public virtual IShape
+	class SIDX_DLL LineSegment : public LibSupermesh_Tools::IObject, public virtual IShape
 	{
 	public:
 		LineSegment();

@@ -40,8 +40,8 @@
 #include "Index.h"
 #include "BulkLoader.h"
 
-using namespace SpatialIndex;
-using namespace SpatialIndex::RTree;
+using namespace LibSupermesh_SpatialIndex;
+using namespace LibSupermesh_SpatialIndex::RTree;
 
 //
 // ExternalSorter::Record
@@ -64,7 +64,7 @@ ExternalSorter::Record::~Record()
 bool ExternalSorter::Record::operator<(const Record& r) const
 {
 	if (m_s != r.m_s)
-		throw Tools::IllegalStateException("ExternalSorter::Record::operator<: Incompatible sorting dimensions.");
+		throw LibSupermesh_Tools::IllegalStateException("ExternalSorter::Record::operator<: Incompatible sorting dimensions.");
 
 	if (m_r.m_pHigh[m_s] + m_r.m_pLow[m_s] < r.m_r.m_pHigh[m_s] + r.m_r.m_pLow[m_s])
 		return true;
@@ -72,7 +72,7 @@ bool ExternalSorter::Record::operator<(const Record& r) const
 		return false;
 }
 
-void ExternalSorter::Record::storeToFile(Tools::TemporaryFile& f)
+void ExternalSorter::Record::storeToFile(LibSupermesh_Tools::TemporaryFile& f)
 {
 	f.write(static_cast<uint64_t>(m_id));
 	f.write(m_r.m_dimension);
@@ -88,7 +88,7 @@ void ExternalSorter::Record::storeToFile(Tools::TemporaryFile& f)
 	if (m_len > 0) f.write(m_len, m_pData);
 }
 
-void ExternalSorter::Record::loadFromFile(Tools::TemporaryFile& f)
+void ExternalSorter::Record::loadFromFile(LibSupermesh_Tools::TemporaryFile& f)
 {
 	m_id = static_cast<id_type>(f.readUInt64());
 	uint32_t dim = f.readUInt32();
@@ -131,7 +131,7 @@ ExternalSorter::~ExternalSorter()
 void ExternalSorter::insert(Record* r)
 {
 	if (m_bInsertionPhase == false)
-		throw Tools::IllegalStateException("ExternalSorter::insert: Input has already been sorted.");
+		throw LibSupermesh_Tools::IllegalStateException("ExternalSorter::insert: Input has already been sorted.");
 
 	m_buffer.push_back(r);
 	++m_u64TotalEntries;
@@ -141,7 +141,7 @@ void ExternalSorter::insert(Record* r)
 	if (m_buffer.size() >= m_u32PageSize * m_u32BufferPages)
 	{
 		std::sort(m_buffer.begin(), m_buffer.end(), Record::SortAscending());
-		Tools::TemporaryFile* tf = new Tools::TemporaryFile();
+		LibSupermesh_Tools::TemporaryFile* tf = new LibSupermesh_Tools::TemporaryFile();
 		for (size_t j = 0; j < m_buffer.size(); ++j)
 		{
 			m_buffer[j]->storeToFile(*tf);
@@ -149,14 +149,14 @@ void ExternalSorter::insert(Record* r)
 		}
 		m_buffer.clear();
 		tf->rewindForReading();
-		m_runs.push_back(Tools::SmartPointer<Tools::TemporaryFile>(tf));
+		m_runs.push_back(LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile>(tf));
 	}
 }
 
 void ExternalSorter::sort()
 {
 	if (m_bInsertionPhase == false)
-		throw Tools::IllegalStateException("ExternalSorter::sort: Input has already been sorted.");
+		throw LibSupermesh_Tools::IllegalStateException("ExternalSorter::sort: Input has already been sorted.");
 
 	if (m_runs.empty())
 	{
@@ -171,7 +171,7 @@ void ExternalSorter::sort()
 		// Whatever remained in the buffer (if not filled) needs to be stored
 		// as the final bucket.
 		std::sort(m_buffer.begin(), m_buffer.end(), Record::SortAscending());
-		Tools::TemporaryFile* tf = new Tools::TemporaryFile();
+		LibSupermesh_Tools::TemporaryFile* tf = new LibSupermesh_Tools::TemporaryFile();
 		for (size_t j = 0; j < m_buffer.size(); ++j)
 		{
 			m_buffer[j]->storeToFile(*tf);
@@ -179,7 +179,7 @@ void ExternalSorter::sort()
 		}
 		m_buffer.clear();
 		tf->rewindForReading();
-		m_runs.push_back(Tools::SmartPointer<Tools::TemporaryFile>(tf));
+		m_runs.push_back(LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile>(tf));
 	}
 
 	if (m_runs.size() == 1)
@@ -192,13 +192,13 @@ void ExternalSorter::sort()
 
 		while (m_runs.size() > 1)
 		{
-			Tools::SmartPointer<Tools::TemporaryFile> tf(new Tools::TemporaryFile());
-			std::vector<Tools::SmartPointer<Tools::TemporaryFile> > buckets;
+			LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile> tf(new LibSupermesh_Tools::TemporaryFile());
+			std::vector<LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile> > buckets;
 			std::vector<std::queue<Record*> > buffers;
 			std::priority_queue<PQEntry, std::vector<PQEntry>, PQEntry::SortAscending> pq;
 
 			// initialize buffers and priority queue.
-			std::list<Tools::SmartPointer<Tools::TemporaryFile> >::iterator it = m_runs.begin();
+			std::list<LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile> >::iterator it = m_runs.begin();
 			for (uint32_t i = 0; i < (std::min)(static_cast<uint32_t>(m_runs.size()), m_u32BufferPages); ++i)
 			{
 				buckets.push_back(*it);
@@ -218,7 +218,7 @@ void ExternalSorter::sort()
 						r->loadFromFile(**it);
 						buffers.back().push(r);
 					}
-					catch (Tools::EndOfStreamException)
+					catch (LibSupermesh_Tools::EndOfStreamException)
 					{
 						delete r;
 						break;
@@ -244,7 +244,7 @@ void ExternalSorter::sort()
 							r->loadFromFile(*buckets[e.m_u32Index]);
 							buffers[e.m_u32Index].push(r);
 						}
-						catch (Tools::EndOfStreamException)
+						catch (LibSupermesh_Tools::EndOfStreamException)
 						{
 							delete r;
 							break;
@@ -287,7 +287,7 @@ void ExternalSorter::sort()
 ExternalSorter::Record* ExternalSorter::getNextRecord()
 {
 	if (m_bInsertionPhase == true)
-		throw Tools::IllegalStateException("ExternalSorter::getNextRecord: Input has not been sorted yet.");
+		throw LibSupermesh_Tools::IllegalStateException("ExternalSorter::getNextRecord: Input has not been sorted yet.");
 
 	Record* ret;
 
@@ -300,7 +300,7 @@ ExternalSorter::Record* ExternalSorter::getNextRecord()
 			++m_stI;
 		}
 		else
-			throw Tools::EndOfStreamException("");
+			throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	else
 	{
@@ -320,7 +320,7 @@ inline uint64_t ExternalSorter::getTotalEntries() const
 // BulkLoader
 //
 void BulkLoader::bulkLoadUsingSTR(
-	SpatialIndex::RTree::RTree* pTree,
+	LibSupermesh_SpatialIndex::RTree::RTree* pTree,
 	IDataStream& stream,
 	uint32_t bindex,
 	uint32_t bleaf,
@@ -328,20 +328,20 @@ void BulkLoader::bulkLoadUsingSTR(
 	uint32_t numberOfPages
 ) {
 	if (! stream.hasNext())
-		throw Tools::IllegalArgumentException(
+		throw LibSupermesh_Tools::IllegalArgumentException(
 			"RTree::BulkLoader::bulkLoadUsingSTR: Empty data stream given."
 		);
 
 	NodePtr n = pTree->readNode(pTree->m_rootID);
 	pTree->deleteNode(n.get());
 
-	Tools::SmartPointer<ExternalSorter> es = Tools::SmartPointer<ExternalSorter>(new ExternalSorter(pageSize, numberOfPages));
+	LibSupermesh_Tools::SmartPointer<ExternalSorter> es = LibSupermesh_Tools::SmartPointer<ExternalSorter>(new ExternalSorter(pageSize, numberOfPages));
 
 	while (stream.hasNext())
 	{
 		Data* d = reinterpret_cast<Data*>(stream.getNext());
 		if (d == 0)
-			throw Tools::IllegalArgumentException(
+			throw LibSupermesh_Tools::IllegalArgumentException(
 				"bulkLoadUsingSTR: RTree bulk load expects SpatialIndex::RTree::Data entries."
 			);
 
@@ -360,7 +360,7 @@ void BulkLoader::bulkLoadUsingSTR(
 	{
 		pTree->m_stats.m_nodesInLevel.push_back(0);
 
-		Tools::SmartPointer<ExternalSorter> es2 = Tools::SmartPointer<ExternalSorter>(new ExternalSorter(pageSize, numberOfPages));
+		LibSupermesh_Tools::SmartPointer<ExternalSorter> es2 = LibSupermesh_Tools::SmartPointer<ExternalSorter>(new ExternalSorter(pageSize, numberOfPages));
 		createLevel(pTree, es, 0, bleaf, bindex, level++, es2, pageSize, numberOfPages);
 		es = es2;
 
@@ -373,13 +373,13 @@ void BulkLoader::bulkLoadUsingSTR(
 }
 
 void BulkLoader::createLevel(
-	SpatialIndex::RTree::RTree* pTree,
-	Tools::SmartPointer<ExternalSorter> es,
+	LibSupermesh_SpatialIndex::RTree::RTree* pTree,
+	LibSupermesh_Tools::SmartPointer<ExternalSorter> es,
 	uint32_t dimension,
 	uint32_t bleaf,
 	uint32_t bindex,
 	uint32_t level,
-	Tools::SmartPointer<ExternalSorter> es2,
+	LibSupermesh_Tools::SmartPointer<ExternalSorter> es2,
 	uint32_t pageSize,
 	uint32_t numberOfPages
 ) {
@@ -394,7 +394,7 @@ void BulkLoader::createLevel(
 
 		while (true)
 		{
-			try { r = es->getNextRecord(); } catch (Tools::EndOfStreamException) { break; }
+			try { r = es->getNextRecord(); } catch (LibSupermesh_Tools::EndOfStreamException) { break; }
 			node.push_back(r);
 
 			if (node.size() == b)
@@ -425,12 +425,12 @@ void BulkLoader::createLevel(
 		while (bMore)
 		{
 			ExternalSorter::Record* pR;
-			Tools::SmartPointer<ExternalSorter> es3 = Tools::SmartPointer<ExternalSorter>(new ExternalSorter(pageSize, numberOfPages));
+			LibSupermesh_Tools::SmartPointer<ExternalSorter> es3 = LibSupermesh_Tools::SmartPointer<ExternalSorter>(new ExternalSorter(pageSize, numberOfPages));
 
 			for (uint64_t i = 0; i < S * b; ++i)
 			{
 				try { pR = es->getNextRecord(); }
-				catch (Tools::EndOfStreamException) { bMore = false; break; }
+				catch (LibSupermesh_Tools::EndOfStreamException) { bMore = false; break; }
 				pR->m_s = dimension + 1;
 				es3->insert(pR);
 			}
@@ -440,7 +440,7 @@ void BulkLoader::createLevel(
 	}
 }
 
-Node* BulkLoader::createNode(SpatialIndex::RTree::RTree* pTree, std::vector<ExternalSorter::Record*>& e, uint32_t level)
+Node* BulkLoader::createNode(LibSupermesh_SpatialIndex::RTree::RTree* pTree, std::vector<ExternalSorter::Record*>& e, uint32_t level)
 {
 	Node* n;
 

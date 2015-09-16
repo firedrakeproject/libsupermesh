@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
 	size_t numberOfObjects = atoi(argv[1]);
 	map<size_t, Region> data;
-	Tools::Random rnd;
+	LibSupermesh_Tools::Random rnd;
 
 	for (size_t i = 0; i < numberOfObjects; i++)
 	{

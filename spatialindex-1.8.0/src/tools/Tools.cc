@@ -41,80 +41,80 @@
 #endif
 #endif
 
-Tools::IndexOutOfBoundsException::IndexOutOfBoundsException(size_t i)
+LibSupermesh_Tools::IndexOutOfBoundsException::IndexOutOfBoundsException(size_t i)
 {
 	std::ostringstream s;
 	s << "Invalid index " << i;
 	m_error = s.str();
 }
 
-std::string Tools::IndexOutOfBoundsException::what()
+std::string LibSupermesh_Tools::IndexOutOfBoundsException::what()
 {
 	return "IndexOutOfBoundsException: " + m_error;
 }
 
-Tools::IllegalArgumentException::IllegalArgumentException(std::string s) : m_error(s)
+LibSupermesh_Tools::IllegalArgumentException::IllegalArgumentException(std::string s) : m_error(s)
 {
 }
 
-std::string Tools::IllegalArgumentException::what()
+std::string LibSupermesh_Tools::IllegalArgumentException::what()
 {
 	return "IllegalArgumentException: " + m_error;
 }
 
-Tools::IllegalStateException::IllegalStateException(std::string s) : m_error(s)
+LibSupermesh_Tools::IllegalStateException::IllegalStateException(std::string s) : m_error(s)
 {
 }
 
-std::string Tools::IllegalStateException::what()
+std::string LibSupermesh_Tools::IllegalStateException::what()
 {
 	return "IllegalStateException: " + m_error;
 }
 
-Tools::EndOfStreamException::EndOfStreamException(std::string s) : m_error(s)
+LibSupermesh_Tools::EndOfStreamException::EndOfStreamException(std::string s) : m_error(s)
 {
 }
 
-std::string Tools::EndOfStreamException::what()
+std::string LibSupermesh_Tools::EndOfStreamException::what()
 {
 	return "EndOfStreamException: " + m_error;
 }
 
-Tools::ResourceLockedException::ResourceLockedException(std::string s) : m_error(s)
+LibSupermesh_Tools::ResourceLockedException::ResourceLockedException(std::string s) : m_error(s)
 {
 }
 
-std::string Tools::ResourceLockedException::what()
+std::string LibSupermesh_Tools::ResourceLockedException::what()
 {
 	return "ResourceLockedException: " + m_error;
 }
 
-Tools::NotSupportedException::NotSupportedException(std::string s) : m_error(s)
+LibSupermesh_Tools::NotSupportedException::NotSupportedException(std::string s) : m_error(s)
 {
 }
 
-std::string Tools::NotSupportedException::what()
+std::string LibSupermesh_Tools::NotSupportedException::what()
 {
 	return "NotSupportedException: " + m_error;
 }
 
-Tools::Variant::Variant() : m_varType(VT_EMPTY)
+LibSupermesh_Tools::Variant::Variant() : m_varType(VT_EMPTY)
 {
 }
 
-Tools::PropertySet::PropertySet(const byte* data)
+LibSupermesh_Tools::PropertySet::PropertySet(const byte* data)
 {
 	loadFromByteArray(data);
 }
 
-Tools::PropertySet::~PropertySet()
+LibSupermesh_Tools::PropertySet::~PropertySet()
 {
 }
 
-Tools::PropertySet::PropertySet()
+LibSupermesh_Tools::PropertySet::PropertySet()
 {
 }
-void Tools::PropertySet::loadFromByteArray(const byte* ptr)
+void LibSupermesh_Tools::PropertySet::loadFromByteArray(const byte* ptr)
 {
 	m_propertySet.clear();
 
@@ -209,7 +209,7 @@ void Tools::PropertySet::loadFromByteArray(const byte* ptr)
 	}
 }
 
-uint32_t Tools::PropertySet::getByteArraySize()
+uint32_t LibSupermesh_Tools::PropertySet::getByteArraySize()
 {
 	uint32_t size = sizeof(uint32_t);
 	std::map<std::string, Variant>::iterator it;
@@ -262,7 +262,7 @@ uint32_t Tools::PropertySet::getByteArraySize()
 	return size;
 }
 
-void Tools::PropertySet::storeToByteArray(byte** data, uint32_t& length)
+void LibSupermesh_Tools::PropertySet::storeToByteArray(byte** data, uint32_t& length)
 {
 	length = getByteArraySize();
 	*data = new byte[length];
@@ -343,7 +343,7 @@ void Tools::PropertySet::storeToByteArray(byte** data, uint32_t& length)
 	assert(ptr == (*data) + length);
 }
 
-Tools::Variant Tools::PropertySet::getProperty(std::string property)
+LibSupermesh_Tools::Variant LibSupermesh_Tools::PropertySet::getProperty(std::string property)
 {
    	std::map<std::string, Variant>::iterator it = m_propertySet.find(property);
 
@@ -351,7 +351,7 @@ Tools::Variant Tools::PropertySet::getProperty(std::string property)
    	else return Variant();
 }
 
-void Tools::PropertySet::setProperty(std::string property, Variant& v)
+void LibSupermesh_Tools::PropertySet::setProperty(std::string property, Variant& v)
 {
 	std::pair<std::map<std::string, Variant>::iterator, bool> ret;
 	std::map<std::string, Variant>::iterator it;
@@ -363,34 +363,34 @@ void Tools::PropertySet::setProperty(std::string property, Variant& v)
 	if (ret.second == false) ret.first->second = v;
 }
 
-void Tools::PropertySet::removeProperty(std::string property)
+void LibSupermesh_Tools::PropertySet::removeProperty(std::string property)
 {
    	std::map<std::string, Variant>::iterator it = m_propertySet.find(property);
    	if (it != m_propertySet.end()) m_propertySet.erase(it);
 }
 
-Tools::Interval::Interval() : m_type(IT_RIGHTOPEN), m_low(0.0), m_high(0.0)
+LibSupermesh_Tools::Interval::Interval() : m_type(IT_RIGHTOPEN), m_low(0.0), m_high(0.0)
 {
 }
 
-Tools::Interval::Interval(IntervalType t, double l, double h) : m_type(t), m_low(l), m_high(h)
-{
-	assert(l < h);
-}
-
-Tools::Interval::Interval(double l, double h) : m_type(IT_RIGHTOPEN), m_low(l), m_high(h)
+LibSupermesh_Tools::Interval::Interval(IntervalType t, double l, double h) : m_type(t), m_low(l), m_high(h)
 {
 	assert(l < h);
 }
 
-Tools::Interval::Interval(const Interval& iv)
+LibSupermesh_Tools::Interval::Interval(double l, double h) : m_type(IT_RIGHTOPEN), m_low(l), m_high(h)
+{
+	assert(l < h);
+}
+
+LibSupermesh_Tools::Interval::Interval(const Interval& iv)
 {
 	m_low = iv.m_low;
 	m_high = iv.m_high;
 	m_type = iv.m_type;
 }
 
-Tools::IInterval& Tools::Interval::operator=(const Tools::IInterval& iv)
+LibSupermesh_Tools::IInterval& LibSupermesh_Tools::Interval::operator=(const LibSupermesh_Tools::IInterval& iv)
 {
 	if (this != &iv)
 	{
@@ -402,7 +402,7 @@ Tools::IInterval& Tools::Interval::operator=(const Tools::IInterval& iv)
 	return *this;
 }
 
-bool Tools::Interval::operator==(const Interval& iv) const
+bool LibSupermesh_Tools::Interval::operator==(const Interval& iv) const
 {
 	if (
 		m_type == iv.m_type &&
@@ -415,22 +415,22 @@ bool Tools::Interval::operator==(const Interval& iv) const
 	return false;
 }
 
-bool Tools::Interval::operator!=(const Interval& iv) const
+bool LibSupermesh_Tools::Interval::operator!=(const Interval& iv) const
 {
 	return ! (*this == iv);
 }
 
-double Tools::Interval::getLowerBound() const
+double LibSupermesh_Tools::Interval::getLowerBound() const
 {
 	return m_low;
 }
 
-double Tools::Interval::getUpperBound() const
+double LibSupermesh_Tools::Interval::getUpperBound() const
 {
 	return m_high;
 }
 
-void Tools::Interval::setBounds(double l, double h)
+void LibSupermesh_Tools::Interval::setBounds(double l, double h)
 {
 	assert(l <= h);
 
@@ -438,12 +438,12 @@ void Tools::Interval::setBounds(double l, double h)
 	m_high = h;
 }
 
-bool Tools::Interval::intersectsInterval(const IInterval& i) const
+bool LibSupermesh_Tools::Interval::intersectsInterval(const IInterval& i) const
 {
 	return intersectsInterval(i.getIntervalType(), i.getLowerBound(), i.getUpperBound());
 }
 
-bool Tools::Interval::intersectsInterval(IntervalType type, const double low, const double high) const
+bool LibSupermesh_Tools::Interval::intersectsInterval(IntervalType type, const double low, const double high) const
 {
 	if (m_high < m_low)
 		throw IllegalStateException(
@@ -497,7 +497,7 @@ bool Tools::Interval::intersectsInterval(IntervalType type, const double low, co
 	return true;
 }
 
-bool Tools::Interval::containsInterval(const IInterval& i) const
+bool LibSupermesh_Tools::Interval::containsInterval(const IInterval& i) const
 {
 	if (m_high < m_low)
 		throw IllegalStateException(
@@ -534,29 +534,29 @@ bool Tools::Interval::containsInterval(const IInterval& i) const
 	return true;
 }
 
-Tools::IntervalType Tools::Interval::getIntervalType() const
+LibSupermesh_Tools::IntervalType LibSupermesh_Tools::Interval::getIntervalType() const
 {
 	return m_type;
 }
 
-Tools::Random::Random()
+LibSupermesh_Tools::Random::Random()
 {
 	m_pBuffer = 0;
 	initDrand(static_cast<uint32_t>(time(0)), 0xD31A);
 }
 
-Tools::Random::Random(uint32_t seed, uint16_t xsubi0)
+LibSupermesh_Tools::Random::Random(uint32_t seed, uint16_t xsubi0)
 {
 	m_pBuffer = 0;
 	initDrand(seed, xsubi0);
 }
 
-Tools::Random::~Random()
+LibSupermesh_Tools::Random::~Random()
 {
 	delete[] m_pBuffer;
 }
 
-void Tools::Random::initDrand(uint32_t seed, uint16_t xsubi0)
+void LibSupermesh_Tools::Random::initDrand(uint32_t seed, uint16_t xsubi0)
 {
 	m_pBuffer = new uint16_t[3];
 	m_pBuffer[0] = static_cast<uint16_t>(xsubi0);
@@ -574,32 +574,32 @@ void Tools::Random::initDrand(uint32_t seed, uint16_t xsubi0)
 #endif
 }
 
-int32_t Tools::Random::nextUniformLong()
+int32_t LibSupermesh_Tools::Random::nextUniformLong()
 {
 	return jrand48(m_pBuffer);
 }
 
-uint32_t Tools::Random::nextUniformUnsignedLong()
+uint32_t LibSupermesh_Tools::Random::nextUniformUnsignedLong()
 {
 	return static_cast<uint32_t>(nextUniformLong());
 }
 
-int32_t Tools::Random::nextUniformLong(int32_t low, int32_t high)
+int32_t LibSupermesh_Tools::Random::nextUniformLong(int32_t low, int32_t high)
 {
 	return low + static_cast<int32_t>((high - low) * nextUniformDouble());
 }
 
-uint32_t Tools::Random::nextUniformUnsignedLong(uint32_t low, uint32_t high)
+uint32_t LibSupermesh_Tools::Random::nextUniformUnsignedLong(uint32_t low, uint32_t high)
 {
 	return low + static_cast<uint32_t>((high - low) * nextUniformDouble());
 }
 
-int64_t Tools::Random::nextUniformLongLong()
+int64_t LibSupermesh_Tools::Random::nextUniformLongLong()
 {
 	return static_cast<int64_t>(nextUniformUnsignedLongLong());
 }
 
-uint64_t Tools::Random::nextUniformUnsignedLongLong()
+uint64_t LibSupermesh_Tools::Random::nextUniformUnsignedLongLong()
 {
 	uint64_t lh = static_cast<uint64_t>(nextUniformLong());
 	uint64_t ll = static_cast<uint64_t>(nextUniformLong());
@@ -607,58 +607,58 @@ uint64_t Tools::Random::nextUniformUnsignedLongLong()
 	return ret;
 }
 
-int64_t Tools::Random::nextUniformLongLong(int64_t low, int64_t high)
+int64_t LibSupermesh_Tools::Random::nextUniformLongLong(int64_t low, int64_t high)
 {
 	return low + static_cast<int64_t>((high - low) * nextUniformDouble());
 }
 
-uint64_t Tools::Random::nextUniformUnsignedLongLong(uint64_t low, uint64_t high)
+uint64_t LibSupermesh_Tools::Random::nextUniformUnsignedLongLong(uint64_t low, uint64_t high)
 {
 	return low + static_cast<uint64_t>((high - low) * nextUniformDouble());
 }
 
-int16_t Tools::Random::nextUniformShort()
+int16_t LibSupermesh_Tools::Random::nextUniformShort()
 {
 	return static_cast<int16_t>(nextUniformUnsignedShort());
 }
 
-uint16_t Tools::Random::nextUniformUnsignedShort()
+uint16_t LibSupermesh_Tools::Random::nextUniformUnsignedShort()
 {
 	return nextUniformUnsignedLong() >> 16;
 		// retain the high order bits.
 }
 
-double Tools::Random::nextUniformDouble()
+double LibSupermesh_Tools::Random::nextUniformDouble()
 {
 	uint16_t* xsubi = reinterpret_cast<uint16_t*>(m_pBuffer);
 	return erand48(xsubi);
 }
 
-double Tools::Random::nextUniformDouble(double low, double high)
+double LibSupermesh_Tools::Random::nextUniformDouble(double low, double high)
 {
 	return (high - low) * nextUniformDouble() + low;
 }
 
-bool Tools::Random::flipCoin()
+bool LibSupermesh_Tools::Random::flipCoin()
 {
 	if (nextUniformDouble() < 0.5) return true;
 	return false;
 }
 
 #if HAVE_PTHREAD_H
-Tools::LockGuard::LockGuard(pthread_mutex_t* pLock)
+LibSupermesh_Tools::LockGuard::LockGuard(pthread_mutex_t* pLock)
  : m_pLock(pLock)
 {
 	pthread_mutex_lock(m_pLock);
 }
 
-Tools::LockGuard::~LockGuard()
+LibSupermesh_Tools::LockGuard::~LockGuard()
 {
 	pthread_mutex_unlock(m_pLock);
 }
 #endif
 
-std::ostream& Tools::operator<<(std::ostream& os, const Tools::PropertySet& p)
+std::ostream& LibSupermesh_Tools::operator<<(std::ostream& os, const LibSupermesh_Tools::PropertySet& p)
 {
 	std::map<std::string, Variant>::const_iterator it;
 
@@ -718,7 +718,7 @@ std::ostream& Tools::operator<<(std::ostream& os, const Tools::PropertySet& p)
 	return os;
 }
 
-std::ostream& Tools::operator<<(std::ostream& os, const Tools::Interval& iv)
+std::ostream& LibSupermesh_Tools::operator<<(std::ostream& os, const LibSupermesh_Tools::Interval& iv)
 {
 	os << iv.m_type << " " << iv.m_low << " " << iv.m_high;
 	return os;
@@ -727,23 +727,23 @@ std::ostream& Tools::operator<<(std::ostream& os, const Tools::Interval& iv)
 //
 // BufferedFile
 //
-Tools::BufferedFile::BufferedFile(uint32_t u32BufferSize)
+LibSupermesh_Tools::BufferedFile::BufferedFile(uint32_t u32BufferSize)
 : m_buffer(new char[u32BufferSize]), m_u32BufferSize(u32BufferSize), m_bEOF(true)
 {
 }
 
-Tools::BufferedFile::~BufferedFile()
+LibSupermesh_Tools::BufferedFile::~BufferedFile()
 {
 	m_file.close();
 	delete[] m_buffer;
 }
 
-void Tools::BufferedFile::close()
+void LibSupermesh_Tools::BufferedFile::close()
 {
 	m_file.close();
 }
 
-bool Tools::BufferedFile::eof()
+bool LibSupermesh_Tools::BufferedFile::eof()
 {
 	return m_bEOF;
 }
@@ -751,17 +751,17 @@ bool Tools::BufferedFile::eof()
 //
 // BufferedFileReader
 //
-Tools::BufferedFileReader::BufferedFileReader()
+LibSupermesh_Tools::BufferedFileReader::BufferedFileReader()
 {
 }
 
-Tools::BufferedFileReader::BufferedFileReader(const std::string& sFileName, uint32_t u32BufferSize)
+LibSupermesh_Tools::BufferedFileReader::BufferedFileReader(const std::string& sFileName, uint32_t u32BufferSize)
 : BufferedFile(u32BufferSize)
 {
 	open(sFileName);
 }
 
-void Tools::BufferedFileReader::open(const std::string& sFileName)
+void LibSupermesh_Tools::BufferedFileReader::open(const std::string& sFileName)
 {
 	m_bEOF = false;
 	m_file.close(); m_file.clear();
@@ -774,11 +774,11 @@ void Tools::BufferedFileReader::open(const std::string& sFileName)
 	m_file.rdbuf()->pubsetbuf(m_buffer, m_u32BufferSize);
 }
 
-Tools::BufferedFileReader::~BufferedFileReader()
+LibSupermesh_Tools::BufferedFileReader::~BufferedFileReader()
 {
 }
 
-void Tools::BufferedFileReader::rewind()
+void LibSupermesh_Tools::BufferedFileReader::rewind()
 {
 	m_file.clear();
 	m_file.seekg(0, std::ios_base::beg);
@@ -788,7 +788,7 @@ void Tools::BufferedFileReader::rewind()
 	m_bEOF = false;
 }
 
-void Tools::BufferedFileReader::seek(std::fstream::off_type offset)
+void LibSupermesh_Tools::BufferedFileReader::seek(std::fstream::off_type offset)
 {
 	m_bEOF = false;
 	m_file.clear();
@@ -797,114 +797,114 @@ void Tools::BufferedFileReader::seek(std::fstream::off_type offset)
 		throw std::ios_base::failure("Tools::BufferedFileReader::seek: seek failed.");
 }
 
-uint8_t Tools::BufferedFileReader::readUInt8()
+uint8_t LibSupermesh_Tools::BufferedFileReader::readUInt8()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	uint8_t ret;
 	m_file.read(reinterpret_cast<char*>(&ret), sizeof(uint8_t));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	return ret;
 }
 
-uint16_t Tools::BufferedFileReader::readUInt16()
+uint16_t LibSupermesh_Tools::BufferedFileReader::readUInt16()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	uint16_t ret;
 	m_file.read(reinterpret_cast<char*>(&ret), sizeof(uint16_t));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	return ret;
 }
 
-uint32_t Tools::BufferedFileReader::readUInt32()
+uint32_t LibSupermesh_Tools::BufferedFileReader::readUInt32()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	uint32_t ret;
 	m_file.read(reinterpret_cast<char*>(&ret), sizeof(uint32_t));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	return ret;
 }
 
-uint64_t Tools::BufferedFileReader::readUInt64()
+uint64_t LibSupermesh_Tools::BufferedFileReader::readUInt64()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	uint64_t ret;
 	m_file.read(reinterpret_cast<char*>(&ret), sizeof(uint64_t));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	return ret;
 }
 
-float Tools::BufferedFileReader::readFloat()
+float LibSupermesh_Tools::BufferedFileReader::readFloat()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	float ret;
 	m_file.read(reinterpret_cast<char*>(&ret), sizeof(float));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	return ret;
 }
 
-double Tools::BufferedFileReader::readDouble()
+double LibSupermesh_Tools::BufferedFileReader::readDouble()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	double ret;
 	m_file.read(reinterpret_cast<char*>(&ret), sizeof(double));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	return ret;
 }
 
-bool Tools::BufferedFileReader::readBoolean()
+bool LibSupermesh_Tools::BufferedFileReader::readBoolean()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	bool ret;
 	m_file.read(reinterpret_cast<char*>(&ret), sizeof(bool));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 	return ret;
 }
 
-std::string Tools::BufferedFileReader::readString()
+std::string LibSupermesh_Tools::BufferedFileReader::readString()
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	uint32_t len;
 	m_file.read(reinterpret_cast<char*>(&len), sizeof(uint32_t));
 	if (! m_file.good())
 	{
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 
 	std::string::value_type* buf = new std::string::value_type[len];
@@ -913,7 +913,7 @@ std::string Tools::BufferedFileReader::readString()
 	{
 		delete[] buf;
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 
 	std::string ret(buf, len);
@@ -922,9 +922,9 @@ std::string Tools::BufferedFileReader::readString()
 	return ret;
 }
 
-void Tools::BufferedFileReader::readBytes(uint32_t u32Len, byte** pData)
+void LibSupermesh_Tools::BufferedFileReader::readBytes(uint32_t u32Len, byte** pData)
 {
-	if (m_bEOF) throw Tools::EndOfStreamException("");
+	if (m_bEOF) throw LibSupermesh_Tools::EndOfStreamException("");
 
 	*pData = new byte[u32Len];
 	m_file.read(reinterpret_cast<char*>(*pData), u32Len);
@@ -932,30 +932,30 @@ void Tools::BufferedFileReader::readBytes(uint32_t u32Len, byte** pData)
 	{
 		delete[] *pData;
 		m_bEOF = true;
-		throw Tools::EndOfStreamException("");
+		throw LibSupermesh_Tools::EndOfStreamException("");
 	}
 }
 
 //
 // BufferedFileWriter
 //
-Tools::BufferedFileWriter::BufferedFileWriter()
+LibSupermesh_Tools::BufferedFileWriter::BufferedFileWriter()
 {
 	open("");
 }
 
-Tools::BufferedFileWriter::BufferedFileWriter(const std::string& sFileName, FileMode mode, uint32_t u32BufferSize)
+LibSupermesh_Tools::BufferedFileWriter::BufferedFileWriter(const std::string& sFileName, FileMode mode, uint32_t u32BufferSize)
 : BufferedFile(u32BufferSize)
 {
 	open(sFileName, mode);
 }
 
-Tools::BufferedFileWriter::~BufferedFileWriter()
+LibSupermesh_Tools::BufferedFileWriter::~BufferedFileWriter()
 {
 	m_file.flush();
 }
 
-void Tools::BufferedFileWriter::open(const std::string& sFileName, FileMode mode)
+void LibSupermesh_Tools::BufferedFileWriter::open(const std::string& sFileName, FileMode mode)
 {
 	m_bEOF = false;
 	m_file.close(); m_file.clear();
@@ -988,10 +988,10 @@ void Tools::BufferedFileWriter::open(const std::string& sFileName, FileMode mode
 		}
 	}
 	else
-		throw Tools::IllegalArgumentException("Tools::BufferedFileWriter::open: Unknown mode.");
+		throw LibSupermesh_Tools::IllegalArgumentException("Tools::BufferedFileWriter::open: Unknown mode.");
 }
 
-void Tools::BufferedFileWriter::rewind()
+void LibSupermesh_Tools::BufferedFileWriter::rewind()
 {
 	m_bEOF = false;
 	m_file.clear();
@@ -1000,7 +1000,7 @@ void Tools::BufferedFileWriter::rewind()
 		throw std::ios_base::failure("Tools::BufferedFileWriter::rewind: seek failed.");
 }
 
-void Tools::BufferedFileWriter::seek(std::fstream::off_type offset)
+void LibSupermesh_Tools::BufferedFileWriter::seek(std::fstream::off_type offset)
 {
 	m_bEOF = false;
 	m_file.clear();
@@ -1009,49 +1009,49 @@ void Tools::BufferedFileWriter::seek(std::fstream::off_type offset)
 		throw std::ios_base::failure("Tools::BufferedFileWriter::seek: seek failed.");
 }
 
-void Tools::BufferedFileWriter::write(uint8_t i)
+void LibSupermesh_Tools::BufferedFileWriter::write(uint8_t i)
 {
 	m_file.write(reinterpret_cast<const char*>(&i), sizeof(uint8_t));
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(uint16_t i)
+void LibSupermesh_Tools::BufferedFileWriter::write(uint16_t i)
 {
 	m_file.write(reinterpret_cast<const char*>(&i), sizeof(uint16_t));
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(uint32_t i)
+void LibSupermesh_Tools::BufferedFileWriter::write(uint32_t i)
 {
 	m_file.write(reinterpret_cast<const char*>(&i), sizeof(uint32_t));
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(uint64_t i)
+void LibSupermesh_Tools::BufferedFileWriter::write(uint64_t i)
 {
 	m_file.write(reinterpret_cast<const char*>(&i), sizeof(uint64_t));
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(float i)
+void LibSupermesh_Tools::BufferedFileWriter::write(float i)
 {
 	m_file.write(reinterpret_cast<const char*>(&i), sizeof(float));
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(double i)
+void LibSupermesh_Tools::BufferedFileWriter::write(double i)
 {
 	m_file.write(reinterpret_cast<const char*>(&i), sizeof(double));
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(bool b)
+void LibSupermesh_Tools::BufferedFileWriter::write(bool b)
 {
 	m_file.write(reinterpret_cast<const char*>(&b), sizeof(bool));
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(const std::string& s)
+void LibSupermesh_Tools::BufferedFileWriter::write(const std::string& s)
 {
 	uint32_t len = static_cast<uint32_t>(s.size());
 	m_file.write(reinterpret_cast<const char*>(&len), sizeof(uint32_t));
@@ -1060,7 +1060,7 @@ void Tools::BufferedFileWriter::write(const std::string& s)
 	if (! m_file.good()) throw std::ios_base::failure("");
 }
 
-void Tools::BufferedFileWriter::write(uint32_t u32Len, byte* pData)
+void LibSupermesh_Tools::BufferedFileWriter::write(uint32_t u32Len, byte* pData)
 {
 	m_file.write(reinterpret_cast<const char*>(pData), u32Len);
 	if (! m_file.good()) throw std::ios_base::failure("");
@@ -1069,7 +1069,7 @@ void Tools::BufferedFileWriter::write(uint32_t u32Len, byte* pData)
 //
 // TemporaryFile
 //
-Tools::TemporaryFile::TemporaryFile()
+LibSupermesh_Tools::TemporaryFile::TemporaryFile()
 {
 
 #ifdef _MSC_VER
@@ -1102,10 +1102,10 @@ Tools::TemporaryFile::TemporaryFile()
 	m_sFile = tmpName;
 #endif
 
-	m_pFile = new Tools::BufferedFileWriter(m_sFile, Tools::CREATE);
+	m_pFile = new LibSupermesh_Tools::BufferedFileWriter(m_sFile, LibSupermesh_Tools::CREATE);
 }
 
-Tools::TemporaryFile::~TemporaryFile()
+LibSupermesh_Tools::TemporaryFile::~TemporaryFile()
 {
 	delete m_pFile;
 
@@ -1116,178 +1116,178 @@ Tools::TemporaryFile::~TemporaryFile()
 #endif
 }
 
-void Tools::TemporaryFile::rewindForReading()
+void LibSupermesh_Tools::TemporaryFile::rewindForReading()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br != 0)
 		m_pFile->rewind();
 	else
 	{
 		delete m_pFile;
-		m_pFile = new Tools::BufferedFileReader(m_sFile);
+		m_pFile = new LibSupermesh_Tools::BufferedFileReader(m_sFile);
 	}
 }
 
-void Tools::TemporaryFile::rewindForWriting()
+void LibSupermesh_Tools::TemporaryFile::rewindForWriting()
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw != 0)
 		m_pFile->rewind();
 	else
 	{
 		delete m_pFile;
-		m_pFile = new Tools::BufferedFileWriter(m_sFile);
+		m_pFile = new LibSupermesh_Tools::BufferedFileWriter(m_sFile);
 	}
 }
 
-bool Tools::TemporaryFile::eof()
+bool LibSupermesh_Tools::TemporaryFile::eof()
 {
 	return m_pFile->eof();
 }
 
-std::string Tools::TemporaryFile::getFileName() const
+std::string LibSupermesh_Tools::TemporaryFile::getFileName() const
 {
 	return m_sFile;
 }
 
-uint8_t Tools::TemporaryFile::readUInt8()
+uint8_t LibSupermesh_Tools::TemporaryFile::readUInt8()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::readUInt8: file not open for reading.");
 
 	return br->readUInt8();
 }
 
-uint16_t Tools::TemporaryFile::readUInt16()
+uint16_t LibSupermesh_Tools::TemporaryFile::readUInt16()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::readUInt16: file not open for reading.");
 
 	return br->readUInt16();
 }
 
-uint32_t Tools::TemporaryFile::readUInt32()
+uint32_t LibSupermesh_Tools::TemporaryFile::readUInt32()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::readUInt32: file not open for reading.");
 
 	return br->readUInt32();
 }
 
-uint64_t Tools::TemporaryFile::readUInt64()
+uint64_t LibSupermesh_Tools::TemporaryFile::readUInt64()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::readUInt64: file not open for reading.");
 
 	return br->readUInt64();
 }
 
-float Tools::TemporaryFile::readFloat()
+float LibSupermesh_Tools::TemporaryFile::readFloat()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
-		throw std::ios_base::failure("Tools::TemporaryFile::readFloat: file not open for reading.");
+		throw std::ios_base::failure("LibSupermesh_Tools::TemporaryFile::readFloat: file not open for reading.");
 
 	return br->readFloat();
 }
 
-double Tools::TemporaryFile::readDouble()
+double LibSupermesh_Tools::TemporaryFile::readDouble()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::readDouble: file not open for reading.");
 
 	return br->readDouble();
 }
 
-std::string Tools::TemporaryFile::readString()
+std::string LibSupermesh_Tools::TemporaryFile::readString()
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::readString: file not open for reading.");
 
 	return br->readString();
 }
 
-void Tools::TemporaryFile::readBytes(uint32_t u32Len, byte** pData)
+void LibSupermesh_Tools::TemporaryFile::readBytes(uint32_t u32Len, byte** pData)
 {
-	Tools::BufferedFileReader* br = dynamic_cast<Tools::BufferedFileReader*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileReader* br = dynamic_cast<LibSupermesh_Tools::BufferedFileReader*>(m_pFile);
 	if (br == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::readString: file not open for reading.");
 
 	return br->readBytes(u32Len, pData);
 }
 
-void Tools::TemporaryFile::write(uint8_t i)
+void LibSupermesh_Tools::TemporaryFile::write(uint8_t i)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 
 	return bw->write(i);
 }
 
-void Tools::TemporaryFile::write(uint16_t i)
+void LibSupermesh_Tools::TemporaryFile::write(uint16_t i)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 
 	return bw->write(i);
 }
 
-void Tools::TemporaryFile::write(uint32_t i)
+void LibSupermesh_Tools::TemporaryFile::write(uint32_t i)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 
 	return bw->write(i);
 }
 
-void Tools::TemporaryFile::write(uint64_t i)
+void LibSupermesh_Tools::TemporaryFile::write(uint64_t i)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 
 	return bw->write(i);
 }
 
-void Tools::TemporaryFile::write(float i)
+void LibSupermesh_Tools::TemporaryFile::write(float i)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 
 	return bw->write(i);
 }
 
-void Tools::TemporaryFile::write(double i)
+void LibSupermesh_Tools::TemporaryFile::write(double i)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 
 	return bw->write(i);
 }
 
-void Tools::TemporaryFile::write(const std::string& s)
+void LibSupermesh_Tools::TemporaryFile::write(const std::string& s)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 
 	return bw->write(s);
 }
 
-void Tools::TemporaryFile::write(uint32_t u32Len, byte* pData)
+void LibSupermesh_Tools::TemporaryFile::write(uint32_t u32Len, byte* pData)
 {
-	Tools::BufferedFileWriter* bw = dynamic_cast<Tools::BufferedFileWriter*>(m_pFile);
+	LibSupermesh_Tools::BufferedFileWriter* bw = dynamic_cast<LibSupermesh_Tools::BufferedFileWriter*>(m_pFile);
 	if (bw == 0)
 		throw std::ios_base::failure("Tools::TemporaryFile::write: file not open for writing.");
 

@@ -29,9 +29,9 @@
 
 #include "tools/Tools.h"
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
-	class SIDX_DLL Point : public Tools::IObject, public virtual IShape
+	class SIDX_DLL Point : public LibSupermesh_Tools::IObject, public virtual IShape
 	{
 	public:
 		Point();
@@ -81,7 +81,7 @@ namespace SpatialIndex
 		friend SIDX_DLL std::ostream& operator<<(std::ostream& os, const Point& pt);
 	}; // Point
 	
-	typedef Tools::PoolPointer<Point> PointPtr;
+	typedef LibSupermesh_Tools::PoolPointer<Point> PointPtr;
 
 	SIDX_DLL std::ostream& operator<<(std::ostream& os, const Point& pt);
 }

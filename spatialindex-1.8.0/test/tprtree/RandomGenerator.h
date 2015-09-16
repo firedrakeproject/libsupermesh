@@ -133,7 +133,7 @@ public:
 
 	map<int, MyMovingObject*> m_dataset;
 	set<int>* m_updateArray;
-	Tools::Random m_random;
+	LibSupermesh_Tools::Random m_random;
 };
 
 #endif

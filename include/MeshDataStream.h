@@ -42,26 +42,26 @@ namespace LibSupermesh{
   
   // Customised version of MyDataStream class in
   // regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0
-  class MeshDataStream : public SpatialIndex::IDataStream{
+  class MeshDataStream : public LibSupermesh_SpatialIndex::IDataStream{
   public:
     MeshDataStream(const double*& positions, const int& nnodes, const int& dim,
                    const int*& enlist, const int& nelements, const int& loc);
     virtual ~MeshDataStream();
     
-    virtual SpatialIndex::IData* getNext();
+    virtual LibSupermesh_SpatialIndex::IData* getNext();
     virtual bool hasNext();
     virtual uint32_t size();
     virtual void rewind();
 
     virtual int getPredicateCount();
 
-    class MDSInstrumentedRegion : public SpatialIndex::Region
+    class MDSInstrumentedRegion : public LibSupermesh_SpatialIndex::Region
     {
       public:
         MDSInstrumentedRegion(MeshDataStream* mdss){mds = mdss;}
         MDSInstrumentedRegion(MeshDataStream* mdss, const double* pLow, const double* pHigh, size_t dimension){mds = mdss;}
-        MDSInstrumentedRegion(MeshDataStream* mdss, const SpatialIndex::Point& low, const SpatialIndex::Point& high){mds = mdss;}
-        MDSInstrumentedRegion(MeshDataStream* mdss, const SpatialIndex::Region& in){mds = mdss;}
+        MDSInstrumentedRegion(MeshDataStream* mdss, const LibSupermesh_SpatialIndex::Point& low, const LibSupermesh_SpatialIndex::Point& high){mds = mdss;}
+        MDSInstrumentedRegion(MeshDataStream* mdss, const LibSupermesh_SpatialIndex::Region& in){mds = mdss;}
 
         virtual bool intersectsRegion(const Region& in);
         virtual bool containsRegion(const Region& in);
@@ -95,7 +95,7 @@ namespace LibSupermesh{
         return;
       }
       
-      virtual SpatialIndex::IData* getNext();
+      virtual LibSupermesh_SpatialIndex::IData* getNext();
     private:
       double expansionFactor;
   };

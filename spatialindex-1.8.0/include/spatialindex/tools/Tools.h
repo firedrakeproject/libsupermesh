@@ -82,7 +82,7 @@
 
 typedef uint8_t byte;
 
-namespace Tools
+namespace LibSupermesh_Tools
 {
 	SIDX_DLL enum IntervalType
 	{
@@ -301,7 +301,7 @@ namespace Tools
 	}; // Variant
 
 	class SIDX_DLL PropertySet;
-	SIDX_DLL std::ostream& operator<<(std::ostream& os, const Tools::PropertySet& p);
+	SIDX_DLL std::ostream& operator<<(std::ostream& os, const LibSupermesh_Tools::PropertySet& p);
 
 	class SIDX_DLL PropertySet : public ISerializable
 	{
@@ -325,7 +325,7 @@ namespace Tools
 #else
 			bool m_rwLock;
 #endif
-		friend SIDX_DLL std::ostream& Tools::operator<<(std::ostream& os, const Tools::PropertySet& p);
+		friend SIDX_DLL std::ostream& LibSupermesh_Tools::operator<<(std::ostream& os, const LibSupermesh_Tools::PropertySet& p);
 	}; // PropertySet
 
 	// does not support degenerate intervals.
@@ -354,7 +354,7 @@ namespace Tools
 		double m_high;
 	}; // Interval
 
-	SIDX_DLL std::ostream& operator<<(std::ostream& os, const Tools::Interval& iv);
+	SIDX_DLL std::ostream& operator<<(std::ostream& os, const LibSupermesh_Tools::Interval& iv);
 
 	class SIDX_DLL Random
 	{

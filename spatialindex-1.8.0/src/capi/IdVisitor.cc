@@ -37,18 +37,18 @@ IdVisitor::~IdVisitor()
 
 }
 
-void IdVisitor::visitNode(const SpatialIndex::INode& n)
+void IdVisitor::visitNode(const LibSupermesh_SpatialIndex::INode& n)
 {
 
 }
 
-void IdVisitor::visitData(const SpatialIndex::IData& d)
+void IdVisitor::visitData(const LibSupermesh_SpatialIndex::IData& d)
 {
 	nResults += 1;
 	
 	m_vector.push_back(d.getIdentifier());
 }
 
-void IdVisitor::visitData(std::vector<const SpatialIndex::IData*>& v)
+void IdVisitor::visitData(std::vector<const LibSupermesh_SpatialIndex::IData*>& v)
 {
 }

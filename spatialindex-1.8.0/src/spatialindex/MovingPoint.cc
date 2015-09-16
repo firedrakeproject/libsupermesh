@@ -31,7 +31,7 @@
 
 #include <spatialindex/SpatialIndex.h>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 MovingPoint::MovingPoint()
 {
@@ -63,7 +63,7 @@ MovingPoint::MovingPoint(	const Point& p,
 							const IInterval& ti)
 {
 	if (p.m_dimension != vp.m_dimension) 
-		throw Tools::IllegalArgumentException("MovingPoint: Points have different number of dimensions.");
+		throw LibSupermesh_Tools::IllegalArgumentException("MovingPoint: Points have different number of dimensions.");
 
 	initialize(	p.m_pCoords, 
 				vp.m_pCoords, 
@@ -75,7 +75,7 @@ MovingPoint::MovingPoint(	const Point& p,
 MovingPoint::MovingPoint(const Point& p, const Point& vp, double tStart, double tEnd)
 {
 	if (p.m_dimension != vp.m_dimension) 
-		throw Tools::IllegalArgumentException("MovingPoint: Points have different number of dimensions.");
+		throw LibSupermesh_Tools::IllegalArgumentException("MovingPoint: Points have different number of dimensions.");
 
 	initialize(	p.m_pCoords, 
 				vp.m_pCoords, 
@@ -122,7 +122,7 @@ void MovingPoint::initialize(
 	m_pCoords = 0;
 
 	if (m_endTime <= m_startTime) 
-		throw Tools::IllegalArgumentException("MovingPoint: Cannot support degenerate time intervals.");
+		throw LibSupermesh_Tools::IllegalArgumentException("MovingPoint: Cannot support degenerate time intervals.");
 
 	try
 	{
@@ -179,7 +179,7 @@ bool MovingPoint::operator==(const MovingPoint& p) const
 
 double MovingPoint::getCoord(uint32_t d, double t) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	if (t >= m_endTime) return m_pCoords[d] + m_pVCoords[d] * (m_endTime - m_startTime);
 	else if (t <= m_startTime) return m_pCoords[d] + m_pVCoords[d] * m_startTime;
@@ -188,14 +188,14 @@ double MovingPoint::getCoord(uint32_t d, double t) const
 
 double MovingPoint::getProjectedCoord(uint32_t d, double t) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	return m_pCoords[d] + m_pVCoords[d] * (t - m_startTime);
 }
 
 double MovingPoint::getVCoord(uint32_t d) const
 {
-	if (d >= m_dimension) throw Tools::IndexOutOfBoundsException(d);
+	if (d >= m_dimension) throw LibSupermesh_Tools::IndexOutOfBoundsException(d);
 
 	return m_pVCoords[d];
 }
@@ -307,7 +307,7 @@ void MovingPoint::makeDimension(uint32_t dimension)
 	}
 }
 
-std::ostream& SpatialIndex::operator<<(std::ostream& os, const MovingPoint& pt)
+std::ostream& LibSupermesh_SpatialIndex::operator<<(std::ostream& os, const MovingPoint& pt)
 {
 	uint32_t i;
 

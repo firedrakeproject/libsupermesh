@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	namespace TPRTree
 	{
@@ -36,9 +36,9 @@ namespace SpatialIndex
 		class Index;
 		class Node;
 
-		typedef Tools::PoolPointer<Node> NodePtr;
+		typedef LibSupermesh_Tools::PoolPointer<Node> NodePtr;
 
-		class Node : public SpatialIndex::INode
+		class Node : public LibSupermesh_SpatialIndex::INode
 		{
 		public:
 			virtual ~Node();
@@ -46,7 +46,7 @@ namespace SpatialIndex
 			//
 			// Tools::IObject interface
 			//
-			virtual Tools::IObject* clone();
+			virtual LibSupermesh_Tools::IObject* clone();
 
 			//
 			// Tools::ISerializable interface
@@ -56,13 +56,13 @@ namespace SpatialIndex
 			virtual void storeToByteArray(byte** data, uint32_t& len);
 
 			//
-			// SpatialIndex::IEntry interface
+			// LibSupermesh_SpatialIndex::IEntry interface
 			//
 			virtual id_type getIdentifier() const;
 			virtual void getShape(IShape** out) const;
 
 			//
-			// SpatialIndex::INode interface
+			// LibSupermesh_SpatialIndex::INode interface
 			//
 			virtual uint32_t getChildrenCount() const;
 			virtual id_type getChildIdentifier(uint32_t index)  const;
@@ -200,7 +200,7 @@ namespace SpatialIndex
 			friend class TPRTree;
 			friend class Leaf;
 			friend class Index;
-			friend class Tools::PointerPool<Node>;
+			friend class LibSupermesh_Tools::PointerPool<Node>;
 		}; // Node
 	}
 }

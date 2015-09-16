@@ -35,32 +35,32 @@
 #include <spatialindex/SpatialIndex.h>
 #include "RandomEvictionsBuffer.h"
 
-using namespace SpatialIndex;
-using namespace SpatialIndex::StorageManager;
+using namespace LibSupermesh_SpatialIndex;
+using namespace LibSupermesh_SpatialIndex::StorageManager;
 
-IBuffer* SpatialIndex::StorageManager::returnRandomEvictionsBuffer(IStorageManager& sm, Tools::PropertySet& ps)
+IBuffer* LibSupermesh_SpatialIndex::StorageManager::returnRandomEvictionsBuffer(IStorageManager& sm, LibSupermesh_Tools::PropertySet& ps)
 {
 	IBuffer* b = new RandomEvictionsBuffer(sm, ps);
 	return b;
 }
 
-IBuffer* SpatialIndex::StorageManager::createNewRandomEvictionsBuffer(IStorageManager& sm, uint32_t capacity, bool bWriteThrough)
+IBuffer* LibSupermesh_SpatialIndex::StorageManager::createNewRandomEvictionsBuffer(IStorageManager& sm, uint32_t capacity, bool bWriteThrough)
 {
-	Tools::Variant var;
-	Tools::PropertySet ps;
+	LibSupermesh_Tools::Variant var;
+	LibSupermesh_Tools::PropertySet ps;
 
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = capacity;
 	ps.setProperty("Capacity", var);
 
-	var.m_varType = Tools::VT_BOOL;
+	var.m_varType = LibSupermesh_Tools::VT_BOOL;
 	var.m_val.blVal = bWriteThrough;
 	ps.setProperty("WriteThrough", var);
 
 	return returnRandomEvictionsBuffer(sm, ps);
 }
 
-RandomEvictionsBuffer::RandomEvictionsBuffer(IStorageManager& sm, Tools::PropertySet& ps) : Buffer(sm, ps)
+RandomEvictionsBuffer::RandomEvictionsBuffer(IStorageManager& sm, LibSupermesh_Tools::PropertySet& ps) : Buffer(sm, ps)
 {
 	srand48(static_cast<uint32_t>(time(0)));
 }

@@ -36,10 +36,10 @@
 #include "BulkLoader.h"
 #include "RTree.h"
 
-using namespace SpatialIndex::RTree;
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex::RTree;
+using namespace LibSupermesh_SpatialIndex;
 
-SpatialIndex::RTree::Data::Data(uint32_t len, byte* pData, Region& r, id_type id)
+LibSupermesh_SpatialIndex::RTree::Data::Data(uint32_t len, byte* pData, Region& r, id_type id)
 	: m_id(id), m_region(r), m_pData(0), m_dataLength(len)
 {
 	if (m_dataLength > 0)
@@ -49,27 +49,27 @@ SpatialIndex::RTree::Data::Data(uint32_t len, byte* pData, Region& r, id_type id
 	}
 }
 
-SpatialIndex::RTree::Data::~Data()
+LibSupermesh_SpatialIndex::RTree::Data::~Data()
 {
 	delete[] m_pData;
 }
 
-SpatialIndex::RTree::Data* SpatialIndex::RTree::Data::clone()
+LibSupermesh_SpatialIndex::RTree::Data* LibSupermesh_SpatialIndex::RTree::Data::clone()
 {
 	return new Data(m_dataLength, m_pData, m_region, m_id);
 }
 
-id_type SpatialIndex::RTree::Data::getIdentifier() const
+id_type LibSupermesh_SpatialIndex::RTree::Data::getIdentifier() const
 {
 	return m_id;
 }
 
-void SpatialIndex::RTree::Data::getShape(IShape** out) const
+void LibSupermesh_SpatialIndex::RTree::Data::getShape(IShape** out) const
 {
 	*out = new Region(m_region);
 }
 
-void SpatialIndex::RTree::Data::getData(uint32_t& len, byte** data) const
+void LibSupermesh_SpatialIndex::RTree::Data::getData(uint32_t& len, byte** data) const
 {
 	len = m_dataLength;
 	*data = 0;
@@ -81,7 +81,7 @@ void SpatialIndex::RTree::Data::getData(uint32_t& len, byte** data) const
 	}
 }
 
-uint32_t SpatialIndex::RTree::Data::getByteArraySize()
+uint32_t LibSupermesh_SpatialIndex::RTree::Data::getByteArraySize()
 {
 	return
 		sizeof(id_type) +
@@ -90,7 +90,7 @@ uint32_t SpatialIndex::RTree::Data::getByteArraySize()
 		m_region.getByteArraySize();
 }
 
-void SpatialIndex::RTree::Data::loadFromByteArray(const byte* ptr)
+void LibSupermesh_SpatialIndex::RTree::Data::loadFromByteArray(const byte* ptr)
 {
 	memcpy(&m_id, ptr, sizeof(id_type));
 	ptr += sizeof(id_type);
@@ -111,7 +111,7 @@ void SpatialIndex::RTree::Data::loadFromByteArray(const byte* ptr)
 	m_region.loadFromByteArray(ptr);
 }
 
-void SpatialIndex::RTree::Data::storeToByteArray(byte** data, uint32_t& len)
+void LibSupermesh_SpatialIndex::RTree::Data::storeToByteArray(byte** data, uint32_t& len)
 {
 	// it is thread safe this way.
 	uint32_t regionsize;
@@ -139,14 +139,14 @@ void SpatialIndex::RTree::Data::storeToByteArray(byte** data, uint32_t& len)
 	// ptr += regionsize;
 }
 
-SpatialIndex::ISpatialIndex* SpatialIndex::RTree::returnRTree(SpatialIndex::IStorageManager& sm, Tools::PropertySet& ps)
+LibSupermesh_SpatialIndex::ISpatialIndex* LibSupermesh_SpatialIndex::RTree::returnRTree(LibSupermesh_SpatialIndex::IStorageManager& sm, LibSupermesh_Tools::PropertySet& ps)
 {
-	SpatialIndex::ISpatialIndex* si = new SpatialIndex::RTree::RTree(sm, ps);
+	LibSupermesh_SpatialIndex::ISpatialIndex* si = new LibSupermesh_SpatialIndex::RTree::RTree(sm, ps);
 	return si;
 }
 
-SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createNewRTree(
-	SpatialIndex::IStorageManager& sm,
+LibSupermesh_SpatialIndex::ISpatialIndex* LibSupermesh_SpatialIndex::RTree::createNewRTree(
+	LibSupermesh_SpatialIndex::IStorageManager& sm,
 	double fillFactor,
 	uint32_t indexCapacity,
 	uint32_t leafCapacity,
@@ -154,55 +154,55 @@ SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createNewRTree(
 	RTreeVariant rv,
 	id_type& indexIdentifier)
 {
-	Tools::Variant var;
-	Tools::PropertySet ps;
+	LibSupermesh_Tools::Variant var;
+	LibSupermesh_Tools::PropertySet ps;
 
-	var.m_varType = Tools::VT_DOUBLE;
+	var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
 	var.m_val.dblVal = fillFactor;
 	ps.setProperty("FillFactor", var);
 
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = indexCapacity;
 	ps.setProperty("IndexCapacity", var);
 
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = leafCapacity;
 	ps.setProperty("LeafCapacity", var);
 
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = dimension;
 	ps.setProperty("Dimension", var);
 
-	var.m_varType = Tools::VT_LONG;
+	var.m_varType = LibSupermesh_Tools::VT_LONG;
 	var.m_val.lVal = rv;
 	ps.setProperty("TreeVariant", var);
 
 	ISpatialIndex* ret = returnRTree(sm, ps);
 
-	var.m_varType = Tools::VT_LONGLONG;
+	var.m_varType = LibSupermesh_Tools::VT_LONGLONG;
 	var = ps.getProperty("IndexIdentifier");
 	indexIdentifier = var.m_val.llVal;
 
 	return ret;
 }
 
-SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createAndBulkLoadNewRTree(
+LibSupermesh_SpatialIndex::ISpatialIndex* LibSupermesh_SpatialIndex::RTree::createAndBulkLoadNewRTree(
 	BulkLoadMethod m,
 	IDataStream& stream,
-	SpatialIndex::IStorageManager& sm,
+	LibSupermesh_SpatialIndex::IStorageManager& sm,
 	double fillFactor,
 	uint32_t indexCapacity,
 	uint32_t leafCapacity,
 	uint32_t dimension,
-	SpatialIndex::RTree::RTreeVariant rv,
+	LibSupermesh_SpatialIndex::RTree::RTreeVariant rv,
 	id_type& indexIdentifier)
 {
-	SpatialIndex::ISpatialIndex* tree = createNewRTree(sm, fillFactor, indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
+	LibSupermesh_SpatialIndex::ISpatialIndex* tree = createNewRTree(sm, fillFactor, indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
 
 	uint32_t bindex = static_cast<uint32_t>(std::floor(static_cast<double>(indexCapacity * fillFactor)));
 	uint32_t bleaf = static_cast<uint32_t>(std::floor(static_cast<double>(leafCapacity * fillFactor)));
 
-	SpatialIndex::RTree::BulkLoader bl;
+	LibSupermesh_SpatialIndex::RTree::BulkLoader bl;
 
 	switch (m)
 	{
@@ -210,21 +210,21 @@ SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createAndBulkLoadNewRTree(
 		bl.bulkLoadUsingSTR(static_cast<RTree*>(tree), stream, bindex, bleaf, 10000, 100);
 		break;
 	default:
-		throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Unknown bulk load method.");
+		throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Unknown bulk load method.");
 		break;
 	}
 
 	return tree;
 }
 
-SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createAndBulkLoadNewRTree(
+LibSupermesh_SpatialIndex::ISpatialIndex* LibSupermesh_SpatialIndex::RTree::createAndBulkLoadNewRTree(
 	BulkLoadMethod m,
 	IDataStream& stream,
-	SpatialIndex::IStorageManager& sm,
-	Tools::PropertySet& ps,
+	LibSupermesh_SpatialIndex::IStorageManager& sm,
+	LibSupermesh_Tools::PropertySet& ps,
 	id_type& indexIdentifier)
 {
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 	RTreeVariant rv(RV_LINEAR);
 	double fillFactor(0.0);
 	uint32_t indexCapacity(0);
@@ -235,14 +235,14 @@ SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createAndBulkLoadNewRTree(
 
 	// tree variant
 	var = ps.getProperty("TreeVariant");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
 		if (
-			var.m_varType != Tools::VT_LONG ||
+			var.m_varType != LibSupermesh_Tools::VT_LONG ||
 			(var.m_val.lVal != RV_LINEAR &&
 			var.m_val.lVal != RV_QUADRATIC &&
 			var.m_val.lVal != RV_RSTAR))
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property TreeVariant must be Tools::VT_LONG and of RTreeVariant type");
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property TreeVariant must be Tools::VT_LONG and of RTreeVariant type");
 
 		rv = static_cast<RTreeVariant>(var.m_val.lVal);
 	}
@@ -251,83 +251,83 @@ SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createAndBulkLoadNewRTree(
 	// it cannot be larger than 50%, since linear and quadratic split algorithms
 	// require assigning to both nodes the same number of entries.
 	var = ps.getProperty("FillFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-	    if (var.m_varType != Tools::VT_DOUBLE)
-            throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property FillFactor was not of type Tools::VT_DOUBLE");
+	    if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE)
+            throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property FillFactor was not of type Tools::VT_DOUBLE");
 
         if (var.m_val.dblVal <= 0.0)
-            throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property FillFactor was less than 0.0");
+            throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property FillFactor was less than 0.0");
 
         if (((rv == RV_LINEAR || rv == RV_QUADRATIC) && var.m_val.dblVal > 0.5))
-            throw Tools::IllegalArgumentException( "createAndBulkLoadNewRTree: Property FillFactor must be in range (0.0, 0.5) for LINEAR or QUADRATIC index types");
+            throw LibSupermesh_Tools::IllegalArgumentException( "createAndBulkLoadNewRTree: Property FillFactor must be in range (0.0, 0.5) for LINEAR or QUADRATIC index types");
         if ( var.m_val.dblVal >= 1.0)
-            throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property FillFactor must be in range (0.0, 1.0) for RSTAR index type");
+            throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property FillFactor must be in range (0.0, 1.0) for RSTAR index type");
 		fillFactor = var.m_val.dblVal;
 	}
 
 	// index capacity
 	var = ps.getProperty("IndexCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG || var.m_val.ulVal < 4)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property IndexCapacity must be Tools::VT_ULONG and >= 4");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG || var.m_val.ulVal < 4)
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property IndexCapacity must be Tools::VT_ULONG and >= 4");
 
 		indexCapacity = var.m_val.ulVal;
 	}
 
 	// leaf capacity
 	var = ps.getProperty("LeafCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG || var.m_val.ulVal < 4)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property LeafCapacity must be Tools::VT_ULONG and >= 4");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG || var.m_val.ulVal < 4)
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property LeafCapacity must be Tools::VT_ULONG and >= 4");
 
 		leafCapacity = var.m_val.ulVal;
 	}
 
 	// dimension
 	var = ps.getProperty("Dimension");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property Dimension must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property Dimension must be Tools::VT_ULONG");
 		if (var.m_val.ulVal <= 1)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property Dimension must be greater than 1");
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property Dimension must be greater than 1");
 
 		dimension = var.m_val.ulVal;
 	}
 
 	// page size
 	var = ps.getProperty("ExternalSortBufferPageSize");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferPageSize must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferPageSize must be Tools::VT_ULONG");
 		if (var.m_val.ulVal <= 1)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferPageSize must be greater than 1");
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferPageSize must be greater than 1");
 
 		pageSize = var.m_val.ulVal;
 	}
 
 	// number of pages
 	var = ps.getProperty("ExternalSortBufferTotalPages");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferTotalPages must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferTotalPages must be Tools::VT_ULONG");
 		if (var.m_val.ulVal <= 1)
-			throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferTotalPages must be greater than 1");
+			throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Property ExternalSortBufferTotalPages must be greater than 1");
 
 		numberOfPages = var.m_val.ulVal;
 	}
 
-	SpatialIndex::ISpatialIndex* tree = createNewRTree(sm, fillFactor, indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
+	LibSupermesh_SpatialIndex::ISpatialIndex* tree = createNewRTree(sm, fillFactor, indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
 
 	uint32_t bindex = static_cast<uint32_t>(std::floor(static_cast<double>(indexCapacity * fillFactor)));
 	uint32_t bleaf = static_cast<uint32_t>(std::floor(static_cast<double>(leafCapacity * fillFactor)));
 
-	SpatialIndex::RTree::BulkLoader bl;
+	LibSupermesh_SpatialIndex::RTree::BulkLoader bl;
 
 	switch (m)
 	{
@@ -335,26 +335,26 @@ SpatialIndex::ISpatialIndex* SpatialIndex::RTree::createAndBulkLoadNewRTree(
 		bl.bulkLoadUsingSTR(static_cast<RTree*>(tree), stream, bindex, bleaf, pageSize, numberOfPages);
 		break;
 	default:
-		throw Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Unknown bulk load method.");
+		throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Unknown bulk load method.");
 		break;
 	}
 
 	return tree;
 }
 
-SpatialIndex::ISpatialIndex* SpatialIndex::RTree::loadRTree(IStorageManager& sm, id_type indexIdentifier)
+LibSupermesh_SpatialIndex::ISpatialIndex* LibSupermesh_SpatialIndex::RTree::loadRTree(IStorageManager& sm, id_type indexIdentifier)
 {
-	Tools::Variant var;
-	Tools::PropertySet ps;
+	LibSupermesh_Tools::Variant var;
+	LibSupermesh_Tools::PropertySet ps;
 
-	var.m_varType = Tools::VT_LONGLONG;
+	var.m_varType = LibSupermesh_Tools::VT_LONGLONG;
 	var.m_val.llVal = indexIdentifier;
 	ps.setProperty("IndexIdentifier", var);
 
 	return returnRTree(sm, ps);
 }
 
-SpatialIndex::RTree::RTree::RTree(IStorageManager& sm, Tools::PropertySet& ps) :
+LibSupermesh_SpatialIndex::RTree::RTree::RTree(IStorageManager& sm, LibSupermesh_Tools::PropertySet& ps) :
 	m_pStorageManager(&sm),
 	m_rootID(StorageManager::NewPage),
 	m_headerID(StorageManager::NewPage),
@@ -376,26 +376,26 @@ SpatialIndex::RTree::RTree::RTree(IStorageManager& sm, Tools::PropertySet& ps) :
 	pthread_mutex_init(&m_lock, NULL);
 #endif
 
-	Tools::Variant var = ps.getProperty("IndexIdentifier");
-	if (var.m_varType != Tools::VT_EMPTY)
+	LibSupermesh_Tools::Variant var = ps.getProperty("IndexIdentifier");
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType == Tools::VT_LONGLONG) m_headerID = var.m_val.llVal;
-		else if (var.m_varType == Tools::VT_LONG) m_headerID = var.m_val.lVal;
+		if (var.m_varType == LibSupermesh_Tools::VT_LONGLONG) m_headerID = var.m_val.llVal;
+		else if (var.m_varType == LibSupermesh_Tools::VT_LONG) m_headerID = var.m_val.lVal;
 			// for backward compatibility only.
-		else throw Tools::IllegalArgumentException("RTree: Property IndexIdentifier must be Tools::VT_LONGLONG");
+		else throw LibSupermesh_Tools::IllegalArgumentException("RTree: Property IndexIdentifier must be Tools::VT_LONGLONG");
 
 		initOld(ps);
 	}
 	else
 	{
 		initNew(ps);
-		var.m_varType = Tools::VT_LONGLONG;
+		var.m_varType = LibSupermesh_Tools::VT_LONGLONG;
 		var.m_val.llVal = m_headerID;
 		ps.setProperty("IndexIdentifier", var);
 	}
 }
 
-SpatialIndex::RTree::RTree::~RTree()
+LibSupermesh_SpatialIndex::RTree::RTree::~RTree()
 {
 #ifdef HAVE_PTHREAD_H
 	pthread_mutex_destroy(&m_lock);
@@ -408,12 +408,12 @@ SpatialIndex::RTree::RTree::~RTree()
 // ISpatialIndex interface
 //
 
-void SpatialIndex::RTree::RTree::insertData(uint32_t len, const byte* pData, const IShape& shape, id_type id)
+void LibSupermesh_SpatialIndex::RTree::RTree::insertData(uint32_t len, const byte* pData, const IShape& shape, id_type id)
 {
-	if (shape.getDimension() != m_dimension) throw Tools::IllegalArgumentException("insertData: Shape has the wrong number of dimensions.");
+	if (shape.getDimension() != m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("insertData: Shape has the wrong number of dimensions.");
 
 #ifdef HAVE_PTHREAD_H
-	Tools::LockGuard lock(&m_lock);
+	LibSupermesh_Tools::LockGuard lock(&m_lock);
 #endif
 
 	// convert the shape into a Region (R-Trees index regions only; i.e., approximations of the shapes).
@@ -432,12 +432,12 @@ void SpatialIndex::RTree::RTree::insertData(uint32_t len, const byte* pData, con
 		// the buffer is stored in the tree. Do not delete here.
 }
 
-bool SpatialIndex::RTree::RTree::deleteData(const IShape& shape, id_type id)
+bool LibSupermesh_SpatialIndex::RTree::RTree::deleteData(const IShape& shape, id_type id)
 {
-	if (shape.getDimension() != m_dimension) throw Tools::IllegalArgumentException("deleteData: Shape has the wrong number of dimensions.");
+	if (shape.getDimension() != m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("deleteData: Shape has the wrong number of dimensions.");
 
 #ifdef HAVE_PTHREAD_H
-	Tools::LockGuard lock(&m_lock);
+	LibSupermesh_Tools::LockGuard lock(&m_lock);
 #endif
 
 	RegionPtr mbr = m_regionPool.acquire();
@@ -448,12 +448,12 @@ bool SpatialIndex::RTree::RTree::deleteData(const IShape& shape, id_type id)
 }
 
 
-void SpatialIndex::RTree::RTree::containsWhatQuery(const IShape& query, IVisitor& v)
+void LibSupermesh_SpatialIndex::RTree::RTree::containsWhatQuery(const IShape& query, IVisitor& v)
 {
-	if (query.getDimension() != m_dimension) throw Tools::IllegalArgumentException("containsWhatQuery: Shape has the wrong number of dimensions.");
+	if (query.getDimension() != m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("containsWhatQuery: Shape has the wrong number of dimensions.");
 
 #ifdef HAVE_PTHREAD_H
-	Tools::LockGuard lock(&m_lock);
+	LibSupermesh_Tools::LockGuard lock(&m_lock);
 #endif
 
 	try
@@ -504,25 +504,25 @@ void SpatialIndex::RTree::RTree::containsWhatQuery(const IShape& query, IVisitor
 		throw;
 	}
 }
-void SpatialIndex::RTree::RTree::intersectsWithQuery(const IShape& query, IVisitor& v)
+void LibSupermesh_SpatialIndex::RTree::RTree::intersectsWithQuery(const IShape& query, IVisitor& v)
 {
-	if (query.getDimension() != m_dimension) throw Tools::IllegalArgumentException("intersectsWithQuery: Shape has the wrong number of dimensions.");
+	if (query.getDimension() != m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("intersectsWithQuery: Shape has the wrong number of dimensions.");
 	rangeQuery(IntersectionQuery, query, v);
 }
 
-void SpatialIndex::RTree::RTree::pointLocationQuery(const Point& query, IVisitor& v)
+void LibSupermesh_SpatialIndex::RTree::RTree::pointLocationQuery(const Point& query, IVisitor& v)
 {
-	if (query.m_dimension != m_dimension) throw Tools::IllegalArgumentException("pointLocationQuery: Shape has the wrong number of dimensions.");
+	if (query.m_dimension != m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("pointLocationQuery: Shape has the wrong number of dimensions.");
 	Region r(query, query);
 	rangeQuery(IntersectionQuery, r, v);
 }
 
-void SpatialIndex::RTree::RTree::nearestNeighborQuery(uint32_t k, const IShape& query, IVisitor& v, INearestNeighborComparator& nnc)
+void LibSupermesh_SpatialIndex::RTree::RTree::nearestNeighborQuery(uint32_t k, const IShape& query, IVisitor& v, INearestNeighborComparator& nnc)
 {
-	if (query.getDimension() != m_dimension) throw Tools::IllegalArgumentException("nearestNeighborQuery: Shape has the wrong number of dimensions.");
+	if (query.getDimension() != m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("nearestNeighborQuery: Shape has the wrong number of dimensions.");
 
 #ifdef HAVE_PTHREAD_H
-	Tools::LockGuard lock(&m_lock);
+	LibSupermesh_Tools::LockGuard lock(&m_lock);
 #endif
 
 	std::priority_queue<NNEntry*, std::vector<NNEntry*>, NNEntry::ascending> queue;
@@ -583,21 +583,21 @@ void SpatialIndex::RTree::RTree::nearestNeighborQuery(uint32_t k, const IShape& 
 	}
 }
 
-void SpatialIndex::RTree::RTree::nearestNeighborQuery(uint32_t k, const IShape& query, IVisitor& v)
+void LibSupermesh_SpatialIndex::RTree::RTree::nearestNeighborQuery(uint32_t k, const IShape& query, IVisitor& v)
 {
-	if (query.getDimension() != m_dimension) throw Tools::IllegalArgumentException("nearestNeighborQuery: Shape has the wrong number of dimensions.");
+	if (query.getDimension() != m_dimension) throw LibSupermesh_Tools::IllegalArgumentException("nearestNeighborQuery: Shape has the wrong number of dimensions.");
 	NNComparator nnc;
 	nearestNeighborQuery(k, query, v, nnc);
 }
 
 
-void SpatialIndex::RTree::RTree::selfJoinQuery(const IShape& query, IVisitor& v)
+void LibSupermesh_SpatialIndex::RTree::RTree::selfJoinQuery(const IShape& query, IVisitor& v)
 {
 	if (query.getDimension() != m_dimension)
-		throw Tools::IllegalArgumentException("selfJoinQuery: Shape has the wrong number of dimensions.");
+		throw LibSupermesh_Tools::IllegalArgumentException("selfJoinQuery: Shape has the wrong number of dimensions.");
 
 #ifdef HAVE_PTHREAD_H
-	Tools::LockGuard lock(&m_lock);
+	LibSupermesh_Tools::LockGuard lock(&m_lock);
 #endif
 
 	RegionPtr mbr = m_regionPool.acquire();
@@ -605,10 +605,10 @@ void SpatialIndex::RTree::RTree::selfJoinQuery(const IShape& query, IVisitor& v)
 	selfJoinQuery(m_rootID, m_rootID, *mbr, v);
 }
 
-void SpatialIndex::RTree::RTree::queryStrategy(IQueryStrategy& qs)
+void LibSupermesh_SpatialIndex::RTree::RTree::queryStrategy(IQueryStrategy& qs)
 {
 #ifdef HAVE_PTHREAD_H
-	Tools::LockGuard lock(&m_lock);
+	LibSupermesh_Tools::LockGuard lock(&m_lock);
 #endif
 
 	id_type next = m_rootID;
@@ -621,93 +621,93 @@ void SpatialIndex::RTree::RTree::queryStrategy(IQueryStrategy& qs)
 	}
 }
 
-void SpatialIndex::RTree::RTree::getIndexProperties(Tools::PropertySet& out) const
+void LibSupermesh_SpatialIndex::RTree::RTree::getIndexProperties(LibSupermesh_Tools::PropertySet& out) const
 {
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 
 	// dimension
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_dimension;
 	out.setProperty("Dimension", var);
 
 	// index capacity
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_indexCapacity;
 	out.setProperty("IndexCapacity", var);
 
 	// leaf capacity
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_leafCapacity;
 	out.setProperty("LeafCapacity", var);
 
 	// R-tree variant
-	var.m_varType = Tools::VT_LONG;
+	var.m_varType = LibSupermesh_Tools::VT_LONG;
 	var.m_val.lVal = m_treeVariant;
 	out.setProperty("TreeVariant", var);
 
 	// fill factor
-	var.m_varType = Tools::VT_DOUBLE;
+	var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
 	var.m_val.dblVal = m_fillFactor;
 	out.setProperty("FillFactor", var);
 
 	// near minimum overlap factor
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_nearMinimumOverlapFactor;
 	out.setProperty("NearMinimumOverlapFactor", var);
 
 	// split distribution factor
-	var.m_varType = Tools::VT_DOUBLE;
+	var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
 	var.m_val.dblVal = m_splitDistributionFactor;
 	out.setProperty("SplitDistributionFactor", var);
 
 	// reinsert factor
-	var.m_varType = Tools::VT_DOUBLE;
+	var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
 	var.m_val.dblVal = m_reinsertFactor;
 	out.setProperty("ReinsertFactor", var);
 
 	// tight MBRs
-	var.m_varType = Tools::VT_BOOL;
+	var.m_varType = LibSupermesh_Tools::VT_BOOL;
 	var.m_val.blVal = m_bTightMBRs;
 	out.setProperty("EnsureTightMBRs", var);
 
 	// index pool capacity
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_indexPool.getCapacity();
 	out.setProperty("IndexPoolCapacity", var);
 
 	// leaf pool capacity
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_leafPool.getCapacity();
 	out.setProperty("LeafPoolCapacity", var);
 
 	// region pool capacity
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_regionPool.getCapacity();
 	out.setProperty("RegionPoolCapacity", var);
 
 	// point pool capacity
-	var.m_varType = Tools::VT_ULONG;
+	var.m_varType = LibSupermesh_Tools::VT_ULONG;
 	var.m_val.ulVal = m_pointPool.getCapacity();
 	out.setProperty("PointPoolCapacity", var);
 }
 
-void SpatialIndex::RTree::RTree::addCommand(ICommand* pCommand, CommandType ct)
+void LibSupermesh_SpatialIndex::RTree::RTree::addCommand(ICommand* pCommand, CommandType ct)
 {
 	switch (ct)
 	{
 		case CT_NODEREAD:
-			m_readNodeCommands.push_back(Tools::SmartPointer<ICommand>(pCommand));
+			m_readNodeCommands.push_back(LibSupermesh_Tools::SmartPointer<ICommand>(pCommand));
 			break;
 		case CT_NODEWRITE:
-			m_writeNodeCommands.push_back(Tools::SmartPointer<ICommand>(pCommand));
+			m_writeNodeCommands.push_back(LibSupermesh_Tools::SmartPointer<ICommand>(pCommand));
 			break;
 		case CT_NODEDELETE:
-			m_deleteNodeCommands.push_back(Tools::SmartPointer<ICommand>(pCommand));
+			m_deleteNodeCommands.push_back(LibSupermesh_Tools::SmartPointer<ICommand>(pCommand));
 			break;
 	}
 }
 
-bool SpatialIndex::RTree::RTree::isIndexValid()
+bool LibSupermesh_SpatialIndex::RTree::RTree::isIndexValid()
 {
 	bool ret = true;
 	std::stack<ValidateEntry> st;
@@ -799,25 +799,25 @@ bool SpatialIndex::RTree::RTree::isIndexValid()
 	return ret;
 }
 
-void SpatialIndex::RTree::RTree::getStatistics(IStatistics** out) const
+void LibSupermesh_SpatialIndex::RTree::RTree::getStatistics(IStatistics** out) const
 {
 	*out = new Statistics(m_stats);
 }
 
-void SpatialIndex::RTree::RTree::initNew(Tools::PropertySet& ps)
+void LibSupermesh_SpatialIndex::RTree::RTree::initNew(LibSupermesh_Tools::PropertySet& ps)
 {
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 
 	// tree variant
 	var = ps.getProperty("TreeVariant");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
 		if (
-			var.m_varType != Tools::VT_LONG ||
+			var.m_varType != LibSupermesh_Tools::VT_LONG ||
 			(var.m_val.lVal != RV_LINEAR &&
 			var.m_val.lVal != RV_QUADRATIC &&
 			var.m_val.lVal != RV_RSTAR))
-			throw Tools::IllegalArgumentException("initNew: Property TreeVariant must be Tools::VT_LONG and of RTreeVariant type");
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property TreeVariant must be Tools::VT_LONG and of RTreeVariant type");
 
 		m_treeVariant = static_cast<RTreeVariant>(var.m_val.lVal);
 	}
@@ -826,141 +826,141 @@ void SpatialIndex::RTree::RTree::initNew(Tools::PropertySet& ps)
 	// it cannot be larger than 50%, since linear and quadratic split algorithms
 	// require assigning to both nodes the same number of entries.
 	var = ps.getProperty("FillFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-	    if (var.m_varType != Tools::VT_DOUBLE)
-            throw Tools::IllegalArgumentException("initNew: Property FillFactor was not of type Tools::VT_DOUBLE");
+	    if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE)
+            throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property FillFactor was not of type Tools::VT_DOUBLE");
 
         if (var.m_val.dblVal <= 0.0)
-            throw Tools::IllegalArgumentException("initNew: Property FillFactor was less than 0.0");
+            throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property FillFactor was less than 0.0");
 
         if (((m_treeVariant == RV_LINEAR || m_treeVariant == RV_QUADRATIC) && var.m_val.dblVal > 0.5))
-            throw Tools::IllegalArgumentException(  "initNew: Property FillFactor must be in range "
+            throw LibSupermesh_Tools::IllegalArgumentException(  "initNew: Property FillFactor must be in range "
                                                     "(0.0, 0.5) for LINEAR or QUADRATIC index types");
         if ( var.m_val.dblVal >= 1.0)
-            throw Tools::IllegalArgumentException(  "initNew: Property FillFactor must be in range "
+            throw LibSupermesh_Tools::IllegalArgumentException(  "initNew: Property FillFactor must be in range "
                                                     "(0.0, 1.0) for RSTAR index type");
 		m_fillFactor = var.m_val.dblVal;
 	}
 
 	// index capacity
 	var = ps.getProperty("IndexCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG || var.m_val.ulVal < 4)
-			throw Tools::IllegalArgumentException("initNew: Property IndexCapacity must be Tools::VT_ULONG and >= 4");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG || var.m_val.ulVal < 4)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property IndexCapacity must be Tools::VT_ULONG and >= 4");
 
 		m_indexCapacity = var.m_val.ulVal;
 	}
 
 	// leaf capacity
 	var = ps.getProperty("LeafCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG || var.m_val.ulVal < 4)
-			throw Tools::IllegalArgumentException("initNew: Property LeafCapacity must be Tools::VT_ULONG and >= 4");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG || var.m_val.ulVal < 4)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property LeafCapacity must be Tools::VT_ULONG and >= 4");
 
 		m_leafCapacity = var.m_val.ulVal;
 	}
 
 	// near minimum overlap factor
 	var = ps.getProperty("NearMinimumOverlapFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
 		if (
-			var.m_varType != Tools::VT_ULONG ||
+			var.m_varType != LibSupermesh_Tools::VT_ULONG ||
 			var.m_val.ulVal < 1 ||
 			var.m_val.ulVal > m_indexCapacity ||
 			var.m_val.ulVal > m_leafCapacity)
-			throw Tools::IllegalArgumentException("initNew: Property NearMinimumOverlapFactor must be Tools::VT_ULONG and less than both index and leaf capacities");
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property NearMinimumOverlapFactor must be Tools::VT_ULONG and less than both index and leaf capacities");
 
 		m_nearMinimumOverlapFactor = var.m_val.ulVal;
 	}
 
 	// split distribution factor
 	var = ps.getProperty("SplitDistributionFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
 		if (
-			var.m_varType != Tools::VT_DOUBLE ||
+			var.m_varType != LibSupermesh_Tools::VT_DOUBLE ||
 			var.m_val.dblVal <= 0.0 ||
 			var.m_val.dblVal >= 1.0)
-			throw Tools::IllegalArgumentException("initNew: Property SplitDistributionFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property SplitDistributionFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
 
 		m_splitDistributionFactor = var.m_val.dblVal;
 	}
 
 	// reinsert factor
 	var = ps.getProperty("ReinsertFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
 		if (
-			var.m_varType != Tools::VT_DOUBLE ||
+			var.m_varType != LibSupermesh_Tools::VT_DOUBLE ||
 			var.m_val.dblVal <= 0.0 ||
 			var.m_val.dblVal >= 1.0)
-			throw Tools::IllegalArgumentException("initNew: Property ReinsertFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property ReinsertFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
 
 		m_reinsertFactor = var.m_val.dblVal;
 	}
 
 	// dimension
 	var = ps.getProperty("Dimension");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("initNew: Property Dimension must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property Dimension must be Tools::VT_ULONG");
 		if (var.m_val.ulVal <= 1)
-			throw Tools::IllegalArgumentException("initNew: Property Dimension must be greater than 1");
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property Dimension must be greater than 1");
 
 		m_dimension = var.m_val.ulVal;
 	}
 
 	// tight MBRs
 	var = ps.getProperty("EnsureTightMBRs");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_BOOL)
-			throw Tools::IllegalArgumentException("initNew: Property EnsureTightMBRs must be Tools::VT_BOOL");
+		if (var.m_varType != LibSupermesh_Tools::VT_BOOL)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property EnsureTightMBRs must be Tools::VT_BOOL");
 
 		m_bTightMBRs = var.m_val.blVal;
 	}
 
 	// index pool capacity
 	var = ps.getProperty("IndexPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("initNew: Property IndexPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property IndexPoolCapacity must be Tools::VT_ULONG");
 
 		m_indexPool.setCapacity(var.m_val.ulVal);
 	}
 
 	// leaf pool capacity
 	var = ps.getProperty("LeafPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("initNew: Property LeafPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property LeafPoolCapacity must be Tools::VT_ULONG");
 
 		m_leafPool.setCapacity(var.m_val.ulVal);
 	}
 
 	// region pool capacity
 	var = ps.getProperty("RegionPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("initNew: Property RegionPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property RegionPoolCapacity must be Tools::VT_ULONG");
 
 		m_regionPool.setCapacity(var.m_val.ulVal);
 	}
 
 	// point pool capacity
 	var = ps.getProperty("PointPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG)
-			throw Tools::IllegalArgumentException("initNew: Property PointPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
+			throw LibSupermesh_Tools::IllegalArgumentException("initNew: Property PointPoolCapacity must be Tools::VT_ULONG");
 
 		m_pointPool.setCapacity(var.m_val.ulVal);
 	}
@@ -976,104 +976,104 @@ void SpatialIndex::RTree::RTree::initNew(Tools::PropertySet& ps)
 	storeHeader();
 }
 
-void SpatialIndex::RTree::RTree::initOld(Tools::PropertySet& ps)
+void LibSupermesh_SpatialIndex::RTree::RTree::initOld(LibSupermesh_Tools::PropertySet& ps)
 {
 	loadHeader();
 
 	// only some of the properties may be changed.
 	// the rest are just ignored.
 
-	Tools::Variant var;
+	LibSupermesh_Tools::Variant var;
 
 	// tree variant
 	var = ps.getProperty("TreeVariant");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
 		if (
-			var.m_varType != Tools::VT_LONG ||
+			var.m_varType != LibSupermesh_Tools::VT_LONG ||
 			(var.m_val.lVal != RV_LINEAR &&
 			 var.m_val.lVal != RV_QUADRATIC &&
 			 var.m_val.lVal != RV_RSTAR))
-			throw Tools::IllegalArgumentException("initOld: Property TreeVariant must be Tools::VT_LONG and of RTreeVariant type");
+			throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property TreeVariant must be Tools::VT_LONG and of RTreeVariant type");
 
 		m_treeVariant = static_cast<RTreeVariant>(var.m_val.lVal);
 	}
 
 	// near minimum overlap factor
 	var = ps.getProperty("NearMinimumOverlapFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
 		if (
-			var.m_varType != Tools::VT_ULONG ||
+			var.m_varType != LibSupermesh_Tools::VT_ULONG ||
 			var.m_val.ulVal < 1 ||
 			var.m_val.ulVal > m_indexCapacity ||
 			var.m_val.ulVal > m_leafCapacity)
-			throw Tools::IllegalArgumentException("initOld: Property NearMinimumOverlapFactor must be Tools::VT_ULONG and less than both index and leaf capacities");
+			throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property NearMinimumOverlapFactor must be Tools::VT_ULONG and less than both index and leaf capacities");
 
 		m_nearMinimumOverlapFactor = var.m_val.ulVal;
 	}
 
 	// split distribution factor
 	var = ps.getProperty("SplitDistributionFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_DOUBLE || var.m_val.dblVal <= 0.0 || var.m_val.dblVal >= 1.0)
-			throw Tools::IllegalArgumentException("initOld: Property SplitDistributionFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
+		if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE || var.m_val.dblVal <= 0.0 || var.m_val.dblVal >= 1.0)
+			throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property SplitDistributionFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
 
 		m_splitDistributionFactor = var.m_val.dblVal;
 	}
 
 	// reinsert factor
 	var = ps.getProperty("ReinsertFactor");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_DOUBLE || var.m_val.dblVal <= 0.0 || var.m_val.dblVal >= 1.0)
-			throw Tools::IllegalArgumentException("initOld: Property ReinsertFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
+		if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE || var.m_val.dblVal <= 0.0 || var.m_val.dblVal >= 1.0)
+			throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property ReinsertFactor must be Tools::VT_DOUBLE and in (0.0, 1.0)");
 
 		m_reinsertFactor = var.m_val.dblVal;
 	}
 
 	// tight MBRs
 	var = ps.getProperty("EnsureTightMBRs");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_BOOL) throw Tools::IllegalArgumentException("initOld: Property EnsureTightMBRs must be Tools::VT_BOOL");
+		if (var.m_varType != LibSupermesh_Tools::VT_BOOL) throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property EnsureTightMBRs must be Tools::VT_BOOL");
 
 		m_bTightMBRs = var.m_val.blVal;
 	}
 
 	// index pool capacity
 	var = ps.getProperty("IndexPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG) throw Tools::IllegalArgumentException("initOld: Property IndexPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property IndexPoolCapacity must be Tools::VT_ULONG");
 
 		m_indexPool.setCapacity(var.m_val.ulVal);
 	}
 
 	// leaf pool capacity
 	var = ps.getProperty("LeafPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG) throw Tools::IllegalArgumentException("initOld: Property LeafPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property LeafPoolCapacity must be Tools::VT_ULONG");
 
 		m_leafPool.setCapacity(var.m_val.ulVal);
 	}
 
 	// region pool capacity
 	var = ps.getProperty("RegionPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG) throw Tools::IllegalArgumentException("initOld: Property RegionPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property RegionPoolCapacity must be Tools::VT_ULONG");
 
 		m_regionPool.setCapacity(var.m_val.ulVal);
 	}
 
 	// point pool capacity
 	var = ps.getProperty("PointPoolCapacity");
-	if (var.m_varType != Tools::VT_EMPTY)
+	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
 	{
-		if (var.m_varType != Tools::VT_ULONG) throw Tools::IllegalArgumentException("initOld: Property PointPoolCapacity must be Tools::VT_ULONG");
+		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) throw LibSupermesh_Tools::IllegalArgumentException("initOld: Property PointPoolCapacity must be Tools::VT_ULONG");
 
 		m_pointPool.setCapacity(var.m_val.ulVal);
 	}
@@ -1081,7 +1081,7 @@ void SpatialIndex::RTree::RTree::initOld(Tools::PropertySet& ps)
 	m_infiniteRegion.makeInfinite(m_dimension);
 }
 
-void SpatialIndex::RTree::RTree::storeHeader()
+void LibSupermesh_SpatialIndex::RTree::RTree::storeHeader()
 {
 	const uint32_t headerSize =
 		sizeof(id_type) +						// m_rootID
@@ -1141,7 +1141,7 @@ void SpatialIndex::RTree::RTree::storeHeader()
 	delete[] header;
 }
 
-void SpatialIndex::RTree::RTree::loadHeader()
+void LibSupermesh_SpatialIndex::RTree::RTree::loadHeader()
 {
 	uint32_t headerSize;
 	byte* header = 0;
@@ -1189,7 +1189,7 @@ void SpatialIndex::RTree::RTree::loadHeader()
 	delete[] header;
 }
 
-void SpatialIndex::RTree::RTree::insertData_impl(uint32_t dataLength, byte* pData, Region& mbr, id_type id)
+void LibSupermesh_SpatialIndex::RTree::RTree::insertData_impl(uint32_t dataLength, byte* pData, Region& mbr, id_type id)
 {
 	assert(mbr.getDimension() == m_dimension);
 
@@ -1221,7 +1221,7 @@ void SpatialIndex::RTree::RTree::insertData_impl(uint32_t dataLength, byte* pDat
 	}
 }
 
-void SpatialIndex::RTree::RTree::insertData_impl(uint32_t dataLength, byte* pData, Region& mbr, id_type id, uint32_t level, byte* overflowTable)
+void LibSupermesh_SpatialIndex::RTree::RTree::insertData_impl(uint32_t dataLength, byte* pData, Region& mbr, id_type id, uint32_t level, byte* overflowTable)
 {
 	assert(mbr.getDimension() == m_dimension);
 
@@ -1239,7 +1239,7 @@ void SpatialIndex::RTree::RTree::insertData_impl(uint32_t dataLength, byte* pDat
 	n->insertData(dataLength, pData, mbr, id, pathBuffer, overflowTable);
 }
 
-bool SpatialIndex::RTree::RTree::deleteData_impl(const Region& mbr, id_type id)
+bool LibSupermesh_SpatialIndex::RTree::RTree::deleteData_impl(const Region& mbr, id_type id)
 {
 	assert(mbr.m_dimension == m_dimension);
 
@@ -1263,7 +1263,7 @@ bool SpatialIndex::RTree::RTree::deleteData_impl(const Region& mbr, id_type id)
 	return false;
 }
 
-SpatialIndex::id_type SpatialIndex::RTree::RTree::writeNode(Node* n)
+LibSupermesh_SpatialIndex::id_type LibSupermesh_SpatialIndex::RTree::RTree::writeNode(Node* n)
 {
 	byte* buffer;
 	uint32_t dataLength;
@@ -1297,7 +1297,7 @@ SpatialIndex::id_type SpatialIndex::RTree::RTree::writeNode(Node* n)
 		}
 		catch(...)
 		{
-			throw Tools::IllegalStateException("writeNode: writing past the end of m_nodesInLevel.");
+			throw LibSupermesh_Tools::IllegalStateException("writeNode: writing past the end of m_nodesInLevel.");
 		}
 #else
 		m_stats.m_nodesInLevel[n->m_level] = m_stats.m_nodesInLevel[n->m_level] + 1;
@@ -1314,7 +1314,7 @@ SpatialIndex::id_type SpatialIndex::RTree::RTree::writeNode(Node* n)
 	return page;
 }
 
-SpatialIndex::RTree::NodePtr SpatialIndex::RTree::RTree::readNode(id_type page)
+LibSupermesh_SpatialIndex::RTree::NodePtr LibSupermesh_SpatialIndex::RTree::RTree::readNode(id_type page)
 {
 	uint32_t dataLength;
 	byte* buffer;
@@ -1338,7 +1338,7 @@ SpatialIndex::RTree::NodePtr SpatialIndex::RTree::RTree::readNode(id_type page)
 
 		if (nodeType == PersistentIndex) n = m_indexPool.acquire();
 		else if (nodeType == PersistentLeaf) n = m_leafPool.acquire();
-		else throw Tools::IllegalStateException("readNode: failed reading the correct node type information");
+		else throw LibSupermesh_Tools::IllegalStateException("readNode: failed reading the correct node type information");
 
 		if (n.get() == 0)
 		{
@@ -1367,7 +1367,7 @@ SpatialIndex::RTree::NodePtr SpatialIndex::RTree::RTree::readNode(id_type page)
 	}
 }
 
-void SpatialIndex::RTree::RTree::deleteNode(Node* n)
+void LibSupermesh_SpatialIndex::RTree::RTree::deleteNode(Node* n)
 {
 	try
 	{
@@ -1388,10 +1388,10 @@ void SpatialIndex::RTree::RTree::deleteNode(Node* n)
 	}
 }
 
-void SpatialIndex::RTree::RTree::rangeQuery(RangeQueryType type, const IShape& query, IVisitor& v)
+void LibSupermesh_SpatialIndex::RTree::RTree::rangeQuery(RangeQueryType type, const IShape& query, IVisitor& v)
 {
 #ifdef HAVE_PTHREAD_H
-	Tools::LockGuard lock(&m_lock);
+	LibSupermesh_Tools::LockGuard lock(&m_lock);
 #endif
 
 	std::stack<NodePtr> st;
@@ -1433,7 +1433,7 @@ void SpatialIndex::RTree::RTree::rangeQuery(RangeQueryType type, const IShape& q
 	}
 }
 
-void SpatialIndex::RTree::RTree::selfJoinQuery(id_type id1, id_type id2, const Region& r, IVisitor& vis)
+void LibSupermesh_SpatialIndex::RTree::RTree::selfJoinQuery(id_type id1, id_type id2, const Region& r, IVisitor& vis)
 {
 	NodePtr n1 = readNode(id1);
 	NodePtr n2 = readNode(id2);
@@ -1475,7 +1475,7 @@ void SpatialIndex::RTree::RTree::selfJoinQuery(id_type id1, id_type id2, const R
 	}
 }
 
-void SpatialIndex::RTree::RTree::visitSubTree(NodePtr subTree, IVisitor& v)
+void LibSupermesh_SpatialIndex::RTree::RTree::visitSubTree(NodePtr subTree, IVisitor& v)
 {
 	std::stack<NodePtr> st;
 	st.push(subTree);
@@ -1504,7 +1504,7 @@ void SpatialIndex::RTree::RTree::visitSubTree(NodePtr subTree, IVisitor& v)
 	}
 }
 
-std::ostream& SpatialIndex::RTree::operator<<(std::ostream& os, const RTree& t)
+std::ostream& LibSupermesh_SpatialIndex::RTree::operator<<(std::ostream& os, const RTree& t)
 {
 	os	<< "Dimension: " << t.m_dimension << std::endl
 		<< "Fill factor: " << t.m_fillFactor << std::endl

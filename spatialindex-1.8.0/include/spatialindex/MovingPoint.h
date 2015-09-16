@@ -27,15 +27,15 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	class SIDX_DLL MovingPoint : public TimePoint, public IEvolvingShape
 	{
 	public:
 		MovingPoint();
-		MovingPoint(const double* pCoords, const double* pVCoords, const Tools::IInterval& ti, uint32_t dimension);
+		MovingPoint(const double* pCoords, const double* pVCoords, const LibSupermesh_Tools::IInterval& ti, uint32_t dimension);
 		MovingPoint(const double* pCoords, const double* pVCoords, double tStart, double tEnd, uint32_t dimension);
-		MovingPoint(const Point& p, const Point& vp, const Tools::IInterval& ti);
+		MovingPoint(const Point& p, const Point& vp, const LibSupermesh_Tools::IInterval& ti);
 		MovingPoint(const Point& p, const Point& vp, double tStart, double tEnd);
 		MovingPoint(const MovingPoint& p);
 		virtual ~MovingPoint();

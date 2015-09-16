@@ -29,14 +29,14 @@
 
 #include <cstring>
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	namespace StorageManager
 	{
-		class MemoryStorageManager : public SpatialIndex::IStorageManager
+		class MemoryStorageManager : public LibSupermesh_SpatialIndex::IStorageManager
 		{
 		public:
-			MemoryStorageManager(Tools::PropertySet&);
+			MemoryStorageManager(LibSupermesh_Tools::PropertySet&);
 
 			virtual ~MemoryStorageManager();
 

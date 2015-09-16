@@ -31,7 +31,7 @@
 #include "Node.h"
 #include "PointerPoolNode.h"
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	namespace TPRTree
 	{
@@ -40,7 +40,7 @@ namespace SpatialIndex
 			class NNEntry;
 
 		public:
-			TPRTree(IStorageManager&, Tools::PropertySet&);
+			TPRTree(IStorageManager&, LibSupermesh_Tools::PropertySet&);
 				// String                   Value     Description
 				// ----------------------------------------------
 				// IndexIndentifier         VT_LONG   If specified an existing index will be openened from the supplied
@@ -75,14 +75,14 @@ namespace SpatialIndex
 			virtual void nearestNeighborQuery(uint32_t k, const IShape& query, IVisitor& v);
 			virtual void selfJoinQuery(const IShape& s, IVisitor& v);
 			virtual void queryStrategy(IQueryStrategy& qs);
-			virtual void getIndexProperties(Tools::PropertySet& out) const;
+			virtual void getIndexProperties(LibSupermesh_Tools::PropertySet& out) const;
 			virtual void addCommand(ICommand* pCommand, CommandType ct);
 			virtual bool isIndexValid();
 			virtual void getStatistics(IStatistics** out) const;
 
 		private:
-			void initNew(Tools::PropertySet&);
-			void initOld(Tools::PropertySet& ps);
+			void initNew(LibSupermesh_Tools::PropertySet&);
+			void initOld(LibSupermesh_Tools::PropertySet& ps);
 			void storeHeader();
 			void loadHeader();
 
@@ -135,14 +135,14 @@ namespace SpatialIndex
 
 			double m_horizon;
 
-			Tools::PointerPool<Point> m_pointPool;
-			Tools::PointerPool<MovingRegion> m_regionPool;
-			Tools::PointerPool<Node> m_indexPool;
-			Tools::PointerPool<Node> m_leafPool;
+			LibSupermesh_Tools::PointerPool<Point> m_pointPool;
+			LibSupermesh_Tools::PointerPool<MovingRegion> m_regionPool;
+			LibSupermesh_Tools::PointerPool<Node> m_indexPool;
+			LibSupermesh_Tools::PointerPool<Node> m_leafPool;
 
-			std::vector<Tools::SmartPointer<ICommand> > m_writeNodeCommands;
-			std::vector<Tools::SmartPointer<ICommand> > m_readNodeCommands;
-			std::vector<Tools::SmartPointer<ICommand> > m_deleteNodeCommands;
+			std::vector<LibSupermesh_Tools::SmartPointer<ICommand> > m_writeNodeCommands;
+			std::vector<LibSupermesh_Tools::SmartPointer<ICommand> > m_readNodeCommands;
+			std::vector<LibSupermesh_Tools::SmartPointer<ICommand> > m_deleteNodeCommands;
 
 #ifdef HAVE_PTHREAD_H
 			pthread_mutex_t m_lock;

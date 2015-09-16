@@ -31,7 +31,7 @@
 
 #include <spatialindex/SpatialIndex.h>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 LineSegment::LineSegment()
 	: m_dimension(0), m_pStartPoint(0), m_pEndPoint(0)
@@ -53,7 +53,7 @@ LineSegment::LineSegment(const Point& startPoint, const Point& endPoint)
 	: m_dimension(startPoint.m_dimension)
 {
 	if (startPoint.m_dimension != endPoint.m_dimension)
-		throw Tools::IllegalArgumentException(
+		throw LibSupermesh_Tools::IllegalArgumentException(
 			"LineSegment::LineSegment: Points have different dimensionalities."
 		);
 
@@ -97,7 +97,7 @@ LineSegment& LineSegment::operator=(const LineSegment& l)
 bool LineSegment::operator==(const LineSegment& l) const
 {
 	if (m_dimension != l.m_dimension)
-		throw Tools::IllegalArgumentException(
+		throw LibSupermesh_Tools::IllegalArgumentException(
 			"LineSegment::operator==: LineSegments have different number of dimensions."
 		);
 
@@ -163,7 +163,7 @@ void LineSegment::storeToByteArray(byte** data, uint32_t& len)
 //
 bool LineSegment::intersectsShape(const IShape& s) const
 {
-	throw Tools::IllegalStateException(
+	throw LibSupermesh_Tools::IllegalStateException(
 		"LineSegment::intersectsShape: Not implemented yet!"
 	);
 }
@@ -175,7 +175,7 @@ bool LineSegment::containsShape(const IShape& s) const
 
 bool LineSegment::touchesShape(const IShape& s) const
 {
-	throw Tools::IllegalStateException(
+	throw LibSupermesh_Tools::IllegalStateException(
 		"LineSegment::touchesShape: Not implemented yet!"
 	);
 }
@@ -235,7 +235,7 @@ double LineSegment::getMinimumDistance(const IShape& s) const
 	}
 */
 
-	throw Tools::IllegalStateException(
+	throw LibSupermesh_Tools::IllegalStateException(
 		"LineSegment::getMinimumDistance: Not implemented yet!"
 	);
 }
@@ -243,12 +243,12 @@ double LineSegment::getMinimumDistance(const IShape& s) const
 double LineSegment::getMinimumDistance(const Point& p) const
 {
 	if (m_dimension == 1)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getMinimumDistance: Use an Interval instead."
 		);
 
 	if (m_dimension != 2)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getMinimumDistance: Distance for high dimensional spaces not supported!"
 		);
 
@@ -272,12 +272,12 @@ double LineSegment::getMinimumDistance(const Point& p) const
 double LineSegment::getRelativeMinimumDistance(const Point& p) const
 {
 	if (m_dimension == 1)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getRelativeMinimumDistance: Use an Interval instead."
 		);
 
 	if (m_dimension != 2)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getRelativeMinimumDistance: Distance for high dimensional spaces not supported!"
 		);
 
@@ -308,12 +308,12 @@ double LineSegment::getRelativeMinimumDistance(const Point& p) const
 double LineSegment::getRelativeMaximumDistance(const Region& r) const
 {
 	if (m_dimension == 1)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getRelativeMaximumDistance: Use an Interval instead."
 		);
 
 	if (m_dimension != 2)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getRelativeMaximumDistance: Distance for high dimensional spaces not supported!"
 		);
 
@@ -337,12 +337,12 @@ double LineSegment::getRelativeMaximumDistance(const Region& r) const
 double LineSegment::getAngleOfPerpendicularRay()
 {
 	if (m_dimension == 1)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getAngleOfPerpendicularRay: Use an Interval instead."
 		);
 
 	if (m_dimension != 2)
-		throw Tools::NotSupportedException(
+		throw LibSupermesh_Tools::NotSupportedException(
 			"LineSegment::getAngleOfPerpendicularRay: Distance for high dimensional spaces not supported!"
 		);
 

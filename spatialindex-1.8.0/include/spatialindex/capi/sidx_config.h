@@ -107,8 +107,8 @@ typedef enum
 #endif
 
 typedef Index *IndexH;
-typedef SpatialIndex::IData *IndexItemH;
-typedef Tools::PropertySet *IndexPropertyH;
+typedef LibSupermesh_SpatialIndex::IData *IndexItemH;
+typedef LibSupermesh_Tools::PropertySet *IndexPropertyH;
 
 #ifndef SIDX_C_DLL
 #if defined(_MSC_VER)

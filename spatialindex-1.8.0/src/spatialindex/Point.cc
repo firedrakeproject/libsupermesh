@@ -31,7 +31,7 @@
 
 #include <spatialindex/SpatialIndex.h>
 
-using namespace SpatialIndex;
+using namespace LibSupermesh_SpatialIndex;
 
 Point::Point()
 	: m_dimension(0), m_pCoords(0)
@@ -75,7 +75,7 @@ Point& Point::operator=(const Point& p)
 bool Point::operator==(const Point& p) const
 {
 	if (m_dimension != p.m_dimension)
-		throw Tools::IllegalArgumentException(
+		throw LibSupermesh_Tools::IllegalArgumentException(
 			"Point::operator==: Points have different number of dimensions."
 		);
 
@@ -139,7 +139,7 @@ bool Point::intersectsShape(const IShape& s) const
 		return pr->containsPoint(*this);
 	}
 
-	throw Tools::IllegalStateException(
+	throw LibSupermesh_Tools::IllegalStateException(
 		"Point::intersectsShape: Not implemented yet!"
 	);
 }
@@ -164,7 +164,7 @@ bool Point::touchesShape(const IShape& s) const
 		return pr->touchesPoint(*this);
 	}
 
-	throw Tools::IllegalStateException(
+	throw LibSupermesh_Tools::IllegalStateException(
 		"Point::touchesShape: Not implemented yet!"
 	);
 }
@@ -203,7 +203,7 @@ double Point::getMinimumDistance(const IShape& s) const
 		return pr->getMinimumDistance(*this);
 	}
 
-	throw Tools::IllegalStateException(
+	throw LibSupermesh_Tools::IllegalStateException(
 		"Point::getMinimumDistance: Not implemented yet!"
 	);
 }
@@ -211,7 +211,7 @@ double Point::getMinimumDistance(const IShape& s) const
 double Point::getMinimumDistance(const Point& p) const
 {
 	if (m_dimension != p.m_dimension)
-		throw Tools::IllegalArgumentException(
+		throw LibSupermesh_Tools::IllegalArgumentException(
 			"Point::getMinimumDistance: Shapes have different number of dimensions."
 		);
 
@@ -228,7 +228,7 @@ double Point::getMinimumDistance(const Point& p) const
 double Point::getCoordinate(uint32_t index) const
 {
 	if (index >= m_dimension)
-		throw Tools::IndexOutOfBoundsException(index);
+		throw LibSupermesh_Tools::IndexOutOfBoundsException(index);
 
 	return m_pCoords[index];
 }
@@ -257,7 +257,7 @@ void Point::makeDimension(uint32_t dimension)
 	}
 }
 
-std::ostream& SpatialIndex::operator<<(std::ostream& os, const Point& pt)
+std::ostream& LibSupermesh_SpatialIndex::operator<<(std::ostream& os, const Point& pt)
 {
 	for (uint32_t cDim = 0; cDim < pt.m_dimension; ++cDim)
 	{

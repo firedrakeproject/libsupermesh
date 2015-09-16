@@ -66,7 +66,7 @@ namespace LibSupermesh
   const int writeThrough = false;
 
   // R-Tree parameters
-  const SpatialIndex::RTree::RTreeVariant variant = SpatialIndex::RTree::RV_RSTAR;
+  const LibSupermesh_SpatialIndex::RTree::RTreeVariant variant = LibSupermesh_SpatialIndex::RTree::RV_RSTAR;
   // Minimum fraction (of maximum) of entries in any node (index or leaf)
   const double fillFactor = 0.7;
   // Node index capacity in the rtree
@@ -76,7 +76,7 @@ namespace LibSupermesh
   
   // Customised version of PyListVisitor class in
   // wrapper.cc in Rtree 0.4.1
-  class ElementListVisitor : public SpatialIndex::IVisitor, public std::vector< int >
+  class ElementListVisitor : public LibSupermesh_SpatialIndex::IVisitor, public std::vector< int >
   {
     public:
       inline ElementListVisitor()
@@ -89,31 +89,31 @@ namespace LibSupermesh
         return;
       }
       
-      inline virtual void visitNode(const SpatialIndex::INode& node)
+      inline virtual void visitNode(const LibSupermesh_SpatialIndex::INode& node)
       {
         return;
       }
       
-      inline virtual void visitData(const SpatialIndex::IData& data)
+      inline virtual void visitData(const LibSupermesh_SpatialIndex::IData& data)
       {
         push_back(data.getIdentifier());
 
         return;
       }
 
-      inline virtual void visitData(std::vector< const SpatialIndex::IData* >& vector)
+      inline virtual void visitData(std::vector< const LibSupermesh_SpatialIndex::IData* >& vector)
       {
         return;
       }
   };
 
-  class InstrumentedRegion : public SpatialIndex::Region
+  class InstrumentedRegion : public LibSupermesh_SpatialIndex::Region
   {
     public:
       InstrumentedRegion();
       InstrumentedRegion(const double* pLow, const double* pHigh, size_t dimension);
-      InstrumentedRegion(const SpatialIndex::Point& low, const SpatialIndex::Point& high);
-      InstrumentedRegion(const SpatialIndex::Region& in);
+      InstrumentedRegion(const LibSupermesh_SpatialIndex::Point& low, const LibSupermesh_SpatialIndex::Point& high);
+      InstrumentedRegion(const LibSupermesh_SpatialIndex::Region& in);
 
       virtual bool intersectsRegion(const Region& in);
       virtual bool containsRegion(const Region& in);
@@ -143,9 +143,9 @@ namespace LibSupermesh
       void Free();
     
       int dim, loc;
-      SpatialIndex::IStorageManager* storageManager;
-      SpatialIndex::StorageManager::IBuffer* storage;
-      SpatialIndex::ISpatialIndex* rTree;
+      LibSupermesh_SpatialIndex::IStorageManager* storageManager;
+      LibSupermesh_SpatialIndex::StorageManager::IBuffer* storage;
+      LibSupermesh_SpatialIndex::ISpatialIndex* rTree;
       ElementListVisitor visitor;
 
       int predicateCount;

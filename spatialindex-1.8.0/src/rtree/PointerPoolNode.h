@@ -30,9 +30,9 @@
 
 #include "Node.h"
 
-namespace Tools
+namespace LibSupermesh_Tools
 {
-	using namespace SpatialIndex;
+	using namespace LibSupermesh_SpatialIndex;
 	template<> class PointerPool<RTree::Node>
 	{
 	public:

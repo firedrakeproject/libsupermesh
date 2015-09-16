@@ -28,10 +28,10 @@
 
 #pragma once
 
-class ObjVisitor : public SpatialIndex::IVisitor
+class ObjVisitor : public LibSupermesh_SpatialIndex::IVisitor
 {
 private:
-    std::vector<SpatialIndex::IData*> m_vector;
+    std::vector<LibSupermesh_SpatialIndex::IData*> m_vector;
     uint64_t nResults;
 
 public:
@@ -40,10 +40,10 @@ public:
     ~ObjVisitor();
 
     uint32_t GetResultCount() const { return nResults; }
-    std::vector<SpatialIndex::IData*>& GetResults()  { return m_vector; }
+    std::vector<LibSupermesh_SpatialIndex::IData*>& GetResults()  { return m_vector; }
     
-    void visitNode(const SpatialIndex::INode& n);
-    void visitData(const SpatialIndex::IData& d);
-    void visitData(std::vector<const SpatialIndex::IData*>& v);
+    void visitNode(const LibSupermesh_SpatialIndex::INode& n);
+    void visitData(const LibSupermesh_SpatialIndex::IData& d);
+    void visitData(std::vector<const LibSupermesh_SpatialIndex::IData*>& v);
 };
 

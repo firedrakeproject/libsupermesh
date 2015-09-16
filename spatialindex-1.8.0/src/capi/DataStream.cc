@@ -29,7 +29,7 @@
 #include <spatialindex/capi/sidx_impl.h>
 
 
-DataStream::DataStream(int (*readNext)(SpatialIndex::id_type * id, 
+DataStream::DataStream(int (*readNext)(LibSupermesh_SpatialIndex::id_type * id, 
 					   double **pMin, 
 					   double **pMax, 
 					   uint32_t *nDimension, 
@@ -51,7 +51,7 @@ DataStream::~DataStream()
 
 bool DataStream::readData()
 {
-	SpatialIndex::id_type id;
+	LibSupermesh_SpatialIndex::id_type id;
 	double *pMin=0;
 	double *pMax=0;
 	uint32_t nDimension=0;
@@ -72,38 +72,38 @@ bool DataStream::readData()
 		return false;
 	}
 	
-	SpatialIndex::Region r = SpatialIndex::Region(pMin, pMax, nDimension);
+	LibSupermesh_SpatialIndex::Region r = LibSupermesh_SpatialIndex::Region(pMin, pMax, nDimension);
 	
 	// Data gets copied here anyway. We should fix this part of SpatialIndex::RTree::Data's constructor
-	m_pNext = new SpatialIndex::RTree::Data(nDataLength, p_data, r, id);
+	m_pNext = new LibSupermesh_SpatialIndex::RTree::Data(nDataLength, p_data, r, id);
 
 	return true;
 }
 
 
-SpatialIndex::IData* DataStream::getNext()
+LibSupermesh_SpatialIndex::IData* DataStream::getNext()
 {
 	if (m_pNext == 0) return 0;
 
-	SpatialIndex::RTree::Data* ret = m_pNext;
+	LibSupermesh_SpatialIndex::RTree::Data* ret = m_pNext;
 	m_pNext = 0;
 	readData();
 	return ret;
 }
 
-bool DataStream::hasNext() throw (Tools::NotSupportedException)
+bool DataStream::hasNext() throw (LibSupermesh_Tools::NotSupportedException)
 {
 	return (m_pNext != 0);
 }
 
-uint32_t DataStream::size() throw (Tools::NotSupportedException)
+uint32_t DataStream::size() throw (LibSupermesh_Tools::NotSupportedException)
 {
-	throw Tools::NotSupportedException("Operation not supported.");
+	throw LibSupermesh_Tools::NotSupportedException("Operation not supported.");
 }
 
-void DataStream::rewind() throw (Tools::NotSupportedException)
+void DataStream::rewind() throw (LibSupermesh_Tools::NotSupportedException)
 {
-	throw Tools::NotSupportedException("Operation not supported.");
+	throw LibSupermesh_Tools::NotSupportedException("Operation not supported.");
 
 	if (m_pNext != 0)
 	{

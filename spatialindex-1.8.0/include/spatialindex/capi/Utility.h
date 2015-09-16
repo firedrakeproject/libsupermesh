@@ -29,4 +29,4 @@
 
 #pragma once
 
-Tools::PropertySet* GetDefaults();
+LibSupermesh_Tools::PropertySet* GetDefaults();

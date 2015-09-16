@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace SpatialIndex
+namespace LibSupermesh_SpatialIndex
 {
 	namespace MVRTree
 	{
@@ -50,7 +50,7 @@ namespace SpatialIndex
 			IntersectionQuery = 0x2
 		};
 
-		class SIDX_DLL Data : public IData, public Tools::ISerializable
+		class SIDX_DLL Data : public IData, public LibSupermesh_Tools::ISerializable
 		{
 		public:
 			Data(uint32_t len, byte* pData, TimeRegion& r, id_type id);
@@ -70,7 +70,7 @@ namespace SpatialIndex
 			uint32_t m_dataLength;
 		}; // Data
 
-		SIDX_DLL ISpatialIndex* returnMVRTree(IStorageManager& ind, Tools::PropertySet& in);
+		SIDX_DLL ISpatialIndex* returnMVRTree(IStorageManager& ind, LibSupermesh_Tools::PropertySet& in);
 		SIDX_DLL ISpatialIndex* createNewMVRTree(
 			IStorageManager& in,
 			double fillFactor,
