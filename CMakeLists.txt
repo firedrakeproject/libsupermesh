@@ -573,4 +573,4 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder.mod" DEST
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod"  DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection_module.mod"  DESTINATION include)
 # ToDo FIX: If PKG_CONFIG_PATH has more than one entry; the following line will fail!!
-install (FILES "${PROJECT_BINARY_DIR}/SuperMesh.pc"                         DESTINATION $ENV{PKG_CONFIG_PATH})
+install (FILES "${PROJECT_BINARY_DIR}/include/SuperMesh.pc"                 DESTINATION $ENV{PKG_CONFIG_PATH})
