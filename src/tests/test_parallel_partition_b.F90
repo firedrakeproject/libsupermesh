@@ -85,13 +85,13 @@ subroutine test_parallel_partition_b
     allocate(areas_parallel(0:mpi_num_procs-1), times_parallel(0:mpi_num_procs-1))
 !  end if
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   
 !  ToDo TODO todo FIX HACK
 !  Remove the DO loop and the IF check
 !  do i=0,mpi_num_procs
     call FLUSH()
-    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
 !    if ( mpi_my_id .eq. i ) then 
       area_parallel = 0.0
       write(mpi_my_id_character,'(I5)') mpi_my_id
@@ -147,11 +147,11 @@ subroutine test_parallel_partition_b
       call deallocate(positionsB)
 !    end if
 !    call FLUSH()
-!    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+!    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
 !  end do
   
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
 
   ! Gather remote results:
   call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &

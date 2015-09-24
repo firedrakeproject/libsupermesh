@@ -82,10 +82,10 @@ subroutine benchmark_parallel
 !  end if
 !  ToDo TODO todo FIX HACK
 !  Remove the next lines
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   print "(a)", "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   
 !  ToDo TODO todo FIX HACK
 !  Refactor the next lines. We only load this file here
@@ -99,16 +99,16 @@ subroutine benchmark_parallel
 !  end do
 !  ToDo TODO todo FIX HACK
 !  Remove the next lines
-!  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+!  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
 !  print "(a)", "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
 !  call FLUSH()
-!  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+!  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
 
 !  ToDo TODO todo FIX HACK
 !  Remove the DO loop and the IF check
   do i=0,mpi_num_procs
     call FLUSH()
-    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
     if ( mpi_my_id .eq. i ) then 
       area_parallel = 0.0
       write(mpi_my_id_character,'(I5)') mpi_my_id
@@ -189,11 +189,11 @@ subroutine benchmark_parallel
       print "(a)", "======================================================================"
     end if
     call FLUSH()
-    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   end do
   
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   call FLUSH()
 
   ! Gather remote results:
@@ -270,16 +270,16 @@ subroutine benchmark_parallel
 !  end if
 !  ToDo TODO todo FIX HACK
 !  Remove the next lines
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   print "(a)", "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   
 !  ToDo TODO todo FIX HACK
 !  Remove the DO loop and the IF check
   do i=0,mpi_num_procs
     call FLUSH()
-    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
     if ( mpi_my_id .eq. i ) then 
       area_parallel = 0.0
       write(mpi_my_id_character,'(I5)') mpi_my_id
@@ -332,7 +332,7 @@ subroutine benchmark_parallel
   end do
 
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   call FLUSH()
   
   ! Distribute partitionA to all nodes
@@ -341,13 +341,13 @@ subroutine benchmark_parallel
 !      & mpi_my_root, MPI_COMM_WORLD, mpi_my_error)
 
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   call FLUSH()
 
   ! Compute the intersection
   do i=0,mpi_num_procs
     call FLUSH()
-    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
     if ( mpi_my_id .eq. i ) then 
       t1 = mpi_wtime()
 
@@ -382,11 +382,11 @@ subroutine benchmark_parallel
       print "(a)", "======================================================================"
     end if
     call FLUSH()
-    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   end do
   
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   call FLUSH()
 
   ! Gather remote results:

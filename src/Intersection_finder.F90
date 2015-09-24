@@ -58,8 +58,7 @@ module libsupermesh_intersection_finder
 
   public :: rtree_intersection_finder_set_input, bbbox, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
-    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset, &
-    & libsupermesh_MPI_BARRIER
+    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
 
 !   interface
 !     function mpi_wtime()
@@ -672,12 +671,5 @@ contains
     deallocate(lmap_ab)
 
   end subroutine brute_force_intersection_finder_lists
-  
-  subroutine libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
-    integer, intent(in)       :: MPI_COMM_WORLD
-    integer, intent(inout)    :: mpi_my_error
-    
-    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
-  end subroutine libsupermesh_MPI_BARRIER
 
 end module libsupermesh_intersection_finder

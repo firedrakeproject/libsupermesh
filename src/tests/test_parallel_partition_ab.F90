@@ -86,14 +86,14 @@ subroutine test_parallel_partition_ab
     allocate(areas_parallel(0:mpi_num_procs-1), times_parallel(0:mpi_num_procs-1))
 !  end if
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
   
 !  ToDo TODO todo FIX HACK
 !  Remove the DO loop and the IF check
-!  do i=0,mpi_num_procs
+  do i=0,mpi_num_procs
     call FLUSH()
-    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
-!    if ( mpi_my_id .eq. i ) then 
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+    if ( mpi_my_id .eq. i ) then 
       area_parallel = 0.0
       write(mpi_my_id_character,'(I5)') mpi_my_id
 
@@ -135,6 +135,7 @@ subroutine test_parallel_partition_ab
       allocate(bbox_b(positionsB%dim,2))
       bbox_b = bbbox(positionsB)
       do ele_A=1,ele_count(positionsA)
+        if(ele_owner(ele_A) /= mpi_my_id) cycle
 !        write(*,*) "ele_A:",ele_A,"."
 !        write(*,*) "positionsA%mesh%ndglno(ele_A) :",positionsA%mesh%ndglno(ele_A),"."
 !        write(*,*) "ele_val(",ele_A,") :",ele_val(positionsA, ele_A),"."
@@ -142,6 +143,7 @@ subroutine test_parallel_partition_ab
         call FLUSH()
         tri_A%v = ele_val(positionsA, ele_A)
         do ele_B=1,ele_count(positionsB) 
+          if(ele_owner(ele_B) /= mpi_my_id) cycle
           ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
           tri_B%v = ele_val(positionsB, ele_B)
 
@@ -153,20 +155,20 @@ subroutine test_parallel_partition_ab
         end do
       end do
       t2 = mpi_wtime()
-      time_parallel = t2 - t1
+!      time_parallel = t2 - t1
 
 !      print "(i5,a,e25.17e3)", mpi_my_id, ": intersection time  = ", time_parallel
 !      print "(i5,a,e25.17e3,a)", mpi_my_id, ": intersection area:", area_parallel,"."
     
       call deallocate(positionsA)
       call deallocate(positionsB)
-!    end if
-!    call FLUSH()
-!    call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
-!  end do
+    end if
+    call FLUSH()
+    call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  end do
   
   call FLUSH()
-  call libsupermesh_MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
+  call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
 
   ! Gather remote results:
   call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &
