@@ -29,7 +29,7 @@ subroutine benchmark_parallel
   logical :: fail = .FALSE.
   real, dimension(:,:), allocatable :: bbox_a, bbox_b
   PetscErrorCode :: ierr
-  
+
 !  call MPI_INIT ( mpi_my_error ); CHKERRQ(mpi_my_error)
 
   !     find out MY process ID, and how many processes were started.
@@ -70,11 +70,11 @@ subroutine benchmark_parallel
 
     print "(a,e25.17e3)", "Serial intersection time  = ", time_serial
     print "(a,e25.17e3,a)", "Serial intersection area:", area_serial,"."
-    
+
     call deallocate(positionsA)
     call deallocate(positionsB)
   end if
-  
+
 !  ToDo TODO todo FIX HACK
 !  Remove the comments when running non debug code
 !  if ( mpi_my_id .eq. 0 ) then 

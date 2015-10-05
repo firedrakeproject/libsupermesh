@@ -74,11 +74,11 @@ subroutine test_parallel_partition_b
 
 !    print "(a,e25.17e3)", "Serial intersection time  = ", time_serial
 !    print "(a,e25.17e3,a)", "Serial intersection area:", area_serial,"."
-    
+
     call deallocate(positionsA)
     call deallocate(positionsB)
   end if
-  
+
 !  ToDo TODO todo FIX HACK
 !  Remove the comments when running non debug code
 !  if ( mpi_my_id .eq. 0 ) then 
@@ -86,7 +86,7 @@ subroutine test_parallel_partition_b
 !  end if
   call FLUSH()
   call MPI_BARRIER(MPI_COMM_WORLD, mpi_my_error)
-  
+
 !  ToDo TODO todo FIX HACK
 !  Remove the DO loop and the IF check
 !  do i=0,mpi_num_procs

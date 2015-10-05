@@ -56,7 +56,7 @@ module libsupermesh_intersection_finder
     end subroutine libsupermesh_cintersection_finder_reset
   end interface rtree_intersection_finder_reset
 
-  public :: rtree_intersection_finder_set_input, bbbox, &
+  public :: rtree_intersection_finder_set_input, partition_bbox, bboxes_intersect, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
 
@@ -174,33 +174,35 @@ contains
     end do
 
   end function bbox
-  
-  function bbbox(field) result(box)
-    type(vector_field)                         :: field
-    ! Xmin, Xmax, Ymin, Ymax
-    real, dimension(field%dim, 2)              :: box
+
+  pure function partition_bbox(field, ele_owner, mpi_id)
+!  function partition_bbox(field, ele_owner, mpi_id) result (partition_bbox1)
+    type(vector_field), intent(in)             :: field
+    integer, dimension(:), intent(in)          :: ele_owner
+    integer, intent(in)                        :: mpi_id
+    ! Xmin, Ymin,   Xmax, Ymax
+    real, dimension(2, field%dim)              :: partition_bbox
 
     real, dimension(field%dim, field%mesh%loc) :: ele_val_
 
     integer :: i, j, k
 
     ele_val_ = ele_val(field, 1)
-    box(1, 1) = ele_val_(1,1)
-    box(1, 2) = ele_val_(1,1)
+    partition_bbox(1, :) = ele_val_(:, 1)
+    partition_bbox(2, :) = ele_val_(:, 1)
 
-    do k = 1, ele_count(field)
+    do k = 2, ele_count(field)
+      if(ele_owner(k) /= mpi_id) cycle
       ele_val_ = ele_val(field, k)
-      do i = 1, field%dim
-        box(i, 1) = min(ele_val_(i,1), box(i,1))
-        box(i, 2) = max(ele_val_(i,2), box(i,2))
-        do j = 2, field%mesh%loc
-          box(i, 1) = min(ele_val_(i,j), box(i,1))
-          box(i, 2) = max(ele_val_(i,j), box(i,2))
+      do i = 1, field%mesh%loc
+        do j = 1, field%dim
+          partition_bbox(1, j) = min(partition_bbox(1, j), ele_val_(j, i))
+          partition_bbox(2, j) = max(partition_bbox(2, j), ele_val_(j, i))
         end do
       end do
     end do
 
-  end function bbbox
+  end function partition_bbox
 
   pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
     ! 2 x dim
