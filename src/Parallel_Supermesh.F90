@@ -1,14 +1,18 @@
 module libsupermesh_parallel_supermesh
 
+  use libsupermesh_integer_hash_table
+  
   implicit none
 
 contains
 
-  subroutine parallel_supermesh(positions_a, enlist_a, positions_b, enlist_b, donor_ele_data, unpack_donor_ele_data, intersection_calculation)
+  subroutine parallel_supermesh(positions_a, enlist_a, un_a, positions_b, enlist_b, donor_ele_data, unpack_donor_ele_data, intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
+    ! nnodes_a
+    integer, dimension(:), intent(in) :: un_a
     ! dim x nnodes_b
     real, dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b

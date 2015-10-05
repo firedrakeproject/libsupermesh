@@ -44,6 +44,8 @@ subroutine test_parallel_partition_ab
   integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB
   type(halo_type) :: halo
 
+  type(intersections), dimension(:), allocatable :: map_AB
+
 !  call MPI_INIT ( mpi_my_error ); CHKERRQ(mpi_my_error)
 
 ! find out MY process ID, and how many processes were started.
@@ -75,12 +77,18 @@ subroutine test_parallel_partition_ab
 !    print "(a,e25.17e3)", "Mesh input time  = ", mesh_serial
 !    print "(a,i10,a,i10,a)", "Element Count (tris) A:",ele_count(positionsA),", Node Count (cells) A:",node_count(positionsA),"."
 !    print "(a,i10,a,i10,a)", "Element Count (tris) B:",ele_count(positionsB),", Node Count (cells) B:",node_count(positionsB),"."
-
+    
     t1 = mpi_wtime()
+    allocate(map_AB(serial_ele_A))
+    call intersection_finder(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), serial_ele_A/)), &
+                           & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
+                           & map_AB)
+
     do ele_A=1,ele_count(positionsA)
       tri_A%v = ele_val(positionsA, ele_A)
 
-      do ele_B=1,ele_count(positionsB) 
+      do i = 1, map_AB(ele_A)%n
+        ele_B = map_AB(ele_A)%v(i)
         ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
         tri_B%v = ele_val(positionsB, ele_B)
 
@@ -94,6 +102,8 @@ subroutine test_parallel_partition_ab
         end do
       end do
     end do
+    
+    deallocate(map_AB)
     t2 = mpi_wtime()
     time_serial = t2 - t1
 
@@ -184,7 +194,10 @@ subroutine test_parallel_partition_ab
   CALL MPI_Allgather(parallel_ele_B, 1, MPI_INTEGER, &
     &    parallel_ele_B_array, 1, MPI_INTEGER,    &
     &    MPI_COMM_WORLD, mpi_my_error)
+    
+  ! JM: Work out which elements to send using the bounding boxes
 
+                       ! JM: Per-processing sizing required
   allocate(recv_buffer(maxval(parallel_ele_B_array)*(positionsB%dim + 1)*2,0:mpi_num_procs-1))
   allocate(send_buffer(parallel_ele_B*(positionsB%dim + 1)*2))
   recv_buffer = -9.0
@@ -192,6 +205,9 @@ subroutine test_parallel_partition_ab
   i=1
   do ele_B=1,ele_count(positionsB) 
     if(ele_ownerB(ele_B) /= mpi_my_id) cycle
+    ! JM: Somewhere in the send loop
+    !if(.not. bboxes_intersect(ele_val(positionsB, ele_B), parallel_bbox_a(:, :, proc))) cycle
+    
     tri_B%v = ele_val(positionsB, ele_B)
     send_buffer(i) = tri_B%v(1,1)
     i = i + 1
