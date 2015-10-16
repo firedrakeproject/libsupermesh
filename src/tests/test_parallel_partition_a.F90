@@ -16,7 +16,7 @@ subroutine test_parallel_partition_a
 
   integer :: i, nnodes, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
        & serial_ele_A, serial_ele_B, parallel_ele_A, parallel_ele_B, local_sum
-  character(len=5) :: mpi_my_id_character
+  character(len=5) :: mpi_my_id_character, mpi_num_procs_character
   type(tri_type) :: tri_A, tri_B
   type(tri_type), dimension(tri_buf_size) :: trisC
   logical :: pass
@@ -29,7 +29,8 @@ subroutine test_parallel_partition_a
   integer, parameter :: mpi_my_root = 0
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
   logical :: fail = .FALSE.
-  
+  character(len=128) :: hostname
+
   integer, dimension(:), allocatable :: ele_owner
   type(halo_type) :: halo
 
@@ -39,13 +40,17 @@ subroutine test_parallel_partition_a
   call MPI_COMM_RANK (MPI_COMM_WORLD, mpi_my_id, mpi_my_error); CHKERRQ(mpi_my_error)
   call MPI_COMM_SIZE (MPI_COMM_WORLD, mpi_num_procs, mpi_my_error); CHKERRQ(mpi_my_error)
 
+  write(mpi_num_procs_character,'(I5)') mpi_num_procs
+  call hostnm(hostname)
+!  write (*,*) "mpi_num_procs:",mpi_num_procs,", hostname:",trim(adjustl(hostname))
+
   pass = .true.
 
 ! Do everything in serial  
   if ( mpi_my_id .eq. 0 ) then  
     t_0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_2", dim)
-    positionsB = read_triangle_files("data/square_0_1", dim)
+    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
+    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     mesh_serial = mpi_wtime() - t_0
@@ -97,7 +102,7 @@ subroutine test_parallel_partition_a
       write(mpi_my_id_character,'(I5)') mpi_my_id
 
       t_0 = mpi_wtime()
-      filenameA = trim(adjustl("data/square_0_2_"))//trim(adjustl(mpi_my_id_character))
+      filenameA = trim(adjustl("data/square_0_2_"))//trim(adjustl(mpi_num_procs_character))//"_"//trim(adjustl(mpi_my_id_character))
 
 !      print "(a,i5,a,i10,a,a,a)", "MPI Process:",mpi_my_id,", has nodes:",nnodes,", read from:",trim(filenameA),"."
       call FLUSH()
@@ -105,14 +110,13 @@ subroutine test_parallel_partition_a
       positionsA = read_triangle_files(trim(filenameA), dim)
       parallel_ele_A = ele_count(positionsA)
 
-      call read_halo("data/square_0_2", halo, level = 2)
+      call read_halo("data/square_0_2"//"_"//trim(adjustl(mpi_num_procs_character)), halo, level = 2)
       allocate(ele_owner(ele_count(positionsA)))
       call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_owner)
       parallel_ele_A = count(ele_owner == mpi_my_id)
       call deallocate(halo)
 
-      filenameB = trim(adjustl("data/square_0_1_"))//trim(adjustl(mpi_my_id_character))
-      positionsB = read_triangle_files("data/square_0_1", dim)
+      positionsB = read_triangle_files("data/square_0_1"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
       parallel_ele_B = ele_count(positionsB) 
 
       mesh_parallel = mpi_wtime() - t_0

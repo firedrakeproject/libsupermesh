@@ -201,6 +201,10 @@ elseif (lower_build_type MATCHES debug)
   set( SUBPROJECTS_debugging "YES")
 endif (lower_build_type MATCHES release)
 
+if (SUBPROJECTS_debugging MATCHES YES)
+  set(local_debugging "--enable-debug")
+endif (SUBPROJECTS_debugging MATCHES YES)
+
 set( SUBPROJECTS_profilling      "")
 
 option (USE_PROFILE "Use profile flags" OFF)
@@ -233,9 +237,33 @@ message ("MAIN SUBPROJECTS_C_FLAGS:${SUBPROJECTS_C_FLAGS}")
 message ("MAIN SUBPROJECTS_CXX_FLAGS:${SUBPROJECTS_CXX_FLAGS}")
 message ("MAIN SUBPROJECTS_Fortran_FLAGS:${SUBPROJECTS_Fortran_FLAGS}")
 
+message ("MAIN PROJECT_SOURCE_DIR:${PROJECT_SOURCE_DIR}")
+message ("MAIN PROJECT_BINARY_DIR:${PROJECT_BINARY_DIR}")
+
 
 add_subdirectory(spatialindex-1.8.0)
-add_subdirectory(libjudy)
+#add_subdirectory(libjudy)
+
+include(ExternalProject)
+ExternalProject_Add(libjudy
+  SOURCE_DIR ${PROJECT_SOURCE_DIR}/libjudy
+  PREFIX     ${PROJECT_BINARY_DIR}/libjudy
+  BINARY_DIR ${PROJECT_BINARY_DIR}/libjudy
+#  CONFIGURE_COMMAND CXX=mpicxx CC=mpicc FC=mpif90 ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debug
+# errors  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure "CFLAGS=-O3 -march=native" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static
+  CONFIGURE_COMMAND ./configure "CFLAGS=${SUBPROJECTS_C_FLAGS}" "CXXFLAGS=${SUBPROJECTS_CXX_FLAGS}" "FFLAGS=${SUBPROJECTS_Fortran_FLAGS}" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static ${SUBPROJECTS_profilling} ${local_debugging}
+#  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
+  BUILD_COMMAND make
+#  BUILD_DIR ${PROJECT_BINARY_DIR}
+#  BUILD_IN_SOURCE 1
+  INSTALL_COMMAND echo "installing"
+)
+# copy SRC directory from source to build
+ExternalProject_Add_Step(libjudy copy_libjudy
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/libjudy ${CMAKE_BINARY_DIR}/libjudy
+  COMMENT copying libjudy from source to build
+  DEPENDEES download
+)
 
 include_directories(${MPI_Fortran_INCLUDE_PATH} ${PETSC_INCLUDES})
 ADD_DEFINITIONS(${PETSC_DEFINITIONS})
@@ -297,7 +325,7 @@ endif (USE_MYLIB)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
 include_directories ("${PROJECT_SOURCE_DIR}/libwm/")
-include_directories ("${PROJECT_SOURCE_DIR}/libjudy/src/")
+include_directories ("${PROJECT_BINARY_DIR}/libjudy/src/")
 
 set(CPP_WM4_FILES "")
 set(CPP_WM4_FILES
@@ -357,41 +385,41 @@ endforeach()
 
 set (CPP_LIBJUDY_O_FILES "")
 set (CPP_LIBJUDY_O_FILES
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1FreeArray.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Set.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Count.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libcount_la-Judy1ByCount.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Unset.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Test.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1MallocIF.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Tables.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Decascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1Cascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1CreateBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1InsertBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/Judy1First.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libnext_la-Judy1Next.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libprev_la-Judy1Prev.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libnext_la-Judy1NextEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/Judy1/libprev_la-Judy1PrevEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLFreeArray.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLIns.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLCount.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLGet.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLDel.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libcount_la-JudyLByCount.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLTables.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLMallocIF.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLDecascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLCascade.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLInsertBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLCreateBranch.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/JudyLFirst.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libnext_la-JudyLNext.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrev.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libnext_la-JudyLNextEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrevEmpty.o
-  ${PROJECT_SOURCE_DIR}/libjudy/src/JudyCommon/JudyMalloc.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1FreeArray.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Set.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Count.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libcount_la-Judy1ByCount.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Unset.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Test.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1MallocIF.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Tables.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Decascade.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Cascade.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1CreateBranch.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1InsertBranch.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1First.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1Next.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1Prev.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1NextEmpty.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1PrevEmpty.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFreeArray.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLIns.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCount.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLGet.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDel.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libcount_la-JudyLByCount.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLTables.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLMallocIF.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDecascade.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCascade.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLInsertBranch.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCreateBranch.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFirst.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNext.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrev.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNextEmpty.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrevEmpty.o
+  ${PROJECT_BINARY_DIR}/libjudy/src/JudyCommon/JudyMalloc.o
 )
 foreach (test ${CPP_LIBJUDY_O_FILES})
  SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
@@ -492,17 +520,23 @@ add_custom_command(TARGET test_tri_intersector
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" ./
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" unittests/
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/tests/data/" ./
+  COMMAND unzip -o data/square_0_002.zip -d data/
+  COMMAND unzip -o data/square_0_004.zip -d data/
+  COMMAND unzip -o data/square_0_02.zip -d data/
+  COMMAND unzip -o data/square_0_1.zip -d data/
+  COMMAND unzip -o data/square_0_2.zip -d data/
 #  COMMAND cd unittests && ./test_tri_intersector && cd ..
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#  COMMENT "Running test_tri_intersector" VERBATIM
+  COMMENT "Copying test data files"
+  VERBATIM
 )
 
 add_custom_target(distclean 
+  COMMAND make clean
   COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ 
-  COMMAND cd "${PROJECT_BINARY_DIR}/" && make clean
   COMMAND rm -rf unittests/
   COMMAND rm -rf data/
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && make distclean
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 #  COMMAND cd "${PROJECT_SOURCE_DIR}/libjud" && make distcleanlibjudy
 )
 

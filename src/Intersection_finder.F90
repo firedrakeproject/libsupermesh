@@ -56,9 +56,10 @@ module libsupermesh_intersection_finder
     end subroutine libsupermesh_cintersection_finder_reset
   end interface rtree_intersection_finder_reset
 
-  public :: rtree_intersection_finder_set_input, partition_bbox, bboxes_intersect, &
+  public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
-    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
+    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset, &
+    & partition_bbox, bboxes_intersect, bboxes_partition_intersect, bbox
 
 !   interface
 !     function mpi_wtime()
@@ -191,11 +192,11 @@ contains
     partition_bbox(1, :) = ele_val_(:, 1)
     partition_bbox(2, :) = ele_val_(:, 1)
 
-    do k = 2, ele_count(field)
+    do k = 1, ele_count(field)
       if(ele_owner(k) /= mpi_id) cycle
       ele_val_ = ele_val(field, k)
-      do i = 1, field%mesh%loc
-        do j = 1, field%dim
+      do i = 1, size(ele_val_, 2)   !field%mesh%loc
+        do j = 1, size(ele_val_, 1) !field%dim
           partition_bbox(1, j) = min(partition_bbox(1, j), ele_val_(j, i))
           partition_bbox(2, j) = max(partition_bbox(2, j), ele_val_(j, i))
         end do
@@ -229,6 +230,30 @@ contains
     intersect = .true.
 
   end function bboxes_intersect
+
+  pure function bboxes_partition_intersect(bbox_1, bbox_2) result(intersect)
+    ! 2 x dim
+    real, dimension(:, :), intent(in) :: bbox_1
+    ! 2 x dim
+    real, dimension(:, :), intent(in) :: bbox_2
+
+    logical :: intersect
+
+    integer :: i
+
+#ifdef COUNT_INTERSECTION_TESTS
+    intersection_tests_count = intersection_tests_count + 1
+#endif
+
+    do i = 1, size(bbox_1, 2)
+      if(bbox_2(2, i) .le. bbox_1(1, i) .or. bbox_2(1, i) .ge. bbox_1(2, i)) then
+        intersect = .false.
+        return
+      end if
+    end do
+    intersect = .true.
+
+  end function bboxes_partition_intersect
 
   ! Advancing front intersection finder, as described in P. E. Farrell and
   ! J. R. Maddison, "Conservative interpolation between volume meshes by local
