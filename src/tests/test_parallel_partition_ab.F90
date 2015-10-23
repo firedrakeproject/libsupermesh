@@ -24,7 +24,7 @@ subroutine test_parallel_partition_ab
 
 #include <finclude/petsc.h90>
 
-  integer :: i, j, k, l, sends, recvs, nnodes, ele_A, ele_B, ele_C, n_trisC, nprocs, &
+  integer :: i, j, k, l, m, sends, recvs, nnodes, ele_A, ele_B, ele_C, n_trisC, nprocs, &
        & rank, ierr, serial_ele_A, serial_ele_B, parallel_ele_A, &
        & parallel_ele_B
   integer :: local_sum_a, local_sum_b, triangles, &
@@ -60,6 +60,10 @@ subroutine test_parallel_partition_ab
   type(intersections), dimension(:), allocatable :: map_AB
   character(len = 255) :: hostname
   character(len = 2047) :: buffer
+  
+  integer :: nintersections, ntests
+  integer, dimension(:, :), allocatable :: comm_enlist_B
+  real, dimension(:, :), allocatable :: comm_coords_B
 
 ! find out MY process ID, and how many processes were started.
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
@@ -96,8 +100,12 @@ subroutine test_parallel_partition_ab
   k = 0
   triangles = 0
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!! Serial runtime test !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   ! Serial test
-  if (rank == 0) then
+  if(rank == root) then
     t0 = mpi_wtime()
     positionsA = read_triangle_files("data/square_0_02"//"_"//trim(nprocs_character), dim)
     positionsB = read_triangle_files("data/square_0_01"//"_"//trim(nprocs_character), dim)
@@ -106,7 +114,6 @@ subroutine test_parallel_partition_ab
     serial_read_time = mpi_wtime() - t0
 
     t0 = mpi_wtime()
-!   Use the intersection finder!!
     allocate(map_AB(serial_ele_A))
     call intersection_finder(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), serial_ele_A/)), &
                          & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
@@ -116,10 +123,8 @@ subroutine test_parallel_partition_ab
     do ele_A = 1, serial_ele_A
       tri_A%v = ele_val(positionsA, ele_A)
 
-!      do ele_B = 1, serial_ele_B
       do i = 1, map_AB(ele_A)%n
         ele_B = map_AB(ele_A)%v(i)
-      ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
         tri_B%v = ele_val(positionsB, ele_B)
 
         call intersect_tris(tri_A, tri_B, trisC, n_trisC)
@@ -133,9 +138,7 @@ subroutine test_parallel_partition_ab
       end do
     end do
 
-    do i=1,size(map_AB)
-      deallocate(map_AB(i)%v)
-    end do
+    call deallocate(map_AB)
     deallocate(map_AB)
 
     serial_time = mpi_wtime() - t0
@@ -307,7 +310,7 @@ subroutine test_parallel_partition_ab
   sends = -1
   recvs = -1
   do j = 0,nprocs - 1
-    if(rank == j)cycle
+    if(rank == j) cycle
 
     if(partition_intersection_recv(j) .and. (number_of_elements_to_receive(j) /=0) ) then
       recvs = recvs + 1
@@ -329,11 +332,19 @@ subroutine test_parallel_partition_ab
     end if
   end do
 
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!! Parallel self-self runtime test !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   t1 = mpi_wtime()
+  call rtree_intersection_finder_set_input(positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)))
   do ele_A = 1, ele_count(positionsA)
     if(ele_ownerA(ele_A) /= rank) cycle
     tri_A%v = ele_val(positionsA, ele_A)
-    do ele_B = 1,ele_count(positionsB)
+    call rtree_intersection_finder_find(tri_A%v)
+    call rtree_intersection_finder_query_output(nintersections)
+    do i = 1, nintersections
+      call rtree_intersection_finder_get_output(ele_B, i)
       if(ele_ownerB(ele_B) /= rank) cycle
       tri_B%v = ele_val(positionsB, ele_B)
 
@@ -341,31 +352,46 @@ subroutine test_parallel_partition_ab
 
       call intersect_tris(tri_A, tri_B, trisC, n_trisC)
 
-      do ele_C = 1,n_trisC
+      do ele_C = 1, n_trisC
         area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
         local_iter_actual = local_iter_actual + 1
       end do
     end do
   end do
+  call rtree_intersection_finder_reset(ntests)
 
   sends = sends + 1
   recvs = recvs + 1
   call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
   call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
-
-  do ele_A = 1, ele_count(positionsA)
-    if(ele_ownerA(ele_A) /= rank) cycle
-    tri_A%v = ele_val(positionsA, ele_A)
-    do j = 0, nprocs - 1
-      if(j == rank) cycle
-      if(.not. partition_intersection_recv(j)) cycle
-      do k = 1, number_of_elements_to_receive(j) * (positionsB%dim + 1) * 2, 6
-        tri_B%v(1, 1) = recv_buffer(j)%p(k)
-        tri_B%v(2, 1) = recv_buffer(j)%p(k + 1)
-        tri_B%v(1, 2) = recv_buffer(j)%p(k + 2)
-        tri_B%v(2, 2) = recv_buffer(j)%p(k + 3)
-        tri_B%v(1, 3) = recv_buffer(j)%p(k + 4)
-        tri_B%v(2, 3) = recv_buffer(j)%p(k + 5)
+  
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!! Parallel self-other runtime test !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  do i = 0, nprocs - 1
+    if(i == rank) cycle
+    if(number_of_elements_to_receive(i) <= 0) cycle
+    allocate(comm_coords_B(positionsB%dim,     number_of_elements_to_receive(i) * (positionsB%dim + 1)), &
+           & comm_enlist_B(positionsB%dim + 1, number_of_elements_to_receive(i)))
+    m = 1
+    do j = 1, number_of_elements_to_receive(i)
+      do k = 1, positionsB%dim + 1
+        do l = 1, positionsB%dim
+          comm_coords_B(l, (j - 1) * (positionsB%dim + 1) + k) = recv_buffer(i)%p(positionsB%dim * (m - 1) + l)
+        end do
+        comm_enlist_B(k, j) = m
+        m = m + 1
+      end do
+    end do
+    call rtree_intersection_finder_set_input(comm_coords_B, comm_enlist_B)
+    do ele_A = 1, ele_count(positionsA)
+      if(ele_ownerA(ele_A) /= rank) cycle
+      tri_A%v = ele_val(positionsA, ele_A)
+      call rtree_intersection_finder_find(tri_A%v)
+      call rtree_intersection_finder_query_output(nintersections)
+      do k = 1, nintersections
+        call rtree_intersection_finder_get_output(ele_B, k)
+        tri_B%v = comm_coords_B(:, (ele_B - 1) * (positionsB%dim + 1) + 1:ele_B * (positionsB%dim + 1))
 
         local_iter = local_iter + 1
 
@@ -375,8 +401,11 @@ subroutine test_parallel_partition_ab
           area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
           local_iter_actual = local_iter_actual + 1
         end do
-      end do
+      end do     
     end do
+    call rtree_intersection_finder_reset(ntests)
+    deallocate(comm_coords_B, &
+             & comm_enlist_B)
   end do
   local_time = mpi_wtime() - t0                    ! total
   local_time_intersection_only = mpi_wtime() - t1  ! only intersection
