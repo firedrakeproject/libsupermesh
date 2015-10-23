@@ -5,7 +5,7 @@ subroutine test_intersection_finder_2d
   use libsupermesh_read_triangle
   use libsupermesh_unittest_tools
   use libsupermesh_linked_lists
-  
+
   implicit none
 
   type(vector_field) :: positionsA, positionsB
@@ -30,7 +30,7 @@ subroutine test_intersection_finder_2d
   i = fetch(map_AB(1), 1)
   fail = (i /= 1)
   call report_test("[intersection finder: correct]", fail, .false., "The answer should be one")
-  
+
   do i=1,size(map_AB)
     call flush_list(map_AB(i))
   end do
@@ -63,7 +63,7 @@ subroutine test_intersection_finder_2d
   do i=1,size(map_AB)
     call flush_list(map_AB(i))
   end do
-  
+
   do i=1,size(bigger_map_AB)
     call flush_list(bigger_map_AB(i))
   end do

@@ -22,7 +22,7 @@ module libsupermesh_fields
     integer, dimension(:), pointer :: ndglno
     integer :: continuity
     type(eelist_ptr), pointer :: eelist
-    
+
     integer, pointer :: refcount
   end type mesh_type
 
@@ -30,7 +30,7 @@ module libsupermesh_fields
     type(mesh_type) :: mesh
     integer :: dim
     real, dimension(:, :), pointer :: val
-    
+
     integer, pointer :: refcount
   end type vector_field
 
@@ -109,10 +109,10 @@ contains
     allocate(mesh%eelist)
     nullify(mesh%eelist%ptr)
     mesh%continuity = 0
-    
+
     allocate(mesh%refcount)
     mesh%refcount = 1
-    
+
   end subroutine allocate_mesh
 
   pure subroutine deallocate_mesh(mesh)
@@ -145,7 +145,7 @@ contains
     mesh%refcount = mesh%refcount + 1
     allocate(field%refcount)
     field%refcount = 1
-    
+
   end subroutine allocate_vector_field
 
   pure subroutine deallocate_vector_field(field)
@@ -153,11 +153,11 @@ contains
 
     field%refcount = field%refcount - 1
     if(field%refcount == 0) then
-    
+
       call deallocate(field%mesh)
       deallocate(field%val)
-      
-      deallocate(field%refcount)      
+
+      deallocate(field%refcount)
     end if
 
   end subroutine deallocate_vector_field
@@ -448,7 +448,7 @@ contains
     volume = (1.0 / 6.0) * abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
                            & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
                            & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
-    
+
   end function tetrahedron_volume
 
 end module libsupermesh_fields

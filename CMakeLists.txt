@@ -447,8 +447,11 @@ FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_A_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_a.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_B_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_b.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab.F90)
+FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab.F90)
+FILE(GLOB FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_universal_node_numbering.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
+FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_partition_ab.F90)
 #FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
@@ -474,11 +477,14 @@ set (UNITTESTS
   test_parallel_partition_a
   test_parallel_partition_b
   test_parallel_partition_ab
+  test_parallel_partition_complete_ab
+  test_parallel_universal_node_numbering
 )
 
 set (BENCHMARKTESTS
   benchmark_tri_intersector
   benchmark_tet_intersector
+  benchmark_parallel_partition_ab
 #  benchmark_parallel
 )
 
@@ -493,8 +499,11 @@ add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FOR
 add_executable (test_parallel_partition_a ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_A_FILES})
 add_executable (test_parallel_partition_b ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_B_FILES})
 add_executable (test_parallel_partition_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES})
+add_executable (test_parallel_partition_complete_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES})
+add_executable (test_parallel_universal_node_numbering ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
+add_executable (benchmark_parallel_partition_ab EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES} ${CPP_TEST_SOURCE_FILES})
 #add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 foreach (test ${UNITTESTS})
@@ -510,7 +519,7 @@ foreach (benchmark ${BENCHMARKTESTS})
  SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_;HAVE_MPI")
 endforeach()
 
-add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector) # benchmark_parallel)
+add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel_partition_ab) # benchmark_parallel)
 
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD
@@ -522,7 +531,9 @@ add_custom_command(TARGET test_tri_intersector
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/tests/data/" ./
   COMMAND unzip -o data/square_0_002.zip -d data/
   COMMAND unzip -o data/square_0_004.zip -d data/
+  COMMAND unzip -o data/square_0_008.zip -d data/
   COMMAND unzip -o data/square_0_02.zip -d data/
+  COMMAND unzip -o data/square_0_01.zip -d data/
   COMMAND unzip -o data/square_0_1.zip -d data/
   COMMAND unzip -o data/square_0_2.zip -d data/
 #  COMMAND cd unittests && ./test_tri_intersector && cd ..

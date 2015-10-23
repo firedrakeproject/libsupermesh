@@ -1,4 +1,4 @@
-subroutine test_parallel_partition_ab
+subroutine test_parallel_partition_complete_ab
 
   use iso_fortran_env, only : output_unit
 
@@ -11,6 +11,7 @@ subroutine test_parallel_partition_ab
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
   use libsupermesh_halo_ownership
+  use libsupermesh_parallel_supermesh, only : parallel_supermesh
 
   implicit none
 
@@ -54,8 +55,8 @@ subroutine test_parallel_partition_ab
   real, dimension(:,:,:), allocatable :: parallel_bbox_a, parallel_bbox_b
   integer, dimension(:), allocatable  :: parallel_ele_B_array
 
-  integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB, unsB
-  type(halo_type) :: halo
+  integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB, unsA, unsB
+  type(halo_type) :: haloA, haloB
 
   type(intersections), dimension(:), allocatable :: map_AB
   character(len = 255) :: hostname
@@ -165,23 +166,30 @@ subroutine test_parallel_partition_ab
 
   t0 = mpi_wtime()
   positionsA = read_triangle_files(trim("data/square_0_02_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_02"//"_"//trim(nprocs_character), halo, level = 2)
+  call read_halo("data/square_0_02"//"_"//trim(nprocs_character), haloA, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
-  call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
+  call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), haloA, ele_ownerA)
   parallel_ele_A = count(ele_ownerA == rank)
-  call deallocate(halo)
+  allocate(unsA(node_count(positionsA)))
+  call universal_node_numbering(haloA, unsA)
 
   positionsB = read_triangle_files(trim("data/square_0_01_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_01"//"_"//trim(nprocs_character), halo, level = 2)
+  call read_halo("data/square_0_01"//"_"//trim(nprocs_character), haloB, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
-  call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
+  call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), haloB, ele_ownerB)
   parallel_ele_B = count(ele_ownerB == rank)
   allocate(unsB(node_count(positionsB)))
-  call universal_node_numbering(halo, unsB)
+  call universal_node_numbering(haloB, unsB)
   deallocate(unsB)
-  call deallocate(halo)
 
   local_read_time = mpi_wtime() - t0
+
+  call parallel_supermesh(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), unsA, haloA, &
+                      &   positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)),       haloB, &
+                      &   local_donor_ele_data, local_unpack_donor_ele_data, local_intersection_calculation)
+
+  call deallocate(haloA)
+  call deallocate(haloB)
 
   t0 = mpi_wtime()
   allocate(bbox_a(positionsA%dim,2))
@@ -489,6 +497,40 @@ subroutine test_parallel_partition_ab
 
 contains
 
+  subroutine local_donor_ele_data(eles, data, ndata)
+    use iso_c_binding, only : c_ptr
+    implicit none
+    integer, dimension(:), intent(in) :: eles
+    type(c_ptr), intent(out)          :: data
+    integer, intent(out)              :: ndata
+
+  end subroutine local_donor_ele_data
+
+  subroutine local_unpack_donor_ele_data(ele, proc, data, ndata, ele_data, nele_data)
+    use iso_c_binding, only : c_ptr
+    implicit none
+    integer, intent(in)      :: ele
+    integer, intent(in)      :: proc
+    type(c_ptr), intent(in)  :: data
+    integer, intent(in)      :: ndata
+    type(c_ptr), intent(out) :: ele_data
+    integer, intent(out)     :: nele_data
+
+  end subroutine local_unpack_donor_ele_data
+
+  subroutine local_intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, nele_data_a)
+    use iso_c_binding, only : c_ptr
+    implicit none
+    ! dim x loc_c x nelements_c
+    real, dimension(:, :, :), intent(in) :: positions_c
+    integer, intent(in)     :: ele_a
+    integer, intent(in)     :: proc_a
+    integer, intent(in)     :: ele_b
+    type(c_ptr), intent(in) :: ele_data_a
+    integer, intent(in)     :: nele_data_a
+
+  end subroutine local_intersection_calculation
+
   subroutine write_parallel(msg)
     character(len = *), intent(in) :: msg
 
@@ -510,4 +552,4 @@ contains
 
   end subroutine write_parallel
 
-end subroutine test_parallel_partition_ab
+end subroutine test_parallel_partition_complete_ab
