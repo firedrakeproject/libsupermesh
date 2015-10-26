@@ -108,8 +108,9 @@ module libsupermesh_intersection_finder
       & brute_force_intersection_finder_lists
   end interface brute_force_intersection_finder
 
-  public :: intersection_finder, advancing_front_intersection_finder, &
-    & rtree_intersection_finder, brute_force_intersection_finder
+  public :: connected, intersection_finder, &
+    & advancing_front_intersection_finder, rtree_intersection_finder, &
+    & brute_force_intersection_finder
 
 contains
 
@@ -254,6 +255,67 @@ contains
     intersect = .true.
 
   end function bboxes_partition_intersect
+  
+  function connected(positions, enlist, eelist)
+    ! dim x nnodes
+    real, dimension(:, :), intent(in) :: positions
+    ! loc x nelements
+    integer, dimension(:, :), intent(in) :: enlist
+    type(eelist_type), target, optional, intent(in) :: eelist
+    
+    logical :: connected
+    
+    integer :: dim, loc, nelements, nnodes
+    
+    integer :: ele, i, neigh, nnext, nseen
+    integer, dimension(:), allocatable :: next
+    logical, dimension(:), allocatable :: seen
+    type(eelist_type), pointer :: leelist
+    
+    dim = size(positions, 1)
+    nnodes = size(positions, 2)
+    loc = size(enlist, 1)
+    nelements = size(enlist, 2)    
+    if(nelements == 0) then
+      connected = .true.
+      return
+    end if
+    
+    if(present(eelist)) then
+      leelist => eelist
+    else
+      allocate(leelist)
+      call mesh_eelist(nnodes, enlist, sloc(dim, loc), leelist)
+    end if    
+    allocate(next(nelements), seen(nelements))
+    next(1) = 1
+    nnext = 1
+    seen(1) = .true.    
+    seen(2:) = .false.
+    nseen = 1
+    do while(nnext > 0)
+      ele = next(nnext)
+      nnext = nnext - 1
+      do i = 1, leelist%n(ele)
+        neigh = leelist%v(i, ele)
+        if(.not. seen(neigh)) then
+          nnext = nnext + 1
+          next(nnext) = neigh
+          seen(neigh) = .true.
+          nseen = nseen + 1
+        end if
+      end do
+    end do
+    
+    if(.not. present(eelist)) then
+      call deallocate(leelist)
+      deallocate(leelist)
+    end if
+    deallocate(next, seen)
+    
+    connected = (nseen == nelements)
+    
+  end function connected
 
   ! Advancing front intersection finder, as described in P. E. Farrell and
   ! J. R. Maddison, "Conservative interpolation between volume meshes by local
@@ -293,6 +355,13 @@ contains
     nelements_b = size(enlist_b, 2)
     loc_a = size(enlist_a, 1)
     nelements_a = size(enlist_a, 2)
+    if(nelements_b == 0 .or. nelements_a == 0) then
+      do ele_a = 1, nelements_a
+        allocate(map_ab(ele_a)%v(0))
+        map_ab(ele_a)%n = 0
+      end do
+      return
+    end if
 
 !     t_0 = mpi_wtime()
     call mesh_eelist(nnodes_b, enlist_b, sloc(dim, loc_b), eelist_b)
