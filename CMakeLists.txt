@@ -452,6 +452,7 @@ FILE(GLOB FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES ${PROJECT_SOURCE_
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_partition_ab.F90)
+FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_SERIAL_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_partition_ab_serial.F90)
 #FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel.F90)
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
@@ -485,6 +486,7 @@ set (BENCHMARKTESTS
   benchmark_tri_intersector
   benchmark_tet_intersector
   benchmark_parallel_partition_ab
+  benchmark_parallel_partition_ab_serial
 #  benchmark_parallel
 )
 
@@ -504,6 +506,7 @@ add_executable (test_parallel_universal_node_numbering ${CPP_TEST_SOURCE_FILES} 
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_partition_ab EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES} ${CPP_TEST_SOURCE_FILES})
+add_executable (benchmark_parallel_partition_ab_serial EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_SERIAL_FILES} ${CPP_TEST_SOURCE_FILES})
 #add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 foreach (test ${UNITTESTS})
@@ -519,7 +522,7 @@ foreach (benchmark ${BENCHMARKTESTS})
  SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_;HAVE_MPI")
 endforeach()
 
-add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel_partition_ab) # benchmark_parallel)
+add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel_partition_ab benchmark_parallel_partition_ab_serial) # benchmark_parallel)
 
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD

@@ -60,7 +60,7 @@ subroutine test_parallel_partition_ab
   type(intersections), dimension(:), allocatable :: map_AB
   character(len = 255) :: hostname
   character(len = 2047) :: buffer
-  
+
   integer :: nintersections, ntests
   integer, dimension(:, :), allocatable :: comm_enlist_B
   real, dimension(:, :), allocatable :: comm_coords_B
@@ -364,7 +364,7 @@ subroutine test_parallel_partition_ab
   recvs = recvs + 1
   call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
   call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
-  
+
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!! Parallel self-other runtime test !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -401,7 +401,7 @@ subroutine test_parallel_partition_ab
           area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
           local_iter_actual = local_iter_actual + 1
         end do
-      end do     
+      end do
     end do
     call rtree_intersection_finder_reset(ntests)
     deallocate(comm_coords_B, &

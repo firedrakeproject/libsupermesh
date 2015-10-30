@@ -1,4 +1,4 @@
-subroutine benchmark_parallel_partition_ab
+subroutine benchmark_parallel_partition_ab_serial
 
   use iso_fortran_env, only : output_unit
 
@@ -32,7 +32,9 @@ subroutine benchmark_parallel_partition_ab
   real :: t0, t1, area_serial, area_parallel, &
        & local_time, serial_read_time, serial_time, local_read_time, &
        & local_time_intersection_only, local_other_time
+  real :: local_comms_A, local_comms_B, local_comms_temp
   real, dimension(:), allocatable :: areas_parallel, times_parallel, times_intersection_only_parallel, other_times_parallel, times_read_time_parallel
+  real, dimension(:), allocatable :: comms_A_parallel, comms_B_parallel
   integer, dimension(:), allocatable :: iters_parallel, iter_actual_parallel
 
   integer, dimension(:), allocatable   :: number_of_elements_to_receive, number_of_elements_to_send
@@ -155,11 +157,13 @@ subroutine benchmark_parallel_partition_ab
     allocate(iters_parallel(0:nprocs - 1))
     allocate(iter_actual_parallel(0:nprocs - 1))
     allocate(times_intersection_only_parallel(0:nprocs - 1))
+    allocate(comms_A_parallel(0:nprocs - 1), comms_B_parallel(0:nprocs - 1))
   else
     allocate(areas_parallel(0), times_parallel(0), other_times_parallel(0), times_read_time_parallel(0))
     allocate(iters_parallel(0))
     allocate(iter_actual_parallel(0))
     allocate(times_intersection_only_parallel(0))
+    allocate(comms_A_parallel(0), comms_B_parallel(0))
   end if
 
   area_parallel = 0.0
@@ -228,6 +232,7 @@ subroutine benchmark_parallel_partition_ab
   partition_intersection_send = .false.
   sends = -1
   recvs = -1
+  local_comms_temp = mpi_wtime()
   do i = 0, nprocs - 1
     l = 0
 
@@ -268,6 +273,9 @@ subroutine benchmark_parallel_partition_ab
 
   recvs = recvs + 1
   call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
+  sends = sends + 1
+  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
+  local_comms_A = mpi_wtime() - local_comms_temp
 
   do i = 0, nprocs - 1
     if(partition_intersection_recv(i)) then
@@ -297,9 +305,6 @@ subroutine benchmark_parallel_partition_ab
     end do
   end do
 
-  sends = sends + 1
-  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
-
   forall(i = 0: nprocs - 1)
     status_send(:, i) = MPI_STATUS_IGNORE
     status_recv(:, i) = MPI_STATUS_IGNORE
@@ -309,6 +314,7 @@ subroutine benchmark_parallel_partition_ab
 
   sends = -1
   recvs = -1
+  local_comms_temp = mpi_wtime()
   do j = 0,nprocs - 1
     if(rank == j) cycle
 
@@ -331,6 +337,12 @@ subroutine benchmark_parallel_partition_ab
         & j, 0, MPI_COMM_WORLD, request_send(sends), ierr);  CHKERRQ(ierr)
     end if
   end do
+
+  sends = sends + 1
+  recvs = recvs + 1
+  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
+  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
+  local_comms_B = mpi_wtime() - local_comms_temp
 
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -359,11 +371,6 @@ subroutine benchmark_parallel_partition_ab
     end do
   end do
   call rtree_intersection_finder_reset(ntests)
-
-  sends = sends + 1
-  recvs = recvs + 1
-  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
-  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!! Parallel self-other runtime test !!!
@@ -433,6 +440,12 @@ subroutine benchmark_parallel_partition_ab
   call MPI_Gather(local_iter_actual, 1, MPI_INTEGER, &
     & iter_actual_parallel, 1, MPI_INTEGER, &
     & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Gather(local_comms_A, 1, MPI_DOUBLE_PRECISION, &
+    & comms_A_parallel, 1, MPI_DOUBLE_PRECISION, &
+    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Gather(local_comms_B, 1, MPI_DOUBLE_PRECISION, &
+    & comms_B_parallel, 1, MPI_DOUBLE_PRECISION, &
+    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Reduce(parallel_ele_A, local_sum_a, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Reduce(parallel_ele_B, local_sum_b, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
@@ -451,6 +464,12 @@ subroutine benchmark_parallel_partition_ab
     write(output_unit, "(a)") ""
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total other parallel time       : ", sum(other_times_parallel)," ."
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Max other parallel time         : ", maxval(other_times_parallel)," ."
+    write(output_unit, "(a)") ""
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total time comm no of elements  : ", sum(comms_A_parallel)," ."
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Max time comm no of elements    : ", maxval(comms_A_parallel)," ."
+    write(output_unit, "(a)") ""
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total time comm elements        : ", sum(comms_B_parallel)," ."
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Max time comm elements          : ", maxval(comms_B_parallel)," ."
     write(output_unit, "(a)") ""
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial intersection area     : ", area_serial," ."
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
@@ -513,6 +532,7 @@ subroutine benchmark_parallel_partition_ab
   call deallocate(positionsB)
   deallocate(ele_ownerA)
   deallocate(ele_ownerB)
+  deallocate(comms_A_parallel, comms_B_parallel)
 
 
   call cintersection_finder_reset(nnodes)
@@ -540,4 +560,4 @@ contains
 
   end subroutine write_parallel
 
-end subroutine benchmark_parallel_partition_ab
+end subroutine benchmark_parallel_partition_ab_serial
