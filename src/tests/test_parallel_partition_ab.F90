@@ -65,6 +65,8 @@ subroutine test_parallel_partition_ab
   integer, dimension(:, :), allocatable :: comm_enlist_B
   real, dimension(:, :), allocatable :: comm_coords_B
 
+  integer, dimension(:), allocatable :: nodes
+
 ! find out MY process ID, and how many processes were started.
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
   CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
@@ -181,7 +183,7 @@ subroutine test_parallel_partition_ab
   parallel_ele_B = count(ele_ownerB == rank)
   allocate(unsB(node_count(positionsB)))
   call universal_node_numbering(halo, unsB)
-  deallocate(unsB)
+!  if (rank == 1) write(output_unit, *) rank, ": size(unsb): ", size(unsB),", unsb: ", unsB
   call deallocate(halo)
 
   local_read_time = mpi_wtime() - t0
@@ -280,8 +282,13 @@ subroutine test_parallel_partition_ab
     if(.not. associated(send_element_uns(j)%p)) cycle
     if(size(send_element_uns(j)%p) == 0) cycle
     k = 1
+!if (rank == 1) write(output_unit, *) rank, ": j:",j,", size(send_element_uns(j)%p): ", size(send_element_uns(j)%p)
+!    allocate(nodes(size(send_element_uns(j)%p) * 3))
+!    nodes = -12
     do l = 1, size(send_element_uns(j)%p)
       tri_B%v = ele_val(positionsB, send_element_uns(j)%p(l))
+!      nodes(l + (l-1)*2:((l-1)*2)+2) = ele_nodes(positionsB, send_element_uns(j)%p(l))
+!if (rank == 1) write(output_unit, *) rank, ": l:",l,", ele_nodes: ", ele_nodes(positionsB, send_element_uns(j)%p(l))
       send_buffer(j)%p(k) = tri_B%v(1, 1)
       k = k + 1
       send_buffer(j)%p(k) = tri_B%v(2, 1)
@@ -295,6 +302,12 @@ subroutine test_parallel_partition_ab
       send_buffer(j)%p(k) = tri_B%v(2, 3)
       k = k + 1
     end do
+!    do i = minval(nodes), maxval(nodes)
+!      if (sum(nodes,mask=nodes.eq.i) == 0) cycle
+!!      if (rank == 1) write(output_unit, *) rank, ": i:",i,", sum:",sum(nodes,mask=nodes.eq.i)/i
+!    end do
+!    if (rank == 1) write(output_unit, *) rank, ": nodes:",nodes
+!    deallocate(nodes)
   end do
 
   sends = sends + 1
@@ -410,7 +423,7 @@ subroutine test_parallel_partition_ab
   local_time = mpi_wtime() - t0                    ! total
   local_time_intersection_only = mpi_wtime() - t1  ! only intersection
   local_other_time = t1 - t0                       ! other
-
+write(output_unit, *) rank, ": area_parallel:",area_parallel
   ! Gather remote results:
   call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &
     & areas_parallel, 1, MPI_DOUBLE_PRECISION, &
@@ -505,14 +518,15 @@ subroutine test_parallel_partition_ab
   end do
   deallocate(recv_buffer)
 
-  deallocate(areas_parallel, times_parallel, times_read_time_parallel)
-  deallocate(parallel_bbox_a, parallel_bbox_b)
-  deallocate(parallel_ele_B_array)
-  deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_recv, times_intersection_only_parallel)
+  deallocate(areas_parallel, times_parallel, times_read_time_parallel, other_times_parallel)
+  deallocate(iters_parallel, iter_actual_parallel, times_intersection_only_parallel)
+  deallocate(parallel_bbox_a, parallel_bbox_b, bbox_a, bbox_b, parallel_ele_B_array)
+  deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_send, partition_intersection_recv)
   call deallocate(positionsA)
   call deallocate(positionsB)
-  deallocate(ele_ownerA)
-  deallocate(ele_ownerB)
+  deallocate(ele_ownerA, ele_ownerB)
+  deallocate(unsB)
+  deallocate(number_of_elements_to_receive, number_of_elements_to_send)
 
   call cintersection_finder_reset(nnodes)
 

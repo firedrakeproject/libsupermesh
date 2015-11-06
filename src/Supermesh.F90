@@ -6,15 +6,15 @@ module libsupermesh_construction
   use libsupermesh_fields
   use libsupermesh_tri_intersection_module
   use libsupermesh_tet_intersection_module
-  
+
   implicit none
 
   public :: intersect_elements, intersect_elements_old
-  
+
   private
- 
+
   contains
-  
+
   subroutine intersect_elements(positions_A_val, &
         posB, n_C, simplexC_real)
 
@@ -68,7 +68,7 @@ module libsupermesh_construction
     end select
 
   end function simplex_size
-  
+
   subroutine intersect_intervals(positions_A_val, posB, intC, n_C)
     real, dimension(2), intent(in) :: positions_A_val
     real, dimension(2), intent(in) :: posB
@@ -99,7 +99,7 @@ module libsupermesh_construction
     integer, intent(in) :: locA, ndimA
     type(vector_field) :: intersection
     real, dimension(:, :), intent(in) :: posB
-  
+
     integer :: i, nonods, totele
     integer, dimension(:, :), allocatable :: ndglno
     type(mesh_type) :: intersection_mesh
@@ -122,7 +122,7 @@ module libsupermesh_construction
     end if
 
     call deallocate(intersection_mesh)
-    
+
   end function intersect_elements_old
-  
+
 end module libsupermesh_construction

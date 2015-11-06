@@ -32,7 +32,7 @@ module libsupermesh_tri_intersection_module
   end interface get_lines
 
   integer, parameter, public :: tri_buf_size = BUF_SIZE
-  
+
   real, dimension(2, BUF_SIZE + 2), save :: points_tmp
   integer, save :: n_points_tmp
 
@@ -99,7 +99,7 @@ contains
     integer, intent(out) :: n_trisC
 
     integer :: i, nonods
-    
+
     call cintersector_set_input(triA, triB, 2, 3)
     call cintersector_drive
     call cintersector_query(nonods, n_trisC)
@@ -138,7 +138,7 @@ contains
 
     real, dimension(2, BUF_SIZE + 2), save :: points
     integer :: n_points
-    
+
     lines_b = get_lines(triB)
 
     points(:, :3) = triA%v
@@ -195,7 +195,7 @@ contains
         p2 = points(:, i + 1)
         d2 = d(i + 1)
       end if
-      
+
       if(d1 <= 0.0) then
         if(d2 <= 0.0) then
           ! No clip
@@ -218,7 +218,7 @@ contains
         ! Full clip
       end if
     end do
-    
+
   end subroutine clip
 
   pure function get_lines_tri(tri) result(lines)
@@ -240,7 +240,7 @@ contains
     lines(3)%normal(1) = -(tri%V(2, 1) - tri%V(2, 3))
     lines(3)%normal(2) =  (tri%V(1, 1) - tri%V(1, 3))
     lines(3)%point = tri%V(:, 3)
-    
+
     ! Transform the normals so that their direction is consistent (step b).
     det = dot_product(tri%V(:, 2) - tri%V(:, 1), lines(3)%normal)
     if(det > 0.0) then

@@ -59,7 +59,7 @@ module libsupermesh_intersection_finder
   public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output, rtree_intersection_finder_reset, &
-    & partition_bbox, bboxes_intersect, bboxes_partition_intersect, bbox
+    & partition_bbox, partition_bbox_real, bboxes_intersect, bboxes_partition_intersect, bbox
 
 !   interface
 !     function mpi_wtime()
@@ -81,7 +81,7 @@ module libsupermesh_intersection_finder
   interface deallocate
     module procedure deallocate_intersections, deallocate_intersections_vector
   end interface deallocate
-  
+
   public :: intersections, ilist, inode, deallocate
 
   interface intersection_finder
@@ -177,34 +177,74 @@ contains
 
   end function bbox
 
-  pure function partition_bbox(field, ele_owner, mpi_id)
-!  function partition_bbox(field, ele_owner, mpi_id) result (partition_bbox1)
+!  pure function partition_bbox(field, ele_owner, mpi_id)
+  function partition_bbox(field, ele_owner, mpi_id) result (partition_bbox1)
     type(vector_field), intent(in)             :: field
     integer, dimension(:), intent(in)          :: ele_owner
     integer, intent(in)                        :: mpi_id
     ! Xmin, Ymin,   Xmax, Ymax
-    real, dimension(2, field%dim)              :: partition_bbox
+    real, dimension(2, field%dim)              :: partition_bbox1
+!    real, dimension(2, field%dim)              :: partition_bbox
 
     real, dimension(field%dim, field%mesh%loc) :: ele_val_
 
     integer :: i, j, k
 
     ele_val_ = ele_val(field, 1)
-    partition_bbox(1, :) = ele_val_(:, 1)
-    partition_bbox(2, :) = ele_val_(:, 1)
+!if (mpi_id == 1) write(*, *) mpi_id, "1: ele_val_:",ele_val_
+!if (mpi_id == 1) write(*, *) mpi_id, "1: ele_count:",ele_count(field)
+    partition_bbox1(1, :) = ele_val_(:, 1)
+    partition_bbox1(2, :) = ele_val_(:, 1)
 
     do k = 1, ele_count(field)
       if(ele_owner(k) /= mpi_id) cycle
       ele_val_ = ele_val(field, k)
       do i = 1, size(ele_val_, 2)   !field%mesh%loc
         do j = 1, size(ele_val_, 1) !field%dim
-          partition_bbox(1, j) = min(partition_bbox(1, j), ele_val_(j, i))
-          partition_bbox(2, j) = max(partition_bbox(2, j), ele_val_(j, i))
+!if (mpi_id == 1) write(*, *) mpi_id, ": ele_val_:",ele_val_
+          partition_bbox1(1, j) = min(partition_bbox1(1, j), ele_val_(j, i))
+          partition_bbox1(2, j) = max(partition_bbox1(2, j), ele_val_(j, i))
         end do
       end do
     end do
 
   end function partition_bbox
+
+!   pure function partition_bbox_real(field, ele_owner, mpi_id)
+  function partition_bbox_real(field, en_list, ele_owner, mpi_id) result (partition_bbox1)
+    real, dimension(:, :), intent(in)              :: field
+    integer, dimension(:, :), intent(in)           :: en_list
+    integer, dimension(:), intent(in)              :: ele_owner
+    integer, intent(in)                            :: mpi_id
+    ! Xmin, Ymin,   Xmax, Ymax
+    real, dimension(2, size(field,1))               :: partition_bbox1
+!     real, dimension(2, size(field,1))             :: partition_bbox_real
+
+    real, dimension(size(field,1), size(en_list,1)) :: ele_val_
+
+    integer :: i, j, k, i_0, nelements
+
+    nelements = size(en_list, 2)
+    i_0 = (1 - 1) * size(en_list,1)
+    ele_val_ = field(:, en_list(:, 1))
+!if (mpi_id == 1) write(*, *) mpi_id, "1: ele_val_:",ele_val_
+!if (mpi_id == 1) write(*, *) mpi_id, "1: nelements:",nelements
+    partition_bbox1(1, :) = ele_val_(:, 1)
+    partition_bbox1(2, :) = ele_val_(:, 1)
+
+    do k = 1, nelements
+      if(ele_owner(k) /= mpi_id) cycle
+      ele_val_ = field(:, en_list(:, k))
+      do i = 1, size(ele_val_, 2)   !field%mesh%loc
+        do j = 1, size(ele_val_, 1) !field%dim
+!if (mpi_id == 1) write(*, *) mpi_id, ": ele_val_:",ele_val_
+          partition_bbox1(1, j) = min(partition_bbox1(1, j), ele_val_(j, i))
+          partition_bbox1(2, j) = max(partition_bbox1(2, j), ele_val_(j, i))
+        end do
+      end do
+    end do
+
+   end function partition_bbox_real
 
   pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
     ! 2 x dim
@@ -255,42 +295,42 @@ contains
     intersect = .true.
 
   end function bboxes_partition_intersect
-  
+
   function connected(positions, enlist, eelist)
     ! dim x nnodes
     real, dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
     type(eelist_type), target, optional, intent(in) :: eelist
-    
+
     logical :: connected
-    
+
     integer :: dim, loc, nelements, nnodes
-    
+
     integer :: ele, i, neigh, nnext, nseen
     integer, dimension(:), allocatable :: next
     logical, dimension(:), allocatable :: seen
     type(eelist_type), pointer :: leelist
-    
+
     dim = size(positions, 1)
     nnodes = size(positions, 2)
     loc = size(enlist, 1)
-    nelements = size(enlist, 2)    
+    nelements = size(enlist, 2)
     if(nelements == 0) then
       connected = .true.
       return
     end if
-    
+
     if(present(eelist)) then
       leelist => eelist
     else
       allocate(leelist)
       call mesh_eelist(nnodes, enlist, sloc(dim, loc), leelist)
-    end if    
+    end if
     allocate(next(nelements), seen(nelements))
     next(1) = 1
     nnext = 1
-    seen(1) = .true.    
+    seen(1) = .true.
     seen(2:) = .false.
     nseen = 1
     do while(nnext > 0)
@@ -306,15 +346,15 @@ contains
         end if
       end do
     end do
-    
+
     if(.not. present(eelist)) then
       call deallocate(leelist)
       deallocate(leelist)
     end if
     deallocate(next, seen)
-    
+
     connected = (nseen == nelements)
-    
+
   end function connected
 
   ! Advancing front intersection finder, as described in P. E. Farrell and

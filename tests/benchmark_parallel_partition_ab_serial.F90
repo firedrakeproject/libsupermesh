@@ -525,13 +525,11 @@ subroutine benchmark_parallel_partition_ab_serial
   deallocate(recv_buffer)
 
   deallocate(areas_parallel, times_parallel)
-  deallocate(parallel_bbox_a, parallel_bbox_b)
-  deallocate(parallel_ele_B_array)
+  deallocate(parallel_bbox_a, parallel_bbox_b, parallel_ele_B_array)
   deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_recv, times_intersection_only_parallel)
   call deallocate(positionsA)
   call deallocate(positionsB)
-  deallocate(ele_ownerA)
-  deallocate(ele_ownerB)
+  deallocate(ele_ownerA, ele_ownerB)
   deallocate(comms_A_parallel, comms_B_parallel)
 
 

@@ -447,6 +447,7 @@ FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_A_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_a.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_B_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_b.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab.F90)
+FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_universal_node_numbering.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
@@ -478,6 +479,7 @@ set (UNITTESTS
   test_parallel_partition_a
   test_parallel_partition_b
   test_parallel_partition_ab
+  test_parallel_partition_ab_optimal_transfer
   test_parallel_partition_complete_ab
   test_parallel_universal_node_numbering
 )
@@ -501,6 +503,7 @@ add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FOR
 add_executable (test_parallel_partition_a ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_A_FILES})
 add_executable (test_parallel_partition_b ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_B_FILES})
 add_executable (test_parallel_partition_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES})
+add_executable (test_parallel_partition_ab_optimal_transfer ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER})
 add_executable (test_parallel_partition_complete_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES})
 add_executable (test_parallel_universal_node_numbering ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
@@ -539,7 +542,7 @@ add_custom_command(TARGET test_tri_intersector
   COMMAND unzip -o data/square_0_01.zip -d data/
   COMMAND unzip -o data/square_0_1.zip -d data/
   COMMAND unzip -o data/square_0_2.zip -d data/
-#  COMMAND cd unittests && ./test_tri_intersector && cd ..
+  COMMAND cd unittests && ./test_tri_intersector && cd ..
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Copying test data files"
   VERBATIM

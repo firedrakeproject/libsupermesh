@@ -1,4 +1,4 @@
-subroutine benchmark_parallel_partition_ab
+subroutine test_parallel_partition_ab_optimal_transfer
 
   use iso_fortran_env, only : output_unit
 
@@ -65,6 +65,9 @@ subroutine benchmark_parallel_partition_ab
   integer, dimension(:, :), allocatable :: comm_enlist_B
   real, dimension(:, :), allocatable :: comm_coords_B
 
+  integer, dimension(:), allocatable :: nodes
+  integer, dimension(:,:), allocatable :: nodes_translation, nodes_translation_tmp
+
 ! find out MY process ID, and how many processes were started.
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
   CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
@@ -107,8 +110,8 @@ subroutine benchmark_parallel_partition_ab
   ! Serial test
   if(rank == root) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_004"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_002"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
@@ -167,21 +170,21 @@ subroutine benchmark_parallel_partition_ab
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_004_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_004"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/square_0_2_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_2"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   parallel_ele_A = count(ele_ownerA == rank)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_002_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_002"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/square_0_1_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_1"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   parallel_ele_B = count(ele_ownerB == rank)
   allocate(unsB(node_count(positionsB)))
   call universal_node_numbering(halo, unsB)
-  deallocate(unsB)
+!  if (rank == 1) write(output_unit, *) rank, ": size(unsb): ", size(unsB),", unsb: ", unsB
   call deallocate(halo)
 
   local_read_time = mpi_wtime() - t0
@@ -253,6 +256,39 @@ subroutine benchmark_parallel_partition_ab
           l = l + 1                     ! Keep a counter
           temp_elements_uns(l) = ele_B  ! Keep the actual element
         end do
+
+if (rank == 1) write(output_unit, *) rank, ", l (elements): ", l
+        allocate(nodes(l * 3))
+        nodes = -12
+        do k = 1, l
+          nodes(k + (k-1)*2:((k-1)*2)+2) = ele_nodes(positionsB, temp_elements_uns(k))
+        end do
+        allocate(nodes_translation(l/2,2))   ! May need to increase in size
+        m = 0
+        do j = minval(nodes), maxval(nodes)
+          if (sum(nodes,mask=nodes.eq.j) == 0) cycle
+          m = m + 1
+
+          if (m < l/2) then
+            nodes_translation(m,1) = m
+            nodes_translation(m,2) = j
+          else
+            allocate(nodes_translation_tmp(m + l/2,2))
+            nodes_translation_tmp(1:size(nodes_translation,1),:) = nodes_translation
+            deallocate(nodes_translation)
+            allocate(nodes_translation(size(nodes_translation_tmp,1),2))
+            nodes_translation = nodes_translation_tmp
+            deallocate(nodes_translation_tmp)
+            nodes_translation(m,1) = m
+            nodes_translation(m,2) = j
+          end if
+
+if (rank == 1) write(output_unit, *) rank, ": j:",j,", m (nodes):",m,", sum:",sum(nodes,mask=nodes.eq.j)/j,", translate:",nodes_translation(m,:)
+        end do
+        deallocate(nodes_translation)
+        if (rank == 1) write(output_unit, *) rank, ": nodes:",nodes
+        deallocate(nodes)
+
         number_of_elements_to_send(i) = l
         allocate(send_element_uns(i)%p(l))
         send_element_uns(i)%p = temp_elements_uns(1:l)
@@ -280,8 +316,13 @@ subroutine benchmark_parallel_partition_ab
     if(.not. associated(send_element_uns(j)%p)) cycle
     if(size(send_element_uns(j)%p) == 0) cycle
     k = 1
+if (rank == 1) write(output_unit, *) rank, ": j:",j,", size(send_element_uns(j)%p): ", size(send_element_uns(j)%p),", number_of_elements_to_send(j):",number_of_elements_to_send(j)
+    allocate(nodes(size(send_element_uns(j)%p) * 3))
+    nodes = -12
     do l = 1, size(send_element_uns(j)%p)
       tri_B%v = ele_val(positionsB, send_element_uns(j)%p(l))
+      nodes(l + (l-1)*2:((l-1)*2)+2) = ele_nodes(positionsB, send_element_uns(j)%p(l))
+if (rank == 1) write(output_unit, *) rank, ": l:",l,", ele_nodes: ", ele_nodes(positionsB, send_element_uns(j)%p(l)),", (send_element_uns(j)%p(l):",send_element_uns(j)%p(l)
       send_buffer(j)%p(k) = tri_B%v(1, 1)
       k = k + 1
       send_buffer(j)%p(k) = tri_B%v(2, 1)
@@ -295,6 +336,14 @@ subroutine benchmark_parallel_partition_ab
       send_buffer(j)%p(k) = tri_B%v(2, 3)
       k = k + 1
     end do
+    l = 0
+    do i = minval(nodes), maxval(nodes)
+      if (sum(nodes,mask=nodes.eq.i) == 0) cycle
+      l = l + 1
+      if (rank == 1) write(output_unit, *) rank, ": i:",i,", l:",l,", sum:",sum(nodes,mask=nodes.eq.i)/i
+    end do
+    if (rank == 1) write(output_unit, *) rank, ": nodes:",nodes
+    deallocate(nodes)
   end do
 
   sends = sends + 1
@@ -410,7 +459,7 @@ subroutine benchmark_parallel_partition_ab
   local_time = mpi_wtime() - t0                    ! total
   local_time_intersection_only = mpi_wtime() - t1  ! only intersection
   local_other_time = t1 - t0                       ! other
-
+write(output_unit, *) rank, ": area_parallel:",area_parallel
   ! Gather remote results:
   call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &
     & areas_parallel, 1, MPI_DOUBLE_PRECISION, &
@@ -456,7 +505,7 @@ subroutine benchmark_parallel_partition_ab
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
 
     fail = fnequals(sum(areas_parallel), area_serial, tol = tol)
-    call report_test("[benchmark_parallel_partition_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
+    call report_test("[test_parallel_partition_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Total parallel intersection area:", sum(areas_parallel),&
                                        & ", total serial intersection area:",area_serial,"."
@@ -466,21 +515,21 @@ subroutine benchmark_parallel_partition_ab
     end if
 
     fail = ( sum(iter_actual_parallel) .ne. serial_local_iter_actual)
-    call report_test("[benchmark_parallel_partition_ab iterations]", fail, .FALSE., "Should give the same number of iterations")
+    call report_test("[test_parallel_partition_ab iterations]", fail, .FALSE., "Should give the same number of iterations")
     if (fail) then
       print "(a,i15,a,i15,a)", ": Total parallel actual iterations:", sum(iter_actual_parallel),&
                             & ", total serial actual iterations  :",serial_local_iter_actual,"."
     end if
 
     fail = ( serial_ele_A .ne. local_sum_a )
-    call report_test("[benchmark_parallel_partition_ab elementsA]", fail, .FALSE., "Should give the same number of elements for mesh A")
+    call report_test("[test_parallel_partition_ab elementsA]", fail, .FALSE., "Should give the same number of elements for mesh A")
     if (fail) then
       print "(a,i5,a,i5,a)", ": Total parallel elements for mesh A:",local_sum_a,&
                            & ", total serial elements for mesh A:",serial_ele_A,"."
     end if
 
     fail = ( serial_ele_B .ne. local_sum_b )
-    call report_test("[benchmark_parallel_partition_ab elementsB]", fail, .FALSE., "Should give the same number of elements for mesh B")
+    call report_test("[test_parallel_partition_ab elementsB]", fail, .FALSE., "Should give the same number of elements for mesh B")
     if (fail) then
       print "(a,i10,a,i10,a)", ": Total parallel elements for mesh B:",local_sum_b,&
                            & ", total serial elements for mesh B:",serial_ele_B,"."
@@ -505,12 +554,15 @@ subroutine benchmark_parallel_partition_ab
   end do
   deallocate(recv_buffer)
 
-  deallocate(areas_parallel, times_parallel)
-  deallocate(parallel_bbox_a, parallel_bbox_b, parallel_ele_B_array)
-  deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_recv, times_intersection_only_parallel)
+  deallocate(areas_parallel, times_parallel, times_read_time_parallel, other_times_parallel)
+  deallocate(iters_parallel, iter_actual_parallel, times_intersection_only_parallel)
+  deallocate(parallel_bbox_a, parallel_bbox_b, bbox_a, bbox_b, parallel_ele_B_array)
+  deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_send, partition_intersection_recv)
   call deallocate(positionsA)
   call deallocate(positionsB)
   deallocate(ele_ownerA, ele_ownerB)
+  deallocate(unsB)
+  deallocate(number_of_elements_to_receive, number_of_elements_to_send)
 
   call cintersection_finder_reset(nnodes)
 
@@ -537,4 +589,4 @@ contains
 
   end subroutine write_parallel
 
-end subroutine benchmark_parallel_partition_ab
+end subroutine test_parallel_partition_ab_optimal_transfer
