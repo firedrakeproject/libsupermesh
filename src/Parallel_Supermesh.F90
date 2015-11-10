@@ -14,7 +14,7 @@ module libsupermesh_parallel_supermesh
 
   private
 
-  public :: parallel_supermesh, finalise_parallel_supermesh
+  public :: parallel_supermesh
 
   type pointer_real
     real, dimension(:), pointer :: p
@@ -24,19 +24,19 @@ module libsupermesh_parallel_supermesh
     integer, dimension(:), pointer :: p
   end type pointer_integer
 
-  logical, save, private :: parallel_supermesh_allocated = .false.
-  real, dimension(:,:), allocatable    :: bbox_a, bbox_b
-  real, dimension(:,:,:), allocatable  :: parallel_bbox_a, parallel_bbox_b
+  logical, save :: parallel_supermesh_allocated = .false.
+  real, dimension(:,:), allocatable, save :: bbox_a, bbox_b
+  real, dimension(:,:,:), allocatable, save :: parallel_bbox_a, parallel_bbox_b
 
-  type(pointer_integer), dimension(:), allocatable  :: send_element_uns
+  type(pointer_integer), dimension(:), allocatable, save :: send_element_uns
 
-  type(pointer_real), dimension(:), allocatable  :: recv_buffer, send_buffer
-  integer, dimension(:), allocatable   :: request_send, request_recv
-  integer, dimension(:,:), allocatable :: status_send, status_recv
-  logical, dimension(:), allocatable   :: partition_intersection_recv, partition_intersection_send
-  integer, dimension(:), allocatable   :: number_of_elements_to_receive, number_of_elements_to_send, temp_elements_uns
+  type(pointer_real), dimension(:), allocatable, save :: recv_buffer, send_buffer
+  integer, dimension(:), allocatable, save  :: request_send, request_recv
+  integer, dimension(:,:), allocatable, save :: status_send, status_recv
+  logical, dimension(:), allocatable, save :: partition_intersection_recv, partition_intersection_send
+  integer, dimension(:), allocatable, save :: number_of_elements_to_receive, number_of_elements_to_send, temp_elements_uns
 
-  integer                              :: nprocs, rank
+  integer :: mpi_comm, nprocs, rank
 
 #include "mpif.h"
 
@@ -44,7 +44,8 @@ contains
 
   subroutine parallel_supermesh(positions_a, enlist_a, un_a, ele_owner_a, &
                              &  positions_b, enlist_b,       ele_owner_b, &
-                             &  donor_ele_data, unpack_donor_ele_data, intersection_calculation)
+                             &  donor_ele_data, intersection_calculation, &
+                             & comm)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)    :: positions_a
     ! loc_a x nelements_a
@@ -59,6 +60,7 @@ contains
     integer, dimension(:, :), intent(in) :: enlist_b
     ! elements_b
     integer, dimension(:), intent(in)    :: ele_owner_b
+    integer, optional, intent(in) :: comm
     interface
       subroutine donor_ele_data(eles, data, ndata)
         use iso_c_binding, only : c_ptr
@@ -68,43 +70,38 @@ contains
         integer, intent(out)              :: ndata
       end subroutine donor_ele_data
 
-      subroutine unpack_donor_ele_data(ele, proc, data, ndata, ele_data, nele_data)
-        use iso_c_binding, only : c_ptr
-        implicit none
-        integer, intent(in)      :: ele
-        integer, intent(in)      :: proc
-        type(c_ptr), intent(in)  :: data
-        integer, intent(in)      :: ndata
-        type(c_ptr), intent(out) :: ele_data
-        integer, intent(out)     :: nele_data
-      end subroutine unpack_donor_ele_data
-
-      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, nele_data_a)
+      subroutine intersection_calculation(positions_c, ele_a, un_a, ele_b, data_a, ndata_a)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x loc_c x nelements_c
         real, dimension(:, :, :), intent(in) :: positions_c
         integer, intent(in)     :: ele_a
-        integer, intent(in)     :: proc_a
+        integer, intent(in)     :: un_a
         integer, intent(in)     :: ele_b
-        type(c_ptr), intent(in) :: ele_data_a
-        integer, intent(in)     :: nele_data_a
+        type(c_ptr), intent(in) :: data_a
+        integer, intent(in)     :: ndata_a
       end subroutine intersection_calculation
     end interface
 
     integer                     :: i, ierr, sends, recvs
 
-! find out MY process ID, and how many processes were started.
-    CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to MPI_Comm_rank.")
+    if(present(comm)) then
+      mpi_comm = comm
+    else
+      mpi_comm = MPI_COMM_WORLD
     end if
-    CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr)
+
+    CALL MPI_Comm_rank(mpi_comm, rank, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to MPI_Comm_size.")
+      FLAbort("MPI_Comm_rank error")
+    end if
+    CALL MPI_Comm_size(mpi_comm, nprocs, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("MPI_Comm_size error")
     end if
 
     ! 0. Allocate and initialise arrays
+    ! JRM: Deallocate on exit
     parallel_supermesh_allocated = .true.
     allocate(number_of_elements_to_receive(0:nprocs - 1), &
            & number_of_elements_to_send(0:nprocs -1),     &
@@ -112,32 +109,30 @@ contains
            & status_send(MPI_STATUS_SIZE, 0: nprocs - 1), status_recv(MPI_STATUS_SIZE, 0: nprocs - 1))
     number_of_elements_to_receive = -11
     number_of_elements_to_send    = -11
-    forall(i = 0: nprocs - 1)
+    forall(i = 0:nprocs - 1)
       status_send(:, i) = MPI_STATUS_IGNORE
       status_recv(:, i) = MPI_STATUS_IGNORE
     end forall
     request_send = MPI_REQUEST_NULL
     request_recv = MPI_REQUEST_NULL
 
-    ! 1. Calculate and Communicate bounding box data for donor and target
-    !
+    ! 1. Calculate and communicate bounding box data for donor and target
     call step_1(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b)
 
     ! 2. Use bounding box data to cull donor mesh
-    !
     call step_2(positions_b, enlist_b, ele_owner_b, sends, recvs)
-
+    
     ! 3. Pack non-culled mesh data for communication, calling user specified data functions
-    !
     call step_3(positions_b, enlist_b, sends)
-
+    
     ! 4. Communicate donor mesh and mesh data
-    !
     call step_4(positions_b, sends, recvs)
-
+    
     ! 5. Supermesh and call user specified element unpack and calculation functions
-    !
-    call step_5(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, sends, recvs, intersection_calculation)
+    call step_5(positions_a, enlist_a, un_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, sends, recvs, intersection_calculation)
+
+    ! 6. Deallocate
+    call finalise_parallel_supermesh()
 
   end subroutine parallel_supermesh
 
@@ -158,11 +153,11 @@ contains
 
     integer  :: ierr
 
-    allocate(bbox_a(size(positions_a,1),2))
-    bbox_a = partition_bbox_real(positions_a, enlist_a, ele_owner_a, rank)
+    allocate(bbox_a(size(positions_a,1), 2))
+    bbox_a = partition_bbox(positions_a, enlist_a, ele_owner_a, rank)
 
-    allocate(bbox_b(size(positions_b,1),2))
-    bbox_b = partition_bbox_real(positions_b, enlist_b, ele_owner_b, rank)
+    allocate(bbox_b(size(positions_b,1), 2))
+    bbox_b = partition_bbox(positions_b, enlist_b, ele_owner_b, rank)
 
     allocate(parallel_bbox_a(2, size(positions_a,1), 0:nprocs-1))
     allocate(parallel_bbox_b(2, size(positions_b,1), 0:nprocs-1))
@@ -170,14 +165,14 @@ contains
     ! Bounding box all-to-all
     call MPI_Allgather(bbox_a, 4, MPI_DOUBLE_PRECISION, &
       & parallel_bbox_a, 4, MPI_DOUBLE_PRECISION,    &
-      & MPI_COMM_WORLD, ierr)
+      & mpi_comm, ierr)
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to MPI_Allgather bbox_a(s) to parallel_bbox_a.")
     end if
 
     call MPI_Allgather(bbox_b, 4, MPI_DOUBLE_PRECISION, &
       & parallel_bbox_b, 4, MPI_DOUBLE_PRECISION,    &
-      & MPI_COMM_WORLD, ierr)
+      & mpi_comm, ierr)
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to MPI_Allgather bbox_b(s) to parallel_bbox_b.")
     end if
@@ -226,7 +221,7 @@ contains
           partition_intersection_recv(i) = .true.
 
           call MPI_Irecv(number_of_elements_to_receive(i), 1, MPI_INTEGER, &
-              & i, i, MPI_COMM_WORLD, &
+              & i, i, mpi_comm, &
               & request_recv(recvs), ierr)
           if(ierr /= MPI_SUCCESS) then
             FLAbort("Unable to setup MPI_Irecv.")
@@ -250,7 +245,7 @@ contains
           send_element_uns(i)%p = temp_elements_uns(1:l)
           deallocate(temp_elements_uns)
           call MPI_Isend(number_of_elements_to_send(i), 1, MPI_INTEGER, i, rank, &
-              & MPI_COMM_WORLD, request_send(sends), ierr)
+              & mpi_comm, request_send(sends), ierr)
           if(ierr /= MPI_SUCCESS) then
             FLAbort("Unable to setup MPI_Isend.")
           end if
@@ -344,7 +339,7 @@ contains
         call MPI_Irecv(recv_buffer(j)%p, &
           & number_of_elements_to_receive(j) * (size(positions_b,1) + 1) * size(positions_b,1), &
           & MPI_DOUBLE_PRECISION, &
-          & j, MPI_ANY_TAG, MPI_COMM_WORLD, &
+          & j, MPI_ANY_TAG, mpi_comm, &
           & request_recv(recvs), ierr)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("Unable to setup MPI_Irecv(data).")
@@ -357,7 +352,7 @@ contains
         call MPI_Isend(send_buffer(j)%p, &
           & size(send_buffer(j)%p), &
           & MPI_DOUBLE_PRECISION, &
-          & j, 0, MPI_COMM_WORLD, request_send(sends), ierr)
+          & j, 0, mpi_comm, request_send(sends), ierr)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("Unable to setup MPI_Isend(data).")
         end if
@@ -367,13 +362,15 @@ contains
   end subroutine step_4
 
 
-  subroutine step_5(positions_a, enlist_a, ele_owner_a, &
+  subroutine step_5(positions_a, enlist_a, un_a, ele_owner_a, &
                 &  positions_b, enlist_b, ele_owner_b, sends, recvs, &
                 &  intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)       :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in)    :: enlist_a
+    ! nnodes_a
+    integer, dimension(:), intent(in)    :: un_a
     ! elements_a
     integer, dimension(:), intent(in)       :: ele_owner_a
     ! dim x nnodes_b
@@ -391,29 +388,25 @@ contains
     integer, dimension(:, :), allocatable   :: comm_enlist_B
     real, dimension(:, :), allocatable      :: comm_coords_B
     type(tri_type), dimension(tri_buf_size) :: trisC
-#ifdef NDEBUG
-    real, dimension(:), allocatable         :: areas_parallel
-#endif
     real, dimension(:, :, :), allocatable   :: positions_c
 
-    interface
-      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, nele_data_a)
+    ! JRM: FIXME
+    type(c_ptr) :: dummy_data_a
+
+    interface    
+      subroutine intersection_calculation(positions_c, ele_a, un_a, ele_b, data_a, ndata_a)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x loc_c x nelements_c
         real, dimension(:, :, :), intent(in) :: positions_c
         integer, intent(in)     :: ele_a
-        integer, intent(in)     :: proc_a
+        integer, intent(in)     :: un_a
         integer, intent(in)     :: ele_b
-        type(c_ptr), intent(in) :: ele_data_a
-        integer, intent(in)     :: nele_data_a
+        type(c_ptr), intent(in) :: data_a
+        integer, intent(in)     :: ndata_a
       end subroutine intersection_calculation
     end interface
 
-    allocate(positions_c(1,1,1))
-    call intersection_calculation(positions_c, 1, 1, 1, c_null_ptr, 1)
-    deallocate(positions_c)
-    area_parallel = 0.0
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -428,13 +421,16 @@ contains
         if(ele_owner_b(ele_B) /= rank) cycle
         tri_B%v = positions_b(:, enlist_b(:, ele_B))
 
-!        local_iter = local_iter + 1
-        call intersect_tris(tri_A, tri_B, trisC, n_trisC)
+        ! JRM: Choose between triangle and tetrahedron intersection
+        call intersect_tris(tri_A, tri_B, trisC, n_trisC)        
 
+        ! JRM: Allocate worst case size positions_c and just use a bit of it
+        allocate(positions_c(2, 3, n_trisC))
         do ele_C = 1, n_trisC
-          area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
-!          local_iter_actual = local_iter_actual + 1
+          positions_c(:, :, ele_C) = trisC(ele_C)%v
         end do
+        call intersection_calculation(positions_c, ele_A, un_a(ele_A), ele_B, dummy_data_a, 0)
+        deallocate(positions_c)
       end do
     end do
     call rtree_intersection_finder_reset(ntests)
@@ -478,14 +474,16 @@ contains
           call rtree_intersection_finder_get_output(ele_B, k)
           tri_B%v = comm_coords_B(:, (ele_B - 1) * (size(positions_b,1) + 1) + 1:ele_B * (size(positions_b,1) + 1))
 
-!          local_iter = local_iter + 1
-
+          ! JRM: Choose between triangle and tetrahedron intersection
           call intersect_tris(tri_A, tri_B, trisC, n_trisC)
 
+          ! JRM: Allocate worst case size positions_c and just use a bit of it
+          allocate(positions_c(2, 3, n_trisC))
           do ele_C = 1, n_trisC
-            area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
-!            local_iter_actual = local_iter_actual + 1
+            positions_c(:, :, ele_C) = trisC(ele_C)%v
           end do
+          call intersection_calculation(positions_c, ele_A, un_a(ele_A), ele_B, dummy_data_a, 0)
+          deallocate(positions_c)          
         end do
       end do
       call rtree_intersection_finder_reset(ntests)
@@ -493,27 +491,10 @@ contains
                & comm_enlist_B)
     end do
 
-#ifdef NDEBUG
-    allocate(areas_parallel(0:nprocs - 1))
-    write(output_unit, *) rank, ": area_parallel:",area_parallel
-    call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &
-       & areas_parallel, 1, MPI_DOUBLE_PRECISION, &
-       & 0, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Gather(area_parallel).")
-    end if
-
-    if(rank == 0) then
-      write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
-    end if
-
-    deallocate(areas_parallel)
-#endif
-
   end subroutine step_5
 
   subroutine finalise_parallel_supermesh()
-    integer :: i
+    integer :: i, ntests
 
     if(parallel_supermesh_allocated) then
       do i=0,size(send_element_uns(:))-1
@@ -540,6 +521,7 @@ contains
 
       parallel_supermesh_allocated = .false.
     end if
+    call cintersection_finder_reset(ntests)
 
   end subroutine finalise_parallel_supermesh
 

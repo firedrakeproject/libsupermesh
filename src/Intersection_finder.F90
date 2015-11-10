@@ -59,7 +59,7 @@ module libsupermesh_intersection_finder
   public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output, rtree_intersection_finder_reset, &
-    & partition_bbox, partition_bbox_real, bboxes_intersect, bboxes_partition_intersect, bbox
+    & partition_bbox, bboxes_intersect, bboxes_partition_intersect, bbox
 
 !   interface
 !     function mpi_wtime()
@@ -83,6 +83,10 @@ module libsupermesh_intersection_finder
   end interface deallocate
 
   public :: intersections, ilist, inode, deallocate
+
+  interface partition_bbox
+    module procedure partition_bbox_vector_field, partition_bbox_real
+  end interface partition_bbox
 
   interface intersection_finder
     module procedure advancing_front_intersection_finder_intersections, &
@@ -177,13 +181,11 @@ contains
 
   end function bbox
 
-  pure function partition_bbox(field, ele_owner, mpi_id)
-!  function partition_bbox(field, ele_owner, mpi_id) result (partition_bbox1)
+  pure function partition_bbox_vector_field(field, ele_owner, mpi_id) result(partition_bbox)
     type(vector_field), intent(in)             :: field
     integer, dimension(:), intent(in)          :: ele_owner
     integer, intent(in)                        :: mpi_id
     ! Xmin, Ymin,   Xmax, Ymax
-!    real, dimension(2, field%dim)              :: partition_bbox1
     real, dimension(2, field%dim)              :: partition_bbox
 
     real, dimension(field%dim, field%mesh%loc) :: ele_val_
@@ -205,17 +207,15 @@ contains
       end do
     end do
 
-  end function partition_bbox
+  end function partition_bbox_vector_field
 
-   pure function partition_bbox_real(field, en_list, ele_owner, mpi_id)
-!  function partition_bbox_real(field, en_list, ele_owner, mpi_id) result (partition_bbox1)
+  pure function partition_bbox_real(field, en_list, ele_owner, mpi_id) result(partition_bbox)
     real, dimension(:, :), intent(in)              :: field
     integer, dimension(:, :), intent(in)           :: en_list
     integer, dimension(:), intent(in)              :: ele_owner
     integer, intent(in)                            :: mpi_id
     ! Xmin, Ymin,   Xmax, Ymax
-!    real, dimension(2, size(field,1))               :: partition_bbox1
-     real, dimension(2, size(field,1))             :: partition_bbox_real
+     real, dimension(2, size(field,1))             :: partition_bbox
 
     real, dimension(size(field,1), size(en_list,1)) :: ele_val_
 
@@ -224,16 +224,16 @@ contains
     nelements = size(en_list, 2)
     i_0 = (1 - 1) * size(en_list,1)
     ele_val_ = field(:, en_list(:, 1))
-    partition_bbox_real(1, :) = ele_val_(:, 1)
-    partition_bbox_real(2, :) = ele_val_(:, 1)
+    partition_bbox(1, :) = ele_val_(:, 1)
+    partition_bbox(2, :) = ele_val_(:, 1)
 
     do k = 1, nelements
       if(ele_owner(k) /= mpi_id) cycle
       ele_val_ = field(:, en_list(:, k))
       do i = 1, size(ele_val_, 2)   !field%mesh%loc
         do j = 1, size(ele_val_, 1) !field%dim
-          partition_bbox_real(1, j) = min(partition_bbox_real(1, j), ele_val_(j, i))
-          partition_bbox_real(2, j) = max(partition_bbox_real(2, j), ele_val_(j, i))
+          partition_bbox(1, j) = min(partition_bbox(1, j), ele_val_(j, i))
+          partition_bbox(2, j) = max(partition_bbox(2, j), ele_val_(j, i))
         end do
       end do
     end do
