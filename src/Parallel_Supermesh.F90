@@ -137,7 +137,7 @@ contains
 
     ! 5. Supermesh and call user specified element unpack and calculation functions
     !
-    call step_5(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, sends, recvs)
+    call step_5(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, sends, recvs, intersection_calculation)
 
   end subroutine parallel_supermesh
 
@@ -367,7 +367,9 @@ contains
   end subroutine step_4
 
 
-  subroutine step_5(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, sends, recvs)
+  subroutine step_5(positions_a, enlist_a, ele_owner_a, &
+                &  positions_b, enlist_b, ele_owner_b, sends, recvs, &
+                &  intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)       :: positions_a
     ! loc_a x nelements_a
@@ -392,7 +394,25 @@ contains
 #ifdef NDEBUG
     real, dimension(:), allocatable         :: areas_parallel
 #endif
+    real, dimension(:, :, :), allocatable   :: positions_c
 
+    interface
+      subroutine intersection_calculation(positions_c, ele_a, proc_a, ele_b, ele_data_a, nele_data_a)
+        use iso_c_binding, only : c_ptr
+        implicit none
+        ! dim x loc_c x nelements_c
+        real, dimension(:, :, :), intent(in) :: positions_c
+        integer, intent(in)     :: ele_a
+        integer, intent(in)     :: proc_a
+        integer, intent(in)     :: ele_b
+        type(c_ptr), intent(in) :: ele_data_a
+        integer, intent(in)     :: nele_data_a
+      end subroutine intersection_calculation
+    end interface
+
+    allocate(positions_c(1,1,1))
+    call intersection_calculation(positions_c, 1, 1, 1, c_null_ptr, 1)
+    deallocate(positions_c)
     area_parallel = 0.0
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!

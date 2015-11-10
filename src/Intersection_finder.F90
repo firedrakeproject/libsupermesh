@@ -177,48 +177,45 @@ contains
 
   end function bbox
 
-!  pure function partition_bbox(field, ele_owner, mpi_id)
-  function partition_bbox(field, ele_owner, mpi_id) result (partition_bbox1)
+  pure function partition_bbox(field, ele_owner, mpi_id)
+!  function partition_bbox(field, ele_owner, mpi_id) result (partition_bbox1)
     type(vector_field), intent(in)             :: field
     integer, dimension(:), intent(in)          :: ele_owner
     integer, intent(in)                        :: mpi_id
     ! Xmin, Ymin,   Xmax, Ymax
-    real, dimension(2, field%dim)              :: partition_bbox1
-!    real, dimension(2, field%dim)              :: partition_bbox
+!    real, dimension(2, field%dim)              :: partition_bbox1
+    real, dimension(2, field%dim)              :: partition_bbox
 
     real, dimension(field%dim, field%mesh%loc) :: ele_val_
 
     integer :: i, j, k
 
     ele_val_ = ele_val(field, 1)
-!if (mpi_id == 1) write(*, *) mpi_id, "1: ele_val_:",ele_val_
-!if (mpi_id == 1) write(*, *) mpi_id, "1: ele_count:",ele_count(field)
-    partition_bbox1(1, :) = ele_val_(:, 1)
-    partition_bbox1(2, :) = ele_val_(:, 1)
+    partition_bbox(1, :) = ele_val_(:, 1)
+    partition_bbox(2, :) = ele_val_(:, 1)
 
     do k = 1, ele_count(field)
       if(ele_owner(k) /= mpi_id) cycle
       ele_val_ = ele_val(field, k)
       do i = 1, size(ele_val_, 2)   !field%mesh%loc
         do j = 1, size(ele_val_, 1) !field%dim
-!if (mpi_id == 1) write(*, *) mpi_id, ": ele_val_:",ele_val_
-          partition_bbox1(1, j) = min(partition_bbox1(1, j), ele_val_(j, i))
-          partition_bbox1(2, j) = max(partition_bbox1(2, j), ele_val_(j, i))
+          partition_bbox(1, j) = min(partition_bbox(1, j), ele_val_(j, i))
+          partition_bbox(2, j) = max(partition_bbox(2, j), ele_val_(j, i))
         end do
       end do
     end do
 
   end function partition_bbox
 
-!   pure function partition_bbox_real(field, ele_owner, mpi_id)
-  function partition_bbox_real(field, en_list, ele_owner, mpi_id) result (partition_bbox1)
+   pure function partition_bbox_real(field, en_list, ele_owner, mpi_id)
+!  function partition_bbox_real(field, en_list, ele_owner, mpi_id) result (partition_bbox1)
     real, dimension(:, :), intent(in)              :: field
     integer, dimension(:, :), intent(in)           :: en_list
     integer, dimension(:), intent(in)              :: ele_owner
     integer, intent(in)                            :: mpi_id
     ! Xmin, Ymin,   Xmax, Ymax
-    real, dimension(2, size(field,1))               :: partition_bbox1
-!     real, dimension(2, size(field,1))             :: partition_bbox_real
+!    real, dimension(2, size(field,1))               :: partition_bbox1
+     real, dimension(2, size(field,1))             :: partition_bbox_real
 
     real, dimension(size(field,1), size(en_list,1)) :: ele_val_
 
@@ -227,19 +224,16 @@ contains
     nelements = size(en_list, 2)
     i_0 = (1 - 1) * size(en_list,1)
     ele_val_ = field(:, en_list(:, 1))
-!if (mpi_id == 1) write(*, *) mpi_id, "1: ele_val_:",ele_val_
-!if (mpi_id == 1) write(*, *) mpi_id, "1: nelements:",nelements
-    partition_bbox1(1, :) = ele_val_(:, 1)
-    partition_bbox1(2, :) = ele_val_(:, 1)
+    partition_bbox_real(1, :) = ele_val_(:, 1)
+    partition_bbox_real(2, :) = ele_val_(:, 1)
 
     do k = 1, nelements
       if(ele_owner(k) /= mpi_id) cycle
       ele_val_ = field(:, en_list(:, k))
       do i = 1, size(ele_val_, 2)   !field%mesh%loc
         do j = 1, size(ele_val_, 1) !field%dim
-!if (mpi_id == 1) write(*, *) mpi_id, ": ele_val_:",ele_val_
-          partition_bbox1(1, j) = min(partition_bbox1(1, j), ele_val_(j, i))
-          partition_bbox1(2, j) = max(partition_bbox1(2, j), ele_val_(j, i))
+          partition_bbox_real(1, j) = min(partition_bbox_real(1, j), ele_val_(j, i))
+          partition_bbox_real(2, j) = max(partition_bbox_real(2, j), ele_val_(j, i))
         end do
       end do
     end do

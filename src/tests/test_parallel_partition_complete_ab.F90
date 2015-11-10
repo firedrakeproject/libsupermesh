@@ -317,6 +317,8 @@ contains
     type(c_ptr), intent(in) :: ele_data_a
     integer, intent(in)     :: nele_data_a
 
+    write(output_unit, "(i5,a)") rank, " :HI: "
+
   end subroutine local_intersection_calculation
 
   subroutine write_parallel(msg)
