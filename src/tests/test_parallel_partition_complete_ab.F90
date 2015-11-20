@@ -32,6 +32,7 @@ subroutine test_parallel_partition_complete_ab
   logical :: fail
 
   real :: area_parallel, area_serial
+  real, dimension(:), allocatable :: valsB
 
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
   CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
@@ -63,6 +64,11 @@ subroutine test_parallel_partition_complete_ab
                          & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
                          & map_AB)
 
+    allocate(valsB(serial_ele_B))
+    do ele_B = 1, serial_ele_B
+      valsB(ele_B) = sum(positionsB%val(ele_nodes(positionsB, ele_B), 1)) / 3.0
+    end do
+
     area_serial = 0.0
     do ele_A = 1, serial_ele_A
       tri_A%v = ele_val(positionsA, ele_A)
@@ -74,10 +80,12 @@ subroutine test_parallel_partition_complete_ab
         call intersect_tris(tri_A, tri_B, trisC, n_trisC)
 
         do ele_C = 1, n_trisC
-          area_serial = area_serial + triangle_area(trisC(ele_C)%v)
+          area_serial = area_serial + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
         end do
       end do
     end do
+
+    deallocate(valsB)
 
     serial_time = mpi_wtime() - t0
     call deallocate(map_AB)
@@ -151,20 +159,19 @@ contains
 
   end subroutine local_donor_ele_data
 
-  subroutine local_intersection_calculation(positions_c, ele_a, un_a, ele_b, data_a, ndata_a)
+  subroutine local_intersection_calculation(positions_c, ele_a, ele_b, data_b, ndata_b)
     use iso_c_binding, only : c_ptr
     implicit none
     ! dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
     integer, intent(in)     :: ele_a
-    integer, intent(in)     :: un_a
     integer, intent(in)     :: ele_b
-    type(c_ptr), intent(in) :: data_a
-    integer, intent(in)     :: ndata_a
+    type(c_ptr), intent(in) :: data_b
+    integer, intent(in)     :: ndata_b
 
     integer :: ele_c
 
-    do ele_c = 1, un_a
+    do ele_c = 1, size(positions_c, 3)
       area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
     end do
 
