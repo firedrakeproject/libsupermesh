@@ -12,12 +12,12 @@ module libsupermesh_tet_intersection_module
 
   public :: tet_type, plane_type, intersect_tets_libwm, intersect_tets, &
     & intersect_tets_dt_public, intersect_tets_dt_real, get_planes
-  
+
   type tet_type
     real, dimension(3, 4) :: V ! vertices of the tet
     integer, dimension(4) :: colours = -1 ! surface colours
   end type tet_type
-  
+
   type plane_type
     real, dimension(3) :: normal
     real :: c
@@ -31,7 +31,7 @@ module libsupermesh_tet_intersection_module
     module procedure intersect_tets_dt, intersect_tets_dt_public, &
         intersect_tets_dt_real
   end interface intersect_tets
-  
+
   interface get_planes
     module procedure get_planes_tet
   end interface get_planes
@@ -39,7 +39,7 @@ module libsupermesh_tet_intersection_module
   integer, parameter, public :: tet_buf_size = BUF_SIZE
 
 contains
-  
+
   subroutine intersect_tets_libwm(tetA, tetB, nodesC, ndglnoC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
@@ -48,14 +48,14 @@ contains
     integer, intent(out) :: n_tetsC
 
     integer :: i, nonods
-    
+
     call cintersector_set_input(tetA, tetB, 3, 4)
     call cintersector_drive
     call cintersector_query(nonods, n_tetsC)
     call cintersector_get_output(nonods, n_tetsC, 3, 4, nodesC, ndglnoC)
 
   end subroutine intersect_tets_libwm
-  
+
   subroutine intersect_tets_dt_real(tetA, tetB, tetsC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
@@ -75,7 +75,7 @@ contains
     end do
 
   end subroutine intersect_tets_dt_real
-  
+
   subroutine intersect_tets_dt_public(tetA, tetB, tetsC, n_tetsC)
     type(tet_type), intent(in) :: tetA
     type(tet_type), intent(in) :: tetB
@@ -83,7 +83,7 @@ contains
     integer, intent(out) :: n_tetsC
 
     call intersect_tets_dt(tetA, get_planes(tetB), tetsC, n_tetsC, volB = tet_volume(tetB))
-  
+
   end subroutine intersect_tets_dt_public
 
   subroutine intersect_tets_dt(tetA, planesB, tetsC, n_tetsC, volB)
@@ -92,11 +92,11 @@ contains
     type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
     real, optional, intent(in) :: volB
-    
+
     integer :: colour_tmp, i, j
     real, dimension(3) :: vec_tmp
     real :: tol, vol
-    
+
     n_tetsC = 1
     tetsC(1) = tetA
 
@@ -131,7 +131,7 @@ contains
     end do
 
   end subroutine intersect_tets_dt
-  
+
   subroutine clip(plane, tet)
   ! Clip tet against the plane
   ! and append any output to tet_array_tmp.
@@ -394,7 +394,7 @@ contains
 ! 
 !     end do
 !   end function get_planes_hex
-  
+
   pure function unit_cross(vecA, vecB) result(cross)
     real, dimension(3), intent(in) :: vecA, vecB
     real, dimension(3) :: cross
@@ -404,7 +404,7 @@ contains
 
     cross = cross / norm2(cross)
   end function unit_cross
-  
+
   pure function distances_to_plane(plane, tet) result(dists)
     type(plane_type), intent(in) :: plane
     type(tet_type), intent(in) :: tet
@@ -415,7 +415,7 @@ contains
       dists(i) = dot_product(plane%normal, tet%V(:, i)) - plane%c
     end forall
   end function distances_to_plane
-  
+
   pure function tet_volume(tet) result(vol)
     type(tet_type), intent(in) :: tet
     real :: vol
@@ -431,7 +431,7 @@ contains
 
     vol = abs(dot_product(vecA, cross)) / 6.0
   end function tet_volume
-  
+
   function face_no(i, j, k) result(face)
     ! Given three local node numbers, what is the face that they share?
     integer, intent(in) :: i, j, k

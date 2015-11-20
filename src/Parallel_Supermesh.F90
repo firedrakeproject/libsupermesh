@@ -8,6 +8,8 @@ module libsupermesh_parallel_supermesh
   use libsupermesh_read_halos
   use libsupermesh_intersection_finder
   use libsupermesh_tri_intersection_module
+  use libsupermesh_tet_intersection_module
+  use libsupermesh_construction
   use libsupermesh_fields, only : triangle_area
 
   implicit none
@@ -83,7 +85,7 @@ contains
       end subroutine intersection_calculation
     end interface
 
-    integer                     :: i, ierr, sends, recvs
+    integer                     :: ierr, sends, recvs
 
     if(present(comm)) then
       mpi_comm = comm
@@ -101,33 +103,20 @@ contains
     end if
 
     ! 0. Allocate and initialise arrays
-    ! JRM: Deallocate on exit
-    parallel_supermesh_allocated = .true.
-    allocate(number_of_elements_to_receive(0:nprocs - 1), &
-           & number_of_elements_to_send(0:nprocs -1),     &
-           & request_send(0: nprocs - 1), request_recv(0: nprocs - 1), &
-           & status_send(MPI_STATUS_SIZE, 0: nprocs - 1), status_recv(MPI_STATUS_SIZE, 0: nprocs - 1))
-    number_of_elements_to_receive = -11
-    number_of_elements_to_send    = -11
-    forall(i = 0:nprocs - 1)
-      status_send(:, i) = MPI_STATUS_IGNORE
-      status_recv(:, i) = MPI_STATUS_IGNORE
-    end forall
-    request_send = MPI_REQUEST_NULL
-    request_recv = MPI_REQUEST_NULL
+    call initialise_parallel_supermesh(nprocs)
 
     ! 1. Calculate and communicate bounding box data for donor and target
     call step_1(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b)
 
     ! 2. Use bounding box data to cull donor mesh
     call step_2(positions_b, enlist_b, ele_owner_b, sends, recvs)
-    
+
     ! 3. Pack non-culled mesh data for communication, calling user specified data functions
     call step_3(positions_b, enlist_b, sends)
-    
+
     ! 4. Communicate donor mesh and mesh data
     call step_4(positions_b, sends, recvs)
-    
+
     ! 5. Supermesh and call user specified element unpack and calculation functions
     call step_5(positions_a, enlist_a, un_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, sends, recvs, intersection_calculation)
 
@@ -363,14 +352,15 @@ contains
 
 
   subroutine step_5(positions_a, enlist_a, un_a, ele_owner_a, &
-                &  positions_b, enlist_b, ele_owner_b, sends, recvs, &
-                &  intersection_calculation)
+                &   positions_b, enlist_b,       ele_owner_b, &
+                &   sends, recvs, &
+                &   intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)       :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in)    :: enlist_a
     ! nnodes_a
-    integer, dimension(:), intent(in)    :: un_a
+    integer, dimension(:), intent(in)       :: un_a
     ! elements_a
     integer, dimension(:), intent(in)       :: ele_owner_a
     ! dim x nnodes_b
@@ -382,18 +372,17 @@ contains
     integer, intent(inout)                  :: sends
     integer, intent(inout)                  :: recvs
 
-    integer                                 :: i, j, k, l, m, n_trisc, ele_A, ele_B, ele_C, nintersections, ntests, ierr
-    real                                    :: area_parallel
+    integer                                 :: i, j, k, l, m, n_C, ele_A, ele_B, ele_C, nintersections, ntests, ierr
     type(tri_type)                          :: tri_A, tri_B
+    real, dimension(:, :), allocatable      :: nodes_A, nodes_B
     integer, dimension(:, :), allocatable   :: comm_enlist_B
     real, dimension(:, :), allocatable      :: comm_coords_B
-    type(tri_type), dimension(tri_buf_size) :: trisC
     real, dimension(:, :, :), allocatable   :: positions_c
 
     ! JRM: FIXME
     type(c_ptr) :: dummy_data_a
 
-    interface    
+    interface
       subroutine intersection_calculation(positions_c, ele_a, un_a, ele_b, data_a, ndata_a)
         use iso_c_binding, only : c_ptr
         implicit none
@@ -407,30 +396,49 @@ contains
       end subroutine intersection_calculation
     end interface
 
+!write(*,*) "size(enlist_a,1):",size(enlist_a,1),", size(positions_a,1):",size(positions_a,1)
+!    allocate(positions_c(2, 3, tri_buf_size))
+     if (size(positions_a,1) .eq. 1) then
+       ! 1D Vectors
+       allocate(positions_c(1, 2, 5))
+       allocate(nodes_A(1, 5), nodes_B(1, 5))
+       nodes_A = 0.0
+       nodes_B = 0.0
+     else if (size(positions_a,1) .eq. 2) then
+       if (size(enlist_a,1) .eq. 3) then
+         ! 2D Triangles
+         allocate(positions_c(2, 3, tri_buf_size))
+         allocate(nodes_A(2, 3), nodes_B(2, 3))
+         nodes_A = 0.0
+         nodes_B = 0.0
+       else if (size(enlist_a,1) .eq. 4) then
+         ! 2D Tets
+         allocate(positions_c(3, 4, tet_buf_size))
+         allocate(nodes_A(3, 4), nodes_B(3, 4))
+         nodes_A = 0.0
+         nodes_B = 0.0
+       end if
+     else if (size(positions_a,1) .eq. 1) then
+       ! 3D
+     end if
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     call rtree_intersection_finder_set_input(positions_b, enlist_b)
     do ele_A = 1, size(enlist_a, 2)
       if(ele_owner_a(ele_A) /= rank) cycle
-      tri_A%v = positions_a(:, enlist_a(:, ele_A))
-      call rtree_intersection_finder_find(tri_A%v)
+      nodes_A = positions_a(:, enlist_a(:, ele_A))
+      call rtree_intersection_finder_find(nodes_A)
       call rtree_intersection_finder_query_output(nintersections)
       do i = 1, nintersections
         call rtree_intersection_finder_get_output(ele_B, i)
         if(ele_owner_b(ele_B) /= rank) cycle
-        tri_B%v = positions_b(:, enlist_b(:, ele_B))
+        nodes_B = positions_b(:, enlist_b(:, ele_B))
 
-        ! JRM: Choose between triangle and tetrahedron intersection
-        call intersect_tris(tri_A, tri_B, trisC, n_trisC)        
+        call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
+        call intersection_calculation(positions_c, ele_A, n_C, ele_B, dummy_data_a, 0)
 
-        ! JRM: Allocate worst case size positions_c and just use a bit of it
-        allocate(positions_c(2, 3, n_trisC))
-        do ele_C = 1, n_trisC
-          positions_c(:, :, ele_C) = trisC(ele_C)%v
-        end do
-        call intersection_calculation(positions_c, ele_A, un_a(ele_A), ele_B, dummy_data_a, 0)
-        deallocate(positions_c)
       end do
     end do
     call rtree_intersection_finder_reset(ntests)
@@ -467,23 +475,16 @@ contains
       call rtree_intersection_finder_set_input(comm_coords_B, comm_enlist_B)
       do ele_A = 1, size(enlist_a, 2)
         if(ele_owner_a(ele_A) /= rank) cycle
-        tri_A%v = positions_a(:, enlist_a(:, ele_A))
-        call rtree_intersection_finder_find(tri_A%v)
+        nodes_A = positions_a(:, enlist_a(:, ele_A))
+        call rtree_intersection_finder_find(nodes_A)
         call rtree_intersection_finder_query_output(nintersections)
         do k = 1, nintersections
           call rtree_intersection_finder_get_output(ele_B, k)
-          tri_B%v = comm_coords_B(:, (ele_B - 1) * (size(positions_b,1) + 1) + 1:ele_B * (size(positions_b,1) + 1))
+          nodes_B = comm_coords_B(:, (ele_B - 1) * (size(positions_b,1) + 1) + 1:ele_B * (size(positions_b,1) + 1))
 
-          ! JRM: Choose between triangle and tetrahedron intersection
-          call intersect_tris(tri_A, tri_B, trisC, n_trisC)
+          call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
+          call intersection_calculation(positions_c, ele_A, n_C, ele_B, dummy_data_a, 0)
 
-          ! JRM: Allocate worst case size positions_c and just use a bit of it
-          allocate(positions_c(2, 3, n_trisC))
-          do ele_C = 1, n_trisC
-            positions_c(:, :, ele_C) = trisC(ele_C)%v
-          end do
-          call intersection_calculation(positions_c, ele_A, un_a(ele_A), ele_B, dummy_data_a, 0)
-          deallocate(positions_c)          
         end do
       end do
       call rtree_intersection_finder_reset(ntests)
@@ -491,7 +492,29 @@ contains
                & comm_enlist_B)
     end do
 
+    deallocate(positions_c)
+
   end subroutine step_5
+
+  subroutine initialise_parallel_supermesh(nprocs)
+    integer, intent(in)       :: nprocs
+
+    integer  :: i
+
+    parallel_supermesh_allocated = .true.
+    allocate(number_of_elements_to_receive(0:nprocs - 1), &
+           & number_of_elements_to_send(0:nprocs -1),     &
+           & request_send(0: nprocs - 1), request_recv(0: nprocs - 1), &
+           & status_send(MPI_STATUS_SIZE, 0: nprocs - 1), status_recv(MPI_STATUS_SIZE, 0: nprocs - 1))
+    number_of_elements_to_receive = -11
+    number_of_elements_to_send    = -11
+    forall(i = 0:nprocs - 1)
+      status_send(:, i) = MPI_STATUS_IGNORE
+      status_recv(:, i) = MPI_STATUS_IGNORE
+    end forall
+    request_send = MPI_REQUEST_NULL
+    request_recv = MPI_REQUEST_NULL
+  end subroutine initialise_parallel_supermesh
 
   subroutine finalise_parallel_supermesh()
     integer :: i, ntests

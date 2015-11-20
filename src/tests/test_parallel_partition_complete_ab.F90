@@ -27,6 +27,9 @@ subroutine test_parallel_partition_complete_ab
   type(tri_type) :: tri_A, tri_B
   type(tri_type), dimension(tri_buf_size) :: trisC
   type(vector_field) :: positionsA, positionsB
+  real, parameter :: tol = 1.0e3 * epsilon(0.0)
+  real :: t0, serial_time, parallel_time, serial_read_time, parallel_read_time
+  logical :: fail
 
   real :: area_parallel, area_serial
 
@@ -47,11 +50,14 @@ subroutine test_parallel_partition_complete_ab
 
   ! Serial test
   if (rank == 0) then
+    t0 = mpi_wtime()
     positionsA = read_triangle_files("data/square_0_02"//"_"//trim(nprocs_character), dim)
     positionsB = read_triangle_files("data/square_0_01"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
+    serial_read_time = mpi_wtime() - t0
 
+    t0 = mpi_wtime()
     allocate(map_AB(serial_ele_A))
     call intersection_finder(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), serial_ele_A/)), &
                          & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
@@ -73,9 +79,8 @@ subroutine test_parallel_partition_complete_ab
       end do
     end do
 
-    do i=1,size(map_AB)
-      deallocate(map_AB(i)%v)
-    end do
+    serial_time = mpi_wtime() - t0
+    call deallocate(map_AB)
     deallocate(map_AB)
 
     call deallocate(positionsA)
@@ -84,6 +89,7 @@ subroutine test_parallel_partition_complete_ab
 
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
+  t0 = mpi_wtime()
   positionsA = read_triangle_files(trim("data/square_0_02_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
   call read_halo("data/square_0_02"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
@@ -96,12 +102,19 @@ subroutine test_parallel_partition_complete_ab
   call read_halo("data/square_0_01"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
+  call deallocate(halo)
+  parallel_read_time = mpi_wtime() - t0
 
+  t0 = mpi_wtime()
   area_parallel = 0.0
   call parallel_supermesh(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), unsA, ele_ownerA, &
                       &   positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/))      , ele_ownerB, &
                       &   local_donor_ele_data, local_intersection_calculation)
+  parallel_time = mpi_wtime() - t0
+
   call MPI_Allreduce(area_parallel, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_time, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_read_time, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   call deallocate(positionsA)
   call deallocate(positionsB)
@@ -110,8 +123,21 @@ subroutine test_parallel_partition_complete_ab
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   if(rank == root) then
+    write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
+    write(output_unit, "(a,f19.15)") "(MAX) Time, parallel =", parallel_time
+    write(output_unit, "(a)") ""
+    write(output_unit, "(a,f19.15)") "Read Time, serial         =", serial_read_time
+    write(output_unit, "(a,f19.15)") "(MAX) Read Time, parallel =", parallel_read_time
+    write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.15)") "Area, serial   =", area_serial
     write(output_unit, "(a,f19.15)") "Area, parallel =", area_parallel
+
+    fail = fnequals(area_parallel, area_serial, tol = tol)
+    call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
+    if (fail) then
+      print "(a,e25.17e3,a,e25.17e3,a)", ": Area, serial   =", area_serial, &
+                                       & ": Area, parallel =", area_parallel
+    end if
   end if
 
 contains
@@ -125,20 +151,20 @@ contains
 
   end subroutine local_donor_ele_data
 
-  subroutine local_intersection_calculation(positions_c, ele_a, proc_a, ele_b, data_a, ndata_a)
+  subroutine local_intersection_calculation(positions_c, ele_a, un_a, ele_b, data_a, ndata_a)
     use iso_c_binding, only : c_ptr
     implicit none
     ! dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
     integer, intent(in)     :: ele_a
-    integer, intent(in)     :: proc_a
+    integer, intent(in)     :: un_a
     integer, intent(in)     :: ele_b
     type(c_ptr), intent(in) :: data_a
     integer, intent(in)     :: ndata_a
 
     integer :: ele_c
 
-    do ele_c = 1, size(positions_c, 3)    
+    do ele_c = 1, un_a
       area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
     end do
 

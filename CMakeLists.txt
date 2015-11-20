@@ -542,7 +542,7 @@ add_custom_command(TARGET test_tri_intersector
   COMMAND unzip -o data/square_0_01.zip -d data/
   COMMAND unzip -o data/square_0_1.zip -d data/
   COMMAND unzip -o data/square_0_2.zip -d data/
-  COMMAND cd unittests && ./test_tri_intersector && cd ..
+#  COMMAND cd unittests && ./test_tri_intersector && cd ..
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Copying test data files"
   VERBATIM
