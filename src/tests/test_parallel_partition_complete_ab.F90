@@ -1,5 +1,6 @@
 subroutine test_parallel_partition_complete_ab
 
+  use iso_c_binding, only : c_ptr
   use iso_fortran_env, only : output_unit
 
   use libsupermesh_unittest_tools
@@ -169,29 +170,25 @@ subroutine test_parallel_partition_complete_ab
 contains
 
   subroutine local_donor_ele_data(eles, data, ndata)
-    use iso_c_binding, only : c_ptr
-    implicit none
     integer, dimension(:), intent(in) :: eles
     type(c_ptr), intent(out)          :: data
     integer, intent(out)              :: ndata
 
   end subroutine local_donor_ele_data
 
-  subroutine local_intersection_calculation(positions_c, ele_a, un_a, n_C, ele_b, data_b, ndata_b)
-    use iso_c_binding, only : c_ptr
-    implicit none
+  subroutine local_intersection_calculation(positions_c, ele_a, ele_b, data_b, ndata_b)
     ! dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
     integer, intent(in)     :: ele_a
-    integer, intent(in)     :: un_a
-    integer, intent(in)     :: n_C
     integer, intent(in)     :: ele_b
     type(c_ptr), intent(in) :: data_b
     integer, intent(in)     :: ndata_b
 
-    integer :: ele_c
+    integer :: ele_c, nelements_c
 
-    do ele_c = 1, n_C
+    nelements_c = size(positions_c, 3)
+
+    do ele_c = 1, nelements_c
       area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
     end do
 
