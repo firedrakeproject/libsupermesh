@@ -47,7 +47,7 @@ contains
   subroutine parallel_supermesh(positions_a, enlist_a, un_a, ele_owner_a, &
                              &  positions_b, enlist_b,       ele_owner_b, &
                              &  donor_ele_data, intersection_calculation, &
-                             & comm)
+                             &  comm)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)    :: positions_a
     ! loc_a x nelements_a
@@ -72,13 +72,14 @@ contains
         integer, intent(out)              :: ndata
       end subroutine donor_ele_data
 
-      subroutine intersection_calculation(positions_c, ele_a, un_a, ele_b, data_a, ndata_a)
+      subroutine intersection_calculation(positions_c, ele_a, un_a, n_C, ele_b, data_a, ndata_a)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x loc_c x nelements_c
         real, dimension(:, :, :), intent(in) :: positions_c
         integer, intent(in)     :: ele_a
         integer, intent(in)     :: un_a
+        integer, intent(in)     :: n_C
         integer, intent(in)     :: ele_b
         type(c_ptr), intent(in) :: data_a
         integer, intent(in)     :: ndata_a
@@ -372,8 +373,7 @@ contains
     integer, intent(inout)                  :: sends
     integer, intent(inout)                  :: recvs
 
-    integer                                 :: i, j, k, l, m, n_C, ele_A, ele_B, ele_C, nintersections, ntests, ierr
-    type(tri_type)                          :: tri_A, tri_B
+    integer                                 :: i, j, k, l, m, n_C, ele_A, ele_B, nintersections, ntests, ierr
     real, dimension(:, :), allocatable      :: nodes_A, nodes_B
     integer, dimension(:, :), allocatable   :: comm_enlist_B
     real, dimension(:, :), allocatable      :: comm_coords_B
@@ -383,44 +383,39 @@ contains
     type(c_ptr) :: dummy_data_a
 
     interface
-      subroutine intersection_calculation(positions_c, ele_a, un_a, ele_b, data_a, ndata_a)
+      subroutine intersection_calculation(positions_c, ele_a, un_a, n_C, ele_b, data_a, ndata_a)
         use iso_c_binding, only : c_ptr
         implicit none
         ! dim x loc_c x nelements_c
         real, dimension(:, :, :), intent(in) :: positions_c
         integer, intent(in)     :: ele_a
         integer, intent(in)     :: un_a
+        integer, intent(in)     :: n_C
         integer, intent(in)     :: ele_b
         type(c_ptr), intent(in) :: data_a
         integer, intent(in)     :: ndata_a
       end subroutine intersection_calculation
     end interface
 
-!write(*,*) "size(enlist_a,1):",size(enlist_a,1),", size(positions_a,1):",size(positions_a,1)
-!    allocate(positions_c(2, 3, tri_buf_size))
      if (size(positions_a,1) .eq. 1) then
        ! 1D Vectors
-       allocate(positions_c(1, 2, 5))
-       allocate(nodes_A(1, 5), nodes_B(1, 5))
-       nodes_A = 0.0
-       nodes_B = 0.0
+       allocate(positions_c(1, 2, 2))
+       allocate(nodes_A(1, 5), nodes_B(1, 2))
      else if (size(positions_a,1) .eq. 2) then
        if (size(enlist_a,1) .eq. 3) then
          ! 2D Triangles
          allocate(positions_c(2, 3, tri_buf_size))
          allocate(nodes_A(2, 3), nodes_B(2, 3))
-         nodes_A = 0.0
-         nodes_B = 0.0
        else if (size(enlist_a,1) .eq. 4) then
          ! 2D Tets
          allocate(positions_c(3, 4, tet_buf_size))
          allocate(nodes_A(3, 4), nodes_B(3, 4))
-         nodes_A = 0.0
-         nodes_B = 0.0
        end if
      else if (size(positions_a,1) .eq. 1) then
        ! 3D
      end if
+     nodes_A = 0.0
+     nodes_B = 0.0
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!
@@ -437,7 +432,7 @@ contains
         nodes_B = positions_b(:, enlist_b(:, ele_B))
 
         call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
-        call intersection_calculation(positions_c, ele_A, n_C, ele_B, dummy_data_a, 0)
+        call intersection_calculation(positions_c, ele_A, un_a(ele_A), n_C, ele_B, dummy_data_a, 0)
 
       end do
     end do
@@ -483,7 +478,7 @@ contains
           nodes_B = comm_coords_B(:, (ele_B - 1) * (size(positions_b,1) + 1) + 1:ele_B * (size(positions_b,1) + 1))
 
           call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
-          call intersection_calculation(positions_c, ele_A, n_C, ele_B, dummy_data_a, 0)
+          call intersection_calculation(positions_c, ele_A, un_a(ele_A), n_C, ele_B, dummy_data_a, 0)
 
         end do
       end do
@@ -492,7 +487,7 @@ contains
                & comm_enlist_B)
     end do
 
-    deallocate(positions_c)
+    deallocate(positions_c, nodes_A, nodes_B)
 
   end subroutine step_5
 

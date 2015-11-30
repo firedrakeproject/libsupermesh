@@ -31,7 +31,7 @@ subroutine test_parallel_partition_complete_ab
   real :: t0, serial_time, parallel_time, serial_read_time, parallel_read_time
   logical :: fail
 
-  real :: area_parallel, area_serial
+  real :: area_parallel, area_serial, integral_parallel, integral_serial
   real, dimension(:), allocatable :: valsB
 
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
@@ -52,8 +52,8 @@ subroutine test_parallel_partition_complete_ab
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_02"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_01"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
@@ -65,11 +65,13 @@ subroutine test_parallel_partition_complete_ab
                          & map_AB)
 
     allocate(valsB(serial_ele_B))
+
     do ele_B = 1, serial_ele_B
-      valsB(ele_B) = sum(positionsB%val(ele_nodes(positionsB, ele_B), 1)) / 3.0
+      valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
     end do
 
     area_serial = 0.0
+    integral_serial = 0.0
     do ele_A = 1, serial_ele_A
       tri_A%v = ele_val(positionsA, ele_A)
 
@@ -80,7 +82,8 @@ subroutine test_parallel_partition_complete_ab
         call intersect_tris(tri_A, tri_B, trisC, n_trisC)
 
         do ele_C = 1, n_trisC
-          area_serial = area_serial + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
+          area_serial = area_serial + triangle_area(trisC(ele_C)%v)
+          integral_serial = integral_serial + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
         end do
       end do
     end do
@@ -98,16 +101,16 @@ subroutine test_parallel_partition_complete_ab
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_02_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_02"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/square_0_2_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_2"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   allocate(unsA(node_count(positionsA)))
   call universal_node_numbering(halo, unsA)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_01_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_01"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/square_0_1_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_1"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   call deallocate(halo)
@@ -115,9 +118,14 @@ subroutine test_parallel_partition_complete_ab
 
   t0 = mpi_wtime()
   area_parallel = 0.0
-  call parallel_supermesh(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), unsA, ele_ownerA, &
-                      &   positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/))      , ele_ownerB, &
-                      &   local_donor_ele_data, local_intersection_calculation)
+  integral_parallel = 0.0
+  call parallel_supermesh(positionsA%val, & 
+           &  reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), &
+           &  unsA,  ele_ownerA,          &
+           &   positionsB%val,            &
+           &  reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), &
+           &         ele_ownerB,          &
+           &  local_donor_ele_data, local_intersection_calculation)
   parallel_time = mpi_wtime() - t0
 
   call MPI_Allreduce(area_parallel, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
@@ -139,12 +147,22 @@ subroutine test_parallel_partition_complete_ab
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.15)") "Area, serial   =", area_serial
     write(output_unit, "(a,f19.15)") "Area, parallel =", area_parallel
+    write(output_unit, "(a)") ""
+    write(output_unit, "(a,f19.15)") "Integral, serial   =", integral_serial
+    write(output_unit, "(a,f19.15)") "Integral, parallel =", integral_parallel
 
     fail = fnequals(area_parallel, area_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Area, serial   =", area_serial, &
                                        & ": Area, parallel =", area_parallel
+    end if
+
+    fail = fnequals(integral_parallel, integral_serial, tol = tol)
+    call report_test("[test_parallel_partition_complete_ab integrals]", fail, .FALSE., "Should give the same values of integration")
+    if (fail) then
+      print "(a,e25.17e3,a,e25.17e3,a)", ": Integral, serial   =", integral_serial, &
+                                       & ": Integral, parallel =", integral_parallel
     end if
   end if
 
@@ -159,19 +177,21 @@ contains
 
   end subroutine local_donor_ele_data
 
-  subroutine local_intersection_calculation(positions_c, ele_a, ele_b, data_b, ndata_b)
+  subroutine local_intersection_calculation(positions_c, ele_a, un_a, n_C, ele_b, data_b, ndata_b)
     use iso_c_binding, only : c_ptr
     implicit none
     ! dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
     integer, intent(in)     :: ele_a
+    integer, intent(in)     :: un_a
+    integer, intent(in)     :: n_C
     integer, intent(in)     :: ele_b
     type(c_ptr), intent(in) :: data_b
     integer, intent(in)     :: ndata_b
 
     integer :: ele_c
 
-    do ele_c = 1, size(positions_c, 3)
+    do ele_c = 1, n_C
       area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
     end do
 

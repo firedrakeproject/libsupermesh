@@ -109,8 +109,8 @@ subroutine test_parallel_partition_ab
   ! Serial test
   if(rank == root) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_02"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_01"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
@@ -169,15 +169,15 @@ subroutine test_parallel_partition_ab
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_02_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_02"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/square_0_2_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_2"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   parallel_ele_A = count(ele_ownerA == rank)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_01_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_01"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/square_0_1_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_1"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   parallel_ele_B = count(ele_ownerB == rank)
@@ -373,6 +373,7 @@ subroutine test_parallel_partition_ab
   end do
   call rtree_intersection_finder_reset(ntests)
 
+
   sends = sends + 1
   recvs = recvs + 1
   call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
@@ -396,6 +397,16 @@ subroutine test_parallel_partition_ab
         m = m + 1
       end do
     end do
+if ( (rank == 0) .and. (i==1))  write(output_unit, *) ""
+if ( (rank == 0) .and. (i==1))  write(output_unit, *) rank, ": i:",i,", size(comm_enlist_B): ", size(comm_enlist_B),", comm_enlist_B:",comm_enlist_B
+if ( (rank == 0) .and. (i==1))  write(output_unit, *) ""
+if ( (rank == 0) .and. (i==1))  write(output_unit, *) rank, ": i:",i,", size(comm_coords_B): ", size(comm_coords_B),", comm_coords_B:",comm_coords_B
+call flush()
+call flush()
+call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+call flush()
+call flush()
+
     call rtree_intersection_finder_set_input(comm_coords_B, comm_enlist_B)
     do ele_A = 1, ele_count(positionsA)
       if(ele_ownerA(ele_A) /= rank) cycle
@@ -404,8 +415,14 @@ subroutine test_parallel_partition_ab
       call rtree_intersection_finder_query_output(nintersections)
       do k = 1, nintersections
         call rtree_intersection_finder_get_output(ele_B, k)
+if ( (rank == 0) .and. (i==1))  write(output_unit, *) rank, ": i:",i,", ele_B:",ele_B
+call flush()
+call flush()
         tri_B%v = comm_coords_B(:, (ele_B - 1) * (positionsB%dim + 1) + 1:ele_B * (positionsB%dim + 1))
-
+if ( (rank == 0) .and. (i==1))  write(output_unit, *) rank, ": k:",k,", tri_B%v: ", tri_B%v
+call flush()
+!call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+!call flush()
         local_iter = local_iter + 1
 
         call intersect_tris(tri_A, tri_B, trisC, n_trisC)
@@ -423,7 +440,7 @@ subroutine test_parallel_partition_ab
   local_time = mpi_wtime() - t0                    ! total
   local_time_intersection_only = mpi_wtime() - t1  ! only intersection
   local_other_time = t1 - t0                       ! other
-write(output_unit, *) rank, ": area_parallel:",area_parallel
+
   ! Gather remote results:
   call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &
     & areas_parallel, 1, MPI_DOUBLE_PRECISION, &
@@ -467,6 +484,9 @@ write(output_unit, *) rank, ": area_parallel:",area_parallel
     write(output_unit, "(a)") ""
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial intersection area     : ", area_serial," ."
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
+
+    write (*,*) "areas_parallel:",areas_parallel
+    write (*,*) "iters_parallel:",iters_parallel
 
     fail = fnequals(sum(areas_parallel), area_serial, tol = tol)
     call report_test("[test_parallel_partition_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
