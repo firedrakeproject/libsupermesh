@@ -27,6 +27,8 @@ subroutine test_parallel_partition_ab_optimal_transfer_data
     integer, dimension(:), pointer :: p
   end type pointer_integer
 
+  real, dimension(:), allocatable, target   :: global_data
+
 #include <finclude/petsc.h90>
 
   integer :: i, j, k, l, m, n, sends, recvs, nnodes, ele_A, ele_B, ele_C, n_trisC, nprocs, &
@@ -911,22 +913,22 @@ contains
     type(c_ptr), intent(out)          :: data
     integer, intent(out)              :: ndata
 
-    real, dimension(:), target, allocatable   :: temp_data
+!    real, dimension(:), target, allocatable   :: temp_data
 
     ndata = size(eles)
-    allocate(temp_data(size(eles)))
-    temp_data = -56.00
+    allocate(global_data(size(eles)))
+    global_data = -56.00
 
-    data = c_loc(temp_data(1))
+    data = c_loc(global_data(1))
 
 if (rank == 2) then
-  write(*,*) rank,": temp_data:",temp_data
-  write(*,*) rank,": c_loc(temp_data):",c_loc(temp_data)
+  write(*,*) rank,": global_data:",global_data
+  write(*,*) rank,": c_loc(global_data):",c_loc(global_data)
 end if
 
 if (rank == 2) write(*,*) rank,": data:",data
 
-    deallocate(temp_data)
+!    deallocate(temp_data)
   end subroutine local_donor_ele_data
 
   subroutine test_read_data(data, ndata)
@@ -945,6 +947,8 @@ if (rank == 2) then
   write(*,*) rank,":!!!!!!!! temp_data:",temp_data_pointer
   write(*,*) rank,": c_loc(temp_data_pointer):",c_loc(temp_data_pointer)
 end if
+
+  deallocate(global_data)
 
   end subroutine test_read_data
 
