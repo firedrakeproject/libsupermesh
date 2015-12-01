@@ -1,6 +1,6 @@
 subroutine test_parallel_partition_complete_ab
 
-  use iso_c_binding, only : c_ptr
+  use iso_c_binding, only : c_ptr, c_int8_t
   use iso_fortran_env, only : output_unit
 
   use libsupermesh_unittest_tools
@@ -20,7 +20,7 @@ subroutine test_parallel_partition_complete_ab
 
   character(len = 1024) :: buffer, hostname
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
-  integer :: ele_A, ele_B, ele_C, i, ierr, nprocs, n_trisC, rank, serial_ele_A, serial_ele_B
+  integer :: ele_A, ele_B, ele_C, i, ierr, nprocs, n_trisC, rank, serial_ele_A, serial_ele_B, dp_extent, int_extent, test_parallel_ele_B
   integer, parameter :: dim = 2, root = 0
   integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB, unsA
   type(halo_type) :: halo
@@ -34,6 +34,11 @@ subroutine test_parallel_partition_complete_ab
 
   real :: area_parallel, area_serial, integral_parallel, integral_serial
   real, dimension(:), allocatable :: valsB
+
+  ! Data
+  integer(kind = c_int8_t), dimension(:), allocatable :: data
+  integer, dimension(2) :: data_b_header
+  real, dimension(:), allocatable :: data_b_data
 
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
   CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
@@ -114,22 +119,31 @@ subroutine test_parallel_partition_complete_ab
   call read_halo("data/square_0_1"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
+  test_parallel_ele_B = count(ele_ownerB == rank)
   call deallocate(halo)
   parallel_read_time = mpi_wtime() - t0
 
   t0 = mpi_wtime()
+  allocate(valsB(test_parallel_ele_B))
+  do ele_B = 1, test_parallel_ele_B
+    valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
+  end do
   area_parallel = 0.0
   integral_parallel = 0.0
+  call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr); CHKERRQ(ierr)
+  call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr); CHKERRQ(ierr)
+
   call parallel_supermesh(positionsA%val, & 
            &  reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), &
            &  unsA,  ele_ownerA,          &
            &   positionsB%val,            &
            &  reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), &
            &         ele_ownerB,          &
-           &  local_donor_ele_data, local_intersection_calculation)
+           &  local_donor_ele_data, local_unpack_data_b, local_intersection_calculation)
   parallel_time = mpi_wtime() - t0
 
   call MPI_Allreduce(area_parallel, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(integral_parallel, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(parallel_time, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(parallel_read_time, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
@@ -169,28 +183,69 @@ subroutine test_parallel_partition_complete_ab
 
 contains
 
-  subroutine local_donor_ele_data(eles, data, ndata)
-    integer, dimension(:), intent(in) :: eles
-    type(c_ptr), intent(out)          :: data
-    integer, intent(out)              :: ndata
+  subroutine local_donor_ele_data(eles, data)
+    integer, dimension(:), intent(in)                   :: eles
+    integer(kind = c_int8_t), dimension(:), allocatable :: data
+
+    integer :: ierr, ndata, position
+    real, dimension(:), allocatable :: ldata
+
+    allocate(ldata(size(eles)))
+    ldata = valsB(eles)
+
+    ndata = 2 * int_extent + size(eles) * dp_extent
+    allocate(data(ndata))
+    position = 0
+    call MPI_Pack((/size(eles), size(eles)/), 2, MPI_INTEGER, data, ndata, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Pack(ldata, size(eles), MPI_DOUBLE_PRECISION, data, ndata, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+
+    deallocate(ldata)
 
   end subroutine local_donor_ele_data
 
-  subroutine local_intersection_calculation(positions_c, ele_a, ele_b, data_b, ndata_b)
+  subroutine local_unpack_data_b(data_b)
+    integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+
+    integer :: ierr, position
+
+    call cleanup_data_b(data_b)
+
+    position = 0
+    call MPI_Unpack(data_b, size(data_b), position, data_b_header, 2, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    allocate(data_b_data(data_b_header(2)))
+    call MPI_Unpack(data_b, size(data_b), position, data_b_data, size(data_b_data), MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+
+  end subroutine local_unpack_data_b
+
+  subroutine cleanup_data_b(data_b)
+    integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+
+    if(allocated(data_b_data)) deallocate(data_b_data)
+
+  end subroutine cleanup_data_b
+
+  subroutine local_intersection_calculation(positions_c, ele_a, ele_b, local)
     ! dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
     integer, intent(in)     :: ele_a
     integer, intent(in)     :: ele_b
-    type(c_ptr), intent(in) :: data_b
-    integer, intent(in)     :: ndata_b
+    logical, intent(in)     :: local
 
     integer :: ele_c, nelements_c
 
     nelements_c = size(positions_c, 3)
 
-    do ele_c = 1, nelements_c
-      area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
-    end do
+    if (local) then
+      do ele_c = 1, nelements_c
+        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
+        integral_parallel = integral_parallel + valsB(ele_b) * triangle_area(positions_c(:, :, ele_c))
+      end do    
+    else
+      do ele_c = 1, nelements_c
+        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
+        integral_parallel = integral_parallel + data_b_data(ele_b) * triangle_area(positions_c(:, :, ele_c))
+      end do
+    end if
 
   end subroutine local_intersection_calculation
 
