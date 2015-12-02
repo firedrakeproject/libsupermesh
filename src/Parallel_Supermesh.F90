@@ -579,23 +579,22 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    call rtree_intersection_finder_set_input(positions_b, enlist_b)
-    do ele_A = 1, size(enlist_a, 2)
-      if(ele_owner_a(ele_A) /= rank) cycle
-      nodes_A = positions_a(:, enlist_a(:, ele_A))
-      call rtree_intersection_finder_find(nodes_A)
+    call rtree_intersection_finder_set_input(positions_a, enlist_a)
+    do ele_B = 1, size(enlist_b, 2)
+      if(ele_owner_b(ele_B) /= rank) cycle
+      nodes_B = positions_b(:, enlist_b(:, ele_b))
+      call rtree_intersection_finder_find(nodes_B)
       call rtree_intersection_finder_query_output(nintersections)
       do i = 1, nintersections
-        call rtree_intersection_finder_get_output(ele_B, i)
-        if(ele_owner_b(ele_B) /= rank) cycle
-        nodes_B = positions_b(:, enlist_b(:, ele_B))
+        call rtree_intersection_finder_get_output(ele_a, i)
+        if(ele_owner_a(ele_A) /= rank) cycle
+        nodes_A = positions_a(:, enlist_a(:, ele_A))
 
         call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
         call intersection_calculation(positions_c(:, :, :n_C), ele_A, ele_B, .true.)
 
       end do
     end do
-    call rtree_intersection_finder_reset(ntests)
 
     sends = sends + 1
     recvs = recvs + 1
@@ -705,22 +704,19 @@ contains
           end do
         end do
 
-        call rtree_intersection_finder_set_input(comm_coords_B, comm_enlist_B)
-        do ele_A = 1, size(enlist_a, 2)
-          if(ele_owner_a(ele_A) /= rank) cycle
-          nodes_A = positions_a(:, enlist_a(:, ele_A))
-          call rtree_intersection_finder_find(nodes_A)
+        do ele_B = 1, size(comm_enlist_B, 2)
+          nodes_B = comm_coords_B(:, comm_enlist_B(:, ele_B))
+          call rtree_intersection_finder_find(nodes_B)
           call rtree_intersection_finder_query_output(nintersections)
           do k = 1, nintersections
-            call rtree_intersection_finder_get_output(ele_B, k)
- !           nodes_B = comm_coords_B(:, (ele_B - 1) * (size(positions_b,1) + 1) + 1:ele_B * (size(positions_b,1) + 1))
-            nodes_B = comm_coords_B(:, comm_enlist_B(:, ele_B))
+            call rtree_intersection_finder_get_output(ele_A, k)
+            if(ele_owner_a(ele_A) /= rank) cycle
+            nodes_A = positions_a(:, enlist_a(:, ele_A))
 
             call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
             call intersection_calculation(positions_c(:, :, :n_C), ele_A, ele_B, .false.)
           end do
         end do
-        call rtree_intersection_finder_reset(ntests)
 
         deallocate(comm_coords_B, &
                  & comm_enlist_B)

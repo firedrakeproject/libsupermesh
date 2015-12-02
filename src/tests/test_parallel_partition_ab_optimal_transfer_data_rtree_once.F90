@@ -1,6 +1,7 @@
-subroutine test_parallel_partition_ab_optimal_transfer
+subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
 
   use iso_fortran_env, only : output_unit
+  use iso_c_binding, only : c_double, c_int, c_int8_t, c_ptr, c_f_pointer, c_loc, c_size_t, c_sizeof
 
   use libsupermesh_unittest_tools
   use libsupermesh_construction
@@ -18,9 +19,9 @@ subroutine test_parallel_partition_ab_optimal_transfer
     real, dimension(:), pointer :: p
   end type pointer_real
 
-  type pointer_character
-    character, dimension(:), pointer :: p
-  end type pointer_character
+  type pointer_byte
+    integer(kind = c_int8_t), dimension(:), pointer :: p
+  end type pointer_byte
 
   type pointer_integer
     integer, dimension(:), pointer :: p
@@ -29,14 +30,14 @@ subroutine test_parallel_partition_ab_optimal_transfer
 #include <finclude/petsc.h90>
 
   integer :: i, j, k, l, m, n, sends, recvs, nnodes, ele_A, ele_B, ele_C, n_trisC, nprocs, &
-       & rank, ierr, serial_ele_A, serial_ele_B, parallel_ele_A, &
-       & parallel_ele_B, position, dp_extent, int_extent
+       & rank, ierr, serial_ele_A, serial_ele_B, test_parallel_ele_A, &
+       & test_parallel_ele_B, position, dp_extent, int_extent, icount
   integer :: local_sum_a, local_sum_b, triangles, &
        & serial_local_iter, serial_local_iter_actual, local_iter, local_iter_actual
   real :: t0, t1, area_serial, area_parallel, &
        & local_time, serial_read_time, serial_time, local_read_time, &
-       & local_time_intersection_only, local_other_time
-  real, dimension(:), allocatable :: areas_parallel, times_parallel, times_intersection_only_parallel, other_times_parallel, times_read_time_parallel
+       & local_time_intersection_only, local_other_time, integral_serial, integral_parallel
+  real, dimension(:), allocatable :: areas_parallel, integrals_parallel, times_parallel, times_intersection_only_parallel, other_times_parallel, times_read_time_parallel
   integer, dimension(:), allocatable :: iters_parallel, iter_actual_parallel
 
   integer, dimension(:), allocatable   :: number_of_elements_to_receive, number_of_elements_to_send
@@ -45,7 +46,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
   type(pointer_integer), dimension(:), allocatable  :: send_element_uns
   integer, dimension(:), allocatable   :: request_send, request_recv
   integer, dimension(:,:), allocatable :: status_send, status_recv
-  type(pointer_character), dimension(:), allocatable  :: recv_buffer, send_buffer
+  type(pointer_byte), dimension(:), allocatable  :: recv_buffer, send_buffer
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
   type(tri_type) :: tri_A, tri_B
   type(tri_type), dimension(tri_buf_size) :: trisC
@@ -57,7 +58,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
   logical, dimension(:), allocatable :: partition_intersection_recv, partition_intersection_send
   real, dimension(:,:), allocatable :: bbox_a, bbox_b
   real, dimension(:,:,:), allocatable :: parallel_bbox_a, parallel_bbox_b
-  integer, dimension(:), allocatable  :: parallel_ele_B_array
+  integer, dimension(:), allocatable  :: test_parallel_ele_B_array
 
   integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB, unsB
   type(halo_type) :: halo
@@ -70,15 +71,22 @@ subroutine test_parallel_partition_ab_optimal_transfer
   integer, dimension(:, :), allocatable :: comm_enlist_B
   real, dimension(:, :), allocatable :: comm_coords_B
 
-  integer, dimension(:), allocatable :: nodes, nodes_tmp
+  integer, dimension(:), allocatable :: nodes
   integer, dimension(:,:), allocatable :: nodes_translation, nodes_translation_tmp
   type(pointer_integer), dimension(:), allocatable  :: send_nodes_conectivity, recv_nodes_conectivity
   type(pointer_real), dimension(:), allocatable  :: send_nodes_values, recv_nodes_values
-  character, dimension(:), allocatable   :: buffer_mpi
+  integer(kind = c_int8_t), dimension(:), pointer :: buffer_mpi
   integer                                :: buffer_size
 
-  ! Datatype(s)
-  integer elements_nodes_datatype, oldtypes(0:1), blockcounts(0:1), offsets(0:1)
+  real, dimension(:), allocatable :: valsB
+
+  ! Data
+  integer(kind = c_int8_t), dimension(:), allocatable :: data
+  integer, dimension(2) :: data_b_header
+  real, dimension(:), allocatable :: data_b_data
+
+  integer                         :: status(MPI_STATUS_SIZE)
+  integer(kind = c_int8_t), dimension(:), allocatable :: ldata
 
 ! find out MY process ID, and how many processes were started.
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
@@ -118,12 +126,10 @@ subroutine test_parallel_partition_ab_optimal_transfer
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!! Serial runtime test !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  ! Serial test
   if(rank == root) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_02"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_01"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
@@ -134,7 +140,13 @@ subroutine test_parallel_partition_ab_optimal_transfer
                          & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
                          & map_AB)
 
+    allocate(valsB(serial_ele_B))
+    do ele_B = 1, serial_ele_B
+      valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
+    end do
+!write(*,*) "serial size(valsB):",size(valsB),", valsB:",valsB
     area_serial = 0.0
+    integral_serial = 0.0
     do ele_A = 1, serial_ele_A
       tri_A%v = ele_val(positionsA, ele_A)
 
@@ -148,11 +160,13 @@ subroutine test_parallel_partition_ab_optimal_transfer
 
         do ele_C = 1, n_trisC
           area_serial = area_serial + triangle_area(trisC(ele_C)%v)
+          integral_serial = integral_serial + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
           serial_local_iter_actual = serial_local_iter_actual + 1
         end do
       end do
     end do
 
+    deallocate(valsB)
     call deallocate(map_AB)
     deallocate(map_AB)
 
@@ -164,44 +178,49 @@ subroutine test_parallel_partition_ab_optimal_transfer
 
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
-  allocate(parallel_ele_B_array(0:nprocs - 1))
+  allocate(test_parallel_ele_B_array(0:nprocs - 1))
   if(rank == root) then
-    allocate(areas_parallel(0:nprocs - 1), times_parallel(0:nprocs - 1), other_times_parallel(0:nprocs - 1), times_read_time_parallel(0:nprocs - 1))
+    allocate(areas_parallel(0:nprocs - 1), integrals_parallel(0:nprocs - 1), times_parallel(0:nprocs - 1), other_times_parallel(0:nprocs - 1), times_read_time_parallel(0:nprocs - 1))
     allocate(iters_parallel(0:nprocs - 1))
     allocate(iter_actual_parallel(0:nprocs - 1))
     allocate(times_intersection_only_parallel(0:nprocs - 1))
   else
-    allocate(areas_parallel(0), times_parallel(0), other_times_parallel(0), times_read_time_parallel(0))
+    allocate(areas_parallel(0), integrals_parallel(0), times_parallel(0), other_times_parallel(0), times_read_time_parallel(0))
     allocate(iters_parallel(0))
     allocate(iter_actual_parallel(0))
     allocate(times_intersection_only_parallel(0))
   end if
 
   area_parallel = 0.0
+  integral_parallel = 0.0
 
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_02_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_02"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/square_0_2_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_2"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
-  parallel_ele_A = count(ele_ownerA == rank)
+  test_parallel_ele_A = count(ele_ownerA == rank)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_01_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_01"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/square_0_1_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_1"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
-  parallel_ele_B = count(ele_ownerB == rank)
+  test_parallel_ele_B = count(ele_ownerB == rank)
   allocate(unsB(node_count(positionsB)))
   call universal_node_numbering(halo, unsB)
-!  if (rank == 1) write(output_unit, *) rank, ": size(unsb): ", size(unsB),", unsb: ", unsB
   call deallocate(halo)
 
   local_read_time = mpi_wtime() - t0
 
   t0 = mpi_wtime()
+  allocate(valsB(test_parallel_ele_B))
+  do ele_B = 1, test_parallel_ele_B
+    valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
+  end do
+
   allocate(bbox_a(positionsA%dim,2))
   bbox_a = partition_bbox(positionsA, ele_ownerA, rank)
   allocate(bbox_b(positionsB%dim,2))
@@ -219,8 +238,8 @@ subroutine test_parallel_partition_ab_optimal_transfer
     & parallel_bbox_b, 4, MPI_DOUBLE_PRECISION,    &
     & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
-  call MPI_Allgather(parallel_ele_B, 1, MPI_INTEGER, &
-    & parallel_ele_B_array, 1, MPI_INTEGER,    &
+  call MPI_Allgather(test_parallel_ele_B, 1, MPI_INTEGER, &
+    & test_parallel_ele_B_array, 1, MPI_INTEGER,    &
     & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   allocate(send_element_uns(0:nprocs-1))
@@ -258,18 +277,9 @@ subroutine test_parallel_partition_ab_optimal_transfer
     nullify(recv_nodes_values(i)%p)
   end do
 
-  call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr)
-  call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr)
+  call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr); CHKERRQ(ierr)
+  call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr); CHKERRQ(ierr)
 
-  ! Create Datatype
-!  Setup description of the 2 MPI_INTEGER fields n, type 
-   offsets(0) = 0
-   oldtypes(0) = MPI_INTEGER
-   blockcounts(0) = 2
-!  Now define structured type and commit it 
-  call MPI_TYPE_STRUCT(1, blockcounts, offsets, oldtypes,   &
-                &      elements_nodes_datatype, ierr) ;  CHKERRQ(ierr)
-  call MPI_TYPE_COMMIT(elements_nodes_datatype, ierr) ;  CHKERRQ(ierr)
   allocate(number_of_elements_and_nodes_to_receive(2,0:nprocs - 1), number_of_elements_and_nodes_to_send(2,0:nprocs - 1))
   number_of_elements_and_nodes_to_receive = 0
   number_of_elements_and_nodes_to_send = 0
@@ -282,20 +292,14 @@ subroutine test_parallel_partition_ab_optimal_transfer
   do i = 0, nprocs - 1
     l = 0
 
-    if(bboxes_intersect(bbox_a, parallel_bbox_b(:, :, i))) then
-      if(i /= rank) then
-        recvs = recvs + 1
-        partition_intersection_recv(i) = .true.
-
-        call MPI_Irecv(number_of_elements_and_nodes_to_receive(:, i), 1, elements_nodes_datatype, &
-              & i, i, MPI_COMM_WORLD, &
-              & request_recv(recvs), ierr);  CHKERRQ(ierr)
-      end if
-    end if
+     if(bboxes_intersect(bbox_a, parallel_bbox_b(:, :, i))) then
+       if(i /= rank) then
+         partition_intersection_recv(i) = .true.
+       end if
+     end if
 
     if(bboxes_intersect(bbox_b, parallel_bbox_a(:, :, i))) then
       if(i /= rank) then
-        sends = sends + 1
         partition_intersection_send(i) = .true.
         allocate(temp_elements_uns(ele_count(positionsB)))
         do ele_B = 1, ele_count(positionsB)
@@ -308,8 +312,9 @@ subroutine test_parallel_partition_ab_optimal_transfer
         allocate(nodes(l * 3))
         nodes = -12
         do k = 1, l
-          nodes(k + (k-1)*2:((k-1)*2)+2) = ele_nodes(positionsB, temp_elements_uns(k))
+          nodes(k + (k-1)*positionsB%dim:k+((k-1)*positionsB%dim)+(positionsB%dim)) = ele_nodes(positionsB, temp_elements_uns(k))
         end do
+
         n = l/2
         allocate(nodes_translation(n,2))   ! May need to increase in size
         m = 0
@@ -336,9 +341,8 @@ subroutine test_parallel_partition_ab_optimal_transfer
         number_of_elements_and_nodes_to_send(1, i) = l
         number_of_elements_and_nodes_to_send(2, i) = m
 
-        call MPI_Isend(number_of_elements_and_nodes_to_send(:, i), 1, elements_nodes_datatype, &
-            & i, rank, MPI_COMM_WORLD, &
-            & request_send(sends), ierr);  CHKERRQ(ierr)
+!if (rank==2) write(*,*) rank,": i:",i,", nodes_translation(:,1):",nodes_translation(:,1),",nodes_translation(:,2):",nodes_translation(:,2)
+!call flush()
 
         allocate(send_element_uns(i)%p(l))
         send_element_uns(i)%p = temp_elements_uns(1:l)
@@ -362,99 +366,83 @@ subroutine test_parallel_partition_ab_optimal_transfer
           send_nodes_values(i)%p(n + (n-1): n + (n-1) + 1) = node_val(positionsB, nodes_translation(n,2))
         end do
 
-        deallocate(nodes)
-        deallocate(nodes_translation)
-        deallocate(temp_elements_uns)
-
         ! ### Mesh send buffer allocation ###
-        allocate(send_buffer(i)%p((size(send_nodes_conectivity(i)%p) * int_extent) + &
-                              &   (size(send_nodes_values(i)%p)      * dp_extent ) ) )
+! Removed IF, because sometimes we set partition_intersection_recv to TRUE;
+! however, the following IF fails and we end up NOT sending anything.
+! Now, we will send an extra message, so that the receiver (who already EXPECTS a message) can exit gracefully
+        if ( (associated(send_element_uns(i)%p)) .and. (size(send_element_uns(i)%p) /= 0) ) then
+          call local_donor_ele_data(send_element_uns(i)%p, data)
+
+          buffer_size = int_extent + int_extent +                          &
+                    &   (size(send_nodes_conectivity(i)%p) * int_extent) + &
+                    &   (size(send_nodes_values(i)%p)      * dp_extent ) + &
+                    &   int_extent + (size(data))
+
+          allocate(buffer_mpi(buffer_size))
+          position = 0
+
+          call MPI_Pack(number_of_elements_and_nodes_to_send(1, i), &
+               & 1,                                                 &
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
+               & 1,                                                 &
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          call MPI_Pack(send_nodes_conectivity(i)%p,                &
+               & size(send_nodes_conectivity(i)%p),                 &
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          call MPI_Pack(send_nodes_values(i)%p,                     &
+               & size(send_nodes_values(i)%p),                      &
+               & MPI_DOUBLE_PRECISION, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          call MPI_Pack(size(data),                                 &
+               & 1,                                                 &
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          call MPI_Pack(data,                                       &
+               & size(data),                                        &
+               & MPI_BYTE, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+
+          deallocate(data)
+        else
+          buffer_size = int_extent + int_extent
+
+          allocate(buffer_mpi(buffer_size))
+          position = 0
+          call MPI_Pack(number_of_elements_and_nodes_to_send(1, i), &
+               & 1,                                                 &
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
+               & 1,                                                 &
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+        end if
+
+        allocate(send_buffer(i)%p(buffer_size))
+        send_buffer(i)%p = buffer_mpi
+        sends = sends + 1
+
+        call MPI_Isend(send_buffer(i)%p, &
+               & size(send_buffer(i)%p), &
+               & MPI_PACKED,             &
+               & i, 0, MPI_COMM_WORLD, request_send(sends), ierr);  CHKERRQ(ierr)
+        deallocate(buffer_mpi)
+
+        deallocate(nodes, nodes_translation, temp_elements_uns)
       end if
     end if
-
   end do
-
-  recvs = recvs + 1
-  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
-
-  do i = 0, nprocs - 1
-    if(partition_intersection_recv(i)) then
-      ! ### Mesh receivebuffer allocation ###
-      allocate(recv_buffer(i)%p((number_of_elements_and_nodes_to_receive(1, i) * (positionsB%dim + 1) * int_extent ) + &
-                            &   (number_of_elements_and_nodes_to_receive(2, i) * (positionsB%dim) * dp_extent) ) )
-      allocate(recv_nodes_conectivity(i)%p(number_of_elements_and_nodes_to_receive(1, i) * (positionsB%dim + 1)))
-      allocate(recv_nodes_values(i)%p(number_of_elements_and_nodes_to_receive(2, i) * (positionsB%dim)))
-    end if
-  end do
-
-  j = -99
-  do i = 0, nprocs - 1
-    if(.not. associated(send_element_uns(i)%p)) cycle
-    if(size(send_element_uns(i)%p) == 0) cycle
-
-    buffer_size = size(send_buffer(i)%p)
-    allocate(buffer_mpi(buffer_size))
-    position = 0
-    call MPI_Pack ( send_nodes_conectivity(i)%p,      &
-         & size(send_nodes_conectivity(i)%p),         &
-         & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, IERR)
-    call MPI_Pack ( send_nodes_values(i)%p,           &
-         & size(send_nodes_values(i)%p),              &
-         & MPI_DOUBLE_PRECISION, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, IERR)
-    send_buffer(i)%p = buffer_mpi
-    deallocate(buffer_mpi)
-  end do
-
-  sends = sends + 1
-  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
-
-  forall(i = 0: nprocs - 1)
-    status_send(:, i) = MPI_STATUS_IGNORE
-    status_recv(:, i) = MPI_STATUS_IGNORE
-  end forall
-  request_send = MPI_REQUEST_NULL
-  request_recv = MPI_REQUEST_NULL
-
-  sends = -1
-  recvs = -1
-  do i = 0,nprocs - 1
-    if(rank == i) cycle
-
-    if(partition_intersection_recv(i) .and. (number_of_elements_and_nodes_to_receive(2, i) /=0) ) then
-      recvs = recvs + 1
-
-      call MPI_Irecv(recv_buffer(i)%p, &
-        & size(recv_buffer(i)%p), &
-        & MPI_PACKED, &
-        & i, MPI_ANY_TAG, MPI_COMM_WORLD, &
-        & request_recv(recvs), ierr);  CHKERRQ(ierr)
-    end if
-
-    if( (partition_intersection_send(i)) .and. (size(send_buffer(i)%p) /=0) ) then
-      sends = sends + 1
-
-      call MPI_Isend(send_buffer(i)%p, &
-        & size(send_buffer(i)%p), &
-        & MPI_PACKED, &
-        & i, 0, MPI_COMM_WORLD, request_send(sends), ierr);  CHKERRQ(ierr)
-    end if
-  end do
-
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!! Parallel self-self runtime test !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   t1 = mpi_wtime()
-  call rtree_intersection_finder_set_input(positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)))
-  do ele_A = 1, ele_count(positionsA)
-    if(ele_ownerA(ele_A) /= rank) cycle
-    tri_A%v = ele_val(positionsA, ele_A)
-    call rtree_intersection_finder_find(tri_A%v)
+  call rtree_intersection_finder_set_input(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)))
+  do ele_B = 1, ele_count(positionsB)
+    if(ele_ownerB(ele_B) /= rank) cycle
+    tri_B%v = ele_val(positionsB, ele_B)
+    call rtree_intersection_finder_find(tri_B%v)
     call rtree_intersection_finder_query_output(nintersections)
     do i = 1, nintersections
-      call rtree_intersection_finder_get_output(ele_B, i)
-      if(ele_ownerB(ele_B) /= rank) cycle
-      tri_B%v = ele_val(positionsB, ele_B)
+      call rtree_intersection_finder_get_output(ele_A, i)
+      if(ele_ownerA(ele_A) /= rank) cycle
+      tri_A%v = ele_val(positionsA, ele_A)
 
       local_iter = local_iter + 1
 
@@ -463,79 +451,118 @@ subroutine test_parallel_partition_ab_optimal_transfer
       do ele_C = 1, n_trisC
         area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
         local_iter_actual = local_iter_actual + 1
+        integral_parallel = integral_parallel + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
       end do
     end do
   end do
-  call rtree_intersection_finder_reset(ntests)
-write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
-  sends = sends + 1
-  recvs = recvs + 1
-  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
-  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
+!  call rtree_intersection_finder_reset(ntests)
 
-
-  do i = 0, nprocs - 1
-    if(partition_intersection_recv(i)) then
-      position = 0
-      buffer_size = size(recv_buffer(i)%p)
-      call MPI_UnPack ( recv_buffer(i)%p, buffer_size, &
-          & position, recv_nodes_conectivity(i)%p,     &
-          & size(recv_nodes_conectivity(i)%p),         &
-          & MPI_INTEGER, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
-      call MPI_UnPack ( recv_buffer(i)%p, buffer_size, &
-          & position, recv_nodes_values(i)%p,          &
-          & size(recv_nodes_values(i)%p),              &
-          & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
-    end if
-  end do
-
+  ! Receive the PACKED buffer and UNPACK
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!! Parallel self-other runtime test !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  do i = 0, nprocs - 1
-    if(i == rank) cycle
-    if(number_of_elements_and_nodes_to_receive(1, i) <= 0) cycle
-    allocate(comm_coords_B(positionsB%dim,     number_of_elements_and_nodes_to_receive(2, i)), &
-           & comm_enlist_B(positionsB%dim + 1, number_of_elements_and_nodes_to_receive(1, i)))
+  do i = 0,nprocs - 1
+    if(rank == i) cycle
 
-    m = 1
-    do j = 1, number_of_elements_and_nodes_to_receive(1, i)
-      comm_enlist_B(:, j) = recv_nodes_conectivity(i)%p(j * (positionsB%dim + 1) - positionsB%dim: j * (positionsB%dim + 1) )
-    end do
-    m = 1
-    do j = 1, number_of_elements_and_nodes_to_receive(2, i)
-      do l = 1, positionsB%dim
-        comm_coords_B(l, j) = recv_nodes_values(i)%p(m)
-        m = m + 1
+    if(partition_intersection_recv(i)) then
+      call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr);  CHKERRQ(ierr)
+      call MPI_Get_Count(status, MPI_PACKED, icount, ierr);  CHKERRQ(ierr)
+
+      allocate(recv_buffer(i)%p(icount))
+      call MPI_Recv (recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
+                &  i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr);  CHKERRQ(ierr)
+
+      buffer_size = size(recv_buffer(i)%p)
+      position = 0
+      call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
+           & position, m,                    &
+           & 1,                              &
+           & MPI_INTEGER, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+      allocate(recv_nodes_conectivity(i)%p(m * (positionsB%dim + 1)))
+
+      call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
+           & position, n,                    &
+           & 1,                              &
+           & MPI_INTEGER, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+      allocate(recv_nodes_values(i)%p(n * (positionsB%dim)))
+      number_of_elements_and_nodes_to_receive(1, i) = m
+      number_of_elements_and_nodes_to_receive(2, i) = n
+
+      if(number_of_elements_and_nodes_to_receive(1, i) <= 0) cycle
+
+     call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
+          & position, recv_nodes_conectivity(i)%p,     &
+          & size(recv_nodes_conectivity(i)%p),         &
+          & MPI_INTEGER, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+
+     call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
+          & position, recv_nodes_values(i)%p,     &
+          & size(recv_nodes_values(i)%p),         &
+          & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+
+      call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
+           & position, k,                    &
+           & 1,                              &
+           & MPI_INTEGER, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+
+      allocate(ldata(k))
+      call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
+           & position, ldata,                    &
+           & k,                              &
+           & MPI_BYTE, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+
+      allocate(comm_coords_B(positionsB%dim,     number_of_elements_and_nodes_to_receive(2, i)), &
+             & comm_enlist_B(positionsB%dim + 1, number_of_elements_and_nodes_to_receive(1, i)))
+
+      call unpack_data_b(ldata)
+
+      m = 1
+      do j = 1, number_of_elements_and_nodes_to_receive(1, i)
+        comm_enlist_B(:, j) = recv_nodes_conectivity(i)%p(j * (positionsB%dim + 1) - positionsB%dim: j * (positionsB%dim + 1) )
       end do
-    end do
+      m = 1
+      do j = 1, number_of_elements_and_nodes_to_receive(2, i)
+        do l = 1, positionsB%dim
+          comm_coords_B(l, j) = recv_nodes_values(i)%p(m)
+          m = m + 1
+        end do
+      end do
 
-   call rtree_intersection_finder_set_input(comm_coords_B, comm_enlist_B)
-    do ele_A = 1, ele_count(positionsA)
-      if(ele_ownerA(ele_A) /= rank) cycle
-      tri_A%v = ele_val(positionsA, ele_A)
-      call rtree_intersection_finder_find(tri_A%v)
-      call rtree_intersection_finder_query_output(nintersections)
-      do k = 1, nintersections
-        call rtree_intersection_finder_get_output(ele_B, k)
-
+!      call rtree_intersection_finder_set_input(comm_coords_B, comm_enlist_B)
+      do ele_B = 1, size(comm_enlist_B, 2)
         do j = 1, positionsB%dim + 1
           tri_B%v(:,j) = comm_coords_B(:, comm_enlist_B(j,ele_B))
         end do
 
-        local_iter = local_iter + 1
-        call intersect_tris(tri_A, tri_B, trisC, n_trisC)
+        call rtree_intersection_finder_find(tri_B%v)
+        call rtree_intersection_finder_query_output(nintersections)
+        do k = 1, nintersections
+          call rtree_intersection_finder_get_output(ele_A, k)
+          if(ele_ownerA(ele_A) /= rank) cycle
 
-        do ele_C = 1, n_trisC
-          area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
-          local_iter_actual = local_iter_actual + 1
+          tri_A%v = ele_val(positionsA, ele_A)
+
+          local_iter = local_iter + 1
+
+          call intersect_tris(tri_A, tri_B, trisC, n_trisC)
+
+          do ele_C = 1, n_trisC
+            area_parallel = area_parallel + triangle_area(trisC(ele_C)%v)
+            local_iter_actual = local_iter_actual + 1
+            integral_parallel = integral_parallel + data_b_data(ele_b) * triangle_area(trisC(ele_C)%v)
+          end do
         end do
       end do
-    end do
-    call rtree_intersection_finder_reset(ntests)
-    deallocate(comm_coords_B, &
-             & comm_enlist_B)
- end do
+!      call rtree_intersection_finder_reset(ntests)
+      deallocate(comm_coords_B, &
+               & comm_enlist_B)
+      deallocate(ldata)
+    end if
+  end do
+
+  sends = sends + 1
+  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
+
   local_time = mpi_wtime() - t0                    ! total
   local_time_intersection_only = mpi_wtime() - t1  ! only intersection
   local_other_time = t1 - t0                       ! other
@@ -543,6 +570,9 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
   ! Gather remote results:
   call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &
     & areas_parallel, 1, MPI_DOUBLE_PRECISION, &
+    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Gather(integral_parallel, 1, MPI_DOUBLE_PRECISION, &
+    & integrals_parallel, 1, MPI_DOUBLE_PRECISION, &
     & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Gather(local_time, 1, MPI_DOUBLE_PRECISION, &
     & times_parallel, 1, MPI_DOUBLE_PRECISION, &
@@ -562,10 +592,8 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
   call MPI_Gather(local_iter_actual, 1, MPI_INTEGER, &
     & iter_actual_parallel, 1, MPI_INTEGER, &
     & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Reduce(parallel_ele_A, local_sum_a, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Reduce(parallel_ele_B, local_sum_b, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-
-  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Reduce(test_parallel_ele_A, local_sum_a, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Reduce(test_parallel_ele_B, local_sum_b, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   if(rank == root) then
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial read time          : ", serial_read_time," ."
@@ -583,8 +611,11 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total other parallel time       : ", sum(other_times_parallel)," ."
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Max other parallel time         : ", maxval(other_times_parallel)," ."
     write(output_unit, "(a)") ""
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial intersection area     : ", area_serial," ."
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial intersection area   : ", area_serial," ."
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area : ", sum(areas_parallel)," ."
+    write(output_unit, "(a)") ""
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial integral           : ", integral_serial," ."
+    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel integral         : ", sum(integrals_parallel)," ."
 
     fail = fnequals(sum(areas_parallel), area_serial, tol = tol)
     call report_test("[test_parallel_partition_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
@@ -595,6 +626,14 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
       write (*,*) "iters_parallel:",iters_parallel
       print "(a,i15,a,i15,a)", "Serial iters:",serial_local_iter,", parallel iters:",sum(iters_parallel),"."
     end if
+
+    fail = fnequals(sum(integrals_parallel), integral_serial, tol = tol)
+    call report_test("[test_parallel_partition_ab integrals]", fail, .FALSE., "Should give the same values of integration")
+    if (fail) then
+      print "(a,e25.17e3,a,e25.17e3,a)", ": Total parallel integral :", sum(integrals_parallel),&
+                                       & ", total serial integral   :",integral_serial,"."
+      write (*,*) "integrals_parallel:",integrals_parallel
+    end if    
 
     fail = ( sum(iter_actual_parallel) .ne. serial_local_iter_actual)
     call report_test("[test_parallel_partition_ab iterations]", fail, .FALSE., "Should give the same number of iterations")
@@ -660,21 +699,79 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
   end do
   deallocate(recv_nodes_values)
 
-  call MPI_TYPE_FREE(elements_nodes_datatype, ierr);  CHKERRQ(ierr)
-
-  deallocate(areas_parallel, times_parallel, times_read_time_parallel, other_times_parallel)
+  deallocate(areas_parallel, integrals_parallel, times_parallel, times_read_time_parallel, other_times_parallel)
   deallocate(iters_parallel, iter_actual_parallel, times_intersection_only_parallel)
-  deallocate(parallel_bbox_a, parallel_bbox_b, bbox_a, bbox_b, parallel_ele_B_array)
+  deallocate(parallel_bbox_a, parallel_bbox_b, bbox_a, bbox_b, test_parallel_ele_B_array)
   deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_send, partition_intersection_recv)
   call deallocate(positionsA)
   call deallocate(positionsB)
   deallocate(ele_ownerA, ele_ownerB)
-  deallocate(unsB)
+  deallocate(unsB, valsB)
   deallocate(number_of_elements_to_receive, number_of_elements_to_send)
 
   call cintersection_finder_reset(nnodes)
 
+  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+
 contains
+
+  subroutine local_donor_ele_data(eles, data)  
+    integer, dimension(:), intent(in) :: eles
+    integer(kind = c_int8_t), dimension(:), allocatable :: data
+
+    integer :: ierr, ndata, position
+    real, dimension(:), allocatable :: ldata
+
+    allocate(ldata(size(eles)))
+    ldata = valsB(eles)
+
+    ndata = 2 * int_extent + size(eles) * dp_extent
+    allocate(data(ndata))
+    position = 0
+    call MPI_Pack((/size(eles), size(eles)/), 2, MPI_INTEGER, data, ndata, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Pack(ldata, size(eles), MPI_DOUBLE_PRECISION, data, ndata, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+
+    deallocate(ldata)
+
+  end subroutine local_donor_ele_data
+
+  subroutine unpack_data_b(data_b)
+    integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+
+    integer :: ierr, position
+
+    call cleanup_data_b(data_b)
+
+    position = 0
+    call MPI_Unpack(data_b, size(data_b), position, data_b_header, 2, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    allocate(data_b_data(data_b_header(2)))
+    call MPI_Unpack(data_b, size(data_b), position, data_b_data, size(data_b_data), MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+
+  end subroutine unpack_data_b
+
+  subroutine cleanup_data_b(data_b)
+    integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+
+    if(allocated(data_b_data)) deallocate(data_b_data)
+
+  end subroutine cleanup_data_b
+
+  subroutine intersection_calculation(positions_c, ele_a, ele_b, local)
+    ! dim x loc_c x nelements_c
+    real, dimension(:, :, :), intent(in) :: positions_c
+    integer, intent(in)     :: ele_a
+    integer, intent(in)     :: ele_b
+    logical, intent(in)     :: local
+
+    integer :: ele_c, nelements_c
+
+    nelements_c = size(positions_c, 3)
+
+!    do ele_c = 1, nelements_c
+!      integral_parallel = integral_parallel + data_b_data(ele_b) * triangle_area(positions_c(:, :, ele_c))
+!    end do
+
+  end subroutine intersection_calculation
 
   subroutine write_parallel(msg)
     character(len = *), intent(in) :: msg
@@ -697,4 +794,4 @@ contains
 
   end subroutine write_parallel
 
-end subroutine test_parallel_partition_ab_optimal_transfer
+end subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
