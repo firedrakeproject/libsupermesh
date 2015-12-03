@@ -1,4 +1,4 @@
-subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
+subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once_par
 
   use iso_fortran_env, only : output_unit
   use iso_c_binding, only : c_double, c_int, c_int8_t, c_ptr, c_f_pointer, c_loc, c_size_t, c_sizeof
@@ -135,45 +135,40 @@ subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
     serial_read_time = mpi_wtime() - t0
 
     t0 = mpi_wtime()
-    allocate(map_AB(serial_ele_A))
-    call intersection_finder(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), serial_ele_A/)), &
-                         & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
-                         & map_AB)
+    call rtree_intersection_finder_set_input(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)))
 
     allocate(valsB(serial_ele_B))
     do ele_B = 1, serial_ele_B
       valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
     end do
-!write(*,*) "serial size(valsB):",size(valsB),", valsB:",valsB
     area_serial = 0.0
     integral_serial = 0.0
-    do ele_A = 1, serial_ele_A
-      tri_A%v = ele_val(positionsA, ele_A)
 
-      do i = 1, map_AB(ele_A)%n
-        ele_B = map_AB(ele_A)%v(i)
-        tri_B%v = ele_val(positionsB, ele_B)
-
-        call intersect_tris(tri_A, tri_B, trisC, n_trisC)
+    do ele_B = 1, ele_count(positionsB)
+      tri_B%v = ele_val(positionsB, ele_B)
+      call rtree_intersection_finder_find(tri_B%v)
+      call rtree_intersection_finder_query_output(nintersections)
+      do i = 1, nintersections
+        call rtree_intersection_finder_get_output(ele_A, i)
+        tri_A%v = ele_val(positionsA, ele_A)
 
         serial_local_iter = serial_local_iter + 1
 
+        call intersect_tris(tri_A, tri_B, trisC, n_trisC)
+
         do ele_C = 1, n_trisC
           area_serial = area_serial + triangle_area(trisC(ele_C)%v)
-          integral_serial = integral_serial + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
           serial_local_iter_actual = serial_local_iter_actual + 1
+          integral_serial = integral_serial + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
         end do
       end do
     end do
 
     deallocate(valsB)
-    call deallocate(map_AB)
-    deallocate(map_AB)
-
-    serial_time = mpi_wtime() - t0
-
     call deallocate(positionsA)
     call deallocate(positionsB)
+
+    serial_time = mpi_wtime() - t0
   end if
 
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
@@ -340,9 +335,6 @@ subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
 
         number_of_elements_and_nodes_to_send(1, i) = l
         number_of_elements_and_nodes_to_send(2, i) = m
-
-!if (rank==2) write(*,*) rank,": i:",i,", nodes_translation(:,1):",nodes_translation(:,1),",nodes_translation(:,2):",nodes_translation(:,2)
-!call flush()
 
         allocate(send_element_uns(i)%p(l))
         send_element_uns(i)%p = temp_elements_uns(1:l)
@@ -793,4 +785,4 @@ contains
 
   end subroutine write_parallel
 
-end subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
+end subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once_par

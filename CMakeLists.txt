@@ -450,6 +450,7 @@ FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/src/tes
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer_data.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer_data_rtree_once.F90)
+FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE_PAR FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer_data_rtree_once_par.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_universal_node_numbering.F90)
 FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
@@ -484,6 +485,7 @@ set (UNITTESTS
   test_parallel_partition_ab_optimal_transfer
   test_parallel_partition_ab_optimal_transfer_data
   test_parallel_partition_ab_optimal_transfer_data_rtree_once
+  test_parallel_partition_ab_optimal_transfer_data_rtree_once_par
   test_parallel_partition_complete_ab
   test_parallel_universal_node_numbering
 )
@@ -510,6 +512,7 @@ add_executable (test_parallel_partition_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TE
 add_executable (test_parallel_partition_ab_optimal_transfer ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER})
 add_executable (test_parallel_partition_ab_optimal_transfer_data ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA})
 add_executable (test_parallel_partition_ab_optimal_transfer_data_rtree_once ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE})
+add_executable (test_parallel_partition_ab_optimal_transfer_data_rtree_once_par ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE_PAR})
 add_executable (test_parallel_partition_complete_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES})
 add_executable (test_parallel_universal_node_numbering ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES})
 add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
