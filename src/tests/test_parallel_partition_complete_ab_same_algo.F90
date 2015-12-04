@@ -1,4 +1,4 @@
-subroutine test_parallel_partition_complete_ab
+subroutine test_parallel_partition_complete_ab_same_algo
 
   use iso_c_binding, only : c_ptr, c_int8_t
   use iso_fortran_env, only : output_unit
@@ -20,7 +20,7 @@ subroutine test_parallel_partition_complete_ab
 
   character(len = 1024) :: buffer, hostname
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
-  integer :: ele_A, ele_B, ele_C, i, ierr, nprocs, n_trisC, rank, serial_ele_A, serial_ele_B, dp_extent, int_extent, test_parallel_ele_B
+  integer :: ele_A, ele_B, ele_C, i, ierr, nprocs, n_trisC, rank, serial_ele_A, serial_ele_B, dp_extent, int_extent, test_parallel_ele_B, nintersections
   integer, parameter :: dim = 2, root = 0
   integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB, unsA
   type(halo_type) :: halo
@@ -65,25 +65,22 @@ subroutine test_parallel_partition_complete_ab
     serial_read_time = mpi_wtime() - t0
 
     t0 = mpi_wtime()
-    allocate(map_AB(serial_ele_A))
-    call intersection_finder(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), serial_ele_A/)), &
-                         & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
-                         & map_AB)
+    call rtree_intersection_finder_set_input(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)))
 
     allocate(valsB(serial_ele_B))
-
     do ele_B = 1, serial_ele_B
       valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
     end do
-
     area_serial = 0.0
     integral_serial = 0.0
-    do ele_A = 1, serial_ele_A
-      tri_A%v = ele_val(positionsA, ele_A)
 
-      do i = 1, map_AB(ele_A)%n
-        ele_B = map_AB(ele_A)%v(i)
-        tri_B%v = ele_val(positionsB, ele_B)
+    do ele_B = 1, ele_count(positionsB)
+      tri_B%v = ele_val(positionsB, ele_B)
+      call rtree_intersection_finder_find(tri_B%v)
+      call rtree_intersection_finder_query_output(nintersections)
+      do i = 1, nintersections
+        call rtree_intersection_finder_get_output(ele_A, i)
+        tri_A%v = ele_val(positionsA, ele_A)
 
         call intersect_tris(tri_A, tri_B, trisC, n_trisC)
 
@@ -95,12 +92,9 @@ subroutine test_parallel_partition_complete_ab
     end do
 
     deallocate(valsB)
-
-    call deallocate(map_AB)
-    deallocate(map_AB)
-
     call deallocate(positionsA)
     call deallocate(positionsB)
+
     serial_time = mpi_wtime() - t0
   end if
 
@@ -270,4 +264,4 @@ contains
 
   end subroutine write_parallel
 
-end subroutine test_parallel_partition_complete_ab
+end subroutine test_parallel_partition_complete_ab_same_algo
