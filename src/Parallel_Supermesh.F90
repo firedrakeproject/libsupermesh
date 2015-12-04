@@ -596,17 +596,6 @@ contains
       end do
     end do
 
-    sends = sends + 1
-    recvs = recvs + 1
-    call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
-    if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Waitall(send).")
-    end if
-    call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr)
-    if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Waitall(recv).")
-    end if
-
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-other runtime test !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

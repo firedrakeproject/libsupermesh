@@ -142,10 +142,10 @@ subroutine test_parallel_partition_complete_ab
            &  local_donor_ele_data, local_unpack_data_b, local_intersection_calculation)
   parallel_time = mpi_wtime() - t0
 
-  call MPI_Allreduce(area_parallel, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Allreduce(integral_parallel, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Allreduce(parallel_time, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Allreduce(parallel_read_time, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   call deallocate(positionsA)
   call deallocate(positionsB)
@@ -239,7 +239,7 @@ contains
       do ele_c = 1, nelements_c
         area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
         integral_parallel = integral_parallel + valsB(ele_b) * triangle_area(positions_c(:, :, ele_c))
-      end do    
+      end do
     else
       do ele_c = 1, nelements_c
         area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))

@@ -128,8 +128,8 @@ subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once_par
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
   if(rank == root) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_02"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_01"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
@@ -192,15 +192,15 @@ subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once_par
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_02_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_02"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/square_0_2_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_2"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   test_parallel_ele_A = count(ele_ownerA == rank)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_01_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_01"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/square_0_1_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_1"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   test_parallel_ele_B = count(ele_ownerB == rank)
