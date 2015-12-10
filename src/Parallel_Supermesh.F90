@@ -339,10 +339,7 @@ contains
           end do
 
         ! ### Mesh send buffer allocation ###
-! Removed IF, because sometimes we set partition_intersection_recv to TRUE;
-! however, the following IF fails and we end up NOT sending anything.
-! Now, we will send an extra message, so that the receiver (who already EXPECTS a message) can exit gracefully
-          if ( (associated(send_element_uns(i)%p)) .and. (size(send_element_uns(i)%p) /= 0) ) then
+          if ( number_of_elements_and_nodes_to_send(1,i) > 0 ) then
             call donor_ele_data(send_element_uns(i)%p, data)
 
             buffer_size = int_extent + int_extent +                          &
@@ -411,7 +408,7 @@ contains
             if(ierr /= MPI_SUCCESS) then
               FLAbort("MPI_Pack number of nodes error")
             end if
-          
+
             allocate(send_buffer(i)%p(buffer_size))
             send_buffer(i)%p = buffer_mpi
           end if
@@ -432,84 +429,6 @@ contains
   end do
 
   end subroutine step_2
-
-
-!   subroutine step_3(positions_b, enlist_b, sends)
-!     ! dim x nnodes_b
-!     real, dimension(:, :), intent(in)    :: positions_b
-!     ! loc_b x nelements_b
-!     integer, dimension(:, :), intent(in) :: enlist_b
-!     integer, intent(inout)               :: sends
-! 
-!     integer                              :: j, k, l, ierr
-!     type(tri_type)                       :: tri_B
-! 
-!     do j = 0, nprocs - 1
-!       if(.not. associated(send_element_uns(j)%p)) cycle
-!       if(size(send_element_uns(j)%p) == 0) cycle
-!       k = 1
-! 
-!       do l = 1, size(send_element_uns(j)%p)
-!         tri_B%v = positions_b(:, enlist_b(:, send_element_uns(j)%p(l)))
-!         send_buffer(j)%p(k) = tri_B%v(1, 1)
-!         k = k + 1
-!         send_buffer(j)%p(k) = tri_B%v(2, 1)
-!         k = k + 1
-!         send_buffer(j)%p(k) = tri_B%v(1, 2)
-!         k = k + 1
-!         send_buffer(j)%p(k) = tri_B%v(2, 2)
-!         k = k + 1
-!         send_buffer(j)%p(k) = tri_B%v(1, 3)
-!         k = k + 1
-!         send_buffer(j)%p(k) = tri_B%v(2, 3)
-!         k = k + 1
-!       end do
-!     end do
-! 
-!     sends = sends + 1
-!     call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
-!     if(ierr /= MPI_SUCCESS) then
-!       FLAbort("Unable to setup MPI_Waitall(send).")
-!     end if
-! 
-!   end subroutine step_3
-
-
-!   subroutine step_4(positions_b, sends, recvs)
-!     ! dim x nnodes_b
-!     real, dimension(:, :), intent(in)  :: positions_b
-!     integer, intent(inout)             :: sends
-!     integer, intent(inout)             :: recvs
-! 
-!     integer                            :: i, j, ierr
-! 
-!     forall(i = 0: nprocs - 1)
-!       status_send(:, i) = MPI_STATUS_IGNORE
-!       status_recv(:, i) = MPI_STATUS_IGNORE
-!     end forall
-!     request_send = MPI_REQUEST_NULL
-!     request_recv = MPI_REQUEST_NULL
-! 
-!     sends = -1
-!     recvs = -1
-!     do j = 0,nprocs - 1
-!       if(rank == j)cycle
-! 
-!       if( (partition_intersection_send(j)) .and. (size(send_buffer(j)%p) /=0) ) then
-!         sends = sends + 1
-! 
-!         call MPI_Isend(send_buffer(i)%p, &
-!                & size(send_buffer(i)%p), &
-!                & MPI_PACKED,             &
-!                & i, 0, MPI_COMM_WORLD, request_send(sends), ierr)
-!         if(ierr /= MPI_SUCCESS) then
-!           FLAbort("Unable to setup MPI_Isend.")
-!         end if
-!       end if
-!     end do
-! 
-!   end subroutine step_4
-
 
   subroutine step_5(positions_a, enlist_a, un_a, ele_owner_a, &
                 &   positions_b, enlist_b,       ele_owner_b, &
@@ -532,7 +451,7 @@ contains
     integer, intent(inout)                  :: sends
     integer, intent(inout)                  :: recvs
 
-    integer                                 :: i, j, k, l, m, n, n_C, ele_A, ele_B, nintersections, ntests, ierr, buffer_size, icount, position, iiiiii
+    integer                                 :: i, j, k, l, m, n, n_C, ele_A, ele_B, nintersections, ntests, ierr, buffer_size, icount, position
     integer                                 :: status(MPI_STATUS_SIZE)
     real, dimension(:, :), allocatable      :: nodes_A, nodes_B
     integer, dimension(:, :), allocatable   :: comm_enlist_B
@@ -676,6 +595,7 @@ contains
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_UnPack data error")
         end if
+
         allocate(comm_coords_B( size(positions_b,1),      number_of_elements_and_nodes_to_receive(2, i)), &
                & comm_enlist_B((size(positions_b,1) + 1), number_of_elements_and_nodes_to_receive(1, i)))
 
@@ -714,6 +634,12 @@ contains
     end do
 
     deallocate(positions_c, nodes_A, nodes_B)
+
+    sends = sends + 1
+    call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Waitall(send).")
+    end if
 
   end subroutine step_5
 
