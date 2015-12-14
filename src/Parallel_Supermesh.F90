@@ -313,9 +313,6 @@ contains
           number_of_elements_and_nodes_to_send(1, i) = l
           number_of_elements_and_nodes_to_send(2, i) = m
 
-!if (rank==2) write(*,*) rank,": i:",i,", nodes_translation(:,1):",nodes_translation(:,1),",nodes_translation(:,2):",nodes_translation(:,2)
-!call flush()
-
           allocate(send_element_uns(i)%p(l))
           send_element_uns(i)%p = temp_elements_uns(1:l)
 
