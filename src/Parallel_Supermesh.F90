@@ -41,7 +41,7 @@ module libsupermesh_parallel_supermesh
   integer, dimension(:), allocatable :: nodes
   integer, dimension(:,:), allocatable :: nodes_translation, nodes_translation_tmp
   integer, dimension(:,:), allocatable :: number_of_elements_and_nodes_to_receive, number_of_elements_and_nodes_to_send
-  type(pointer_integer), dimension(:), allocatable  :: send_nodes_conectivity, recv_nodes_conectivity
+  type(pointer_integer), dimension(:), allocatable  :: send_nodes_connectivity, recv_nodes_connectivity
   type(pointer_real), dimension(:), allocatable  :: send_nodes_values, recv_nodes_values
   integer, dimension(:), allocatable, save  :: request_send, request_recv
   integer, dimension(:,:), allocatable, save :: status_send, status_recv
@@ -227,14 +227,14 @@ contains
       nullify(recv_buffer(i)%p)
     end do
 
-    allocate(send_nodes_conectivity(0:nprocs-1))
-    do i=0,size(send_nodes_conectivity(:))-1
-      nullify(send_nodes_conectivity(i)%p)
+    allocate(send_nodes_connectivity(0:nprocs-1))
+    do i=0,size(send_nodes_connectivity(:))-1
+      nullify(send_nodes_connectivity(i)%p)
     end do
 
-    allocate(recv_nodes_conectivity(0:nprocs-1))
-    do i=0,size(recv_nodes_conectivity(:))-1
-      nullify(recv_nodes_conectivity(i)%p)
+    allocate(recv_nodes_connectivity(0:nprocs-1))
+    do i=0,size(recv_nodes_connectivity(:))-1
+      nullify(recv_nodes_connectivity(i)%p)
     end do
 
     allocate(send_nodes_values(0:nprocs-1))
@@ -319,7 +319,7 @@ contains
           allocate(send_element_uns(i)%p(l))
           send_element_uns(i)%p = temp_elements_uns(1:l)
 
-          allocate(send_nodes_conectivity(i)%p(number_of_elements_and_nodes_to_send(1, i) * (size(positions_b,1) + 1)))
+          allocate(send_nodes_connectivity(i)%p(number_of_elements_and_nodes_to_send(1, i) * (size(positions_b,1) + 1)))
 
           do k = 1, size(nodes)
             j = -1
@@ -329,7 +329,7 @@ contains
                 exit
               end if
             end do
-            send_nodes_conectivity(i)%p(k) = j
+            send_nodes_connectivity(i)%p(k) = j
           end do
 
           allocate(send_nodes_values(i)%p(number_of_elements_and_nodes_to_send(2,i) * (size(positions_b,1))))
@@ -343,7 +343,7 @@ contains
             call donor_ele_data(send_element_uns(i)%p, data)
 
             buffer_size = int_extent + int_extent +                          &
-                      &   (size(send_nodes_conectivity(i)%p) * int_extent) + &
+                      &   (size(send_nodes_connectivity(i)%p) * int_extent) + &
                       &   (size(send_nodes_values(i)%p)      * dp_extent ) + &
                       &   int_extent + (size(data))
 
@@ -362,11 +362,11 @@ contains
             if(ierr /= MPI_SUCCESS) then
               FLAbort("MPI_Pack number of nodes error")
             end if
-            call MPI_Pack(send_nodes_conectivity(i)%p,                &
-                 & size(send_nodes_conectivity(i)%p),                 &
+            call MPI_Pack(send_nodes_connectivity(i)%p,                &
+                 & size(send_nodes_connectivity(i)%p),                 &
                  & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
             if(ierr /= MPI_SUCCESS) then
-              FLAbort("MPI_Pack conectivity error")
+              FLAbort("MPI_Pack connectivity error")
             end if
             call MPI_Pack(send_nodes_values(i)%p,                     &
                  & size(send_nodes_values(i)%p),                      &
@@ -452,7 +452,7 @@ contains
     integer, intent(inout)                  :: recvs
 
     integer                                 :: i, j, k, l, m, n, n_C, ele_A, ele_B, nintersections, ntests, ierr, buffer_size, icount, position
-    integer                                 :: status(MPI_STATUS_SIZE)
+    integer                                 :: status(MPI_STATUS_SIZE), elements, nodes
     real, dimension(:, :), allocatable      :: nodes_A, nodes_B
     integer, dimension(:, :), allocatable   :: comm_enlist_B
     real, dimension(:, :), allocatable      :: comm_coords_B
@@ -541,34 +541,34 @@ contains
         buffer_size = size(recv_buffer(i)%p)
         position = 0
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
-             & position, m,                    &
+             & position, elements,                        &
              & 1,                              &
              & MPI_INTEGER, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_UnPack number of elements error")
         end if
-        allocate(recv_nodes_conectivity(i)%p(m * (size(positions_b,1) + 1)))
+        allocate(recv_nodes_connectivity(i)%p(elements * (size(positions_b,1) + 1)))
 
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
-             & position, n,                    &
+             & position, nodes,                    &
              & 1,                              &
              & MPI_INTEGER, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_UnPack number of nodes error")
         end if
 
-        allocate(recv_nodes_values(i)%p(n * (size(positions_b,1))))
-        number_of_elements_and_nodes_to_receive(1, i) = m
-        number_of_elements_and_nodes_to_receive(2, i) = n
+        allocate(recv_nodes_values(i)%p(nodes * (size(positions_b,1))))
+        number_of_elements_and_nodes_to_receive(1, i) = elements
+        number_of_elements_and_nodes_to_receive(2, i) = nodes
 
         if(number_of_elements_and_nodes_to_receive(1, i) <= 0) cycle
 
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
-             & position, recv_nodes_conectivity(i)%p,     &
-             & size(recv_nodes_conectivity(i)%p),         &
+             & position, recv_nodes_connectivity(i)%p,     &
+             & size(recv_nodes_connectivity(i)%p),         &
              & MPI_INTEGER, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_UnPack conectivity error")
+          FLAbort("MPI_UnPack connectivity error")
         end if
 
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
@@ -603,7 +603,7 @@ contains
 
         m = 1
         do j = 1, number_of_elements_and_nodes_to_receive(1, i)
-          comm_enlist_B(:, j) = recv_nodes_conectivity(i)%p(j * (size(positions_b,1) + 1) - size(positions_b,1): j * (size(positions_b,1) + 1) )
+          comm_enlist_B(:, j) = recv_nodes_connectivity(i)%p(j * (size(positions_b,1) + 1) - size(positions_b,1): j * (size(positions_b,1) + 1) )
         end do
         m = 1
         do j = 1, number_of_elements_and_nodes_to_receive(2, i)
@@ -689,17 +689,17 @@ contains
       end do
       deallocate(recv_buffer)
 
-      do i=0,size(send_nodes_conectivity(:))-1
-        if ( .NOT. ASSOCIATED(send_nodes_conectivity(i)%p) ) cycle
-        deallocate(send_nodes_conectivity(i)%p)
+      do i=0,size(send_nodes_connectivity(:))-1
+        if ( .NOT. ASSOCIATED(send_nodes_connectivity(i)%p) ) cycle
+        deallocate(send_nodes_connectivity(i)%p)
       end do
-      deallocate(send_nodes_conectivity)
+      deallocate(send_nodes_connectivity)
 
-      do i=0,size(recv_nodes_conectivity(:))-1
-        if ( .NOT. ASSOCIATED(recv_nodes_conectivity(i)%p) ) cycle
-        deallocate(recv_nodes_conectivity(i)%p)
+      do i=0,size(recv_nodes_connectivity(:))-1
+        if ( .NOT. ASSOCIATED(recv_nodes_connectivity(i)%p) ) cycle
+        deallocate(recv_nodes_connectivity(i)%p)
       end do
-      deallocate(recv_nodes_conectivity)
+      deallocate(recv_nodes_connectivity)
 
       do i=0,size(send_nodes_values(:))-1
         if ( .NOT. ASSOCIATED(send_nodes_values(i)%p) ) cycle
