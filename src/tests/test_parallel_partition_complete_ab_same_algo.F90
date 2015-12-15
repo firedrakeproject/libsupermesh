@@ -33,12 +33,12 @@ subroutine test_parallel_partition_complete_ab_same_algo
   logical :: fail
 
   real :: area_parallel, area_serial, integral_parallel, integral_serial
-  real, dimension(:), allocatable :: valsB
+  real, dimension(:), allocatable, target :: valsB
 
   ! Data
   integer(kind = c_int8_t), dimension(:), allocatable :: data
   integer, dimension(2) :: data_b_header
-  real, dimension(:), allocatable :: data_b_data
+  real, dimension(:), allocatable, target :: data_b_data
 
   CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
   CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
@@ -227,20 +227,19 @@ contains
     logical, intent(in)     :: local
 
     integer :: ele_c, nelements_c
+    real, dimension(:), pointer :: data_b
+    
+    if(local) then
+      data_b => valsB
+    else
+      data_b => data_b_data
+    end if
 
     nelements_c = size(positions_c, 3)
-
-    if (local) then
-      do ele_c = 1, nelements_c
-        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
-        integral_parallel = integral_parallel + valsB(ele_b) * triangle_area(positions_c(:, :, ele_c))
-      end do
-    else
-      do ele_c = 1, nelements_c
-        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
-        integral_parallel = integral_parallel + data_b_data(ele_b) * triangle_area(positions_c(:, :, ele_c))
-      end do
-    end if
+    do ele_c = 1, nelements_c
+      area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
+      integral_parallel = integral_parallel + data_b(ele_b) * triangle_area(positions_c(:, :, ele_c))
+    end do
 
   end subroutine local_intersection_calculation
 
