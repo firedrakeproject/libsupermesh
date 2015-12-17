@@ -62,16 +62,14 @@ module libsupermesh_parallel_supermesh
 contains
 
                                                        ! TODO: Remove this unused argument
-  subroutine parallel_supermesh(positions_a, enlist_a, un_a, ele_owner_a, &
-                             &  positions_b, enlist_b,       ele_owner_b, &
+  subroutine parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
+                             &  positions_b, enlist_b, ele_owner_b, &
                              &  donor_ele_data, unpack_data_b, intersection_calculation, &
                              &  comm)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)    :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
-    ! nnodes_a
-    integer, dimension(:), intent(in)    :: un_a
     ! elements_a
     integer, dimension(:), intent(in)    :: ele_owner_a
     ! dim x nnodes_b
@@ -591,7 +589,7 @@ contains
               nodes_B(j, k) = recv_nodes_values(i)%p((l - 1) * size(positions_b, 1) + j)
             end do
           end do
-          
+
           call rtree_intersection_finder_find(nodes_B)
           call rtree_intersection_finder_query_output(nintersections)
           do k = 1, nintersections
@@ -604,6 +602,7 @@ contains
           end do
         end do
 
+        deallocate(recv_nodes_values(i)%p)
         deallocate(ldata)
       end if
     end do

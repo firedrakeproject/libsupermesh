@@ -22,7 +22,7 @@ subroutine benchmark_parallel_complete
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
   integer :: ele_B, ierr, nprocs, rank, test_parallel_ele_B, dp_extent, int_extent
   integer, parameter :: dim = 2, root = 0
-  integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB, unsA
+  integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB
   type(halo_type) :: halo
   type(vector_field) :: positionsA, positionsB
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
@@ -50,15 +50,13 @@ subroutine benchmark_parallel_complete
   hostname = "unknown"
 #endif
   write(buffer, "(a,a,a,i0,a)") "Running on '", trim(hostname), "' with ", nprocs, " processes"
-  if ((rank == 0) .or. (mod(rank,10) == 0)) print *, buffer
+  if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   t0 = mpi_wtime()
   positionsA = read_triangle_files(trim("data/square_0_002_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
   call read_halo("data/square_0_002"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
-  allocate(unsA(node_count(positionsA)))
-  call universal_node_numbering(halo, unsA)
   call deallocate(halo)
 
   positionsB = read_triangle_files(trim("data/square_0_004_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
@@ -81,10 +79,10 @@ subroutine benchmark_parallel_complete
 
   call parallel_supermesh(positionsA%val, & 
            &  reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), &
-           &  unsA,  ele_ownerA,          &
-           &   positionsB%val,            &
+           &  ele_ownerA,          &
+           &  positionsB%val,            &
            &  reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), &
-           &         ele_ownerB,          &
+           &  ele_ownerB,          &
            &  local_donor_ele_data, local_unpack_data_b, local_intersection_calculation)
   parallel_time = mpi_wtime() - t0
 
@@ -95,7 +93,6 @@ subroutine benchmark_parallel_complete
 
   call deallocate(positionsA)
   call deallocate(positionsB)
-  deallocate(unsA)
 
   area_serial = 1.0
   integral_serial = 0.5

@@ -46,7 +46,7 @@ subroutine benchmark_serial
   hostname = "unknown"
 #endif
   write(buffer, "(a,a,a,i0,a)") "Running on '", trim(hostname), "' with ", nprocs, " processes"
-  if ((rank == 0) .or. (mod(rank,10) == 0)) print *, buffer
+  if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   ! Serial test
   if (rank == 0) then
@@ -105,7 +105,10 @@ subroutine benchmark_serial
   if(rank == root) then
     write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Read Time, serial         =", serial_read_time
+    write(output_unit, "(a,f19.15)") "Read Time, serial    =", serial_read_time
+    write(output_unit, "(a)") ""
+    write(output_unit, "(a,f19.15)") "Area, serial       =", area_serial
+    write(output_unit, "(a,f19.15)") "Integral, serial   =", integral_serial
 
     fail = fnequals(area_parallel, area_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
