@@ -107,8 +107,8 @@ subroutine benchmark_serial_3D
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.15)") "Read Time, serial    =", serial_read_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Area, serial       =", vols_serial
-    write(output_unit, "(a,f19.15)") "Integral, serial   =", integral_serial
+    write(output_unit, "(a,f19.15)") "Volume, serial       =", vols_serial
+    write(output_unit, "(a,f19.15)") "Integral, serial     =", integral_serial
 
     fail = fnequals(vols_parallel, vols_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")

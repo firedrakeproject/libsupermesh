@@ -29,7 +29,7 @@ subroutine benchmark_parallel_complete_3D
   real :: t0, serial_time, parallel_time, serial_read_time, parallel_read_time
   logical :: fail
 
-  real :: area_parallel, area_serial, integral_parallel, integral_serial
+  real :: vols_parallel, vols_serial, integral_parallel, integral_serial
   real, dimension(:), allocatable :: valsB
 
   ! Data
@@ -74,7 +74,7 @@ subroutine benchmark_parallel_complete_3D
   end do
   call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr);  CHKERRQ(ierr)
   call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr);  CHKERRQ(ierr)
-  area_parallel = 0.0
+  vols_parallel = 0.0
   integral_parallel = 0.0
 
   call parallel_supermesh(positionsA%val, & 
@@ -86,7 +86,7 @@ subroutine benchmark_parallel_complete_3D
            &  local_donor_ele_data, local_unpack_data_b, local_intersection_calculation)
   parallel_time = mpi_wtime() - t0
 
-  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(MPI_IN_PLACE, vols_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
@@ -94,7 +94,7 @@ subroutine benchmark_parallel_complete_3D
   call deallocate(positionsA)
   call deallocate(positionsB)
 
-  area_serial = 1.0
+  vols_serial = 1.0
   integral_serial = 0.5
 
   if(rank == root) then
@@ -104,17 +104,17 @@ subroutine benchmark_parallel_complete_3D
     write(output_unit, "(a,f19.15)") "Read Time, serial         =", serial_read_time
     write(output_unit, "(a,f19.15)") "(MAX) Read Time, parallel =", parallel_read_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Area, serial   =", area_serial
-    write(output_unit, "(a,f19.15)") "Area, parallel =", area_parallel
+    write(output_unit, "(a,f19.15)") "Volume, serial   =", vols_serial
+    write(output_unit, "(a,f19.15)") "Volume, parallel =", vols_parallel
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.15)") "Integral, serial   =", integral_serial
     write(output_unit, "(a,f19.15)") "Integral, parallel =", integral_parallel
 
-    fail = fnequals(area_parallel, area_serial, tol = tol)
+    fail = fnequals(vols_parallel, vols_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
     if (fail) then
-      print "(a,e25.17e3,a,e25.17e3,a)", ": Area, serial   =", area_serial, &
-                                       & ": Area, parallel =", area_parallel
+      print "(a,e25.17e3,a,e25.17e3,a)", ": Volume, serial   =", vols_serial, &
+                                       & ": Volume, parallel =", vols_parallel
     end if
 
     fail = fnequals(integral_parallel, integral_serial, tol = tol)
@@ -181,13 +181,15 @@ contains
 
     if (local) then
       do ele_c = 1, nelements_c
-        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
-        integral_parallel = integral_parallel + valsB(ele_b) * triangle_area(positions_c(:, :, ele_c))
+!        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
+        vols_parallel = vols_parallel + tetrahedron_volume(positions_c(:, :, ele_c))
+!        integral_parallel = integral_parallel + valsB(ele_b) * triangle_area(positions_c(:, :, ele_c))
       end do
     else
       do ele_c = 1, nelements_c
-        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
-        integral_parallel = integral_parallel + data_b_data(ele_b) * triangle_area(positions_c(:, :, ele_c))
+!        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
+        vols_parallel = vols_parallel + tetrahedron_volume(positions_c(:, :, ele_c))
+!        integral_parallel = integral_parallel + data_b_data(ele_b) * triangle_area(positions_c(:, :, ele_c))
       end do
     end if
 
