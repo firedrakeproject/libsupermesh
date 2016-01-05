@@ -40,7 +40,6 @@ subroutine test_intersection_finder_completeness_3d
     vols_C = 0.0
     do while(associated(llnode))
       ele_A = llnode%value
-write(*,*) "test_intersection_finder_completeness_3d: ele_A:",ele_A,"."
       ! Tets (3D)
         call intersect_elements(ele_val(positionsA, ele_A), ele_val(positionsB, ele_B), &
                 n_tetsC, tetsC_real )
