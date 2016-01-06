@@ -50,8 +50,8 @@ subroutine benchmark_serial_same_algo
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_01"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/triangle_0_01"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/square_0_002"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/square_0_004"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0

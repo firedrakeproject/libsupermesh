@@ -79,7 +79,7 @@ subroutine benchmark_serial_same_algo_3D
 
         do ele_C = 1, n_tetsC
           vols_serial = vols_serial + tetrahedron_volume(tetsC(ele_C)%v)
-!          integral_serial = integral_serial + valsB(ele_B) * triangle_area(trisC(ele_C)%v)
+          integral_serial = integral_serial + valsB(ele_B) * tetrahedron_volume(tetsC(ele_C)%v)
         end do
       end do
     end do
@@ -94,8 +94,8 @@ subroutine benchmark_serial_same_algo_3D
 
   call MPI_Allreduce(MPI_IN_PLACE, vols_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  vols_parallel = 1.0
-  integral_parallel = 0.5
+  vols_parallel = 333.333333333330359
+  integral_parallel = 2222.21838486535671
 
   if(rank == root) then
     write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
@@ -103,7 +103,7 @@ subroutine benchmark_serial_same_algo_3D
     write(output_unit, "(a,f19.15)") "Read Time, serial    =", serial_read_time
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.15)") "Volume, serial       =", vols_serial
-    write(output_unit, "(a,f19.15)") "Integral, serial     =", integral_serial
+    write(output_unit, "(a,f19.14)") "Integral, serial     =", integral_serial
 
     fail = fnequals(vols_parallel, vols_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")

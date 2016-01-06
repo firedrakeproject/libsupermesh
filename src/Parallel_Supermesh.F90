@@ -156,25 +156,25 @@ contains
 
     integer  :: ierr
 
-    allocate(bbox_a(size(positions_a,1), 2))
+    allocate(bbox_a(2, size(positions_a,1)))
     bbox_a = partition_bbox(positions_a, enlist_a, ele_owner_a, rank)
 
-    allocate(bbox_b(size(positions_b,1), 2))
+    allocate(bbox_b(2, size(positions_b,1)))
     bbox_b = partition_bbox(positions_b, enlist_b, ele_owner_b, rank)
 
     allocate(parallel_bbox_a(2, size(positions_a,1), 0:nprocs-1))
     allocate(parallel_bbox_b(2, size(positions_b,1), 0:nprocs-1))
 
     ! Bounding box all-to-all
-    call MPI_Allgather(bbox_a, 4, MPI_DOUBLE_PRECISION, &
-      & parallel_bbox_a, 4, MPI_DOUBLE_PRECISION,    &
+    call MPI_Allgather(bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION, &
+      & parallel_bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION,    &
       & mpi_comm, ierr)
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to MPI_Allgather bbox_a(s) to parallel_bbox_a.")
     end if
 
-    call MPI_Allgather(bbox_b, 4, MPI_DOUBLE_PRECISION, &
-      & parallel_bbox_b, 4, MPI_DOUBLE_PRECISION,    &
+    call MPI_Allgather(bbox_b, 2 * size(positions_b,1), MPI_DOUBLE_PRECISION, &
+      & parallel_bbox_b, 2 * size(positions_b,1), MPI_DOUBLE_PRECISION,    &
       & mpi_comm, ierr)
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to MPI_Allgather bbox_b(s) to parallel_bbox_b.")
@@ -262,7 +262,7 @@ contains
     recvs = -1
     do i = 0, nprocs - 1
       if(i == rank) cycle
-    
+
       if(bboxes_intersect(bbox_a, parallel_bbox_b(:, :, i))) then
         ! Receiving data from process i
         partition_intersection_recv(i) = .true.
@@ -271,7 +271,7 @@ contains
       if(bboxes_intersect(bbox_b, parallel_bbox_a(:, :, i))) then
         ! Sending data to process i
         partition_intersection_send(i) = .true.
-        
+
         allocate(elements_send(size(enlist_b, 2)))
         nelements_send = 0
         do ele_B = 1, size(enlist_b, 2)
@@ -279,7 +279,7 @@ contains
           if(ele_owner_b(ele_B) /= rank) cycle
           ! Don't send elements with non-intersecting bounding boxes
           if(.not. bboxes_intersect(bbox(positions_b(:, enlist_b(:, ele_B))), parallel_bbox_a(:, :, i))) cycle
-          
+
           ! Mark the element for sending
           nelements_send = nelements_send + 1
           elements_send(nelements_send) = ele_B
@@ -301,7 +301,7 @@ contains
         send_element_uns(i)%p = elements_send(1:nelements_send)
 
         allocate(send_nodes_connectivity(i)%p(number_of_elements_and_nodes_to_send(1, i) * size(enlist_b, 1)))
-        
+
         ! Build an element-node graph for sending with contiguous indices
         call allocate(node_map)
         j = 0

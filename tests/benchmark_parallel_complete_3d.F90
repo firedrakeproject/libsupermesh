@@ -53,14 +53,14 @@ subroutine benchmark_parallel_complete_3D
   if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/cube_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/cube_0_5"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/cube_0_9_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/cube_0_9"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/pyramid_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/pyramid_0_5"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/pyramid_0_9_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/pyramid_0_9"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   test_parallel_ele_B = count(ele_ownerB == rank)
@@ -94,8 +94,8 @@ subroutine benchmark_parallel_complete_3D
   call deallocate(positionsA)
   call deallocate(positionsB)
 
-  vols_serial = 1.0
-  integral_serial = 0.5
+  vols_serial = 333.333333333330359
+  integral_serial = 2222.21838486535671
 
   if(rank == root) then
     write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
@@ -107,8 +107,8 @@ subroutine benchmark_parallel_complete_3D
     write(output_unit, "(a,f19.15)") "Volume, serial   =", vols_serial
     write(output_unit, "(a,f19.15)") "Volume, parallel =", vols_parallel
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Integral, serial   =", integral_serial
-    write(output_unit, "(a,f19.15)") "Integral, parallel =", integral_parallel
+    write(output_unit, "(a,f19.14)") "Integral, serial   =", integral_serial
+    write(output_unit, "(a,f19.14)") "Integral, parallel =", integral_parallel
 
     fail = fnequals(vols_parallel, vols_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
@@ -181,15 +181,13 @@ contains
 
     if (local) then
       do ele_c = 1, nelements_c
-!        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
         vols_parallel = vols_parallel + tetrahedron_volume(positions_c(:, :, ele_c))
-!        integral_parallel = integral_parallel + valsB(ele_b) * triangle_area(positions_c(:, :, ele_c))
+        integral_parallel = integral_parallel + valsB(ele_b) * tetrahedron_volume(positions_c(:, :, ele_c))
       end do
     else
       do ele_c = 1, nelements_c
-!        area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
         vols_parallel = vols_parallel + tetrahedron_volume(positions_c(:, :, ele_c))
-!        integral_parallel = integral_parallel + data_b_data(ele_b) * triangle_area(positions_c(:, :, ele_c))
+        integral_parallel = integral_parallel + data_b_data(ele_b) * tetrahedron_volume(positions_c(:, :, ele_c))
       end do
     end if
 
