@@ -50,8 +50,8 @@ subroutine benchmark_serial_same_algo
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_002"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_004"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/triangle_0_05"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/triangle_0_09"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
@@ -93,8 +93,8 @@ subroutine benchmark_serial_same_algo
 
   call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  area_parallel = 1.0
-  integral_parallel = 0.5
+  area_parallel = 45.0
+  integral_parallel = 225.0
 
   if(rank == root) then
     write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time

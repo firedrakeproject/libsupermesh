@@ -602,7 +602,9 @@ contains
           end do
         end do
 
+        ! Deallocate arrays now, to conserve memory
         deallocate(recv_nodes_values(i)%p)
+        deallocate(recv_nodes_connectivity(i)%p)
         deallocate(ldata)
       end if
     end do

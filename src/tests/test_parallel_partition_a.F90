@@ -49,8 +49,8 @@ subroutine test_parallel_partition_a
 ! Do everything in serial  
   if ( mpi_my_id .eq. 0 ) then  
     t_0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
-    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
+    positionsA = read_triangle_files("data/square_0_5"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
+    positionsB = read_triangle_files("data/square_0_9"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     mesh_serial = mpi_wtime() - t_0
@@ -102,7 +102,7 @@ subroutine test_parallel_partition_a
       write(mpi_my_id_character,'(I5)') mpi_my_id
 
       t_0 = mpi_wtime()
-      filenameA = trim(adjustl("data/square_0_2_"))//trim(adjustl(mpi_num_procs_character))//"_"//trim(adjustl(mpi_my_id_character))
+      filenameA = trim(adjustl("data/square_0_5_"))//trim(adjustl(mpi_num_procs_character))//"_"//trim(adjustl(mpi_my_id_character))
 
 !      print "(a,i5,a,i10,a,a,a)", "MPI Process:",mpi_my_id,", has nodes:",nnodes,", read from:",trim(filenameA),"."
       call FLUSH()
@@ -110,13 +110,13 @@ subroutine test_parallel_partition_a
       positionsA = read_triangle_files(trim(filenameA), dim)
       parallel_ele_A = ele_count(positionsA)
 
-      call read_halo("data/square_0_2"//"_"//trim(adjustl(mpi_num_procs_character)), halo, level = 2)
+      call read_halo("data/square_0_5"//"_"//trim(adjustl(mpi_num_procs_character)), halo, level = 2)
       allocate(ele_owner(ele_count(positionsA)))
       call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_owner)
       parallel_ele_A = count(ele_owner == mpi_my_id)
       call deallocate(halo)
 
-      positionsB = read_triangle_files("data/square_0_1"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
+      positionsB = read_triangle_files("data/square_0_9"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
       parallel_ele_B = ele_count(positionsB) 
 
       mesh_parallel = mpi_wtime() - t_0

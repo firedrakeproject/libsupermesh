@@ -49,8 +49,8 @@ subroutine test_parallel_partition_b
 ! Do everything in serial  
   if ( mpi_my_id .eq. 0 ) then  
     t_0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_2"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
-    positionsB = read_triangle_files("data/square_0_1"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
+    positionsA = read_triangle_files("data/square_0_5"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
+    positionsB = read_triangle_files("data/square_0_9"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     mesh_serial = mpi_wtime() - t_0
@@ -102,14 +102,14 @@ subroutine test_parallel_partition_b
       write(mpi_my_id_character,'(I5)') mpi_my_id
 
       t_0 = mpi_wtime()
-      positionsA = read_triangle_files("data/square_0_2"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
+      positionsA = read_triangle_files("data/square_0_5"//"_"//trim(adjustl(mpi_num_procs_character)), dim)
       parallel_ele_A = ele_count(positionsA)
 
 
-      filenameB = trim(adjustl("data/square_0_1_"))//trim(adjustl(mpi_num_procs_character))//"_"//trim(adjustl(mpi_my_id_character))
+      filenameB = trim(adjustl("data/square_0_9_"))//trim(adjustl(mpi_num_procs_character))//"_"//trim(adjustl(mpi_my_id_character))
       positionsB = read_triangle_files(trim(filenameB), dim)
 
-      call read_halo("data/square_0_1"//"_"//trim(adjustl(mpi_num_procs_character)), halo, level = 2)
+      call read_halo("data/square_0_9"//"_"//trim(adjustl(mpi_num_procs_character)), halo, level = 2)
       allocate(ele_owner(ele_count(positionsB)))
       call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_owner)
       parallel_ele_B = count(ele_owner == mpi_my_id)

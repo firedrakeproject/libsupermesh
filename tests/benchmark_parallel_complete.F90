@@ -26,6 +26,7 @@ subroutine benchmark_parallel_complete
   type(halo_type) :: halo
   type(vector_field) :: positionsA, positionsB
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
+  
   real :: t0, serial_time, parallel_time, serial_read_time, parallel_read_time
   logical :: fail
 
@@ -53,14 +54,14 @@ subroutine benchmark_parallel_complete
   if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_002_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_002"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/triangle_0_05_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/triangle_0_05"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_004_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_004"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/triangle_0_09_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/triangle_0_09"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   test_parallel_ele_B = count(ele_ownerB == rank)
@@ -94,8 +95,8 @@ subroutine benchmark_parallel_complete
   call deallocate(positionsA)
   call deallocate(positionsB)
 
-  area_serial = 1.0
-  integral_serial = 0.5
+  area_serial = 45.0
+  integral_serial = 225.0
 
   if(rank == root) then
     write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time

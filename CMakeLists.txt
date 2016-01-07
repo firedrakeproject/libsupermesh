@@ -566,15 +566,12 @@ add_custom_command(TARGET test_tri_intersector
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" ./
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" unittests/
   COMMAND cp -r "${PROJECT_SOURCE_DIR}/tests/data/" ./
-  COMMAND unzip -o data/square_0_002.zip -d data/
-  COMMAND unzip -o data/square_0_004.zip -d data/
-  COMMAND unzip -o data/square_0_008.zip -d data/
-  COMMAND unzip -o data/square_0_02.zip -d data/
-  COMMAND unzip -o data/square_0_01.zip -d data/
-  COMMAND unzip -o data/square_0_1.zip -d data/
-  COMMAND unzip -o data/square_0_2.zip -d data/
-  COMMAND unzip -o data/cube_0_5.zip -d data/
-  COMMAND unzip -o data/pyramid_0_5.zip -d data/
+  COMMAND unzip -o data/2D_09.zip -d data/
+  COMMAND unzip -o data/2D_05.zip -d data/
+  COMMAND unzip -o data/2D_9.zip -d data/
+  COMMAND unzip -o data/2D_5.zip -d data/
+  COMMAND unzip -o data/3D_9.zip -d data/
+  COMMAND unzip -o data/3D_5.zip -d data/
 #  COMMAND cd unittests && ./test_tri_intersector && cd ..
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Copying test data files"

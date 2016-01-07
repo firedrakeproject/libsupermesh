@@ -64,13 +64,13 @@ subroutine test_parallel_universal_node_numbering
   hostname = "unknown"
 #endif
   write(buffer, "(a,a,a,i0,a)") "Running on '", trim(hostname), "' with ", nprocs, " processes"
-  call write_parallel(buffer)
+  if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_008"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_02"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/square_0_5"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/square_0_09"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     call deallocate(positionsA)
@@ -95,8 +95,8 @@ subroutine test_parallel_universal_node_numbering
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_008_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_008"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/square_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_5"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   parallel_ele_A = count(ele_ownerA == rank)
@@ -131,8 +131,8 @@ subroutine test_parallel_universal_node_numbering
   end if
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_02_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/square_0_02"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/square_0_09_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/square_0_09"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   parallel_ele_B = count(ele_ownerB == rank)

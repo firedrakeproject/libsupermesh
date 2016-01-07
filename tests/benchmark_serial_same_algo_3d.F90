@@ -51,8 +51,8 @@ subroutine benchmark_serial_same_algo_3D
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/cube_0_5"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/pyramid_0_5"//"_"//trim(nprocs_character), dim)
+    positionsA = read_triangle_files("data/pyramid_0_5"//"_"//trim(nprocs_character), dim)
+    positionsB = read_triangle_files("data/pyramid_0_9"//"_"//trim(nprocs_character), dim)
     serial_ele_A = ele_count(positionsA)
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
@@ -62,7 +62,7 @@ subroutine benchmark_serial_same_algo_3D
 
     allocate(valsB(serial_ele_B))
     do ele_B = 1, serial_ele_B
-      valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
+      valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 4.0
     end do
     vols_serial = 0.0
     integral_serial = 0.0
@@ -94,15 +94,15 @@ subroutine benchmark_serial_same_algo_3D
 
   call MPI_Allreduce(MPI_IN_PLACE, vols_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  vols_parallel = 333.333333333330359
-  integral_parallel = 2222.21838486535671
+  vols_parallel = 1125.0
+  integral_parallel = 5625.0
 
   if(rank == root) then
     write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.15)") "Read Time, serial    =", serial_read_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Volume, serial       =", vols_serial
+    write(output_unit, "(a,f19.14)") "Volume, serial       =", vols_serial
     write(output_unit, "(a,f19.14)") "Integral, serial     =", integral_serial
 
     fail = fnequals(vols_parallel, vols_serial, tol = tol)

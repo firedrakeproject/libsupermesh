@@ -53,8 +53,8 @@ subroutine benchmark_parallel_complete_3D
   if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/cube_0_9_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/cube_0_9"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsA = read_triangle_files(trim("data/pyramid_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/pyramid_0_5"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerA(ele_count(positionsA)))
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   call deallocate(halo)
@@ -70,7 +70,7 @@ subroutine benchmark_parallel_complete_3D
   t0 = mpi_wtime()
   allocate(valsB(test_parallel_ele_B))
   do ele_B = 1, test_parallel_ele_B
-    valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
+    valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 4.0
   end do
   call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr);  CHKERRQ(ierr)
   call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr);  CHKERRQ(ierr)
@@ -94,8 +94,8 @@ subroutine benchmark_parallel_complete_3D
   call deallocate(positionsA)
   call deallocate(positionsB)
 
-  vols_serial = 333.333333333330359
-  integral_serial = 2222.21838486535671
+  vols_serial = 1125.0
+  integral_serial = 5625.0
 
   if(rank == root) then
     write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
@@ -104,10 +104,8 @@ subroutine benchmark_parallel_complete_3D
     write(output_unit, "(a,f19.15)") "Read Time, serial         =", serial_read_time
     write(output_unit, "(a,f19.15)") "(MAX) Read Time, parallel =", parallel_read_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Volume, serial   =", vols_serial
-    write(output_unit, "(a,f19.15)") "Volume, parallel =", vols_parallel
+    write(output_unit, "(a,f19.14)") "Volume, parallel =", vols_parallel
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.14)") "Integral, serial   =", integral_serial
     write(output_unit, "(a,f19.14)") "Integral, parallel =", integral_parallel
 
     fail = fnequals(vols_parallel, vols_serial, tol = tol)
