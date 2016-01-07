@@ -9,8 +9,8 @@ module libsupermesh_fields
   private
 
   public :: mesh_type, vector_field, eelist_type, allocate, deallocate, &
-    & mesh_eelist, sloc, extract_eelist, ele_count, node_count, ele_val, &
-    & ele_loc, node_val, row_m_ptr, ele_nodes, set, set_ele_nodes, &
+    & mesh_nelist, mesh_eelist, sloc, extract_eelist, ele_count, node_count, &
+    & ele_val, ele_loc, node_val, row_m_ptr, ele_nodes, set, set_ele_nodes, &
     & simplex_volume, triangle_area, tetrahedron_volume
 
   type mesh_type
@@ -162,22 +162,18 @@ contains
 
   end subroutine deallocate_vector_field
 
-  subroutine mesh_eelist(nnodes, enlist, sloc, eelist)
+  subroutine mesh_nelist(nnodes, enlist, nelist_indices, nelist_indptr)
     integer, intent(in) :: nnodes
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
-    integer, intent(in) :: sloc
-    type(eelist_type), intent(out) :: eelist
-
-    integer :: ele, i, j, k, k_max, k_min, loc, nelements, nneigh_ele
-
-    integer, dimension(:), allocatable :: nelist_n
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
     !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
-    integer, dimension(:), allocatable :: nelist_indices, nelist_indptr
-
-    integer, dimension(:), allocatable :: seen, seen_eles
-    integer :: nseen_eles
+    integer, dimension(:), allocatable, intent(out) :: nelist_indices
+    ! nnodes + 1
+    integer, dimension(:), intent(out) :: nelist_indptr
+    
+    integer :: i, j, loc, nelements
+    integer, dimension(:), allocatable :: nelist_n
 
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
@@ -185,7 +181,7 @@ contains
     ! Construct the node-element list. Based on NODELE in Fluidity
     ! femtools/Adjacency_Lists.F90 (see e.g. Fluidity version 4.1.11). Code
     ! first added 05/07/2015.
-    allocate(nelist_n(nnodes), nelist_indptr(nnodes + 1))
+    allocate(nelist_n(nnodes))
     nelist_n = 0
     do i = 1, nelements
       do j = 1, loc
@@ -205,7 +201,31 @@ contains
       end do
     end do
     deallocate(nelist_n)
+  
+  end subroutine mesh_nelist    
 
+  subroutine mesh_eelist(nnodes, enlist, sloc, eelist)
+    integer, intent(in) :: nnodes
+    ! loc x nelements
+    integer, dimension(:, :), intent(in) :: enlist
+    integer, intent(in) :: sloc
+    type(eelist_type), intent(out) :: eelist
+
+    integer :: ele, i, j, k, k_max, k_min, loc, nelements, nneigh_ele
+
+    ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
+    !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
+    integer, dimension(:), allocatable :: nelist_indices, nelist_indptr
+
+    integer, dimension(:), allocatable :: seen, seen_eles
+    integer :: nseen_eles
+
+    loc = size(enlist, 1)
+    nelements = size(enlist, 2)
+
+    allocate(nelist_indptr(nnodes + 1))
+    call mesh_nelist(nnodes, enlist, nelist_indices, nelist_indptr)
+    
     allocate(seen_eles(nelements), seen(nelements))
     seen = 0
     nneigh_ele = loc  ! Linear simplex assumption here (works for more general
