@@ -1,29 +1,26 @@
-#include "fdebug.h"
-
 subroutine benchmark_parallel_p1_inner_product
 
   use iso_c_binding, only : c_int8_t
 
   use libsupermesh_fields, only : triangle_area
-  use libsupermesh_fldebug
-  use libsupermesh_halo_ownership
-  use libsupermesh_parallel_supermesh
-  use libsupermesh_read_halos
-  use libsupermesh_read_triangle
+  use libsupermesh_halo_ownership, only : element_ownership
+  use libsupermesh_parallel_supermesh, only : parallel_supermesh
+  use libsupermesh_read_halos, only : halo_type, deallocate, read_halo
+  use libsupermesh_read_triangle, only : read_ele, read_node
 
   implicit none
 
 #include <finclude/petsc.h90>
-
-  character(len = 1) :: rank_chr
-  integer :: ierr, nprocs, rank
-  integer :: integer_extent, real_extent
   
-  character(len = *), parameter :: basename_a = "data/triangle_0_05_4"
-  character(len = *), parameter :: basename_b = "data/square_0_05_4"
+  character(len = *), parameter :: basename_a = "data/triangle_0_05_4", &
+                                 & basename_b = "data/square_0_05_4"
+  integer, parameter :: dim_a = 2, dim_b = 2
+
+  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr
+  integer :: ierr, integer_extent, rank, real_extent
+  real :: real_buffer
  
   integer :: loc_a, nelements_a, nelements_b, nnodes_a, nnodes_b
-  integer, parameter :: dim_a = 2, dim_b = 2
   integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   real, dimension(:), allocatable, target :: field_a
@@ -37,21 +34,18 @@ subroutine benchmark_parallel_p1_inner_product
   ! Quadrature rule from D. A. Dunavant, "High degree efficient symmetrical
   ! Gaussian quadrature rules for the triangle", International Journal for
   ! Numerical Methods in Engineering, 21, pp. 1129--1148, 1985, appendix II
-  real, dimension(3), parameter :: quad_weights = (/1.0D0, 1.0D0, 1.0D0/) / 6.0D0
+  real, dimension(3), parameter :: quad_weights = (/1.0D0, 1.0D0, 1.0D0/) / 3.0D0
   real, dimension(3, 3), parameter :: quad_points = reshape((/4.0D0, 1.0D0, 1.0D0, 1.0D0, 4.0D0, 1.0D0, 1.0D0, 1.0D0, 4.0D0/) / 6.0D0, (/3, 3/))
-  real :: area_parallel, integral_parallel, real_buffer
+  real :: area_parallel, integral_parallel
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  CHKERRQ(ierr)
-  call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  CHKERRQ(ierr)
-  if(nprocs /= 4) then
-    FLAbort("Require 4 processes")
-  end if    
   write(rank_chr, "(i0)") rank
+  rank_chr = adjustl(rank_chr)
   call MPI_Type_extent(MPI_INTEGER, integer_extent, ierr);  CHKERRQ(ierr)
   call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  CHKERRQ(ierr)
   
-  call read_node(basename_a // "_" // rank_chr // ".node", dim = dim_a, coords = positions_a)
-  call read_ele(basename_a // "_" // rank_chr // ".ele", dim = dim_a, enlist = enlist_a)
+  call read_node(trim(basename_a) // "_" // trim(rank_chr) // ".node", dim = dim_a, coords = positions_a)
+  call read_ele(trim(basename_a) // "_" // trim(rank_chr) // ".ele", dim = dim_a, enlist = enlist_a)
   nnodes_a = size(positions_a, 2)
   loc_a = size(enlist_a, 1)
   nelements_a = size(enlist_a, 2)
@@ -61,8 +55,8 @@ subroutine benchmark_parallel_p1_inner_product
   allocate(field_a(nnodes_a))
   field_a = positions_a(1, :)
   
-  call read_node(basename_b // "_"// rank_chr // ".node", dim = dim_b, coords = positions_b)
-  call read_ele(basename_b // "_" // rank_chr // ".ele", dim = dim_b, enlist = enlist_b)
+  call read_node(trim(basename_b) // "_"// trim(rank_chr) // ".node", dim = dim_b, coords = positions_b)
+  call read_ele(trim(basename_b) // "_" // trim(rank_chr) // ".ele", dim = dim_b, enlist = enlist_b)
   nnodes_b = size(positions_b, 2)
   nelements_b = size(enlist_b, 2)
   call read_halo(basename_b, halo_b, level = 2)
@@ -87,24 +81,23 @@ subroutine benchmark_parallel_p1_inner_product
     print "(a,e26.18e3)", "Integral = ", integral_parallel
   end if
                         
-  deallocate(positions_a, enlist_a, positions_b, enlist_b, ele_owner_a, ele_owner_b, field_a, field_b)
+  deallocate(positions_a, enlist_a, ele_owner_a, field_a, &
+           & positions_b, enlist_b, ele_owner_b, field_b)
   call deallocate(halo_a)
   call deallocate(halo_b)
 
 contains
 
   subroutine donor_ele_data(nodes_a, eles_a, data_a)
-    integer, dimension(:), intent(in)                                :: nodes_a
-    integer, dimension(:), intent(in)                                :: eles_a
+    integer, dimension(:), intent(in) :: nodes_a
+    integer, dimension(:), intent(in) :: eles_a
     integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_a
     
-    integer :: i, lnode, ndata_a, node, position
+    integer :: ndata_a, position
     real, dimension(:), allocatable :: data_field_a
     
     allocate(data_field_a(size(nodes_a)))
-    do i = 1, size(nodes_a)
-      data_field_a(i) = field_a(nodes_a(i))
-    end do
+    data_field_a = field_a(nodes_a)
     
     ndata_a = integer_extent + size(data_field_a) * real_extent
     allocate(data_a(ndata_a))
@@ -134,7 +127,7 @@ contains
     if(allocated(data_field_a)) deallocate(data_field_a)
   end subroutine cleanup_unpack_data_a
   
-  pure function basis_functions(cell_coords, coord) result(fns)
+  pure function basis_functions_p1(cell_coords, coord) result(fns)
     real, dimension(2, 3), intent(in) :: cell_coords
     real, dimension(2), intent(in) :: coord
 
@@ -153,18 +146,18 @@ contains
     fns(2:3) = matmul(jac, coord - cell_coords(:, 1))
     fns(1) = 1.0 - fns(2) - fns(3)
 
-  end function basis_functions
+  end function basis_functions_p1
 
-  pure function interpolate(cell_coords_d, cell_x_d, coord_s) result(x_s)
+  pure function interpolate_p1(cell_coords_d, cell_x_d, coord_s) result(x_s)
     real, dimension(2, 3), intent(in) :: cell_coords_d
     real, dimension(3), intent(in) :: cell_x_d
     real, dimension(2), intent(in) :: coord_s
 
     real :: x_s
 
-    x_s = dot_product(basis_functions(cell_coords_d, coord_s), cell_x_d)
+    x_s = dot_product(basis_functions_p1(cell_coords_d, coord_s), cell_x_d)
 
-  end function interpolate
+  end function interpolate_p1
   
   subroutine intersection_calculation(positions_b, positions_a, positions_c, nodes_a, ele_b, ele_a, local)
     ! dim x loc_b
@@ -198,9 +191,9 @@ contains
       do i = 1, size(quad_weights)
         quad_point(1) = dot_product(quad_points(:, i), positions_c(1, :, ele_c))
         quad_point(2) = dot_product(quad_points(:, i), positions_c(2, :, ele_c))
-        integral_parallel = integral_parallel + 2.0D0 * quad_weights(i) * area &
-                                              & * interpolate(positions_a, lfield_a(nodes_a), quad_point) &
-                                              & * interpolate(positions_b, field_b(enlist_b(:, ele_b)), quad_point)
+        integral_parallel = integral_parallel + quad_weights(i) * area &
+                                              & * interpolate_p1(positions_a, lfield_a(nodes_a), quad_point) &
+                                              & * interpolate_p1(positions_b, field_b(enlist_b(:, ele_b)), quad_point)
       end do
     end do
     
