@@ -9,7 +9,7 @@ module libsupermesh_read_triangle
 
   private
 
-  public :: read_triangle_files
+  public :: read_node, read_ele, read_triangle_files
 
 contains
 
