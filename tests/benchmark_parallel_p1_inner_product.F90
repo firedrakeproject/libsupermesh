@@ -89,8 +89,8 @@ subroutine benchmark_parallel_p1_inner_product
   call MPI_Allreduce(integral_parallel, real_buffer, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   integral_parallel = real_buffer
   if(rank == 0) then
-    print *, "Area     = ", area_parallel
-    print *, "Integral = ", integral_parallel
+    print "(a,e26.18e3)", "Area     = ", area_parallel
+    print "(a,e26.18e3)", "Integral = ", integral_parallel
   end if
                         
   deallocate(positions_a, enlist_a, positions_b, enlist_b, ele_owner_a, ele_owner_b, field_a, field_b)
