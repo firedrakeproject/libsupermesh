@@ -175,9 +175,10 @@ subroutine test_parallel_partition_complete_ab_same_algo
 
 contains
 
-  subroutine local_donor_ele_data(eles, data)
-    integer, dimension(:), intent(in)                   :: eles
-    integer(kind = c_int8_t), dimension(:), allocatable :: data
+  subroutine local_donor_ele_data(nodes, eles, data)
+    integer, dimension(:), intent(in)                                :: nodes
+    integer, dimension(:), intent(in)                                :: eles
+    integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data
 
     integer :: ierr, ndata, position
     real, dimension(:), allocatable :: ldata
@@ -216,9 +217,15 @@ contains
 
   end subroutine cleanup_data_b
 
-  subroutine local_intersection_calculation(positions_c, ele_a, ele_b, local)
+  subroutine local_intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
+    ! dim x loc_a
+    real, dimension(:, :), intent(in) :: positions_a
+    ! dim x loc_b
+    real, dimension(:, :), intent(in) :: positions_b
     ! dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
+    ! loc_b
+    integer, dimension(:), intent(in) :: nodes_b
     integer, intent(in)     :: ele_a
     integer, intent(in)     :: ele_b
     logical, intent(in)     :: local

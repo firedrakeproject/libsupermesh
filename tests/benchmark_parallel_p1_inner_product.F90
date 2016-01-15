@@ -6,8 +6,6 @@ subroutine benchmark_parallel_p1_inner_product
 
   use libsupermesh_fields, only : triangle_area
   use libsupermesh_fldebug
-  use libsupermesh_integer_hash_table
-  use libsupermesh_integer_set
   use libsupermesh_halo_ownership
   use libsupermesh_parallel_supermesh
   use libsupermesh_read_halos
@@ -27,18 +25,14 @@ subroutine benchmark_parallel_p1_inner_product
   integer :: loc_a, nelements_a, nelements_b, nnodes_a, nnodes_b
   integer, parameter :: dim_a = 2, dim_b = 2
   integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
-  integer, dimension(:, :), allocatable, target :: enlist_a
-  integer, dimension(:, :), allocatable :: enlist_b
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   real, dimension(:), allocatable, target :: field_a
   real, dimension(:), allocatable :: field_b
-  real, dimension(:, :), allocatable, target :: positions_a
-  real, dimension(:, :), allocatable :: positions_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
   type(halo_type) :: halo_a, halo_b
   
-  integer :: data_nelements_a, data_nnodes_a
-  integer, dimension(:, :), allocatable, target :: data_enlist_a
+  integer :: data_nnodes_a
   real, dimension(:), allocatable, target :: data_field_a
-  real, dimension(:, :), allocatable, target :: data_positions_a
   
   ! Quadrature rule from D. A. Dunavant, "High degree efficient symmetrical
   ! Gaussian quadrature rules for the triangle", International Journal for
@@ -99,50 +93,26 @@ subroutine benchmark_parallel_p1_inner_product
 
 contains
 
-  subroutine donor_ele_data(eles_a, data_a)
-    integer, dimension(:), intent(in)                   :: eles_a
-    integer(kind = c_int8_t), dimension(:), allocatable :: data_a
+  subroutine donor_ele_data(nodes_a, eles_a, data_a)
+    integer, dimension(:), intent(in)                                :: nodes_a
+    integer, dimension(:), intent(in)                                :: eles_a
+    integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_a
     
-    integer :: data_nnodes_a, i, lnode, ndata_a, node, position
-    integer, dimension(:, :), allocatable :: data_enlist_a
+    integer :: i, lnode, ndata_a, node, position
     real, dimension(:), allocatable :: data_field_a
-    real, dimension(:, :), allocatable :: data_positions_a
-    type(integer_hash_table) :: node_map
-    type(integer_set) :: nodes
     
-    call allocate(nodes)
-    do i = 1, size(eles_a)
-      do lnode = 1, loc_a
-        call insert(nodes, enlist_a(lnode, eles_a(i)))
-      end do
+    allocate(data_field_a(size(nodes_a)))
+    do i = 1, size(nodes_a)
+      data_field_a(i) = field_a(nodes_a(i))
     end do
-    data_nnodes_a = key_count(nodes)
-    call allocate(node_map)
-    allocate(data_positions_a(dim_a, data_nnodes_a), data_field_a(data_nnodes_a))
-    do i = 1, data_nnodes_a
-      node = fetch(nodes, i)
-      call insert(node_map, node, i)
-      data_positions_a(:, i) = positions_a(:, node)
-      data_field_a(i) = field_a(node)
-    end do
-    call deallocate(nodes)
-    allocate(data_enlist_a(loc_a, size(eles_a)))
-    do i = 1, size(eles_a)
-      do lnode = 1, loc_a
-        data_enlist_a(lnode, i) = fetch(node_map, enlist_a(lnode, eles_a(i)))
-      end do
-    end do
-    call deallocate(node_map)
     
-    ndata_a = (2 + loc_a * size(eles_a)) * integer_extent + (dim_a + 1) * size(data_field_a) * real_extent
+    ndata_a = integer_extent + size(data_field_a) * real_extent
     allocate(data_a(ndata_a))
     position = 0
-    call MPI_Pack((/size(eles_a), size(data_field_a)/), 2, MPI_INTEGER, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-    call MPI_Pack(data_enlist_a, loc_a * size(eles_a), MPI_INTEGER, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-    call MPI_Pack(data_positions_a, dim_a * size(data_field_a), MPI_DOUBLE_PRECISION, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Pack(size(data_field_a), 1, MPI_INTEGER, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
     call MPI_Pack(data_field_a, size(data_field_a), MPI_DOUBLE_PRECISION, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
     
-    deallocate(data_enlist_a, data_positions_a, data_field_a)
+    deallocate(data_field_a)
     
   end subroutine donor_ele_data
   
@@ -150,25 +120,18 @@ contains
     integer(kind = c_int8_t), dimension(:), intent(in) :: data_a
     
     integer :: position
-    integer, dimension(2) :: data_header_a
     
     call cleanup_unpack_data_a()
     
     position = 0
-    call MPI_Unpack(data_a, size(data_a), position, data_header_a, 2, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-    data_nelements_a = data_header_a(1)
-    data_nnodes_a = data_header_a(2)
-    allocate(data_enlist_a(loc_a, data_nelements_a), data_positions_a(dim_a, data_nnodes_a), data_field_a(data_nnodes_a))
-    call MPI_Unpack(data_a, size(data_a), position, data_enlist_a, loc_a * data_nelements_a, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-    call MPI_Unpack(data_a, size(data_a), position, data_positions_a, dim_a * data_nnodes_a, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Unpack(data_a, size(data_a), position, data_nnodes_a, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    allocate(data_field_a(data_nnodes_a))
     call MPI_Unpack(data_a, size(data_a), position, data_field_a, data_nnodes_a, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
     
   end subroutine unpack_data_a
   
   subroutine cleanup_unpack_data_a()
-    if(allocated(data_enlist_a)) then
-      deallocate(data_enlist_a, data_positions_a, data_field_a)
-    end if
+    if(allocated(data_field_a)) deallocate(data_field_a)
   end subroutine cleanup_unpack_data_a
   
   pure function basis_functions(cell_coords, coord) result(fns)
@@ -203,29 +166,29 @@ contains
 
   end function interpolate
   
-  subroutine intersection_calculation(positions_c, ele_b, ele_a, local)
+  subroutine intersection_calculation(positions_b, positions_a, positions_c, nodes_a, ele_b, ele_a, local)
+    ! dim x loc_b
+    real, dimension(:, :), intent(in) :: positions_b
+    ! dim x loc_a
+    real, dimension(:, :), intent(in) :: positions_a
     ! dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
+    ! loc_a
+    integer, dimension(:), intent(in) :: nodes_a
     integer, intent(in) :: ele_b
     integer, intent(in) :: ele_a
     logical, intent(in) :: local
     
     integer :: ele_c, i, nelements_c
-    integer, dimension(:, :), pointer :: lenlist_a
     real :: area
     real, dimension(2) :: quad_point
     real, dimension(:), pointer :: lfield_a
-    real, dimension(:, :), pointer :: lpositions_a
     
     nelements_c = size(positions_c, 3)
     
     if(local) then
-      lenlist_a => enlist_a
-      lpositions_a => positions_a
       lfield_a => field_a
     else
-      lenlist_a => data_enlist_a
-      lpositions_a => data_positions_a
       lfield_a => data_field_a
     end if
     
@@ -236,10 +199,11 @@ contains
         quad_point(1) = dot_product(quad_points(:, i), positions_c(1, :, ele_c))
         quad_point(2) = dot_product(quad_points(:, i), positions_c(2, :, ele_c))
         integral_parallel = integral_parallel + 2.0D0 * quad_weights(i) * area &
-                                              & * interpolate(lpositions_a(:, lenlist_a(:, ele_a)), lfield_a(lenlist_a(:, ele_a)), quad_point) &
-                                              & * interpolate(positions_b(:, enlist_b(:, ele_b)), field_b(enlist_b(:, ele_b)), quad_point)
+                                              & * interpolate(positions_a, lfield_a(nodes_a), quad_point) &
+                                              & * interpolate(positions_b, field_b(enlist_b(:, ele_b)), quad_point)
       end do
     end do
+    
     
   end subroutine intersection_calculation
   

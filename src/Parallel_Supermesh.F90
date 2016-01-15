@@ -80,11 +80,12 @@ contains
     integer, dimension(:), intent(in)    :: ele_owner_b
     integer, optional, intent(in) :: comm
     interface
-      subroutine donor_ele_data(eles, data)
+      subroutine donor_ele_data(nodes, eles, data)
         use iso_c_binding, only : c_int8_t
         implicit none
-        integer, dimension(:), intent(in)                   :: eles
-        integer(kind = c_int8_t), dimension(:), allocatable :: data
+        integer, dimension(:), intent(in)                                :: nodes
+        integer, dimension(:), intent(in)                                :: eles
+        integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data
       end subroutine donor_ele_data
 
       subroutine unpack_data_b(data_b)
@@ -93,11 +94,17 @@ contains
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
       end subroutine unpack_data_b
       
-      subroutine intersection_calculation(positions_c, ele_a, ele_b, local)
+      subroutine intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
         use iso_c_binding, only : c_int8_t
         implicit none
+        ! dim x loc_a
+        real, dimension(:, :), intent(in) :: positions_a
+        ! dim x loc_b
+        real, dimension(:, :), intent(in) :: positions_b
         ! dim x loc_c x nelements_c
         real, dimension(:, :, :), intent(in) :: positions_c
+        ! loc_b
+        integer, dimension(:), intent(in) :: nodes_b
         integer, intent(in)     :: ele_a
         integer, intent(in)     :: ele_b
         logical, intent(in)     :: local
@@ -195,7 +202,7 @@ contains
 
     integer    :: ele_B, i, j, k, ierr, buffer_size, dp_extent, int_extent, position
     
-    integer, dimension(:), allocatable :: elements_send
+    integer, dimension(:), allocatable :: elements_send, send_nodes_array
     integer :: nelements_send
     type(integer_set) :: nodes_send
     type(integer_hash_table) :: node_map
@@ -203,11 +210,12 @@ contains
     integer :: node
 
     interface
-      subroutine donor_ele_data(eles, data)
+      subroutine donor_ele_data(nodes, eles, data)
         use iso_c_binding, only : c_int8_t
         implicit none
-        integer, dimension(:), intent(in)                   :: eles
-        integer(kind = c_int8_t), dimension(:), allocatable :: data
+        integer, dimension(:), intent(in)                                :: nodes
+        integer, dimension(:), intent(in)                                :: eles
+        integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data
       end subroutine donor_ele_data
     end interface
 
@@ -318,19 +326,20 @@ contains
         call deallocate(node_map)
         deallocate(elements_send)
 
-        allocate(send_nodes_values(i)%p(nnodes_send * size(positions_b, 1)))
+        allocate(send_nodes_array(nnodes_send), send_nodes_values(i)%p(nnodes_send * size(positions_b, 1)))
 #ifndef NDEBUG
         send_nodes_values(i)%p = -22.0D0
 #endif
         do j = 1, nnodes_send
           node = fetch(nodes_send, j)
+          send_nodes_array(j) = node
           send_nodes_values(i)%p((j - 1) * size(positions_b, 1) + 1:j * size(positions_b, 1)) = positions_b(:, node)
         end do
         call deallocate(nodes_send)
 
       ! ### Mesh send buffer allocation ###
         if ( number_of_elements_and_nodes_to_send(1,i) > 0 ) then
-          call donor_ele_data(send_element_uns(i)%p, data)
+          call donor_ele_data(send_nodes_array, send_element_uns(i)%p, data)
 
           buffer_size = int_extent + int_extent +                          &
                     &   (size(send_nodes_connectivity(i)%p) * int_extent) + &
@@ -402,6 +411,7 @@ contains
           allocate(send_buffer(i)%p(buffer_size))
           send_buffer(i)%p = buffer_mpi
         end if
+        deallocate(send_nodes_array)
 
         sends = sends + 1
 
@@ -449,11 +459,17 @@ contains
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
       end subroutine unpack_data_b
 
-      subroutine intersection_calculation(positions_c, ele_a, ele_b, local)
+      subroutine intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
         use iso_c_binding, only : c_int8_t
         implicit none
+        ! dim x loc_a
+        real, dimension(:, :), intent(in) :: positions_a
+        ! dim x loc_b
+        real, dimension(:, :), intent(in) :: positions_b
         ! dim x loc_c x nelements_c
         real, dimension(:, :, :), intent(in) :: positions_c
+        ! loc_b
+        integer, dimension(:), intent(in) :: nodes_b
         integer, intent(in) :: ele_a
         integer, intent(in) :: ele_b
         logical, intent(in) :: local
@@ -494,7 +510,7 @@ contains
         nodes_A = positions_a(:, enlist_a(:, ele_A))
 
         call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
-        call intersection_calculation(positions_c(:, :, :n_C), ele_A, ele_B, .true.)
+        call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), enlist_b(:, ele_B), ele_A, ele_B, .true.)
 
       end do
     end do
@@ -598,7 +614,7 @@ contains
             nodes_A = positions_a(:, enlist_a(:, ele_A))
 
             call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
-            call intersection_calculation(positions_c(:, :, :n_C), ele_A, ele_B, .false.)
+            call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), recv_nodes_connectivity(i)%p((ele_B - 1) * size(enlist_b, 1) + 1:ele_B * size(enlist_B, 1)), ele_A, ele_B, .false.)
           end do
         end do
 
