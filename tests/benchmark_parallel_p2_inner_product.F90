@@ -17,6 +17,7 @@ subroutine benchmark_parallel_p2_inner_product
 
 #include <finclude/petsc.h90>
   
+  ! Input Triangle mesh base names
   character(len = *), parameter :: basename_a = "data/triangle_0_05_4", &
                                  & basename_b = "data/square_0_05_4"
 
@@ -45,7 +46,7 @@ subroutine benchmark_parallel_p2_inner_product
                                                         & -1.0D0, -1.0D0,  6.0D0, -4.0D0,  0.0D0,  0.0D0, &
                                                         &  0.0D0,  0.0D0, -4.0D0, 32.0D0, 16.0D0, 16.0D0, &
                                                         & -4.0D0,  0.0D0,  0.0D0, 16.0D0, 32.0D0, 16.0D0, &
-                                                        &  0.0D0, -4.0D0,  0.0D0, 16.0D0, 16.0D0, 32.0D0/) / 180.0D0, (/6, 6/))
+                                                        &  0.0D0, -4.0D0,  0.0D0, 16.0D0, 16.0D0, 32.0D0/) / 360.0D0, (/6, 6/))
   real :: area_parallel, integral_parallel
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  CHKERRQ(ierr)
@@ -54,49 +55,64 @@ subroutine benchmark_parallel_p2_inner_product
   call MPI_Type_extent(MPI_INTEGER, integer_extent, ierr);  CHKERRQ(ierr)
   call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  CHKERRQ(ierr)
   
+  ! Read the donor mesh partition
   call read_node(trim(basename_a) // "_" // trim(rank_chr) // ".node", dim = 2, coords = positions_a)
   call read_ele(trim(basename_a) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_p1_a)
   nnodes_p1_a = size(positions_a, 2)
   nelements_a = size(enlist_p1_a, 2)
+  ! Read donor mesh halo data ...
   call read_halo(basename_a, halo_a, level = 2)
+  ! ... and determine the donor mesh element ownership
   allocate(ele_owner_a(nelements_a))
   call element_ownership(nnodes_p1_a, enlist_p1_a, halo_a, ele_owner_a)
+  ! Generate the donor P2 element-node graph
   allocate(enlist_p2_a(6, nelements_a))
   call p2_connectivity(nnodes_p1_a, enlist_p1_a, nnodes_p2_a, enlist_p2_a)
+  ! Construct a donor P2 field equal to: x y
   allocate(field_a(nnodes_p2_a), interpolated(nnodes_p2_a))
   call interpolate_p1_p2(enlist_p1_a, positions_a(1, :), enlist_p2_a, field_a)
   call interpolate_p1_p2(enlist_p1_a, positions_a(2, :), enlist_p2_a, interpolated)
   field_a = field_a * interpolated
   deallocate(interpolated)
   
+  ! Read the target mesh partition
   call read_node(trim(basename_b) // "_"// trim(rank_chr) // ".node", dim = 2, coords = positions_b)
   call read_ele(trim(basename_b) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_p1_b)
   nnodes_p1_b = size(positions_b, 2)
   nelements_b = size(enlist_p1_b, 2)
+  ! Read target mesh halo data ...
   call read_halo(basename_b, halo_b, level = 2)
+  ! ... and determine the target mesh element ownership
   allocate(ele_owner_b(nelements_b))
   call element_ownership(nnodes_p1_b, enlist_p1_b, halo_b, ele_owner_b)
+  ! Generate the donor P2 element-node graph
   allocate(enlist_p2_b(6, nelements_b))
   call p2_connectivity(nnodes_p1_b, enlist_p1_b, nnodes_p2_b, enlist_p2_b)
+  ! Construct a target P2 field equal to: x
   allocate(field_b(nnodes_p2_b))
   call interpolate_p1_p2(enlist_p1_b, positions_b(1, :), enlist_p2_b, field_b)
   
+  ! Perform multi-mesh integration
   area_parallel = 0.0D0
   integral_parallel = 0.0D0
   call parallel_supermesh(positions_b, enlist_p1_b, ele_owner_b, &
                         & positions_a, enlist_p1_a, ele_owner_a, &
                         & donor_ele_data, unpack_data_a, intersection_calculation, &
                         & comm = MPI_COMM_WORLD)
+  ! Deallocate any remaining unpacked communicated data
   call cleanup_unpack_data_a()
+  ! Sum all process contributions to the multi-mesh integrals
   call MPI_Allreduce(area_parallel, real_buffer, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   area_parallel = real_buffer
   call MPI_Allreduce(integral_parallel, real_buffer, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   integral_parallel = real_buffer
   if(rank == 0) then
+    ! Display the multi-mesh integrals on rank 0
     print "(a,e26.18e3)", "Area     = ", area_parallel
     print "(a,e26.18e3)", "Integral = ", integral_parallel
   end if
                         
+  ! Cleanup
   deallocate(positions_a, enlist_p1_a, ele_owner_a, enlist_p2_a, field_a, &
            & positions_b, enlist_p1_b, ele_owner_b, enlist_p2_b, field_b)
   call deallocate(halo_a)
@@ -104,18 +120,22 @@ subroutine benchmark_parallel_p2_inner_product
 
 contains
 
+  ! Generate a P2 element-node graph
   subroutine p2_connectivity(nnodes_p1, enlist_p1, nnodes_p2, enlist_p2)
+    ! Number of P1 nodes
     integer, intent(in) :: nnodes_p1
-    ! 3 x nelements
+    ! P1 element-node graph
+    ! Shape: 3 x nelements
     integer, dimension(:, :), intent(in) :: enlist_p1
+    ! Number of P2 nodes
     integer, intent(out) :: nnodes_p2
-    ! 6 x nelements
+    ! P2 element-node graph
+    ! Shape: 6 x nelements
     integer, dimension(:, :), intent(out) :: enlist_p2
     
     integer :: ele, lnode, nelements, node_p1, node_p1_1, node_p1_2, node_p2
     type(eelist_type) :: eelist
     type(integer_hash_table) :: node_map_p1_p2
-    ! Dynamic sparse matrix
     type(integer_hash_table), dimension(:), allocatable :: node_map_p2
     
     nelements = size(enlist_p1, 2)
@@ -195,14 +215,19 @@ contains
     
   end subroutine p2_connectivity
   
+  ! Interpolate a P1 field onto a P2 function space
   subroutine interpolate_p1_p2(enlist_p1, field_p1, enlist_p2, field_p2)
-    ! 3 x nelements
+    ! P1 element-node graph
+    ! Shape: 3 x nelements
     integer, dimension(:, :), intent(in) :: enlist_p1
-    ! nnodes_p1
+    ! P1 field
+    ! Shape: nnodes_p1
     real, dimension(:), intent(in) :: field_p1
-    ! 6 x nelements
+    ! P2 element-node graph
+    ! Shape: 6 x nelements
     integer, dimension(:, :), intent(in) :: enlist_p2
-    ! nnodes_p2
+    ! P2 field
+    ! Shape: nnodes_p2
     real, dimension(:), intent(out) :: field_p2
     
     integer :: ele, lnode, nelements, node_p2, nnodes_p2
@@ -238,9 +263,13 @@ contains
   
   end subroutine interpolate_p1_p2
 
+  ! Given the provided mesh vertices and elements, pack data for communication
   subroutine donor_ele_data(nodes_a, eles_a, data_a)
+    ! Mesh vertices to be communicated
     integer, dimension(:), intent(in) :: nodes_a
+    ! Mesh elements to be communicated
     integer, dimension(:), intent(in) :: eles_a
+    ! Packed data for communication
     integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_a
  
     integer :: ele, i, lnode, ndata_a, node_a, nnodes_p2_a, position
@@ -248,6 +277,7 @@ contains
     type(integer_hash_table) :: node_map
     type(integer_set) :: nodes_p2_a
     
+    ! For which P2 nodes do we need to send data?
     call allocate(nodes_p2_a)
     do i = 1, size(eles_a)
       ele = eles_a(i)
@@ -256,15 +286,22 @@ contains
         call insert(nodes_p2_a, node_a)
       end do
     end do
+    
+    ! Gather P2 field values for communication
     nnodes_p2_a = key_count(nodes_p2_a)
     allocate(data_field_a(nnodes_p2_a))
-    call allocate(node_map)
     do i = 1, nnodes_p2_a
       node_a = fetch(nodes_p2_a, i)
       data_field_a(i) = field_a(node_a)
+    end do
+    
+    ! Construct a map from communicated nodes to local nodes ...
+    call allocate(node_map)
+    do i = 1, nnodes_p2_a
+      node_a = fetch(nodes_p2_a, i)
       call insert(node_map, node_a, i)
     end do
-    call deallocate(nodes_p2_a)
+    ! ... and use this to construct the communicated P2 element-node graph
     allocate(data_enlist_p2_a(6, size(eles_a)))
     do i = 1, size(eles_a)
       ele = eles_a(i)
@@ -273,8 +310,12 @@ contains
         data_enlist_p2_a(lnode, i) = fetch(node_map, node_a)
       end do
     end do
-    call deallocate(node_map)
     
+    ! Pack data for communication:
+    !   1 integer                         -- number of elements
+    !   1 integer                         -- number of P2 nodes
+    !   (6 x number of elements) integers -- communicated P2 element-node graph
+    !   (number of P2 nodes) reals        -- communicated P2 field values
     ndata_a = (2 + 6 * size(eles_a)) * integer_extent + nnodes_p2_a * real_extent
     allocate(data_a(ndata_a))
     position = 0
@@ -283,35 +324,53 @@ contains
     call MPI_Pack(data_enlist_p2_a, 6 * size(eles_a), MPI_INTEGER, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
     call MPI_Pack(data_field_a, nnodes_p2_a, MPI_DOUBLE_PRECISION, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
     
+    call deallocate(nodes_p2_a)
+    call deallocate(node_map)
     deallocate(data_enlist_p2_a, data_field_a)
     
   end subroutine donor_ele_data
   
+  ! Unpack communicated data
   subroutine unpack_data_a(data_a)
+    ! Packed communicated data
     integer(kind = c_int8_t), dimension(:), intent(in) :: data_a
     
     integer :: position
     
+    ! Deallocate any previously unpacked arrays
     call cleanup_unpack_data_a()
     
     position = 0
+    ! Unpack the number of elements
     call MPI_Unpack(data_a, size(data_a), position, data_nelements_a, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    ! Unpack the number of P2 nodes
     call MPI_Unpack(data_a, size(data_a), position, data_nnodes_p2_a, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-    allocate(data_enlist_p2_a(6, data_nelements_a), data_field_a(data_nnodes_p2_a))
+    ! Unpack the P2 element-node graph
+    allocate(data_enlist_p2_a(6, data_nelements_a))
     call MPI_Unpack(data_a, size(data_a), position, data_enlist_p2_a, 6 * data_nelements_a, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    ! Unpack the P2 field values
+    allocate(data_field_a(data_nnodes_p2_a))
     call MPI_Unpack(data_a, size(data_a), position, data_field_a, data_nnodes_p2_a, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
     
   end subroutine unpack_data_a
   
+  ! Deallocate any previously unpacked arrays
   subroutine cleanup_unpack_data_a()
     if(allocated(data_enlist_p2_a)) deallocate(data_enlist_p2_a)
     if(allocated(data_field_a)) deallocate(data_field_a)
   end subroutine cleanup_unpack_data_a
 
+  ! Evaluate P2 basis functions at a given point
   pure function basis_functions_p2(cell_coords, coord) result(fns)
+    ! Triangle vertex coordinates
+    ! Shape: dim x loc_p1
     real, dimension(2, 3), intent(in) :: cell_coords
+    ! Coordinate at which to evaluate the basis functions
+    ! Shape: dim
     real, dimension(2), intent(in) :: coord
 
+    ! Basis function values
+    ! Shape: loc_p2
     real, dimension(6) :: fns
 
     real :: x, y
@@ -338,9 +397,16 @@ contains
 
   end function basis_functions_p2
 
+  ! Interpolate a P2 function at given point
   pure function interpolate_p2(cell_coords_d, cell_x_d, coord_s) result(x_s)
+    ! Triangle vertex coordinates
+    ! Shape: dim x loc_p1
     real, dimension(2, 3), intent(in) :: cell_coords_d
+    ! P2 nodal values
+    ! Shape: loc_p2
     real, dimension(6), intent(in) :: cell_x_d
+    ! Coordinate at which to evaluate the P2 function
+    ! Shape: dim
     real, dimension(2), intent(in) :: coord_s
 
     real :: x_s
@@ -349,38 +415,53 @@ contains
 
   end function interpolate_p2
   
+  ! Perform calculations on the local supermesh
   subroutine intersection_calculation(positions_b, positions_a, positions_c, nodes_a, ele_b, ele_a, local)
-    ! dim x loc_b
+    ! Target mesh element vertex coordinates
+    ! Shape: dim x loc_b
     real, dimension(:, :), intent(in) :: positions_b
-    ! dim x loc_a
+    ! Donor mesh element vertex coordniates
+    ! Shape: dim x loc_a
     real, dimension(:, :), intent(in) :: positions_a
-    ! dim x loc_c x nelements_c
+    ! Supermesh element vertex coordinates
+    ! Shape: dim x loc_c x nelements_c
     real, dimension(:, :, :), intent(in) :: positions_c
-    ! loc_a
+    ! Donor mesh vertex indices
+    ! Shape: loc_a
     integer, dimension(:), intent(in) :: nodes_a
+    ! Target mesh element
     integer, intent(in) :: ele_b
+    ! Donor mesh element
     integer, intent(in) :: ele_a
+    ! Whether this is a local calculation or a calculation using communicated
+    ! data
     logical, intent(in) :: local
     
-    integer :: ele_c, lnode, nelements_c
+    integer :: ele_c, lnode
     integer, dimension(:, :), pointer :: lenlist_p2_a
     real :: area
     real, dimension(6) :: field_a_c, field_b_c
     real, dimension(:), pointer :: lfield_a
     
-    nelements_c = size(positions_c, 3)
-    
     if(local) then
+      ! If this is a local calculation, use the local P2 element-node graph and
+      ! field data
       lenlist_p2_a => enlist_p2_a
       lfield_a => field_a
     else
+      ! Otherwise, use the unpacked communicated element-node graph and field
+      ! data
       lenlist_p2_a => data_enlist_p2_a
       lfield_a => data_field_a
     end if
   
-    do ele_c = 1, nelements_c
+    do ele_c = 1, size(positions_c, 3)
+      ! Compute the supermesh triangle area
       area = triangle_area(positions_c(:, :, ele_c))
+      ! Local contribution to the intersection area
       area_parallel = area_parallel + area
+      ! Interpolate the donor and target P2 functions onto a P2 space on the
+      ! supermesh element
       do lnode = 1, 6
         select case(lnode)
           case(1:3)
@@ -399,7 +480,8 @@ contains
             stop 1
         end select
       end do
-      integral_parallel = integral_parallel + area * dot_product(field_a_c, matmul(mass_p2, field_b_c))
+      ! Local contribution to the multi-mesh inner product
+      integral_parallel = integral_parallel + 2.0D0 * area * dot_product(field_a_c, matmul(mass_p2, field_b_c))
     end do
     
   end subroutine intersection_calculation
