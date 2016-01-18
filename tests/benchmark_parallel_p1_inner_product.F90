@@ -14,17 +14,16 @@ subroutine benchmark_parallel_p1_inner_product
   
   character(len = *), parameter :: basename_a = "data/triangle_0_05_4", &
                                  & basename_b = "data/square_0_05_4"
-  integer, parameter :: dim_a = 2, dim_b = 2
 
   character(len = int(log10(real(huge(0)))) + 2) :: rank_chr
   integer :: ierr, integer_extent, rank, real_extent
   real :: real_buffer
  
-  integer :: loc_a, nelements_a, nelements_b, nnodes_a, nnodes_b
+  integer :: nelements_a, nelements_b, nnodes_a, nnodes_b
   integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
-  real, dimension(:), allocatable, target :: field_a
   real, dimension(:), allocatable :: field_b
+  real, dimension(:), allocatable, target :: field_a
   real, dimension(:, :), allocatable :: positions_a, positions_b
   type(halo_type) :: halo_a, halo_b
   
@@ -44,10 +43,9 @@ subroutine benchmark_parallel_p1_inner_product
   call MPI_Type_extent(MPI_INTEGER, integer_extent, ierr);  CHKERRQ(ierr)
   call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  CHKERRQ(ierr)
   
-  call read_node(trim(basename_a) // "_" // trim(rank_chr) // ".node", dim = dim_a, coords = positions_a)
-  call read_ele(trim(basename_a) // "_" // trim(rank_chr) // ".ele", dim = dim_a, enlist = enlist_a)
+  call read_node(trim(basename_a) // "_" // trim(rank_chr) // ".node", dim = 2, coords = positions_a)
+  call read_ele(trim(basename_a) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_a)
   nnodes_a = size(positions_a, 2)
-  loc_a = size(enlist_a, 1)
   nelements_a = size(enlist_a, 2)
   call read_halo(basename_a, halo_a, level = 2)
   allocate(ele_owner_a(nelements_a))
@@ -55,8 +53,8 @@ subroutine benchmark_parallel_p1_inner_product
   allocate(field_a(nnodes_a))
   field_a = positions_a(1, :)
   
-  call read_node(trim(basename_b) // "_"// trim(rank_chr) // ".node", dim = dim_b, coords = positions_b)
-  call read_ele(trim(basename_b) // "_" // trim(rank_chr) // ".ele", dim = dim_b, enlist = enlist_b)
+  call read_node(trim(basename_b) // "_"// trim(rank_chr) // ".node", dim = 2, coords = positions_b)
+  call read_ele(trim(basename_b) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_b)
   nnodes_b = size(positions_b, 2)
   nelements_b = size(enlist_b, 2)
   call read_halo(basename_b, halo_b, level = 2)
@@ -144,7 +142,7 @@ contains
     jac = jac / (jac(1, 1) * jac(2, 2) - jac(1, 2) * jac(2, 1))
 
     fns(2:3) = matmul(jac, coord - cell_coords(:, 1))
-    fns(1) = 1.0 - fns(2) - fns(3)
+    fns(1) = 1.0D0 - fns(2) - fns(3)
 
   end function basis_functions_p1
 
@@ -196,8 +194,7 @@ contains
                                               & * interpolate_p1(positions_b, field_b(enlist_b(:, ele_b)), quad_point)
       end do
     end do
-    
-    
+        
   end subroutine intersection_calculation
   
 end subroutine benchmark_parallel_p1_inner_product
