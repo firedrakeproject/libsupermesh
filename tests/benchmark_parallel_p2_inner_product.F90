@@ -2,8 +2,7 @@ subroutine benchmark_parallel_p2_inner_product
 
   use iso_c_binding, only : c_int8_t
 
-  use libsupermesh_fields, only : eelist_type, mesh_eelist, deallocate, &
-    & triangle_area
+  use libsupermesh_fields, only : triangle_area
   use libsupermesh_halo_ownership, only : element_ownership
   use libsupermesh_integer_hash_table, only : integer_hash_table, allocate, &
     & deallocate, has_key, fetch, insert
@@ -134,13 +133,11 @@ contains
     integer, dimension(:, :), intent(out) :: enlist_p2
     
     integer :: ele, lnode, nelements, node_p1, node_p1_1, node_p1_2, node_p2
-    type(eelist_type) :: eelist
     type(integer_hash_table) :: node_map_p1_p2
     type(integer_hash_table), dimension(:), allocatable :: node_map_p2
     
     nelements = size(enlist_p1, 2)
     
-    call mesh_eelist(nnodes_p1, enlist_p1, 3, eelist)
     call allocate(node_map_p1_p2)
     allocate(node_map_p2(nnodes_p1))
     do node_p1 = 1, nnodes_p1
@@ -206,7 +203,6 @@ contains
       end do      
     end do
     
-    call deallocate(eelist)
     call deallocate(node_map_p1_p2)
     do node_p1 = 1, nnodes_p1
       call deallocate(node_map_p2(node_p1))
