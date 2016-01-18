@@ -13,8 +13,8 @@ subroutine benchmark_parallel_p1_inner_product
 #include <finclude/petsc.h90>
   
   ! Input Triangle mesh base names
-  character(len = *), parameter :: basename_a = "data/triangle_0_05_4", &
-                                 & basename_b = "data/square_0_05_4"
+  character(len = *), parameter :: basename_a = "data/triangle_0_01_4", &
+                                 & basename_b = "data/square_0_01_4"
 
   character(len = int(log10(real(huge(0)))) + 2) :: rank_chr
   integer :: ierr, integer_extent, rank, real_extent
@@ -88,8 +88,8 @@ subroutine benchmark_parallel_p1_inner_product
   integral_parallel = real_buffer
   if(rank == 0) then
     ! Display the multi-mesh integrals on rank 0
-    print "(a,e26.18e3)", "Area     = ", area_parallel
-    print "(a,e26.18e3)", "Integral = ", integral_parallel
+    print "(a,e26.18e3,a,e26.18e3,a)", "Area     = ", area_parallel, " (error = ", abs(area_parallel - 0.5D0), ")"
+    print "(a,e26.18e3,a,e26.18e3,a)", "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - 8.3333333333333398D-02), ")"
   end if
                         
   deallocate(positions_a, enlist_a, ele_owner_a, field_a, &
