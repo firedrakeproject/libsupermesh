@@ -282,14 +282,7 @@ contains
         call insert(nodes_p2_a, node_a)
       end do
     end do
-    
-    ! Gather P2 field values for communication
     nnodes_p2_a = key_count(nodes_p2_a)
-    allocate(data_field_a(nnodes_p2_a))
-    do i = 1, nnodes_p2_a
-      node_a = fetch(nodes_p2_a, i)
-      data_field_a(i) = field_a(node_a)
-    end do
     
     ! Construct a map from communicated nodes to local nodes ...
     call allocate(node_map)
@@ -305,6 +298,13 @@ contains
         node_a = enlist_p2_a(lnode, ele)
         data_enlist_p2_a(lnode, i) = fetch(node_map, node_a)
       end do
+    end do
+    
+    ! Gather P2 field values for communication
+    allocate(data_field_a(nnodes_p2_a))
+    do i = 1, nnodes_p2_a
+      node_a = fetch(nodes_p2_a, i)
+      data_field_a(i) = field_a(node_a)
     end do
     
     ! Pack data for communication:
