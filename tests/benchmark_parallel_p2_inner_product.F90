@@ -337,7 +337,7 @@ contains
     
     integer :: position
     
-    ! Deallocate any previously unpacked arrays
+    ! Deallocate any previously unpacked communicated data
     call cleanup_unpack_data_a()
     
     position = 0
@@ -354,7 +354,7 @@ contains
     
   end subroutine unpack_data_a
   
-  ! Deallocate any previously unpacked arrays
+  ! Deallocate any previously unpacked communicated data
   subroutine cleanup_unpack_data_a()
     if(allocated(data_enlist_p2_a)) deallocate(data_enlist_p2_a)
     if(allocated(data_field_a)) deallocate(data_field_a)
@@ -449,7 +449,7 @@ contains
       lenlist_p2_a => enlist_p2_a
       lfield_a => field_a
     else
-      ! Otherwise, use the unpacked communicated element-node graph and field
+      ! Otherwise, use the unpacked communicated element-node graph and P2 field
       ! data
       lenlist_p2_a => data_enlist_p2_a
       lfield_a => data_field_a
