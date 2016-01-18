@@ -116,8 +116,8 @@ contains
     data_field_a = field_a(nodes_a)
     
     ! Pack data for communication:
-    !   1 integer                         -- number of P1 nodes
-    !   (number of P1 nodes) reals        -- communicated P1 field values
+    !   1 integer                  -- number of P1 nodes
+    !   (number of P1 nodes) reals -- communicated P1 field values
     ndata_a = integer_extent + size(data_field_a) * real_extent
     allocate(data_a(ndata_a))
     position = 0
