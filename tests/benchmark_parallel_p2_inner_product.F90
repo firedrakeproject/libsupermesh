@@ -417,7 +417,7 @@ contains
     ! Target mesh element vertex coordinates
     ! Shape: dim x loc_b
     real, dimension(:, :), intent(in) :: positions_b
-    ! Donor mesh element vertex coordniates
+    ! Donor mesh element vertex coordinates
     ! Shape: dim x loc_a
     real, dimension(:, :), intent(in) :: positions_a
     ! Supermesh element vertex coordinates
