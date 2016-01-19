@@ -93,8 +93,8 @@ subroutine benchmark_parallel_p1_inner_product_3d
   integral_parallel = real_buffer
   if(rank == 0) then
     ! Display the multi-mesh integrals on rank 0
-    print "(a,e26.18e3,a,e26.18e3,a)", "Volume   = ", volume_parallel, " (error = ", abs(volume_parallel - 3.3333333333333331e+02), ")"
-    print "(a,e26.18e3,a,e26.18e3,a)", "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - 1.2499999999999989e+04), ")"
+    print "(a,e26.18e3,a,e26.18e3,a)", "Volume   = ", volume_parallel, " (error = ", abs(volume_parallel - 3.3333333333333331D+02), ")"
+    print "(a,e26.18e3,a,e26.18e3,a)", "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - 1.2499999999999989D+04), ")"
   end if
                         
   deallocate(positions_a, enlist_a, ele_owner_a, field_a, &
