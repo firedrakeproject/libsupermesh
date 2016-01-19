@@ -175,13 +175,11 @@ contains
     mat(:, 4) = coord - cell_coords(:, 1)
     ! GE with partial pivoting
     do i = 1, size(mat, 1)
-      if(i < size(mat, 1)) then
-        j = maxloc(abs(mat(i:, i)), 1) + i - 1
-        if(j /= i) then
-          tmp = mat(i, :)
-          mat(i, :) = mat(j, :)
-          mat(j, :) = tmp
-        end if
+      j = maxloc(abs(mat(i:, i)), 1) + i - 1
+      if(j /= i) then
+        tmp = mat(i, :)
+        mat(i, :) = mat(j, :)
+        mat(j, :) = tmp
       end if
       mat(i, :) = mat(i, :) / mat(i, i)
       do j = i + 1, size(mat, 1)
