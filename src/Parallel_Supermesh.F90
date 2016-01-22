@@ -18,7 +18,7 @@ module libsupermesh_parallel_supermesh
 
   private
 
-  public :: parallel_supermesh
+  public :: parallel_supermesh, get_times
 
   type pointer_real
     real, dimension(:), pointer :: p
@@ -56,6 +56,7 @@ module libsupermesh_parallel_supermesh
   integer(kind = c_int8_t), dimension(:), allocatable, save :: ldata
 
   integer, save :: mpi_comm, nprocs, rank
+  real :: t0, all_to_all, point_to_point
 
 #include "mpif.h"
 
@@ -173,6 +174,9 @@ contains
     allocate(parallel_bbox_b(2, size(positions_b,1), 0:nprocs-1))
 
     ! Bounding box all-to-all
+#ifdef PROFILE
+    t0 = mpi_wtime()
+#endif
     call MPI_Allgather(bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION, &
       & parallel_bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION,    &
       & mpi_comm, ierr)
@@ -186,7 +190,9 @@ contains
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to MPI_Allgather bbox_b(s) to parallel_bbox_b.")
     end if
-
+#ifdef PROFILE
+    all_to_all = mpi_wtime() - t0
+#endif
   end subroutine step_1
 
 
@@ -218,6 +224,10 @@ contains
         integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data
       end subroutine donor_ele_data
     end interface
+
+#ifdef PROFILE
+    t0 = -1
+#endif
 
     allocate(send_element_uns(0:nprocs-1))
     do i=0,size(send_element_uns(:))-1
@@ -413,8 +423,11 @@ contains
         end if
         deallocate(send_nodes_array)
 
-        sends = sends + 1
+#ifdef PROFILE
+        if ( t0 .eq. -1 ) t0 = mpi_wtime()
+#endif
 
+        sends = sends + 1
         call MPI_Isend(send_buffer(i)%p, &
                & size(send_buffer(i)%p), &
                & MPI_PACKED,             &
@@ -476,6 +489,42 @@ contains
       end subroutine intersection_calculation
     end interface
 
+#ifdef PROFILE
+    do i = 0, nprocs - 1
+      if(i == rank) cycle
+
+      if(partition_intersection_recv(i)) then
+        call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
+        if(ierr /= MPI_SUCCESS) then
+          FLAbort("MPI_Probe error")
+        end if
+        call MPI_Get_Count(status, MPI_PACKED, icount, ierr)
+        if(ierr /= MPI_SUCCESS) then
+          FLAbort("MPI_Get_Count error")
+        end if
+
+        allocate(recv_buffer(i)%p(icount))
+        call MPI_Recv (recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
+                  &  i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
+        if(ierr /= MPI_SUCCESS) then
+          FLAbort("MPI_Recv error")
+        end if
+      end if
+    end do
+
+    sends = sends + 1
+    call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Waitall(send).")
+    end if
+
+    if ( t0 .gt. 0 ) then
+      point_to_point = mpi_wtime() - t0
+    else
+      point_to_point = 0.0D0
+    end if
+#endif
+
     select case(size(positions_a, 1))
       case(1)
        ! 1D intervals
@@ -522,6 +571,7 @@ contains
       if(i == rank) cycle
 
       if(partition_intersection_recv(i)) then
+#ifndef PROFILE
         call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_Probe error")
@@ -537,7 +587,7 @@ contains
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_Recv error")
         end if
-
+#endif
         buffer_size = size(recv_buffer(i)%p)
         position = 0
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
@@ -627,11 +677,16 @@ contains
 
     deallocate(positions_c, nodes_A, nodes_B)
 
+#ifndef PROFILE
     sends = sends + 1
     call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to setup MPI_Waitall(send).")
     end if
+    point_to_point = 0.0D0
+    all_to_all = 0.0D0
+    t0 = 0.0D0
+#endif
 
   end subroutine step_3
 
@@ -715,5 +770,44 @@ contains
     call cintersection_finder_reset(ntests)
 
   end subroutine finalise_parallel_supermesh
+
+  subroutine get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
+                       point_to_point_max, point_to_point_min, point_to_point_sum)
+    real, intent(out)  :: all_to_all_max, all_to_all_min, all_to_all_sum
+    real, intent(out)  :: point_to_point_max, point_to_point_min, point_to_point_sum
+
+    integer :: ierr
+
+    call MPI_Allreduce(point_to_point, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(point_to_point_min).")
+    end if
+
+    call MPI_Allreduce(point_to_point, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(point_to_point_max).")
+    end if
+
+    call MPI_Allreduce(point_to_point, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(point_to_point_sum).")
+    end if
+
+    call MPI_Allreduce(all_to_all, all_to_all_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(all_to_all_min).")
+    end if
+
+    call MPI_Allreduce(all_to_all, all_to_all_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(all_to_all_max).")
+    end if
+
+    call MPI_Allreduce(all_to_all, all_to_all_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(all_to_all_sum).")
+    end if
+
+  end subroutine get_times
 
 end module libsupermesh_parallel_supermesh

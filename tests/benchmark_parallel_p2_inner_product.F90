@@ -8,13 +8,14 @@ subroutine benchmark_parallel_p2_inner_product
     & deallocate, has_key, fetch, insert
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
     & insert, key_count, fetch
-  use libsupermesh_parallel_supermesh, only : parallel_supermesh
+  use libsupermesh_parallel_supermesh, only : parallel_supermesh, get_times
   use libsupermesh_read_halos, only : halo_type, deallocate, read_halo
   use libsupermesh_read_triangle, only : read_ele, read_node
 
   implicit none
 
 #include <finclude/petsc.h90>
+#include "fdebug.h"
   
   ! Input Triangle mesh base names
   character(len = *), parameter :: basename_a = "data/triangle_0_01_4", &
@@ -23,7 +24,7 @@ subroutine benchmark_parallel_p2_inner_product
   character(len = int(log10(real(huge(0)))) + 2) :: rank_chr
   integer :: ierr, integer_extent, rank, real_extent
   real :: real_buffer
- 
+
   integer :: nelements_a, nelements_b, nnodes_p1_a, nnodes_p2_a, &
     & nnodes_p1_b, nnodes_p2_b
   integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
@@ -34,11 +35,21 @@ subroutine benchmark_parallel_p2_inner_product
   real, dimension(:), allocatable, target :: field_a
   real, dimension(:, :), allocatable :: positions_a, positions_b
   type(halo_type) :: halo_a, halo_b
-  
+
   integer :: data_nelements_a, data_nnodes_p2_a
   integer, dimension(:, :), allocatable, target :: data_enlist_p2_a
   real, dimension(:), allocatable, target :: data_field_a
-  
+
+  real :: t0, parallel_read_time, parallel_interpolation_time, parallel_time
+  real :: parallel_time_read_min, parallel_time_read_max, parallel_time_read_sum
+  real :: parallel_time_min, parallel_time_max, parallel_time_sum
+  real :: parallel_time_interpolation_min, parallel_time_interpolation_max, parallel_time_interpolation_sum
+  integer :: nprocs
+#ifdef PROFILE
+  real :: all_to_all_max, all_to_all_min, all_to_all_sum
+  real :: point_to_point_max, point_to_point_min, point_to_point_sum
+#endif
+
   ! P2 mass matrix
   real, dimension(6, 6), parameter :: mass_p2 = reshape((/ 6.0D0, -1.0D0, -1.0D0,  0.0D0, -4.0D0,  0.0D0, &
                                                         & -1.0D0,  6.0D0, -1.0D0,  0.0D0,  0.0D0, -4.0D0, &
@@ -49,11 +60,13 @@ subroutine benchmark_parallel_p2_inner_product
   real :: area_parallel, integral_parallel
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  CHKERRQ(ierr)
+  call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
   write(rank_chr, "(i0)") rank
   rank_chr = adjustl(rank_chr)
   call MPI_Type_extent(MPI_INTEGER, integer_extent, ierr);  CHKERRQ(ierr)
   call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  CHKERRQ(ierr)
-  
+
+  t0 = mpi_wtime()
   ! Read the donor mesh partition
   call read_node(trim(basename_a) // "_" // trim(rank_chr) // ".node", dim = 2, coords = positions_a)
   call read_ele(trim(basename_a) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_p1_a)
@@ -61,6 +74,9 @@ subroutine benchmark_parallel_p2_inner_product
   nelements_a = size(enlist_p1_a, 2)
   ! Read donor mesh halo data ...
   call read_halo(basename_a, halo_a, level = 2)
+  parallel_read_time = mpi_wtime() - t0
+
+  t0 = mpi_wtime()
   ! ... and determine the donor mesh element ownership
   allocate(ele_owner_a(nelements_a))
   call element_ownership(nnodes_p1_a, enlist_p1_a, halo_a, ele_owner_a)
@@ -73,14 +89,20 @@ subroutine benchmark_parallel_p2_inner_product
   call interpolate_p1_p2(enlist_p1_a, positions_a(2, :), enlist_p2_a, interpolated)
   field_a = field_a * interpolated
   deallocate(interpolated)
+  parallel_interpolation_time = mpi_wtime() - t0
+  
   
   ! Read the target mesh partition
+  t0 = mpi_wtime()
   call read_node(trim(basename_b) // "_"// trim(rank_chr) // ".node", dim = 2, coords = positions_b)
   call read_ele(trim(basename_b) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_p1_b)
   nnodes_p1_b = size(positions_b, 2)
   nelements_b = size(enlist_p1_b, 2)
   ! Read target mesh halo data ...
   call read_halo(basename_b, halo_b, level = 2)
+  parallel_read_time = parallel_read_time + mpi_wtime() - t0
+
+  t0 = mpi_wtime()
   ! ... and determine the target mesh element ownership
   allocate(ele_owner_b(nelements_b))
   call element_ownership(nnodes_p1_b, enlist_p1_b, halo_b, ele_owner_b)
@@ -91,7 +113,11 @@ subroutine benchmark_parallel_p2_inner_product
   allocate(field_b(nnodes_p2_b))
   call interpolate_p1_p2(enlist_p1_b, positions_b(1, :), enlist_p2_b, field_b)
   field_b = field_b * field_b
-  
+  parallel_interpolation_time = parallel_interpolation_time + mpi_wtime() - t0
+
+  if (rank == 0) print"(a,i15,a,i15)", " A:", nelements_a, ", B:", nelements_b
+
+  t0 = mpi_wtime()
   ! Perform multi-mesh integration
   area_parallel = 0.0D0
   integral_parallel = 0.0D0
@@ -101,17 +127,61 @@ subroutine benchmark_parallel_p2_inner_product
                         & comm = MPI_COMM_WORLD)
   ! Deallocate any remaining unpacked communicated data
   call cleanup_unpack_data_a()
+  parallel_time = mpi_wtime() - t0
+
   ! Sum all process contributions to the multi-mesh integrals
   call MPI_Allreduce(area_parallel, real_buffer, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   area_parallel = real_buffer
   call MPI_Allreduce(integral_parallel, real_buffer, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   integral_parallel = real_buffer
+
+  ! Sum, Min and Max of parallel read and compute durations
+  call MPI_Allreduce(parallel_time, parallel_time_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_time, parallel_time_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_time, parallel_time_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_read_time, parallel_time_read_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_read_time, parallel_time_read_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_read_time, parallel_time_read_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_interpolation_time, parallel_time_interpolation_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_interpolation_time, parallel_time_interpolation_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_interpolation_time, parallel_time_interpolation_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+#ifdef PROFILE
+  call get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
+                 point_to_point_max, point_to_point_min, point_to_point_sum)
+#endif
+
   if(rank == 0) then
+    print "(a,f20.15)", "(MIN) Time, parallel = ", parallel_time_min
+    print "(a,f20.15)", "(MAX) Time, parallel = ", parallel_time_max
+    print "(a,f20.15)", "(SUM) Time, parallel = ", parallel_time_sum
+    print "(a,f20.15)", "(AVG) Time, parallel = ", parallel_time_sum / nprocs
+    print "(a)" , ""
+    print "(a,f20.15)", "(MIN) Interpolation Time, parallel = ", parallel_time_interpolation_min
+    print "(a,f20.15)", "(MAX) Interpolation Time, parallel = ", parallel_time_interpolation_max
+    print "(a,f20.15)", "(SUM) Interpolation Time, parallel = ", parallel_time_interpolation_sum
+    print "(a,f20.15)", "(AVG) Interpolation Time, parallel = ", parallel_time_interpolation_sum / nprocs
+    print "(a)" , ""
+    print "(a,f20.15)", "(MIN) Read Time, parallel = ", parallel_time_read_min
+    print "(a,f20.15)", "(MAX) Read Time, parallel = ", parallel_time_read_max
+    print "(a,f20.15)", "(SUM) Read Time, parallel = ", parallel_time_read_sum
+    print "(a,f20.15)", "(AVG) Read Time, parallel = ", parallel_time_read_sum / nprocs
+    print "(a)" , ""
+#ifdef PROFILE
+    print "(a,f20.15)", "(MIN) All to all comms = ", all_to_all_min
+    print "(a,f20.15)", "(MAX) All to all comms = ", all_to_all_max
+    print "(a,f20.15)", "(SUM) All to all comms = ", all_to_all_sum
+    print "(a,f20.15)", "(AVG) All to all comms = ", all_to_all_sum / nprocs
+    print "(a,f20.15)", "(MIN) Point to point comms = ", point_to_point_min
+    print "(a,f20.15)", "(MAX) Point to point comms = ", point_to_point_max
+    print "(a,f20.15)", "(SUM) Point to point comms = ", point_to_point_sum
+    print "(a,f20.15)", "(AVG) Point to point comms = ", point_to_point_sum / nprocs
+    print "(a)" , ""
+#endif
     ! Display the multi-mesh integrals on rank 0
     print "(a,e26.18e3,a,e26.18e3,a)", "Area     = ", area_parallel, " (error = ", abs(area_parallel - 0.5D0), ")"
     print "(a,e26.18e3,a,e26.18e3,a)", "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - 2.7083333333333272D-02), ")"
   end if
-                        
+
   ! Cleanup
   deallocate(positions_a, enlist_p1_a, ele_owner_a, enlist_p2_a, field_a, &
            & positions_b, enlist_p1_b, ele_owner_b, enlist_p2_b, field_b)

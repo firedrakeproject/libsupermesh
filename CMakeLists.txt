@@ -465,7 +465,10 @@ FILE(GLOB FORTRAN_BENCHMARK_SERIAL_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_s
 FILE(GLOB FORTRAN_BENCHMARK_SERIAL_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial_3d.F90)
 FILE(GLOB FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial_same_algo.F90)
 FILE(GLOB FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial_same_algo_3d.F90)
-#FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel.F90)
+FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_p1_inner_product.F90)
+FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_p1_inner_product_3d.F90)
+FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_p2_inner_product.F90)
+
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
 foreach (file ${FORTRAN_SRCFILES})
@@ -510,7 +513,9 @@ set (BENCHMARKTESTS
   benchmark_serial_3d
   benchmark_serial_same_algo
   benchmark_serial_same_algo_3d
-#  benchmark_parallel
+  benchmark_parallel_p1_inner_product
+  benchmark_parallel_p1_inner_product_3d
+  benchmark_parallel_p2_inner_product
 )
 
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
@@ -541,6 +546,10 @@ add_executable (benchmark_serial EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_FIL
 add_executable (benchmark_serial_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_3D_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_serial_same_algo EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_serial_same_algo_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_3D_FILES} ${CPP_TEST_SOURCE_FILES})
+add_executable (benchmark_parallel_p1_inner_product EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_FILES} ${CPP_TEST_SOURCE_FILES})
+add_executable (benchmark_parallel_p1_inner_product_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_3D_FILES} ${CPP_TEST_SOURCE_FILES})
+add_executable (benchmark_parallel_p2_inner_product EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES} ${CPP_TEST_SOURCE_FILES})
+
 #add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 foreach (test ${UNITTESTS})
@@ -556,7 +565,7 @@ foreach (benchmark ${BENCHMARKTESTS})
  SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_;HAVE_MPI")
 endforeach()
 
-add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel_partition_ab benchmark_parallel_partition_ab_serial benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d)
+add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel_partition_ab benchmark_parallel_partition_ab_serial benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d benchmark_parallel_p1_inner_product benchmark_parallel_p1_inner_product_3d benchmark_parallel_p2_inner_product)
 
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD
@@ -572,6 +581,7 @@ add_custom_command(TARGET test_tri_intersector
   COMMAND unzip -o data/2D_5.zip -d data/
   COMMAND unzip -o data/3D_9.zip -d data/
   COMMAND unzip -o data/3D_5.zip -d data/
+  COMMAND unzip -o data/2D_0_01.zip -d data/
 #  COMMAND cd unittests && ./test_tri_intersector && cd ..
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Copying test data files"
@@ -645,7 +655,7 @@ endif()
 
 
 
-install (TARGETS SuperMesh DESTINATION lib)
+install (FILES "${PROJECT_BINARY_DIR}/libSuperMesh.a"                       DESTINATION lib)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_construction.mod"        DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fldebug.mod"             DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fldebug_parameters.mod"  DESTINATION include)
@@ -653,5 +663,4 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_linked_lists.mod"        DEST
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod"  DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection_module.mod"  DESTINATION include)
-# ToDo FIX: If PKG_CONFIG_PATH has more than one entry; the following line will fail!!
-install (FILES "${PROJECT_BINARY_DIR}/include/SuperMesh.pc"                 DESTINATION $ENV{PKG_CONFIG_PATH})
+install (FILES "${PROJECT_BINARY_DIR}/include/SuperMesh.pc"                 DESTINATION lib/pkgconfig)
