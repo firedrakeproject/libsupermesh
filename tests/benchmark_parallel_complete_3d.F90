@@ -66,6 +66,8 @@ subroutine benchmark_parallel_complete_3D
   test_parallel_ele_B = count(ele_ownerB == rank)
   call deallocate(halo)
   parallel_read_time = mpi_wtime() - t0
+  
+  if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
 
   t0 = mpi_wtime()
   allocate(valsB(test_parallel_ele_B))

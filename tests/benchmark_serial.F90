@@ -57,6 +57,8 @@ subroutine benchmark_serial
     serial_ele_B = ele_count(positionsB)
     serial_read_time = mpi_wtime() - t0
 
+    if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
+
     t0 = mpi_wtime()
     allocate(map_AB(serial_ele_A))
     call intersection_finder(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), serial_ele_A/)), &
