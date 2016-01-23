@@ -242,7 +242,7 @@ message ("MAIN PROJECT_SOURCE_DIR:${PROJECT_SOURCE_DIR}")
 message ("MAIN PROJECT_BINARY_DIR:${PROJECT_BINARY_DIR}")
 
 
-add_subdirectory(spatialindex-1.8.0)
+add_subdirectory(spatialindex-1.8.0 EXCLUDE_FROM_ALL)
 #add_subdirectory(libjudy)
 
 include(ExternalProject)

@@ -174,7 +174,7 @@ contains
     allocate(parallel_bbox_b(2, size(positions_b,1), 0:nprocs-1))
 
     ! Bounding box all-to-all
-#ifdef PROFILE
+#if PROFILE == 1
     t0 = mpi_wtime()
 #endif
     call MPI_Allgather(bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION, &
@@ -190,7 +190,7 @@ contains
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to MPI_Allgather bbox_b(s) to parallel_bbox_b.")
     end if
-#ifdef PROFILE
+#if PROFILE == 1
     all_to_all = mpi_wtime() - t0
 #endif
   end subroutine step_1
@@ -225,7 +225,7 @@ contains
       end subroutine donor_ele_data
     end interface
 
-#ifdef PROFILE
+#if PROFILE == 1
     t0 = -1
 #endif
 
@@ -423,7 +423,7 @@ contains
         end if
         deallocate(send_nodes_array)
 
-#ifdef PROFILE
+#if PROFILE == 1
         if ( t0 .eq. -1 ) t0 = mpi_wtime()
 #endif
 
@@ -489,7 +489,7 @@ contains
       end subroutine intersection_calculation
     end interface
 
-#ifdef PROFILE
+#if PROFILE == 1
     do i = 0, nprocs - 1
       if(i == rank) cycle
 
@@ -571,7 +571,7 @@ contains
       if(i == rank) cycle
 
       if(partition_intersection_recv(i)) then
-#ifndef PROFILE
+#if PROFILE == 0
         call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_Probe error")
@@ -677,7 +677,7 @@ contains
 
     deallocate(positions_c, nodes_A, nodes_B)
 
-#ifndef PROFILE
+#if PROFILE == 0
     sends = sends + 1
     call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
     if(ierr /= MPI_SUCCESS) then

@@ -14,10 +14,10 @@ subroutine benchmark_parallel_p1_inner_product
 #include "fdebug.h"
   
   ! Input Triangle mesh base names
-  character(len = *), parameter :: basename_a = "data/triangle_0_01_4", &
-                                 & basename_b = "data/square_0_01_4"
+  character(len = *), parameter :: basename_a = "data/triangle_0_01", &
+                                 & basename_b = "data/square_0_01"
 
-  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr
+  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, size_chr
   integer :: ierr, integer_extent, rank, real_extent
   real :: real_buffer
  
@@ -43,7 +43,7 @@ subroutine benchmark_parallel_p1_inner_product
   real :: parallel_time_read_min, parallel_time_read_max, parallel_time_read_sum
   real :: parallel_time_min, parallel_time_max, parallel_time_sum
   integer :: nprocs
-#ifdef PROFILE
+#if PROFILE == 1
   real :: all_to_all_max, all_to_all_min, all_to_all_sum
   real :: point_to_point_max, point_to_point_min, point_to_point_sum
 #endif
@@ -51,19 +51,21 @@ subroutine benchmark_parallel_p1_inner_product
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  CHKERRQ(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
   write(rank_chr, "(i0)") rank
+  write(size_chr, "(i0)") nprocs
   rank_chr = adjustl(rank_chr)
+  size_chr = adjustl(size_chr)
   call MPI_Type_extent(MPI_INTEGER, integer_extent, ierr);  CHKERRQ(ierr)
   call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  CHKERRQ(ierr)
 
   t0 = mpi_wtime()
   ! Read the donor mesh partition
-  call read_node(trim(basename_a) // "_" // trim(rank_chr) // ".node", dim = 2, coords = positions_a)
-  call read_ele(trim(basename_a) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_a)
-  parallel_read_time = mpi_wtime() - t0
+  call read_node(trim(basename_a) // "_" // trim(size_chr) // "_" // trim(rank_chr) // ".node", dim = 2, coords = positions_a)
+  call read_ele(trim(basename_a) // "_" // trim(size_chr) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_a)
   nnodes_a = size(positions_a, 2)
   nelements_a = size(enlist_a, 2)
   ! Read donor mesh halo data ...
-  call read_halo(basename_a, halo_a, level = 2)
+  call read_halo(trim(basename_a) // "_" // trim(size_chr), halo_a, level = 2)
+  parallel_read_time = mpi_wtime() - t0
   ! ... and determine the donor mesh element ownership
   allocate(ele_owner_a(nelements_a))
   call element_ownership(nnodes_a, enlist_a, halo_a, ele_owner_a)
@@ -73,13 +75,13 @@ subroutine benchmark_parallel_p1_inner_product
 
   t0 = mpi_wtime()
   ! Read the target mesh partition
-  call read_node(trim(basename_b) // "_"// trim(rank_chr) // ".node", dim = 2, coords = positions_b)
-  call read_ele(trim(basename_b) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_b)
-  parallel_read_time = parallel_read_time + mpi_wtime() - t0
+  call read_node(trim(basename_b) // "_" // trim(size_chr) // "_"// trim(rank_chr) // ".node", dim = 2, coords = positions_b)
+  call read_ele(trim(basename_b) // "_" // trim(size_chr) // "_" // trim(rank_chr) // ".ele", dim = 2, enlist = enlist_b)
   nnodes_b = size(positions_b, 2)
   nelements_b = size(enlist_b, 2)
   ! Read target mesh halo data ...
-  call read_halo(basename_b, halo_b, level = 2)
+  call read_halo(trim(basename_b) // "_" // trim(size_chr), halo_b, level = 2)
+  parallel_read_time = parallel_read_time + mpi_wtime() - t0
   ! ... and determine the target mesh element ownership
   allocate(ele_owner_b(nelements_b))
   call element_ownership(nnodes_b, enlist_b, halo_b, ele_owner_b)
@@ -114,7 +116,7 @@ subroutine benchmark_parallel_p1_inner_product
   call MPI_Allreduce(parallel_read_time, parallel_time_read_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
   call MPI_Allreduce(parallel_read_time, parallel_time_read_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
   call MPI_Allreduce(parallel_read_time, parallel_time_read_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-#ifdef PROFILE
+#if PROFILE == 1
   call get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
                  point_to_point_max, point_to_point_min, point_to_point_sum)
 #endif
@@ -130,7 +132,7 @@ subroutine benchmark_parallel_p1_inner_product
     print "(a,f20.15)", "(SUM) Read Time, parallel = ", parallel_time_read_sum
     print "(a,f20.15)", "(AVG) Read Time, parallel = ", parallel_time_read_sum / nprocs
     print "(a)" , ""
-#ifdef PROFILE
+#if PROFILE == 1
     print "(a,f20.15)", "(MIN) All to all comms = ", all_to_all_min
     print "(a,f20.15)", "(MAX) All to all comms = ", all_to_all_max
     print "(a,f20.15)", "(SUM) All to all comms = ", all_to_all_sum
