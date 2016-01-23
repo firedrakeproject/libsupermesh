@@ -34,7 +34,7 @@ subroutine benchmark_parallel_complete
 
   real :: area_parallel, area_serial, integral_parallel, integral_serial
   real, dimension(:), allocatable :: valsB
-#ifdef PROFILE
+#if PROFILE == 1
   real :: all_to_all_max, all_to_all_min, all_to_all_sum
   real :: point_to_point_max, point_to_point_min, point_to_point_sum
 #endif
@@ -102,7 +102,7 @@ subroutine benchmark_parallel_complete
   call MPI_Allreduce(parallel_time, parallel_time_tot_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-#ifdef PROFILE
+#if PROFILE == 1
   call get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
                  point_to_point_max, point_to_point_min, point_to_point_sum)
 #endif
@@ -127,7 +127,7 @@ subroutine benchmark_parallel_complete
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f20.15)") "Integral, serial   = ", integral_serial
     write(output_unit, "(a,f20.15)") "Integral, parallel = ", integral_parallel
-#ifdef PROFILE
+#if PROFILE == 1
     write(output_unit, "(a,f20.15)") "(MIN) All to all comms = ", all_to_all_min
     write(output_unit, "(a,f20.15)") "(MAX) All to all comms = ", all_to_all_max
     write(output_unit, "(a,f20.15)") "(SUM) All to all comms = ", all_to_all_sum
