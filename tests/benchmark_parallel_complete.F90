@@ -113,14 +113,14 @@ subroutine benchmark_parallel_complete
   integral_serial = 225.0
 
   if(rank == root) then
-    write(output_unit, "(a,f20.15)") "Time, serial         = ", serial_time
-    write(output_unit, "(a,f20.15)") "(MIN) Time, parallel = ", parallel_time_tot_min
-    write(output_unit, "(a,f20.15)") "(MAX) Time, parallel = ", parallel_time_tot_max
-    write(output_unit, "(a,f20.15)") "(SUM) Time, parallel = ", parallel_time_tot_sum
-    write(output_unit, "(a,f20.15)") "(AVG) Time, parallel = ", parallel_time_tot_sum / nprocs
+    write(output_unit, "(a,f20.10)") "Time, serial         = ", serial_time
+    write(output_unit, "(a,f20.10)") "(MIN) Time, parallel = ", parallel_time_tot_min
+    write(output_unit, "(a,f20.10)") "(MAX) Time, parallel = ", parallel_time_tot_max
+    write(output_unit, "(a,f20.10)") "(SUM) Time, parallel = ", parallel_time_tot_sum
+    write(output_unit, "(a,f20.10)") "(AVG) Time, parallel = ", parallel_time_tot_sum / nprocs
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f20.15)") "Read Time, serial         = ", serial_read_time
-    write(output_unit, "(a,f20.15)") "(MAX) Read Time, parallel = ", parallel_read_time
+    write(output_unit, "(a,f20.10)") "Read Time, serial         = ", serial_read_time
+    write(output_unit, "(a,f20.10)") "(MAX) Read Time, parallel = ", parallel_read_time
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f20.15)") "Area, serial   = ", area_serial
     write(output_unit, "(a,f20.15)") "Area, parallel = ", area_parallel
@@ -128,14 +128,14 @@ subroutine benchmark_parallel_complete
     write(output_unit, "(a,f20.15)") "Integral, serial   = ", integral_serial
     write(output_unit, "(a,f20.15)") "Integral, parallel = ", integral_parallel
 #if PROFILE == 1
-    write(output_unit, "(a,f20.15)") "(MIN) All to all comms = ", all_to_all_min
-    write(output_unit, "(a,f20.15)") "(MAX) All to all comms = ", all_to_all_max
-    write(output_unit, "(a,f20.15)") "(SUM) All to all comms = ", all_to_all_sum
-    write(output_unit, "(a,f20.15)") "(AVG) All to all comms = ", all_to_all_sum / nprocs
-    write(output_unit, "(a,f20.15)") "(MIN) Point to point comms = ", point_to_point_min
-    write(output_unit, "(a,f20.15)") "(MAX) Point to point comms = ", point_to_point_max
-    write(output_unit, "(a,f20.15)") "(SUM) Point to point comms = ", point_to_point_sum
-    write(output_unit, "(a,f20.15)") "(AVG) Point to point comms = ", point_to_point_sum / nprocs
+    write(output_unit, "(a,f20.10)") "(MIN) All to all comms = ", all_to_all_min
+    write(output_unit, "(a,f20.10)") "(MAX) All to all comms = ", all_to_all_max
+    write(output_unit, "(a,f20.10)") "(SUM) All to all comms = ", all_to_all_sum
+    write(output_unit, "(a,f20.10)") "(AVG) All to all comms = ", all_to_all_sum / nprocs
+    write(output_unit, "(a,f20.10)") "(MIN) Point to point comms = ", point_to_point_min
+    write(output_unit, "(a,f20.10)") "(MAX) Point to point comms = ", point_to_point_max
+    write(output_unit, "(a,f20.10)") "(SUM) Point to point comms = ", point_to_point_sum
+    write(output_unit, "(a,f20.10)") "(AVG) Point to point comms = ", point_to_point_sum / nprocs
     write(output_unit, "(a)") ""
 #endif
 

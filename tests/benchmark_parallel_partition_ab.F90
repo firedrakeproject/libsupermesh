@@ -437,23 +437,23 @@ subroutine benchmark_parallel_partition_ab
   call MPI_Reduce(parallel_ele_B, local_sum_b, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 
   if(rank == root) then
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial read time          : ", serial_read_time," ."
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial intersection time  : ", serial_time," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Total serial read time          : ", serial_read_time," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Total serial intersection time  : ", serial_time," ."
     write(output_unit, "(a)") ""
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel read time        : ", sum(times_read_time_parallel)," ."
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Max parallel read time          : ", maxval(times_read_time_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Total parallel read time        : ", sum(times_read_time_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Max parallel read time          : ", maxval(times_read_time_parallel)," ."
     write(output_unit, "(a)") ""
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection time: ", sum(times_intersection_only_parallel)," ."
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Max parallel intersection time  : ", maxval(times_intersection_only_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Total parallel intersection time: ", sum(times_intersection_only_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Max parallel intersection time  : ", maxval(times_intersection_only_parallel)," ."
     write(output_unit, "(a)") ""
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel time             : ", sum(times_parallel)," ."
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Max parallel time               : ", maxval(times_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Total parallel time             : ", sum(times_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Max parallel time               : ", maxval(times_parallel)," ."
     write(output_unit, "(a)") ""
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total other parallel time       : ", sum(other_times_parallel)," ."
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Max other parallel time         : ", maxval(other_times_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Total other parallel time       : ", sum(other_times_parallel)," ."
+    write(output_unit, "(i5,a,F19.10,a)") rank, ": Max other parallel time         : ", maxval(other_times_parallel)," ."
     write(output_unit, "(a)") ""
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial intersection area     : ", area_serial," ."
-    write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
+    write(output_unit, "(i5,a,F19.14,a)") rank, ": Total serial intersection area     : ", area_serial," ."
+    write(output_unit, "(i5,a,F19.14,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
 
     fail = fnequals(sum(areas_parallel), area_serial, tol = tol)
     call report_test("[benchmark_parallel_partition_ab areas]", fail, .FALSE., "Should give the same areas of intersection")

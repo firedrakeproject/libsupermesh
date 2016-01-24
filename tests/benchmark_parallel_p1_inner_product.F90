@@ -122,25 +122,25 @@ subroutine benchmark_parallel_p1_inner_product
 #endif
 
   if(rank == 0) then
-    print "(a,f20.15)", "(MIN) Time, parallel = ", parallel_time_min
-    print "(a,f20.15)", "(MAX) Time, parallel = ", parallel_time_max
-    print "(a,f20.15)", "(SUM) Time, parallel = ", parallel_time_sum
-    print "(a,f20.15)", "(AVG) Time, parallel = ", parallel_time_sum / nprocs
+    print "(a,f20.10)", "(MIN) Time, parallel = ", parallel_time_min
+    print "(a,f20.10)", "(MAX) Time, parallel = ", parallel_time_max
+    print "(a,f20.10)", "(SUM) Time, parallel = ", parallel_time_sum
+    print "(a,f20.10)", "(AVG) Time, parallel = ", parallel_time_sum / nprocs
     print "(a)" , ""
-    print "(a,f20.15)", "(MIN) Read Time, parallel = ", parallel_time_read_min
-    print "(a,f20.15)", "(MAX) Read Time, parallel = ", parallel_time_read_max
-    print "(a,f20.15)", "(SUM) Read Time, parallel = ", parallel_time_read_sum
-    print "(a,f20.15)", "(AVG) Read Time, parallel = ", parallel_time_read_sum / nprocs
+    print "(a,f20.10)", "(MIN) Read Time, parallel = ", parallel_time_read_min
+    print "(a,f20.10)", "(MAX) Read Time, parallel = ", parallel_time_read_max
+    print "(a,f20.10)", "(SUM) Read Time, parallel = ", parallel_time_read_sum
+    print "(a,f20.10)", "(AVG) Read Time, parallel = ", parallel_time_read_sum / nprocs
     print "(a)" , ""
 #if PROFILE == 1
-    print "(a,f20.15)", "(MIN) All to all comms = ", all_to_all_min
-    print "(a,f20.15)", "(MAX) All to all comms = ", all_to_all_max
-    print "(a,f20.15)", "(SUM) All to all comms = ", all_to_all_sum
-    print "(a,f20.15)", "(AVG) All to all comms = ", all_to_all_sum / nprocs
-    print "(a,f20.15)", "(MIN) Point to point comms = ", point_to_point_min
-    print "(a,f20.15)", "(MAX) Point to point comms = ", point_to_point_max
-    print "(a,f20.15)", "(SUM) Point to point comms = ", point_to_point_sum
-    print "(a,f20.15)", "(AVG) Point to point comms = ", point_to_point_sum / nprocs
+    print "(a,f20.10)", "(MIN) All to all comms = ", all_to_all_min
+    print "(a,f20.10)", "(MAX) All to all comms = ", all_to_all_max
+    print "(a,f20.10)", "(SUM) All to all comms = ", all_to_all_sum
+    print "(a,f20.10)", "(AVG) All to all comms = ", all_to_all_sum / nprocs
+    print "(a,f20.10)", "(MIN) Point to point comms = ", point_to_point_min
+    print "(a,f20.10)", "(MAX) Point to point comms = ", point_to_point_max
+    print "(a,f20.10)", "(SUM) Point to point comms = ", point_to_point_sum
+    print "(a,f20.10)", "(AVG) Point to point comms = ", point_to_point_sum / nprocs
     print "(a)" , ""
 #endif
     ! Display the multi-mesh integrals on rank 0

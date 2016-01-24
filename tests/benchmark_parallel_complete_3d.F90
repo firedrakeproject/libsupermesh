@@ -100,11 +100,11 @@ subroutine benchmark_parallel_complete_3D
   integral_serial = 5625.0
 
   if(rank == root) then
-    write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
-    write(output_unit, "(a,f19.15)") "(MAX) Time, parallel =", parallel_time
+    write(output_unit, "(a,f19.10)") "Time, serial         =", serial_time
+    write(output_unit, "(a,f19.10)") "(MAX) Time, parallel =", parallel_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Read Time, serial         =", serial_read_time
-    write(output_unit, "(a,f19.15)") "(MAX) Read Time, parallel =", parallel_read_time
+    write(output_unit, "(a,f19.10)") "Read Time, serial         =", serial_read_time
+    write(output_unit, "(a,f19.10)") "(MAX) Read Time, parallel =", parallel_read_time
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.14)") "Volume, parallel =", vols_parallel
     write(output_unit, "(a)") ""

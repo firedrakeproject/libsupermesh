@@ -99,12 +99,12 @@ subroutine benchmark_serial_same_algo
   integral_parallel = 225.0
 
   if(rank == root) then
-    write(output_unit, "(a,f19.15)") "Time, serial         =", serial_time
+    write(output_unit, "(a,f19.10)") "Time, serial         =", serial_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Read Time, serial    =", serial_read_time
+    write(output_unit, "(a,f19.10)") "Read Time, serial    =", serial_read_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.15)") "Area, serial       =", area_serial
-    write(output_unit, "(a,f19.15)") "Integral, serial   =", integral_serial
+    write(output_unit, "(a,f19.14)") "Area, serial       =", area_serial
+    write(output_unit, "(a,f19.14)") "Integral, serial   =", integral_serial
 
     fail = fnequals(area_parallel, area_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
