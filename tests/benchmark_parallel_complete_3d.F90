@@ -27,10 +27,15 @@ subroutine benchmark_parallel_complete_3D
   type(vector_field) :: positionsA, positionsB
   real, parameter :: tol = 1.0e3 * epsilon(0.0)
   real :: t0, serial_time, parallel_time, serial_read_time, parallel_read_time
+  real :: parallel_time_tot_min, parallel_time_tot_max, parallel_time_tot_sum 
   logical :: fail
 
   real :: vols_parallel, vols_serial, integral_parallel, integral_serial
   real, dimension(:), allocatable :: valsB
+#if PROFILE == 1
+  real :: all_to_all_max, all_to_all_min, all_to_all_sum
+  real :: point_to_point_max, point_to_point_min, point_to_point_sum
+#endif
 
   ! Data
   integer(kind = c_int8_t), dimension(:), allocatable :: data
@@ -90,8 +95,15 @@ subroutine benchmark_parallel_complete_3D
 
   call MPI_Allreduce(MPI_IN_PLACE, vols_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_time, parallel_time_tot_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_time, parallel_time_tot_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
+  call MPI_Allreduce(parallel_time, parallel_time_tot_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+#if PROFILE == 1
+  call get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
+                 point_to_point_max, point_to_point_min, point_to_point_sum)
+#endif
 
   call deallocate(positionsA)
   call deallocate(positionsB)
@@ -100,15 +112,29 @@ subroutine benchmark_parallel_complete_3D
   integral_serial = 5625.0
 
   if(rank == root) then
-    write(output_unit, "(a,f19.10)") "Time, serial         =", serial_time
-    write(output_unit, "(a,f19.10)") "(MAX) Time, parallel =", parallel_time
+    write(output_unit, "(a,f20.10)") "Time, serial         = ", serial_time
+    write(output_unit, "(a,f20.10)") "(MIN) Time, parallel = ", parallel_time_tot_min
+    write(output_unit, "(a,f20.10)") "(MAX) Time, parallel = ", parallel_time_tot_max
+    write(output_unit, "(a,f20.10)") "(SUM) Time, parallel = ", parallel_time_tot_sum
+    write(output_unit, "(a,f20.10)") "(AVG) Time, parallel = ", parallel_time_tot_sum / nprocs
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.10)") "Read Time, serial         =", serial_read_time
-    write(output_unit, "(a,f19.10)") "(MAX) Read Time, parallel =", parallel_read_time
+    write(output_unit, "(a,f19.10)") "Read Time, serial         = ", serial_read_time
+    write(output_unit, "(a,f19.10)") "(MAX) Read Time, parallel = ", parallel_read_time
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.14)") "Volume, parallel =", vols_parallel
+    write(output_unit, "(a,f19.14)") "Volume, parallel = ", vols_parallel
     write(output_unit, "(a)") ""
-    write(output_unit, "(a,f19.14)") "Integral, parallel =", integral_parallel
+    write(output_unit, "(a,f19.14)") "Integral, parallel = ", integral_parallel
+#if PROFILE == 1
+    write(output_unit, "(a,f20.10)") "(MIN) All to all comms = ", all_to_all_min
+    write(output_unit, "(a,f20.10)") "(MAX) All to all comms = ", all_to_all_max
+    write(output_unit, "(a,f20.10)") "(SUM) All to all comms = ", all_to_all_sum
+    write(output_unit, "(a,f20.10)") "(AVG) All to all comms = ", all_to_all_sum / nprocs
+    write(output_unit, "(a,f20.10)") "(MIN) Point to point comms = ", point_to_point_min
+    write(output_unit, "(a,f20.10)") "(MAX) Point to point comms = ", point_to_point_max
+    write(output_unit, "(a,f20.10)") "(SUM) Point to point comms = ", point_to_point_sum
+    write(output_unit, "(a,f20.10)") "(AVG) Point to point comms = ", point_to_point_sum / nprocs
+    write(output_unit, "(a)") ""
+#endif
 
     fail = fnequals(vols_parallel, vols_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
