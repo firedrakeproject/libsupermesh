@@ -136,6 +136,7 @@ void ExternalSorter::insert(Record* r)
 	m_buffer.push_back(r);
 	++m_u64TotalEntries;
 
+/*
 	// this will create the initial, sorted buckets before the
 	// external merge sort.
 	if (m_buffer.size() >= m_u32PageSize * m_u32BufferPages)
@@ -151,6 +152,7 @@ void ExternalSorter::insert(Record* r)
 		tf->rewindForReading();
 		m_runs.push_back(LibSupermesh_Tools::SmartPointer<LibSupermesh_Tools::TemporaryFile>(tf));
 	}
+*/
 }
 
 void ExternalSorter::sort()

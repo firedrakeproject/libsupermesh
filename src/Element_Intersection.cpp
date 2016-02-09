@@ -281,7 +281,7 @@ void ElementIntersectionFinder::SetInput(const double*& positions, const int& nn
                         enlist, nelements, loc);  
   // As in regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0
   id_type id = 1;
-  rTree = RTree::createAndBulkLoadNewRTree(RTree::BLM_STR, stream, *storageManager, fillFactor, indexCapacity, leafCapacity, dim, LibSupermesh_SpatialIndex::RTree::RV_RSTAR, id);
+  rTree = RTree::createAndBulkLoadNewRTree(RTree::BLM_STR, stream, *storageManager, fillFactor, indexCapacity, leafCapacity, dim, variant, id);
 
   predicateCount += stream.getPredicateCount();
   
