@@ -25,56 +25,25 @@
 !    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !    USA
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#pragma once
+
 #include "confdefs.h"
 
-#ifndef NDEBUG
-#define NDEBUG
-#endif
-#undef DDEBUG
-
 #ifndef __FILE__
-#error __FILE__ does not work
+#define __FILE__ "unknown"
 #endif
 
 #ifndef __LINE__
-#error __LINE__ does not work
+#define __LINE__ "unknown"
 #endif
 
-#define ewrite(priority, format) if (priority <= current_debug_level) write(debug_unit(priority), format) 
-#define EWRITE(priority, format) ewrite(priority, format)
-
-#ifdef __GNUC__
-! gfortran/gccs traditional cpp does not allow #array stringification
-!#define ewrite_minmax(array) ewrite(2, *) "Min, max of "//'array'//" = ",minval(array), maxval(array)
-#define ewrite_minmax(array) if (current_debug_level >= 2) call write_minmax(array, 'array')
-#else
-!#define ewrite_minmax(array) ewrite(2, *) "Min, max of "//#array//" = ",minval(array), maxval(array)
-#define ewrite_minmax(array) if (current_debug_level >= 2) call write_minmax(array, #array)
-#endif
-
-#define EWRITE_MINMAX(array) ewrite_minmax(array)
-
-#define ploc(x, i) call dprintf(-1, "%d: %p\n$", (i), (x))
+#define ewrite(priority, format) if(priority <= current_debug_level) write(debug_unit(priority), format)
 
 #define FLAbort(X) call FLAbort_pinpoint(X, __FILE__, __LINE__)
 #define FLExit(X) call FLExit_pinpoint(X, __FILE__, __LINE__)
 
-! #define FORTRAN_DISALLOWS_LONG_LINES
 #ifdef NDEBUG
-#define ASSERT(X)
+#define assert(X)
 #else
-#ifdef FORTRAN_DISALLOWS_LONG_LINES
-#define ASSERT(X) IF(.NOT.(X)) FLAbort('Failed assertion ')
-#else
-#define ASSERT(X) IF(.NOT.(X)) FLAbort('Failed assertion '//'X')
-#endif
-#endif
-#define assert(X) ASSERT(X)
-
-#ifdef DDEBUG
-#define METRIC_DEBUG
-#endif
-
+#define assert(X) if(.not. (X)) FLAbort("Failed assertion " // "X")
 #endif
