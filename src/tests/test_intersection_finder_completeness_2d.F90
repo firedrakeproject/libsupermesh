@@ -1,32 +1,32 @@
 #include "fdebug.h"
 
-subroutine test_intersection_finder_completeness_3d()
+subroutine test_intersection_finder_completeness_2d()
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder, advancing_front_intersection_finder, &
-    & octtree_intersection_finder, tree_intersection_finder, &
+    & quadtree_intersection_finder, tree_intersection_finder, &
     & rtree_intersection_finder, brute_force_intersection_finder
-  use libsupermesh_fields, only : tetrahedron_volume
+  use libsupermesh_fields, only : triangle_area
   use libsupermesh_read_triangle, only : read_ele, read_node
-  use libsupermesh_tet_intersection_module, only : intersect_tets, tet_buf_size
+  use libsupermesh_tri_intersection_module, only : intersect_tris, tri_buf_size
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
 
   implicit none
 
-  integer :: ele_a, ele_b, ele_c, i, n_tetsC
-  real :: volume_b, volume_c
+  integer :: ele_a, ele_b, ele_c, i, n_trisC
+  real :: area_b, area_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   logical :: fail
-  real, dimension(3, 4, tet_buf_size) ::  tetsC
+  real, dimension(2, 3, tri_buf_size) ::  trisC
   real, dimension(:, :), allocatable :: positions_a, positions_b
   type(intersections), dimension(:), allocatable :: map_ba
 
-  integer, parameter :: dim = 3
+  integer, parameter :: dim = 2
 
-  call read_node("data/cube.1.node", dim, positions_a)
-  call read_ele("data/cube.1.ele", dim, enlist_a)
-  call read_node("data/cube.2.node", dim, positions_b)
-  call read_ele("data/cube.2.ele", dim, enlist_b)
+  call read_node("data/square.1.node", dim, positions_a)
+  call read_ele("data/square.1.ele", dim, enlist_a)
+  call read_node("data/square.2.node", dim, positions_b)
+  call read_ele("data/square.2.ele", dim, enlist_b)
   allocate(map_ba(size(enlist_b, 2)))
   
   call intersection_finder(positions_b, enlist_b, positions_a, enlist_a, map_ba)
@@ -37,8 +37,8 @@ subroutine test_intersection_finder_completeness_3d()
   call check_map_ba("advancing_front_intersection_finder")
   call deallocate(map_ba)
   
-  call octtree_intersection_finder(positions_b, enlist_b, positions_a, enlist_a, map_ba)
-  call check_map_ba("octtree_intersection_finder")
+  call quadtree_intersection_finder(positions_b, enlist_b, positions_a, enlist_a, map_ba)
+  call check_map_ba("quadtree_intersection_finder")
   call deallocate(map_ba)
   
   call rtree_intersection_finder(positions_b, enlist_b, positions_a, enlist_a, map_ba)
@@ -62,22 +62,22 @@ contains
 
     fail = .false.
     do ele_b = 1, size(enlist_b, 2)
-      volume_b = tetrahedron_volume(positions_b(:, enlist_b(:, ele_b)))
+      area_b = triangle_area(positions_b(:, enlist_b(:, ele_b)))
 
-      volume_c = 0.0
+      area_c = 0.0
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
-        call intersect_tets(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), tetsC, n_tetsC)
-        do ele_c = 1, n_tetsC
-          volume_c = volume_c + tetrahedron_volume(tetsC(:, :, ele_c))
+        call intersect_tris(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), trisC, n_trisC)
+        do ele_c = 1, n_trisC
+          area_c = area_c + triangle_area(trisC(:, :, ele_c))
         end do
       end do
 
-      fail = (volume_b .fne. volume_c)
+      fail = (area_b .fne. area_c)
       if(fail) exit
     end do
-    call report_test("[" // trim(name) // ": completeness]", fail, .false., "Need to have the same volume")
-  
-  end subroutine check_map_ba
+    call report_test("[" // trim(name) // ": completeness]", fail, .false., "Need to have the same area")
+ 
+ end subroutine check_map_ba
 
-end subroutine test_intersection_finder_completeness_3d
+end subroutine test_intersection_finder_completeness_2d

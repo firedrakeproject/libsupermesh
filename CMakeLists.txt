@@ -459,9 +459,9 @@ FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/tes
 FILE(GLOB FORTRAN_TEST_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tet_intersector.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_2d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_3d.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_1d.F90)
+FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_2d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_3d.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_periodic.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_A_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_a.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_B_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_b.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab.F90)
@@ -504,9 +504,9 @@ set (UNITTESTS
   test_tet_intersector
   test_intersection_finder_2d
   test_intersection_finder_3d
-  test_intersection_finder_completeness
+  test_intersection_finder_completeness_1d
+  test_intersection_finder_completeness_2d
   test_intersection_finder_completeness_3d
-  test_intersection_finder_periodic
   test_parallel_partition_a
   test_parallel_partition_b
   test_parallel_partition_ab
@@ -540,9 +540,9 @@ add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI
 add_executable (test_tet_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TET_INTERSECTOR_FILES})
 add_executable (test_intersection_finder_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES})
 add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES})
-add_executable (test_intersection_finder_completeness ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_FILES})
+add_executable (test_intersection_finder_completeness_1d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES})
+add_executable (test_intersection_finder_completeness_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_2D_FILES})
 add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES})
-add_executable (test_intersection_finder_periodic ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_PERIODIC_FILES})
 add_executable (test_parallel_partition_a ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_A_FILES})
 add_executable (test_parallel_partition_b ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_B_FILES})
 add_executable (test_parallel_partition_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES})

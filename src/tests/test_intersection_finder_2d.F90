@@ -1,71 +1,65 @@
-subroutine test_intersection_finder_2d
+#include "fdebug.h"
 
-  use libsupermesh_intersection_finder
-  use libsupermesh_fields
-  use libsupermesh_read_triangle
-  use libsupermesh_unittest_tools
-  use libsupermesh_linked_lists
+subroutine test_intersection_finder_2d()
+
+  use libsupermesh_intersection_finder, only : intersections, deallocate
+  use libsupermesh_intersection_finder, only : &
+    & advancing_front_intersection_finder
+  use libsupermesh_read_triangle, only : read_ele, read_node
+  use libsupermesh_unittest_tools, only : report_test
 
   implicit none
 
-  type(vector_field) :: positionsA, positionsB
-  type(ilist), dimension(1) :: map_AB
-  type(ilist), dimension(3) :: bigger_map_AB
-  !type(inode), pointer :: node
-
   integer :: i
   logical :: fail
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
+  type(intersections), dimension(1) :: map_ab
+  type(intersections), dimension(3) :: bigger_map_ab
 
-  integer, parameter :: dim = 2, loc = 3
+  integer, parameter :: dim = 2
   
-  positionsA = read_triangle_files("data/triangle.1", dim)
-  positionsB = read_triangle_files("data/triangle.1", dim)
-  call intersection_finder( &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), map_AB)
+  call read_node("data/triangle.1.node", dim, positions_a)
+  call read_ele("data/triangle.1.ele", dim, enlist_a)
+  call read_node("data/triangle.1.node", dim, positions_b)
+  call read_ele("data/triangle.1.ele", dim, enlist_b)
+  call advancing_front_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
 
-  fail = (map_AB(1)%length /= 1)
-  call report_test("[intersection finder: length]", fail, .false., "There shall be only one")
+  fail = (map_ab(1)%n /= 1)
+  call report_test("[intersection finder: length]", fail, .false., "There shall be only one element")
 
-  i = fetch(map_AB(1), 1)
+  i = map_ab(1)%v(1)
   fail = (i /= 1)
   call report_test("[intersection finder: correct]", fail, .false., "The answer should be one")
 
-  do i=1,size(map_AB)
-    call flush_list(map_AB(i))
-  end do
-
-  call deallocate(positionsB)
-  positionsB = read_triangle_files("data/triangle.2", dim)
-  call intersection_finder( &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), map_AB)
-
-  fail = (map_AB(1)%length /= 3)
+  call deallocate(map_ab)
+  deallocate(positions_b, enlist_b)
+  call read_node("data/triangle.2.node", dim, positions_b)
+  call read_ele("data/triangle.2.ele", dim, enlist_b)
+  call advancing_front_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+  
+  fail = (map_ab(1)%n /= 3)
   call report_test("[intersection finder: length]", fail, .false., "There shall be three elements")
-
-  call deallocate(positionsA)
-  positionsA = read_triangle_files("data/triangle.2", dim)
-  call intersection_finder( &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), bigger_map_AB)
-  do i=1,ele_count(positionsA)
-    fail = (bigger_map_AB(i)%length < 1)
-    call report_test("[intersection finder: length]", fail, .false., "There shall be only one")
-
-    fail = (.not. has_value(bigger_map_AB(i), i))
+  do i = 1, 3
+    fail = (.not. any(map_ab(1)%v(:map_ab(1)%n) == i))
     call report_test("[intersection finder: correct]", fail, .false., "The answer should be correct")
   end do
 
-  call deallocate(positionsA)
-  call deallocate(positionsB)
+  call deallocate(map_ab)
+  deallocate(positions_a, enlist_a)
+  call read_node("data/triangle.2.node", dim, positions_a)
+  call read_ele("data/triangle.2.ele", dim, enlist_a)
+  
+  call advancing_front_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, bigger_map_ab)
+  do i = 1, 3
+    fail = (bigger_map_ab(i)%n < 1)
+    call report_test("[intersection finder: length]", fail, .false., "There shall be at least one element")
 
-  do i=1,size(map_AB)
-    call flush_list(map_AB(i))
+    fail = (.not. any(bigger_map_ab(i)%v(:bigger_map_ab(i)%n) == i))
+    call report_test("[intersection finder: correct]", fail, .false., "The answer should be correct")
   end do
 
-  do i=1,size(bigger_map_AB)
-    call flush_list(bigger_map_AB(i))
-  end do
+  call deallocate(bigger_map_ab)
+  deallocate(positions_a, enlist_a, positions_b, enlist_b)
 
 end subroutine test_intersection_finder_2d

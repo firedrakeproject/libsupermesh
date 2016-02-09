@@ -1,39 +1,37 @@
-subroutine test_intersection_finder_3d
+#include "fdebug.h"
 
-  use libsupermesh_intersection_finder
-  use libsupermesh_fields
-  use libsupermesh_read_triangle
-  use libsupermesh_unittest_tools
-  use libsupermesh_linked_lists
+subroutine test_intersection_finder_3d()
+
+  use libsupermesh_intersection_finder, only : intersections, deallocate
+  use libsupermesh_intersection_finder, only : &
+    & advancing_front_intersection_finder
+  use libsupermesh_read_triangle, only : read_ele, read_node
+  use libsupermesh_unittest_tools, only : report_test
 
   implicit none
   
-  type(vector_field) :: positionsA, positionsB
-  type(ilist), dimension(1) :: map_AB
-
   integer :: i
   logical :: fail
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
+  type(intersections), dimension(1) :: map_ab
 
-  integer, parameter :: dim = 3, loc = 4
+  integer, parameter :: dim = 3
 
-  positionsA = read_triangle_files("data/tet", dim)
-  positionsB = read_triangle_files("data/tet", dim)
-  call intersection_finder( &
-      & positionsA%val, reshape(positionsA%mesh%ndglno, (/loc, ele_count(positionsA)/)), &
-      & positionsB%val, reshape(positionsB%mesh%ndglno, (/loc, ele_count(positionsB)/)), map_AB)
+  call read_node("data/tet.node", dim, positions_a)
+  call read_ele("data/tet.ele", dim, enlist_a)
+  call read_node("data/tet.node", dim, positions_b)
+  call read_ele("data/tet.ele", dim, enlist_b)
+  call advancing_front_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
 
-  fail = (map_AB(1)%length /= 1)
-  call report_test("[intersection finder: length]", fail, .false., "There shall be only one")
+  fail = (map_ab(1)%n /= 1)
+  call report_test("[intersection finder: length]", fail, .false., "There shall be only one element")
 
-  i = fetch(map_AB(1), 1)
+  i = map_ab(1)%v(1)
   fail = (i /= 1)
   call report_test("[intersection finder: correct]", fail, .false., "The answer should be one")
-  
-  call deallocate(positionsA)
-  call deallocate(positionsB)
-  
-  do i=1,size(map_AB)
-    call flush_list(map_AB(i))
-  end do
+    
+  call deallocate(map_ab)
+  deallocate(positions_a, enlist_a, positions_b, enlist_b)
 
 end subroutine test_intersection_finder_3d
