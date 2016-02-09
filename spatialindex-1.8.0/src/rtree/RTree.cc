@@ -207,7 +207,7 @@ LibSupermesh_SpatialIndex::ISpatialIndex* LibSupermesh_SpatialIndex::RTree::crea
 	switch (m)
 	{
 	case BLM_STR:
-		bl.bulkLoadUsingSTR(static_cast<RTree*>(tree), stream, bindex, bleaf, 10000, 100);
+		bl.bulkLoadUsingSTR(static_cast<RTree*>(tree), stream, bindex, bleaf, std::numeric_limits<uint32_t>::max(), 1);
 		break;
 	default:
 		throw LibSupermesh_Tools::IllegalArgumentException("createAndBulkLoadNewRTree: Unknown bulk load method.");
