@@ -26,13 +26,10 @@
     USA
 */
 
-#ifndef HALOS_IO_H
-#define HALOS_IO_H
+#pragma once
 
 #include "confdefs.h"
 #include "Tokenize.h"
-
-#include <mpi.h>
 
 #include <algorithm>
 #include <cassert>
@@ -45,13 +42,6 @@
 #include <vector>
 
 #include "tinyxml.h"
-
-#ifndef DDEBUG
-#ifdef assert
-#undef assert
-#endif
-#define assert
-#endif
 
 namespace LibSupermesh {
 
@@ -82,15 +72,10 @@ namespace LibSupermesh {
   extern HaloData* readHaloData;
 }
 
-extern "C"{
+extern "C" {
   void cLibSuperMesh_halo_reader_reset();
-  
   int cLibSuperMesh_halo_reader_set_input(char* filename, int* filename_len, int* process, int* nprocs);
-
   void cLibSuperMesh_halo_reader_query_output(int* level, int* nprocs, int* nsends, int* nreceives);
-
   void cLibSuperMesh_halo_reader_get_output(int* level, int* nprocs, int* nsends, int* nreceives,
     int* npnodes, int* send, int* recv);
 }
-
-#endif
