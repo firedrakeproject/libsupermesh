@@ -26,63 +26,32 @@
     USA
 */
 
-#include <stdlib.h>
-#include <unistd.h>
+#include "confdefs.h"
 
-#ifdef HAVE_MPI
 #include <mpi.h>
-#endif
 #ifdef HAVE_PETSC
-#include "petsc.h"
+#include <petsc.h>
 #endif
-
-
 
 extern "C" {
-
-#ifdef HAVE_PYTHON
-#include "python_statec.h"
-#endif
   void TESTNAME();
-//  void set_global_debug_level_fc(int *val);	// IAKOVOS commented out
-//  void set_pseudo2d_domain_fc(int* val);	// IAKOVOS commented out
 }
 
 int main(int argc, char **argv) 
 {
-  int val = 0;
-
-//  set_global_debug_level_fc(&val);		// IAKOVOS commented out
-//  set_pseudo2d_domain_fc(&val);		// IAKOVOS commented out
-#ifdef HAVE_MPI
   MPI::Init(argc, argv);
-  // Undo some MPI init shenanigans
-  chdir(getenv("PWD"));
-#endif
 #ifdef HAVE_PETSC  
-  PetscInitialize(&argc, &argv, NULL, PETSC_NULL);
-  // PetscInitializeFortran needs to be called when initialising PETSc from C, but calling it from Fortran
-  // This sets all kinds of objects such as PETSC_NULL_OBJECT, PETSC_COMM_WORLD, etc., etc.
-  PetscInitializeFortran();
+  PetscErrorCode ierr;
+  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);  CHKERRQ(ierr);
+  ierr = PetscInitializeFortran();  CHKERRQ(ierr);
 #endif
   
-#ifdef HAVE_PYTHON
-  // Initialize the Python Interpreter
-//  python_init_();		// IAKOVOS commented out
-#endif
   TESTNAME();
 
-#ifdef HAVE_PYTHON
-  // Finalize the Python Interpreter
-//  python_end_();		// IAKOVOS commented out
-#endif
 #ifdef HAVE_PETSC  
   PetscFinalize();
 #endif
-#ifdef HAVE_MPI
   MPI::Finalize();
-#endif
 
   return 0;
-
 }
