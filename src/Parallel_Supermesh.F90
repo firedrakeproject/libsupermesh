@@ -613,7 +613,7 @@ contains
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_UnPack number of elements error")
         end if
-        allocate(recv_nodes_connectivity(i)%p(nelements * (size(positions_b,1) + 1)))
+        allocate(recv_nodes_connectivity(i)%p(nelements * size(enlist_b, 1)))
 
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, nnodes,                    &
