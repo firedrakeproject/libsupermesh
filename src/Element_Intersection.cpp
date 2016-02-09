@@ -28,54 +28,9 @@
 
 #include "Element_Intersection.h"
 
-using namespace LibSupermesh_SpatialIndex;
-
 using namespace std;
-
 using namespace LibSupermesh;
-
-InstrumentedRegion::InstrumentedRegion()
-{
-  predicateCount = 0;
-}
-
-InstrumentedRegion::InstrumentedRegion(const double* pLow, const double* pHigh, size_t dimension)
-{
-  predicateCount = 0;
-}
-
-InstrumentedRegion::InstrumentedRegion(const Point& low, const Point& high)
-{
-  predicateCount = 0;
-}
-
-InstrumentedRegion::InstrumentedRegion(const Region& in)
-{
-  predicateCount = 0;
-}
-
-bool InstrumentedRegion::intersectsRegion(const Region& in) 
-{
-  predicateCount++;
-  return ((Region*)this)->intersectsRegion(in);
-}
-
-bool InstrumentedRegion::containsRegion(const Region& in)
-{
-  predicateCount++;
-  return ((Region*)this)->containsRegion(in);
-}
-
-bool InstrumentedRegion::touchesRegion(const Region& in)
-{
-  predicateCount++;
-  return ((Region*)this)->touchesRegion(in);
-}
-
-int InstrumentedRegion::getPredicateCount(void) const
-{
-  return predicateCount;
-}
+using namespace LibSupermesh_SpatialIndex;
 
 MeshDataStream::MeshDataStream(const double*& positions, const int& nnodes, const int& dim,
                                const int*& enlist, const int& nelements, const int& loc)
@@ -104,7 +59,6 @@ MeshDataStream::MeshDataStream(const double*& positions, const int& nnodes, cons
   this->loc = loc;
 
   index = 0;
-  predicateCount = 0;
 }
 
 MeshDataStream::~MeshDataStream()
@@ -168,77 +122,6 @@ void MeshDataStream::rewind()
   return;
 }
 
-int MeshDataStream::getPredicateCount()
-{
-  return predicateCount;
-}
-
-bool MeshDataStream::MDSInstrumentedRegion::intersectsRegion(const Region& in) 
-{
-  mds->predicateCount++;
-  return ((Region*)this)->intersectsRegion(in);
-}
-
-bool MeshDataStream::MDSInstrumentedRegion::containsRegion(const Region& in)
-{
-  mds->predicateCount++;
-  return ((Region*)this)->containsRegion(in);
-}
-
-bool MeshDataStream::MDSInstrumentedRegion::touchesRegion(const Region& in)
-{
-  mds->predicateCount++;
-  return ((Region*)this)->touchesRegion(in);
-}
-
-IData* ExpandedMeshDataStream::getNext()
-{
-  if(index >= nelements)
-  {
-    return NULL;
-  }
-
-  int node;
-
-  double high[dim], low[dim];
-
-  node = enlist[loc * index] - 1;
-
-  for(int i = 0;i < dim;i++)
-  {
-    high[i] = positions[dim * node + i];
-    low[i] = positions[dim * node + i];
-  }
-  for(int i = 1; i < loc; i++)
-  {
-    node = enlist[loc * index + i] - 1;
-    for(int j = 0;j < dim;j++)
-    {
-      if(positions[dim * node + j] > high[j])
-      {
-        high[j] = positions[dim * node + j];
-      }
-      else if(positions[dim * node + j] < low[j])
-      {
-        low[j] = positions[dim * node + j];
-      }
-    }
-  }
-  
-  for(int i = 0;i < dim;i++)
-  {
-    assert(high[i] > low[i]);
-    double expansion = max((high[i] - low[i]) * expansionFactor, 100.0 * numeric_limits<double>::epsilon());
-    high[i] += expansion;
-    low[i] -= expansion;
-  }
-      
-  LibSupermesh_SpatialIndex::Region region = LibSupermesh_SpatialIndex::Region(low, high, dim);
-  IData* data = new RTree::Data(0, 0, region, ++index);
-
-  return data;
-}
-
 ElementIntersectionFinder::ElementIntersectionFinder()
 {
   Initialise();  
@@ -253,13 +136,12 @@ ElementIntersectionFinder::~ElementIntersectionFinder()
   return;
 }
 
-int ElementIntersectionFinder::Reset()
+void ElementIntersectionFinder::Reset()
 {
-  int ntests = predicateCount;
   Free();
   Initialise();
   
-  return ntests;
+  return;
 }
 
 void ElementIntersectionFinder::SetInput(const double*& positions, const int& nnodes, const int& dim,
@@ -282,8 +164,6 @@ void ElementIntersectionFinder::SetInput(const double*& positions, const int& nn
   // As in regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0
   id_type id = 1;
   rTree = RTree::createAndBulkLoadNewRTree(RTree::BLM_STR, stream, *storageManager, fillFactor, indexCapacity, leafCapacity, dim, variant, id);
-
-  predicateCount += stream.getPredicateCount();
   
   return;
 }
@@ -349,8 +229,6 @@ void ElementIntersectionFinder::Initialise()
   
   dim = 0;
   loc = 0;
-
-  predicateCount = 0;
 }
 
 void ElementIntersectionFinder::Free()
@@ -913,14 +791,14 @@ extern "C"
     return;
   }
 
-  void cLibSuperMeshIntersectionFinderReset(int* ntests)
+  void libsupermesh_cintersection_finder_reset()
   {
-    *ntests = elementIntersectionFinder_LibSuperMesh.Reset();
+    elementIntersectionFinder_LibSuperMesh.Reset();
     
     return;
   }
 
-  void cLibSuperMeshIntersectionFinderSetInput(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements)
+  void libsupermesh_cintersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements)
   {
     assert(*dim >= 0);
     assert(*loc >= 0);
@@ -932,7 +810,7 @@ extern "C"
     return;
   }
 
-  void cLibSuperMeshIntersectionFinderFind(const double* positions, const int* dim, const int* loc)
+  void libsupermesh_cintersection_finder_find(const double* positions, const int* dim, const int* loc)
   {
     assert(*dim >= 0);
     assert(*loc >= 0);
@@ -942,14 +820,14 @@ extern "C"
     return;
   }
 
-  void cLibSuperMeshIntersectionFinderQueryOutput(int* nelms)
+  void libsupermesh_cintersection_finder_query_output(int* nelms)
   {
     elementIntersectionFinder_LibSuperMesh.QueryOutput(*nelms);
     
     return;
   }
 
-  void cLibSuperMeshIntersectionFinderGetOutput(int* id, const int* index)
+  void libsupermesh_cintersection_finder_get_output(int* id, const int* index)
   {
     elementIntersectionFinder_LibSuperMesh.GetOutput(*id, *index);
     

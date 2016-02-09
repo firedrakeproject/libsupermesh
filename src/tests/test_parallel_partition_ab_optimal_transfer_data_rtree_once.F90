@@ -68,7 +68,7 @@ subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
   character(len = 255) :: hostname
   character(len = 2047) :: buffer
 
-  integer :: nintersections, ntests
+  integer :: nintersections
   integer, dimension(:, :), allocatable :: comm_enlist_B
   real, dimension(:, :), allocatable :: comm_coords_B
 
@@ -558,7 +558,7 @@ subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once
       deallocate(ldata)
     end if
   end do
-  call rtree_intersection_finder_reset(ntests)
+  call rtree_intersection_finder_reset()
 
   sends = sends + 1
   call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)

@@ -62,7 +62,7 @@ subroutine test_parallel_partition_ab
   character(len = 255) :: hostname
   character(len = 2047) :: buffer
 
-  integer :: nintersections, ntests
+  integer :: nintersections
   integer, dimension(:, :), allocatable :: comm_enlist_B
   real, dimension(:, :), allocatable :: comm_coords_B
 
@@ -372,7 +372,7 @@ subroutine test_parallel_partition_ab
       end do
     end do
   end do
-  call rtree_intersection_finder_reset(ntests)
+  call rtree_intersection_finder_reset()
 
 
   sends = sends + 1
@@ -434,7 +434,7 @@ call flush()
         end do
       end do
     end do
-    call rtree_intersection_finder_reset(ntests)
+    call rtree_intersection_finder_reset()
     deallocate(comm_coords_B, &
              & comm_enlist_B)
   end do

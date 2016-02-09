@@ -26,17 +26,12 @@
     USA
 */
 
-#ifndef MESHDATASTREAM_H
-#define MESHDATASTREAM_H
+#pragma once
+
+#include "confdefs.h"
 
 #include <strings.h>
 #include <spatialindex/SpatialIndex.h>
-
-#include <cassert>
-#include <iostream>
-#include <map>
-#include <vector>
-#include <set>
 
 namespace LibSupermesh{
   
@@ -53,52 +48,10 @@ namespace LibSupermesh{
     virtual uint32_t size();
     virtual void rewind();
 
-    virtual int getPredicateCount();
-
-    class MDSInstrumentedRegion : public LibSupermesh_SpatialIndex::Region
-    {
-      public:
-        MDSInstrumentedRegion(MeshDataStream* mdss){mds = mdss;}
-        MDSInstrumentedRegion(MeshDataStream* mdss, const double* pLow, const double* pHigh, size_t dimension){mds = mdss;}
-        MDSInstrumentedRegion(MeshDataStream* mdss, const LibSupermesh_SpatialIndex::Point& low, const LibSupermesh_SpatialIndex::Point& high){mds = mdss;}
-        MDSInstrumentedRegion(MeshDataStream* mdss, const LibSupermesh_SpatialIndex::Region& in){mds = mdss;}
-
-        virtual bool intersectsRegion(const Region& in);
-        virtual bool containsRegion(const Region& in);
-        virtual bool touchesRegion(const Region& in);
-
-      private:
-        MeshDataStream* mds;
-    };
-
-    int predicateCount;
-
   protected:
     const double* positions;
     const int* enlist;
     int dim, index, nelements, loc, nnodes;
   };
   
-  class ExpandedMeshDataStream : public MeshDataStream
-  {
-    public:
-      inline ExpandedMeshDataStream(const double*& positions, const int& nnodes, const int& dim,
-                   const int*& enlist, const int& nelements, const int& loc, const double& expansionFactor)
-        : MeshDataStream(positions, nnodes, dim, enlist, nelements, loc),
-          expansionFactor(fabs(expansionFactor))
-      {      
-        return;
-      }
-                   
-      inline virtual ~ExpandedMeshDataStream()
-      {
-        return;
-      }
-      
-      virtual LibSupermesh_SpatialIndex::IData* getNext();
-    private:
-      double expansionFactor;
-  };
 }
-
-#endif

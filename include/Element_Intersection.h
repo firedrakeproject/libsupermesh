@@ -26,9 +26,10 @@
     USA
 */
 
-#ifndef ELEMENT_INTERSECTION_H
-#define ELEMENT_INTERSECTION_H
+#pragma once
 
+#include "confdefs.h"
+#include "MeshDataStream.h"
 #include "Wm4Intersector.h"
 #include "Wm4IntrTriangle2Triangle2.h"
 #include "Wm4Triangle2.h"
@@ -43,19 +44,7 @@
 
 #include <cassert>
 #include <iostream>
-#include <limits>
-#include <map>
 #include <vector>
-#include <set>
-
-#ifndef DDEBUG
-#ifdef assert
-#undef assert
-#endif
-#define assert
-#endif
-
-#include "MeshDataStream.h"
 
 #define GEOM_REAL double
 
@@ -79,48 +68,11 @@ namespace LibSupermesh
   class ElementListVisitor : public LibSupermesh_SpatialIndex::IVisitor, public std::vector< int >
   {
     public:
-      inline ElementListVisitor()
-      {
-        return;
-      }
-      
-      inline virtual ~ElementListVisitor()
-      {
-        return;
-      }
-      
-      inline virtual void visitNode(const LibSupermesh_SpatialIndex::INode& node)
-      {
-        return;
-      }
-      
-      inline virtual void visitData(const LibSupermesh_SpatialIndex::IData& data)
-      {
-        push_back(data.getIdentifier());
-
-        return;
-      }
-
-      inline virtual void visitData(std::vector< const LibSupermesh_SpatialIndex::IData* >& vector)
-      {
-        return;
-      }
-  };
-
-  class InstrumentedRegion : public LibSupermesh_SpatialIndex::Region
-  {
-    public:
-      InstrumentedRegion();
-      InstrumentedRegion(const double* pLow, const double* pHigh, size_t dimension);
-      InstrumentedRegion(const LibSupermesh_SpatialIndex::Point& low, const LibSupermesh_SpatialIndex::Point& high);
-      InstrumentedRegion(const LibSupermesh_SpatialIndex::Region& in);
-
-      virtual bool intersectsRegion(const Region& in);
-      virtual bool containsRegion(const Region& in);
-      virtual bool touchesRegion(const Region& in);
-      virtual int getPredicateCount(void) const;
-    private:
-      int predicateCount;
+      inline ElementListVisitor() {}      
+      inline virtual ~ElementListVisitor() {}      
+      inline virtual void visitNode(const LibSupermesh_SpatialIndex::INode& node) {}      
+      inline virtual void visitData(const LibSupermesh_SpatialIndex::IData& data) {push_back(data.getIdentifier());}
+      inline virtual void visitData(std::vector< const LibSupermesh_SpatialIndex::IData* >& vector) {}
   };
 
   // Interface to spatialindex to calculate element intersection lists between
@@ -132,7 +84,7 @@ namespace LibSupermesh
       ElementIntersectionFinder();
       ~ElementIntersectionFinder();
 
-      int Reset();
+      void Reset();
       void SetInput(const double*& positions, const int& nnodes, const int& dim,
                     const int*& enlist, const int& nelements, const int& loc);
       void SetTestElement(const double*& positions, const int& dim, const int& loc);
@@ -147,8 +99,6 @@ namespace LibSupermesh
       LibSupermesh_SpatialIndex::StorageManager::IBuffer* storage;
       LibSupermesh_SpatialIndex::ISpatialIndex* rTree;
       ElementListVisitor visitor;
-
-      int predicateCount;
   };
 
   class ElementIntersector
@@ -310,20 +260,9 @@ extern "C"
 #define cLibSuperMeshIntersectorGetOutput libsupermesh_cintersector_get_output
   void cLibSuperMeshIntersectorGetOutput(const int* nnodes, const int* nelms, const int* dim, const int* loc, double* positions, int* enlist);
 
-#define cLibSuperMeshIntersectionFinderReset libsupermesh_cintersection_finder_reset
-  void cLibSuperMeshIntersectionFinderReset(int* ntests);
-
-#define cLibSuperMeshIntersectionFinderSetInput libsupermesh_cintersection_finder_set_input
-  void cLibSuperMeshIntersectionFinderSetInput(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
-
-#define cLibSuperMeshIntersectionFinderFind libsupermesh_cintersection_finder_find
-  void cLibSuperMeshIntersectionFinderFind(const double* positions, const int* dim, const int* loc);  
-
-#define cLibSuperMeshIntersectionFinderQueryOutput libsupermesh_cintersection_finder_query_output
-  void cLibSuperMeshIntersectionFinderQueryOutput(int* nelms);
-
-#define cLibSuperMeshIntersectionFinderGetOutput libsupermesh_cintersection_finder_get_output
-  void cLibSuperMeshIntersectionFinderGetOutput(int* id, const int* index);
+  void libsupermesh_cintersection_finder_reset();
+  void libsupermesh_cintersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
+  void libsupermesh_cintersection_finder_find(const double* positions, const int* dim, const int* loc);  
+  void libsupermesh_cintersection_finder_query_output(int* nelms);
+  void libsupermesh_cintersection_finder_get_output(int* id, const int* index);
 }
-
-#endif

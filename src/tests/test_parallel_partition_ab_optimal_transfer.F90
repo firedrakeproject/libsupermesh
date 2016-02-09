@@ -67,7 +67,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
   character(len = 255) :: hostname
   character(len = 2047) :: buffer
 
-  integer :: nintersections, ntests
+  integer :: nintersections
   integer, dimension(:, :), allocatable :: comm_enlist_B
   real, dimension(:, :), allocatable :: comm_coords_B
 
@@ -467,7 +467,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
       end do
     end do
   end do
-  call rtree_intersection_finder_reset(ntests)
+  call rtree_intersection_finder_reset()
 write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
   sends = sends + 1
   recvs = recvs + 1
@@ -533,7 +533,7 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
         end do
       end do
     end do
-    call rtree_intersection_finder_reset(ntests)
+    call rtree_intersection_finder_reset()
     deallocate(comm_coords_B, &
              & comm_enlist_B)
  end do

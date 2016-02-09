@@ -1,11 +1,18 @@
-!#define COUNT_INTERSECTION_TESTS
 #include "fdebug.h"
 
 module libsupermesh_intersection_finder
 
-  use iso_c_binding
-  use libsupermesh_fields
-  use libsupermesh_linked_lists
+  use iso_c_binding, only : c_double, c_int
+  
+  use libsupermesh_fields, only : eelist_type, mesh_eelist, sloc, deallocate
+  use libsupermesh_fldebug, only : flabort_pinpoint, current_debug_level, &
+    & debug_unit
+  use libsupermesh_intersections, only : intersections, deallocate, &
+    & intersections_to_csr_sparsity
+  use libsupermesh_octtree_intersection_finder, only : octtree_node, &
+    & deallocate, octtree_intersection_finder, build_octtree, query_octtree
+  use libsupermesh_quadtree_intersection_finder, only : quadtree_node, &
+    & deallocate, quadtree_intersection_finder, build_quadtree, query_quadtree
 
   implicit none
 
@@ -13,7 +20,7 @@ module libsupermesh_intersection_finder
 
   interface crtree_intersection_finder_set_input
     subroutine libsupermesh_cintersection_finder_set_input(positions, enlist, dim, loc, nnodes, nelements) bind(c)
-      use iso_c_binding
+      use iso_c_binding, only : c_double, c_int
       implicit none
       integer(kind = c_int), intent(in) :: dim, loc, nnodes, nelements
       real(kind = c_double), intent(in), dimension(dim, nnodes) :: positions
@@ -23,7 +30,7 @@ module libsupermesh_intersection_finder
 
   interface crtree_intersection_finder_find
     subroutine libsupermesh_cintersection_finder_find(positions, dim, loc) bind(c)
-      use iso_c_binding
+      use iso_c_binding, only : c_double, c_int
       implicit none
       integer(kind = c_int), intent(in) :: dim, loc
       real(kind = c_double), dimension(dim, loc) :: positions
@@ -31,130 +38,79 @@ module libsupermesh_intersection_finder
   end interface crtree_intersection_finder_find
 
   interface rtree_intersection_finder_query_output
-    subroutine libsupermesh_cintersection_finder_query_output(nelems) bind(c)
-      use iso_c_binding
+    subroutine libsupermesh_cintersection_finder_query_output(nelements) bind(c)
+      use iso_c_binding, only : c_int
       implicit none
-      integer(kind = c_int), intent(out) :: nelems
+      integer(kind = c_int), intent(out) :: nelements
     end subroutine libsupermesh_cintersection_finder_query_output
   end interface rtree_intersection_finder_query_output
 
   interface rtree_intersection_finder_get_output
-    subroutine libsupermesh_cintersection_finder_get_output(id, nelem) bind(c)
-      use iso_c_binding
+    subroutine libsupermesh_cintersection_finder_get_output(ele, i) bind(c)
+      use iso_c_binding, only : c_int
       implicit none
-      integer(kind = c_int), intent(out) :: id
-      integer(kind = c_int), intent(in) :: nelem
+      integer(kind = c_int), intent(out) :: ele
+      integer(kind = c_int), intent(in) :: i
     end subroutine libsupermesh_cintersection_finder_get_output
   end interface rtree_intersection_finder_get_output
 
   interface rtree_intersection_finder_reset
-    subroutine libsupermesh_cintersection_finder_reset(ntests) bind(c)
-      use iso_c_binding
+    subroutine libsupermesh_cintersection_finder_reset() bind(c)
       implicit none
-      integer(kind = c_int), intent(out) :: ntests
     end subroutine libsupermesh_cintersection_finder_reset
   end interface rtree_intersection_finder_reset
 
+  public :: intersections, deallocate, connected, intersection_finder, &
+    & advancing_front_intersection_finder, rtree_intersection_finder, &
+    & quadtree_intersection_finder, octtree_intersection_finder, &
+    & tree_intersection_finder, sort_intersection_finder, &
+    & brute_force_intersection_finder
   public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
-
-!   interface
-!     function mpi_wtime()
-!       implicit none
-!       real :: mpi_wtime
-!     end function mpi_wtime
-!   end interface
-  
-#ifdef COUNT_INTERSECTION_TESTS
-  integer, save :: intersection_tests_count = 0
-#endif
-  public :: intersection_tests, reset_intersection_tests_counter
-
-  type intersections
-    integer, dimension(:), pointer :: v
-    integer :: n
-  end type intersections
-
-  interface deallocate
-    module procedure deallocate_intersections, deallocate_intersections_vector
-  end interface deallocate
-
-  public :: intersections, ilist, inode, deallocate
+  public :: tree_intersection_finder_set_input, &
+    & tree_intersection_finder_find, tree_intersection_finder_query_output, &
+    & tree_intersection_finder_get_output, tree_intersection_finder_reset
 
   interface intersection_finder
-    module procedure advancing_front_intersection_finder_intersections, &
-      & advancing_front_intersection_finder_csr_sparsity, &
-      & advancing_front_intersection_finder_lists
+    module procedure intersection_finder_intersections, &
+      & intersection_finder_csr_sparsity, intersection_finder_lists
   end interface intersection_finder
 
   interface advancing_front_intersection_finder
     module procedure advancing_front_intersection_finder_intersections, &
-      & advancing_front_intersection_finder_csr_sparsity, &
-      & advancing_front_intersection_finder_lists
+      & advancing_front_intersection_finder_csr_sparsity
   end interface advancing_front_intersection_finder
 
   interface rtree_intersection_finder
     module procedure rtree_intersection_finder_intersections, &
-      & rtree_intersection_finder_csr_sparsity, &
-      & rtree_intersection_finder_lists
+      & rtree_intersection_finder_csr_sparsity
   end interface rtree_intersection_finder
+
+  interface tree_intersection_finder
+    module procedure tree_intersection_finder_intersections, &
+      & tree_intersection_finder_csr_sparsity
+  end interface tree_intersection_finder
+  
+  interface sort_intersection_finder
+    module procedure sort_intersection_finder_rank_1_intersections, &
+      & sort_intersection_finder_rank_2_intersections, &
+      & sort_intersection_finder_rank_1_csr_sparsity, &
+      & sort_intersection_finder_rank_2_csr_sparsity
+  end interface sort_intersection_finder
 
   interface brute_force_intersection_finder
     module procedure brute_force_intersection_finder_intersections, &
-      & brute_force_intersection_finder_csr_sparsity, &
-      & brute_force_intersection_finder_lists
+      & brute_force_intersection_finder_csr_sparsity
   end interface brute_force_intersection_finder
-
-  public :: connected, intersection_finder, &
-    & advancing_front_intersection_finder, rtree_intersection_finder, &
-    & brute_force_intersection_finder
+  
+  integer, save :: tree_dim = 0, tree_nelements = 0, tree_neles = 0
+  integer, dimension(:), allocatable, save :: tree_eles
+  logical, dimension(:), allocatable, save :: tree_seen_ele
+  type(octtree_node), save :: tree_octtree
+  type(quadtree_node), save :: tree_quadtree
 
 contains
-
-  function intersection_tests() result(tests)
-    !!< Return the number of intersection tests
-
-    integer :: tests
-
-#ifdef COUNT_INTERSECTION_TESTS
-    tests = intersection_tests_count
-#else
-    FLAbort("Counting of intersection tests is not available")
-    ! To keep the compiler quiet
-    tests = -1
-#endif
-
-  end function intersection_tests
-
-  subroutine reset_intersection_tests_counter()
-    !!< Reset the intersection tests counter
-
-#ifdef COUNT_INTERSECTION_TESTS
-    intersection_tests_count = 0
-#else
-    FLAbort("Counting of intersection tests is not available")
-#endif
-
-  end subroutine reset_intersection_tests_counter
-
-  pure subroutine deallocate_intersections(ints)
-    type(intersections), intent(inout) :: ints
-
-    deallocate(ints%v)
-
-  end subroutine deallocate_intersections
-
-  pure subroutine deallocate_intersections_vector(ints)
-    type(intersections), dimension(:), intent(inout) :: ints
-
-    integer :: i
-
-    do i = 1, size(ints)
-      deallocate(ints(i)%v)
-    end do
-
-  end subroutine deallocate_intersections_vector
 
   pure function bbox(coords)
     ! dim x loc
@@ -174,32 +130,6 @@ contains
     end do
 
   end function bbox
-
-  pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
-    ! 2 x dim
-    real, dimension(:, :), intent(in) :: bbox_1
-    ! 2 x dim
-    real, dimension(:, :), intent(in) :: bbox_2
-
-    logical :: intersect
-
-    integer :: i
-
-#ifdef COUNT_INTERSECTION_TESTS
-    intersection_tests_count = intersection_tests_count + 1
-#endif
-
-    do i = 1, size(bbox_1, 2)
-      ! Strict inequalities required here for the advancing front intersection
-      ! finder to work with axis aligned elements
-      if(bbox_2(2, i) < bbox_1(1, i) .or. bbox_2(1, i) > bbox_1(2, i)) then
-        intersect = .false.
-        return
-      end if
-    end do
-    intersect = .true.
-
-  end function bboxes_intersect
 
   function connected(positions, enlist, eelist)
     ! dim x nnodes
@@ -261,6 +191,91 @@ contains
     connected = (nseen == nelements)
 
   end function connected
+
+  subroutine intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    ! dim x nnodes_a
+    real, dimension(:, :), intent(in) :: positions_a
+    ! loc_a x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! dim x nnodes_b
+    real, dimension(:, :), intent(in) :: positions_b
+    ! loc_b x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! nelements_a
+    type(intersections), dimension(:), intent(out) :: map_ab
+    
+    select case(size(positions_a, 1))
+      case(1)
+        call sort_intersection_finder(positions_a(1, :), enlist_a, positions_b(1, :), enlist_b, map_ab)
+      case(2:3)
+        call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+      case default
+        FLAbort("Invalid dimension")
+    end select
+  
+  end subroutine intersection_finder_intersections
+  
+  subroutine intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+    ! dim x nnodes_a
+    real, dimension(:, :), intent(in) :: positions_a
+    ! loc_a x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! dim x nnodes_b
+    real, dimension(:, :), intent(in) :: positions_b
+    ! loc_b x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
+    !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    ! nelements_a + 1
+    integer, dimension(:), intent(out) :: map_ab_indptr
+
+    select case(size(positions_a, 1))
+      case(1)
+        call sort_intersection_finder(positions_a(1, :), enlist_a, positions_b(1, :), enlist_b, map_ab_indices, map_ab_indptr)
+      case(2:3)
+        call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+      case default
+        FLAbort("Invalid dimension")
+    end select
+  
+  end subroutine intersection_finder_csr_sparsity
+
+  subroutine intersection_finder_lists(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    use libsupermesh_linked_lists, only : ilist, insert
+    ! dim x nnodes_a
+    real, dimension(:, :), intent(in) :: positions_a
+    ! loc_a x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! dim x nnodes_b
+    real, dimension(:, :), intent(in) :: positions_b
+    ! loc_b x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! nelements_a
+    type(ilist), dimension(:), intent(out) :: map_ab
+    
+    integer :: ele_a, i, nelements_a
+    type(intersections), dimension(:), allocatable :: lmap_ab
+    
+    nelements_a = size(enlist_a, 2)
+    allocate(lmap_ab(nelements_a))    
+    select case(size(positions_a, 1))
+      case(1)
+        call sort_intersection_finder(positions_a(1, :), enlist_a, positions_b(1, :), enlist_b, lmap_ab)
+      case(2:3)
+        call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, lmap_ab)
+      case default
+        FLAbort("Invalid dimension")
+    end select
+    do ele_a = 1, nelements_a
+      do i = 1, lmap_ab(ele_a)%n
+        call insert(map_ab(ele_a), lmap_ab(ele_a)%v(i))
+      end do
+    end do
+    call deallocate(lmap_ab)
+    deallocate(lmap_ab)
+  
+  end subroutine intersection_finder_lists
 
   ! Advancing front intersection finder, as described in P. E. Farrell and
   ! J. R. Maddison, "Conservative interpolation between volume meshes by local
@@ -426,31 +441,32 @@ contains
     call deallocate(eelist_b)
     call deallocate(eelist_a)
     deallocate(bboxes_b)
+  
+  contains
+
+    pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
+      ! 2 x dim
+      real, dimension(:, :), intent(in) :: bbox_1
+      ! 2 x dim
+      real, dimension(:, :), intent(in) :: bbox_2
+
+      logical :: intersect
+
+      integer :: i
+
+      do i = 1, size(bbox_1, 2)
+        ! Strict inequalities required here for the advancing front intersection
+        ! finder to work with axis aligned elements
+        if(bbox_2(2, i) < bbox_1(1, i) .or. bbox_2(1, i) > bbox_1(2, i)) then
+          intersect = .false.
+          return
+        end if
+      end do
+      intersect = .true.
+
+    end function bboxes_intersect
 
   end subroutine advancing_front_intersection_finder_intersections
-
-  pure subroutine intersections_to_csr_sparsity(ints, indices, indptr)
-    type(intersections), dimension(:), intent(in) :: ints
-    integer, dimension(:), allocatable, intent(out) :: indices
-    integer, dimension(:), intent(out) :: indptr
-
-    integer :: i, j, n
-
-    n = 0
-    do i = 1, size(ints)
-      n = n + ints(i)%n
-    end do
-
-    allocate(indices(n))
-    indptr(1) = 1
-    do i = 1, size(ints)
-      indptr(i + 1) = indptr(i) + ints(i)%n
-      do j = 1, ints(i)%n
-        indices(indptr(i) + j - 1) = ints(i)%v(j)
-      end do
-    end do
-
-  end subroutine intersections_to_csr_sparsity
 
   subroutine advancing_front_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! dim x nnodes_a
@@ -477,42 +493,6 @@ contains
 
   end subroutine advancing_front_intersection_finder_csr_sparsity
 
-  subroutine intersections_to_lists(ints, lists)
-    type(intersections), dimension(:), intent(in) :: ints
-    type(ilist), dimension(:), intent(out) :: lists
-
-    integer :: i, j
-
-    do i = 1, size(ints)
-      do j = 1, ints(i)%n
-        call insert(lists(i), ints(i)%v(j))
-      end do
-    end do
-
-  end subroutine intersections_to_lists
-
-  subroutine advancing_front_intersection_finder_lists(positions_a, enlist_a, positions_b, enlist_b, map_ab)
-    ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
-    ! loc_a x nelements_a
-    integer, dimension(:, :), intent(in) :: enlist_a
-    ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
-    ! loc_b x nelements_b
-    integer, dimension(:, :), intent(in) :: enlist_b
-    ! nelements_a
-    type(ilist), dimension(:), intent(out) :: map_ab
-
-    type(intersections), dimension(:), allocatable :: lmap_ab
-
-    allocate(lmap_ab(size(enlist_a, 2)))
-    call advancing_front_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, lmap_ab)
-    call intersections_to_lists(lmap_ab, map_ab)
-    call deallocate(lmap_ab)
-    deallocate(lmap_ab)
-
-  end subroutine advancing_front_intersection_finder_lists
-
   subroutine rtree_intersection_finder_set_input(positions, enlist)
     ! dim x nnodes_b
     real(kind = c_double), dimension(:, :), intent(in) :: positions
@@ -522,6 +502,9 @@ contains
     integer(kind = c_int) :: loc, dim, nelements, nnodes
 
     dim = size(positions, 1)
+    if(.not. any(dim == (/2, 3/))) then
+      FLAbort("Invalid dimension")
+    end if
     nnodes = size(positions, 2)
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
@@ -555,7 +538,7 @@ contains
     ! nelements_a
     type(intersections), dimension(:), intent(out) :: map_ab
 
-    integer :: ele_a, ele_b, i, nelements_a, nints, ntests
+    integer :: ele_a, ele_b, i, nelements_a, nints
 
     nelements_a = size(enlist_a, 2)
 
@@ -570,10 +553,7 @@ contains
         map_ab(ele_a)%v(i) = ele_b
       end do
     end do
-    call rtree_intersection_finder_reset(ntests)
-#ifdef COUNT_INTERSECTION_TESTS
-    intersection_tests_count = intersection_tests_count + ntests
-#endif
+    call rtree_intersection_finder_reset()
 
   end subroutine rtree_intersection_finder_intersections
 
@@ -602,7 +582,90 @@ contains
 
   end subroutine rtree_intersection_finder_csr_sparsity
 
-  subroutine rtree_intersection_finder_lists(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+  subroutine tree_intersection_finder_set_input(positions, enlist)
+    ! dim x nnodes
+    real, dimension(:, :), intent(in) :: positions
+    ! loc x nelements
+    integer, dimension(:, :), intent(in) :: enlist
+    
+    call tree_intersection_finder_reset()
+    
+    tree_dim = size(positions, 1)
+    tree_nelements = size(enlist, 2)       
+    select case(tree_dim)
+      case(2)
+        tree_quadtree = build_quadtree(positions, enlist)
+      case(3)
+        tree_octtree = build_octtree(positions, enlist)
+      case default
+        FLAbort("Invalid dimension")
+    end select
+    allocate(tree_eles(tree_nelements), tree_seen_ele(tree_nelements))
+    tree_neles = 0 
+    tree_seen_ele = .false.
+    
+  end subroutine tree_intersection_finder_set_input
+
+  subroutine tree_intersection_finder_find(positions)
+    ! dim x loc
+    real, dimension(:, :), intent(in) :: positions
+    
+    integer :: i
+    real, dimension(2, tree_dim) :: bbox
+    
+    bbox(1, :) = positions(:, 1)
+    bbox(2, :) = positions(:, 1)
+    do i = 1, tree_dim
+      bbox(1, i) = min(bbox(1, i), minval(positions(i, :)))
+      bbox(2, i) = max(bbox(1, i), maxval(positions(i, :)))
+    end do
+    tree_seen_ele(tree_eles(:tree_neles)) = .false.
+    tree_neles = 0
+    select case(tree_dim)
+      case(2)
+        call query_quadtree(tree_quadtree, bbox, tree_eles, tree_neles, tree_seen_ele)
+      case(3)
+        call query_octtree(tree_octtree, bbox, tree_eles, tree_neles, tree_seen_ele)
+      case default
+        FLAbort("Invalid dimension")
+    end select
+    
+  end subroutine tree_intersection_finder_find
+  
+  subroutine tree_intersection_finder_query_output(nelements)
+    integer, intent(out) :: nelements
+    
+    nelements = tree_neles
+  
+  end subroutine tree_intersection_finder_query_output
+  
+  subroutine tree_intersection_finder_get_output(ele, i)
+    integer, intent(out) :: ele
+    integer, intent(in) :: i
+        
+    ele = tree_eles(i)
+      
+  end subroutine tree_intersection_finder_get_output
+  
+  subroutine tree_intersection_finder_reset()    
+    if(tree_dim == 0) return
+  
+    select case(tree_dim)
+      case(2)
+        call deallocate(tree_quadtree)
+      case(3)
+        call deallocate(tree_octtree)
+      case default
+        FLAbort("Invalid dimension")
+    end select
+    tree_dim = 0
+    tree_nelements = 0  
+    deallocate(tree_eles, tree_seen_ele)
+    tree_neles = 0
+  
+  end subroutine tree_intersection_finder_reset
+
+  subroutine tree_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
@@ -612,17 +675,221 @@ contains
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
-    type(ilist), dimension(:), intent(out) :: map_ab
+    type(intersections), dimension(:), intent(out) :: map_ab
 
-    type(intersections), dimension(:), allocatable :: lmap_ab
+    select case(size(positions_a, 1))
+      case(2)
+        call quadtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+      case(3)
+        call octtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+      case default
+        FLAbort("Invalid dimension")
+    end select
 
-    allocate(lmap_ab(size(enlist_a, 2)))
-    call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, lmap_ab)
-    call intersections_to_lists(lmap_ab, map_ab)
-    call deallocate(lmap_ab)
-    deallocate(lmap_ab)
+  end subroutine tree_intersection_finder_intersections
 
-  end subroutine rtree_intersection_finder_lists
+  subroutine tree_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+    ! dim x nnodes_a
+    real, dimension(:, :), intent(in) :: positions_a
+    ! loc_a x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! dim x nnodes_b
+    real, dimension(:, :), intent(in) :: positions_b
+    ! loc_b x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
+    !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    ! nelements_a + 1
+    integer, dimension(:), intent(out) :: map_ab_indptr
+
+    select case(size(positions_a, 1))
+      case(2)
+        call quadtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+      case(3)
+        call octtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+      case default
+        FLAbort("Invalid dimension")
+    end select
+
+  end subroutine tree_intersection_finder_csr_sparsity
+  
+  pure subroutine sort_intersection_finder_rank_1_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    ! nnodes_a
+    real, dimension(:), intent(in) :: positions_a
+    ! 2 x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! nnodes_b
+    real, dimension(:), intent(in) :: positions_b
+    ! 2 x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! nelements_a
+    type(intersections), dimension(:), intent(out) :: map_ab
+    
+    integer :: ele_a, ele_b, i, j, nelements_a, nelements_b, nints
+    integer, dimension(:), allocatable :: indices_a, indices_b, ints, work
+    real, dimension(2) :: interval_a, interval_b
+    real, dimension(:), allocatable :: left_positions_a, left_positions_b
+    
+    nelements_a = size(enlist_a, 2)
+    nelements_b = size(enlist_b, 2)
+    
+    allocate(left_positions_a(nelements_a), left_positions_b(nelements_b))
+    do ele_a = 1, nelements_a
+      left_positions_a(ele_a) = minval(positions_a(enlist_a(:, ele_a)))
+    end do
+    do ele_b = 1, nelements_b
+      left_positions_b(ele_b) = minval(positions_b(enlist_b(:, ele_b)))
+    end do
+    
+    allocate(indices_a(nelements_a), indices_b(nelements_b), work(max(nelements_a, nelements_b)))
+    call merge_sort(left_positions_a, indices_a, work(:nelements_a))
+    call merge_sort(left_positions_b, indices_b, work(:nelements_b))
+    deallocate(left_positions_a, left_positions_b, work)
+    
+    allocate(ints(nelements_b))
+    j = 1
+    do i = 1, nelements_a
+      ele_a = indices_a(i)
+      interval_a = positions_a(enlist_a(:, ele_a))
+      nints = 0
+      do while(j <= nelements_b)
+        ele_b = indices_b(j)
+        interval_b = positions_b(enlist_b(:, ele_b))
+        if(maxval(interval_b) <= minval(interval_a)) then
+          j = j + 1
+        else if(minval(interval_b) >= maxval(interval_a)) then
+          exit
+        else
+          nints = nints + 1
+          ints(nints) = ele_b
+          j = j + 1
+        end if
+      end do
+      if(nints > 0) j = j - 1
+      allocate(map_ab(ele_a)%v(nints))
+      map_ab(ele_a)%v = ints(:nints)
+      map_ab(ele_a)%n = nints
+    end do
+    
+    deallocate(indices_a, indices_b, ints)
+  
+  contains
+  
+    ! A very basic merge sort implementation
+    pure recursive subroutine merge_sort(v, indices, work)
+      real, dimension(:), intent(in) :: v
+      integer, dimension(:), intent(inout) :: indices
+      integer, dimension(:), intent(out) :: work
+      
+      integer :: i, i_1, i_2, j, n 
+      
+      n = size(v, 1)
+      
+      if(n <= 4) then
+        ! Switch to a basic quadratic sort for small inputs
+        do i = 1, n
+          indices(i) = i
+          do j = i + 1, n
+            ! < here for a stable sort
+            if(v(j) < v(indices(i))) indices(i) = j
+          end do
+        end do
+      else
+        ! Otherwise split, recurse, and merge
+        call merge_sort(v(1:n / 2), indices(1:n / 2), work(1:n / 2))
+        call merge_sort(v((n / 2) + 1:n), indices((n / 2) + 1:n), work((n / 2) + 1:n))
+        work(1:n / 2) = indices(1:n / 2)
+        work((n / 2) + 1:n) = indices((n / 2) + 1:n) + (n / 2)
+        i_1 = 1
+        i_2 = (n / 2) + 1
+        do i = 1, n
+          if(i_1 > (n / 2)) then
+            indices(i:) = work(i_2:)
+            exit
+          else if(i_2 > n) then
+            indices(i:) = work(i_1:n / 2)
+            exit
+          ! <= here for a stable sort
+          else if(v(work(i_1)) <= v(work(i_2))) then
+            indices(i) = work(i_1)
+            i_1 = i_1 + 1
+          else
+            indices(i) = work(i_2)
+            i_2 = i_2 + 1
+          end if
+        end do
+      end if
+      
+    end subroutine merge_sort
+    
+  end subroutine sort_intersection_finder_rank_1_intersections
+  
+  pure subroutine sort_intersection_finder_rank_2_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    ! 1 x nnodes_a
+    real, dimension(:, :), intent(in) :: positions_a
+    ! 2 x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! 1 x nnodes_b
+    real, dimension(:, :), intent(in) :: positions_b
+    ! 2 x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! nelements_a
+    type(intersections), dimension(:), intent(out) :: map_ab
+    
+    call sort_intersection_finder(positions_a(1, :), enlist_a, positions_b(1, :), enlist_b, map_ab)
+  
+  end subroutine sort_intersection_finder_rank_2_intersections
+
+  pure subroutine sort_intersection_finder_rank_1_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+    ! nnodes_a
+    real, dimension(:), intent(in) :: positions_a
+    ! 2 x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! nnodes_b
+    real, dimension(:), intent(in) :: positions_b
+    ! 2 x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
+    !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    ! nelements_a + 1
+    integer, dimension(:), intent(out) :: map_ab_indptr
+    
+    type(intersections), dimension(:), allocatable :: map_ab
+
+    allocate(map_ab(size(enlist_a, 2)))
+    call sort_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    call intersections_to_csr_sparsity(map_ab, map_ab_indices, map_ab_indptr)
+    call deallocate(map_ab)
+    deallocate(map_ab)
+  
+  end subroutine sort_intersection_finder_rank_1_csr_sparsity
+
+  pure subroutine sort_intersection_finder_rank_2_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+    ! 1 x nnodes_a
+    real, dimension(:, :), intent(in) :: positions_a
+    ! 2 x nelements_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    ! 1 x nnodes_b
+    real, dimension(:, :), intent(in) :: positions_b
+    ! 2 x nelements_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
+    !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    ! nelements_a + 1
+    integer, dimension(:), intent(out) :: map_ab_indptr
+    
+    type(intersections), dimension(:), allocatable :: map_ab
+
+    allocate(map_ab(size(enlist_a, 2)))
+    call sort_intersection_finder(positions_a(1, :), enlist_a, positions_b(1, :), enlist_b, map_ab)
+    call intersections_to_csr_sparsity(map_ab, map_ab_indices, map_ab_indptr)
+    call deallocate(map_ab)
+    deallocate(map_ab)
+  
+  end subroutine sort_intersection_finder_rank_2_csr_sparsity
 
   ! Brute force intersection finder.
   pure subroutine brute_force_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -663,6 +930,28 @@ contains
       map_ab(ele_a)%v = ints(:nints)
     end do
     deallocate(ints)
+    
+  contains
+
+    pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
+      ! 2 x dim
+      real, dimension(:, :), intent(in) :: bbox_1
+      ! 2 x dim
+      real, dimension(:, :), intent(in) :: bbox_2
+
+      logical :: intersect
+
+      integer :: i
+
+      do i = 1, size(bbox_1, 2)
+        if(bbox_2(2, i) <= bbox_1(1, i) .or. bbox_2(1, i) >= bbox_1(2, i)) then
+          intersect = .false.
+          return
+        end if
+      end do
+      intersect = .true.
+
+    end function bboxes_intersect
 
   end subroutine brute_force_intersection_finder_intersections
 
@@ -690,27 +979,5 @@ contains
     deallocate(map_ab)
 
   end subroutine brute_force_intersection_finder_csr_sparsity
-
-  subroutine brute_force_intersection_finder_lists(positions_a, enlist_a, positions_b, enlist_b, map_ab)
-    ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
-    ! loc_a x nelements_a
-    integer, dimension(:, :), intent(in) :: enlist_a
-    ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
-    ! loc_b x nelements_b
-    integer, dimension(:, :), intent(in) :: enlist_b
-    ! nelements_a
-    type(ilist), dimension(:), intent(out) :: map_ab
-
-    type(intersections), dimension(:), allocatable :: lmap_ab
-
-    allocate(lmap_ab(size(enlist_a, 2)))
-    call brute_force_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, lmap_ab)
-    call intersections_to_lists(lmap_ab, map_ab)
-    call deallocate(lmap_ab)
-    deallocate(lmap_ab)
-
-  end subroutine brute_force_intersection_finder_lists
 
 end module libsupermesh_intersection_finder
