@@ -16,10 +16,12 @@ module libsupermesh_parallel_supermesh
 
   implicit none
 
+#include <mpif.h>
+
   private
 
   public :: parallel_supermesh, print_profile_times, printOverlapMode
-  private :: returnOverlapMode
+  public :: bbox, partition_bbox, partition_bboxes_intersect
 
   type pointer_real
     real, dimension(:), pointer :: p
@@ -58,8 +60,10 @@ module libsupermesh_parallel_supermesh
 
   integer, save :: mpi_comm, nprocs, rank
   real :: t0, all_to_all, point_to_point, local_compute, remote_compute, t1
-
-#include "mpif.h"
+  
+  interface partition_bbox
+    module procedure partition_bbox_real, partition_bbox_vector_field
+  end interface partition_bbox
 
 contains
 
@@ -289,12 +293,12 @@ contains
     do i = 0, nprocs - 1
       if(i == rank) cycle
 
-      if(bboxes_intersect(bbox_a, parallel_bbox_b(:, :, i))) then
+      if(partition_bboxes_intersect(bbox_a, parallel_bbox_b(:, :, i))) then
         ! Receiving data from process i
         partition_intersection_recv(i) = .true.
       end if
 
-      if(bboxes_intersect(bbox_b, parallel_bbox_a(:, :, i))) then
+      if(partition_bboxes_intersect(bbox_b, parallel_bbox_a(:, :, i))) then
         ! Sending data to process i
         partition_intersection_send(i) = .true.
 
@@ -304,7 +308,7 @@ contains
           ! Don't send non-owned elements
           if(ele_owner_b(ele_B) /= rank) cycle
           ! Don't send elements with non-intersecting bounding boxes
-          if(.not. bboxes_intersect(bbox(positions_b(:, enlist_b(:, ele_B))), parallel_bbox_a(:, :, i))) cycle
+          if(.not. partition_bboxes_intersect(bbox(positions_b(:, enlist_b(:, ele_B))), parallel_bbox_a(:, :, i))) cycle
 
           ! Mark the element for sending
           nelements_send = nelements_send + 1
@@ -890,5 +894,103 @@ contains
     mode = 0
 #endif
   end function returnOverlapMode
+
+  pure function bbox(coords)
+    ! dim x loc
+    real, dimension(:, :), intent(in) :: coords
+
+    real, dimension(2, size(coords, 1)) :: bbox
+
+    integer :: i, j
+
+    bbox(1, :) = coords(:, 1)
+    bbox(2, :) = coords(:, 1)
+    do i = 2, size(coords, 2)
+      do j = 1, size(coords, 1)
+        bbox(1, j) = min(bbox(1, j), coords(j, i))
+        bbox(2, j) = max(bbox(2, j), coords(j, i))
+      end do
+    end do
+
+  end function bbox
+
+  pure function partition_bbox_real(positions, enlist, ele_owner, rank) result(bbox)
+    ! dim x nnodes
+    real, dimension(:, :), intent(in) :: positions
+    ! loc x nelements
+    integer, dimension(:, :), intent(in) :: enlist
+    ! nelements
+    integer, dimension(:), intent(in) :: ele_owner
+    integer, intent(in) :: rank
+    
+    real, dimension(2, size(positions, 1)) :: bbox
+
+    integer :: dim, ele, ele_0, i, nelements
+    real, dimension(size(positions, 1), size(enlist, 1)) :: element
+    
+    dim = size(positions, 1)
+    nelements = size(enlist, 2)    
+    if(nelements == 0) then
+      bbox = huge(0.0)
+      return
+    end if
+    
+    ele_0 = 1
+    do while(ele_owner(ele_0) /= rank)
+      ele_0 = ele_0 + 1
+      if(ele_0 > nelements) then
+        bbox = huge(0.0)
+        return
+      end if
+    end do    
+    element = positions(:, enlist(:, ele_0))
+    do i = 1, dim
+      bbox(1, i) = minval(element(1, :))
+      bbox(2, i) = maxval(element(2, :))
+    end do
+    
+    do ele = ele_0 + 1, nelements
+      if(ele_owner(ele) /= rank) cycle
+      element = positions(:, enlist(:, ele))
+      do i = 1, dim
+        bbox(1, i) = min(bbox(1, i), minval(element(i, :)))
+        bbox(2, i) = max(bbox(2, i), maxval(element(i, :)))
+      end do
+    end do
+
+  end function partition_bbox_real
+  
+  pure function partition_bbox_vector_field(positions, ele_owner, rank) result(bbox)
+    use libsupermesh_fields, only : vector_field
+    type(vector_field), intent(in) :: positions
+    ! nelements
+    integer, dimension(:), intent(in) :: ele_owner
+    integer, intent(in) :: rank
+    
+    real, dimension(2, size(positions%val, 1)) :: bbox
+    
+    bbox = partition_bbox(positions%val, reshape(positions%mesh%ndglno, (/positions%mesh%loc, positions%mesh%nelements/)), ele_owner, rank)
+  
+  end function partition_bbox_vector_field
+
+  pure function partition_bboxes_intersect(bbox_1, bbox_2) result(intersect)
+    ! 2 x dim
+    real, dimension(:, :), intent(in) :: bbox_1
+    ! 2 x dim
+    real, dimension(:, :), intent(in) :: bbox_2
+
+    logical :: intersect
+
+    integer :: i
+    
+    do i = 1, size(bbox_1, 2)
+      if(bbox_2(2, i) <= bbox_1(1, i) .or. bbox_2(1, i) >= bbox_1(2, i)) then
+        intersect = .false.
+        return
+      end if
+    end do
+    intersect = .true.
+
+  end function partition_bboxes_intersect
 
 end module libsupermesh_parallel_supermesh

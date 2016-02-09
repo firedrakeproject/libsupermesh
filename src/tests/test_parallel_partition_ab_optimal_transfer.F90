@@ -11,6 +11,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
   use libsupermesh_halo_ownership
+  use libsupermesh_parallel_supermesh
 
   implicit none
 
@@ -282,7 +283,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
   do i = 0, nprocs - 1
     l = 0
 
-    if(bboxes_intersect(bbox_a, parallel_bbox_b(:, :, i))) then
+    if(partition_bboxes_intersect(bbox_a, parallel_bbox_b(:, :, i))) then
       if(i /= rank) then
         recvs = recvs + 1
         partition_intersection_recv(i) = .true.
@@ -293,14 +294,14 @@ subroutine test_parallel_partition_ab_optimal_transfer
       end if
     end if
 
-    if(bboxes_intersect(bbox_b, parallel_bbox_a(:, :, i))) then
+    if(partition_bboxes_intersect(bbox_b, parallel_bbox_a(:, :, i))) then
       if(i /= rank) then
         sends = sends + 1
         partition_intersection_send(i) = .true.
         allocate(temp_elements_uns(ele_count(positionsB)))
         do ele_B = 1, ele_count(positionsB)
           if(ele_ownerB(ele_B) /= rank) cycle
-          if(.not. bboxes_intersect(bbox(ele_val(positionsB, ele_B)), parallel_bbox_a(:, :, i))) cycle
+          if(.not. partition_bboxes_intersect(bbox(ele_val(positionsB, ele_B)), parallel_bbox_a(:, :, i))) cycle
           l = l + 1                     ! Keep a counter
           temp_elements_uns(l) = ele_B  ! Keep the actual element
         end do
