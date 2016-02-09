@@ -175,7 +175,7 @@ contains
     allocate(parallel_bbox_b(2, size(positions_b,1), 0:nprocs-1))
 
     ! Bounding box all-to-all
-#if PROFILE == 1
+#ifdef PROFILE
     t0 = mpi_wtime()
 #else
     point_to_point = 0.0D0
@@ -198,7 +198,7 @@ contains
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to MPI_Allgather bbox_b(s) to parallel_bbox_b.")
     end if
-#if PROFILE == 1
+#ifdef PROFILE
     all_to_all = mpi_wtime() - t0
 #endif
   end subroutine step_1
@@ -233,7 +233,7 @@ contains
       end subroutine donor_ele_data
     end interface
 
-#if PROFILE == 1
+#ifdef PROFILE
     t0 = -1
 #endif
 
@@ -431,7 +431,7 @@ contains
         end if
         deallocate(send_nodes_array)
 
-#if PROFILE == 1
+#ifdef PROFILE
         if ( t0 .eq. -1 ) t0 = mpi_wtime()
 #endif
 
@@ -497,7 +497,7 @@ contains
       end subroutine intersection_calculation
     end interface
 
-#if OVERLAP_COMPUTE_COMMS == 0
+#ifndef OVERLAP_COMPUTE_COMMS
     do i = 0, nprocs - 1
       if(i == rank) cycle
 
@@ -526,7 +526,7 @@ contains
       FLAbort("Unable to setup MPI_Waitall(send).")
     end if
 
-#if PROFILE == 1
+#ifdef PROFILE
     if ( t0 .gt. 0 ) then
       point_to_point = mpi_wtime() - t0
     else
@@ -557,7 +557,7 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#if PROFILE == 1
+#ifdef PROFILE
     t1 = mpi_wtime()
 #endif
     call rtree_intersection_finder_set_input(positions_a, enlist_a)
@@ -576,7 +576,7 @@ contains
 
       end do
     end do
-#if PROFILE == 1
+#ifdef PROFILE
     local_compute = mpi_wtime() - t1
 #endif
 
@@ -587,7 +587,7 @@ contains
       if(i == rank) cycle
 
       if(partition_intersection_recv(i)) then
-#if OVERLAP_COMPUTE_COMMS == 1
+#ifdef OVERLAP_COMPUTE_COMMS
         call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_Probe error")
@@ -664,7 +664,7 @@ contains
 
         call unpack_data_b(ldata)
 
-#if PROFILE == 1
+#ifdef PROFILE
     t1 = mpi_wtime()
 #endif
         do ele_B = 1, nelements
@@ -686,7 +686,7 @@ contains
             call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), recv_nodes_connectivity(i)%p((ele_B - 1) * size(enlist_b, 1) + 1:ele_B * size(enlist_B, 1)), ele_A, ele_B, .false.)
           end do
         end do
-#if PROFILE == 1
+#ifdef PROFILE
     remote_compute = mpi_wtime() - t1
 #endif
         ! Deallocate arrays now, to conserve memory
@@ -698,7 +698,7 @@ contains
 
     deallocate(positions_c, nodes_A, nodes_B)
 
-#if OVERLAP_COMPUTE_COMMS == 1
+#ifdef OVERLAP_COMPUTE_COMMS
     sends = sends + 1
     call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
     if(ierr /= MPI_SUCCESS) then
@@ -797,7 +797,7 @@ contains
 
     integer :: ierr
 
-#if PROFILE == 1
+#ifdef PROFILE
     call MPI_Allreduce(point_to_point, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to setup MPI_Allreduce(point_to_point_min).")
@@ -874,7 +874,7 @@ contains
 
   subroutine printOverlapMode()
 
-#if OVERLAP_COMPUTE_COMMS == 1
+#ifdef OVERLAP_COMPUTE_COMMS
     print *, "Using Overlap Compute/Comms"
 #else
     print *, "NOT using Overlap Compute/Comms"
@@ -884,7 +884,7 @@ contains
   function returnOverlapMode() result(mode)
     integer :: mode 
 
-#if OVERLAP_COMPUTE_COMMS == 1
+#ifdef OVERLAP_COMPUTE_COMMS
     mode = 1
 #else
     mode = 0

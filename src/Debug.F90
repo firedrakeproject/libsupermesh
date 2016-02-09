@@ -79,13 +79,9 @@ contains
     INTEGER LineNumber
     LOGICAL UsingMPI
     INTEGER IERR
-#ifdef HAVE_MPI
 #include <mpif.h>
-#endif
     
-#ifdef HAVE_MPI
     CALL MPI_INITIALIZED(UsingMPI, IERR)
-#endif
     ewrite(-1,FMT='(A)') "*** FLUIDITY ERROR ***"
     ewrite(-1,FMT='(3A,I5,A)') "Source location: (",FromFile,",",LineNumber,")"
     ewrite(-1,FMT='(2A)') "Error message: ",ErrorStr
@@ -93,12 +89,10 @@ contains
     call print_backtrace()
     ewrite(-1,FMT='(A)') "Use addr2line -e <binary> <address> to decipher."
     ewrite(-1,FMT='(A)') "Error is terminal."
-#ifdef HAVE_MPI
     IF(UsingMPI) THEN
        !mpi_comm_femtools not required here.
        CALL MPI_ABORT(MPI_COMM_WORLD, MPI_ERR_OTHER, IERR)
     END IF
-#endif
     
     STOP 1
   END SUBROUTINE FLAbort_pinpoint
@@ -109,24 +103,18 @@ contains
     INTEGER LineNumber
     LOGICAL UsingMPI
     INTEGER IERR
-#ifdef HAVE_MPI
 #include <mpif.h>
-#endif
     
-#ifdef HAVE_MPI
     CALL MPI_INITIALIZED(UsingMPI, IERR)
-#endif
     ewrite(-1,FMT='(A)') "*** ERROR ***"
 #ifndef NDEBUG
     ewrite(-1,FMT='(3A,I5,A)') "Source location: (",FromFile,",",LineNumber,")"
 #endif
     ewrite(-1,FMT='(2A)') "Error message: ",ErrorStr
-#ifdef HAVE_MPI
     IF(UsingMPI) THEN
        !mpi_comm_femtools not required here.
        CALL MPI_ABORT(MPI_COMM_WORLD, MPI_ERR_OTHER, IERR)
     END IF
-#endif
     
     STOP
   END SUBROUTINE FLExit_pinpoint

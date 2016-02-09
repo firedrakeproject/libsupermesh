@@ -277,7 +277,7 @@ extern "C"{
     assert(lnsends);
     int* lnreceives = (int*)malloc(*nprocs * sizeof(int));
     assert(lnreceives);
-    cHaloReaderQueryOutput(level, nprocs, lnsends, lnreceives);
+    cLibSuperMesh_halo_reader_query_output(level, nprocs, lnsends, lnreceives);
     for(int i = 0;i < *nprocs;i++){
       assert(nsends[i] == lnsends[i]);
       assert(nreceives[i] == lnreceives[i]);

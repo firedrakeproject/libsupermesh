@@ -32,9 +32,7 @@
 #include "confdefs.h"
 #include "Tokenize.h"
 
-#ifdef HAVE_MPI
 #include <mpi.h>
-#endif
 
 #include <algorithm>
 #include <cassert>

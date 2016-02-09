@@ -45,7 +45,7 @@ subroutine benchmark_parallel_p2_inner_product
   real :: parallel_time_min, parallel_time_max, parallel_time_sum
   real :: parallel_time_interpolation_min, parallel_time_interpolation_max, parallel_time_interpolation_sum
   integer :: nprocs
-#if PROFILE == 1
+#ifdef PROFILE
   real :: all_to_all_max, all_to_all_min, all_to_all_sum
   real :: point_to_point_max, point_to_point_min, point_to_point_sum
 #endif

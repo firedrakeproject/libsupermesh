@@ -1,10 +1,24 @@
-#ifndef CONFDEFS_H
-#define CONFDEFS_H
+#pragma once
 
 #define PROFILE @SuperMesh_PROFILE@
-#define OVERLAP_COMPUTE_COMMS @SuperMesh_OVERLAP_COMPUTE_COMMS@
-#define HAVE_MPI @SuperMesh_HAVE_MPI@
-#define NDEBUG @SuperMesh_DEBUG@
-#define HAVE_PETSC @SuperMesh_HAVE_PETSC@
+#if PROFILE == 0
+#undef PROFILE
+#endif
 
+#define OVERLAP_COMPUTE_COMMS @SuperMesh_OVERLAP_COMPUTE_COMMS@
+#if OVERLAP_COMPUTE_COMMS == 0
+#undef OVERLAP_COMPUTE_COMMS
+#endif
+
+#define HAVE_PETSC @SuperMesh_HAVE_PETSC@
+#if HAVE_PETSC == 0
+#undef HAVE_PETSC
+#endif
+
+#define DDEBUG @SuperMesh_DEBUG@
+#if DDEBUG == 0
+#undef DDEBUG
+#define NDEBUG
+#else
+#undef NDEBUG
 #endif
