@@ -6,7 +6,6 @@
 module libsupermesh_quadtree_intersection_finder
 
   use libsupermesh_debug, only : abort_pinpoint
-  use libsupermesh_debug_parameters, only : debug_log_unit
   use libsupermesh_integer_set, only : integer_set, insert
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
