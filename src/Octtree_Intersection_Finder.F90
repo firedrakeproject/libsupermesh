@@ -5,8 +5,8 @@
 
 module libsupermesh_octtree_intersection_finder
 
-  use libsupermesh_fldebug, only : flabort_pinpoint
-  use libsupermesh_fldebug_parameters, only : debug_log_unit
+  use libsupermesh_debug, only : abort_pinpoint
+  use libsupermesh_debug_parameters, only : debug_log_unit
   use libsupermesh_integer_set, only : integer_set, insert
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
@@ -77,7 +77,7 @@ contains
     logical, dimension(:), allocatable :: seen_ele_b
     
     if(size(positions_a, 1) /= TREE_DIM) then
-      FLAbort("Invalid dimension")
+      libsupermesh_abort("Invalid dimension")
     end if
     nelements_a = size(enlist_a, 2)
     nelements_b = size(enlist_b, 2)
@@ -148,14 +148,14 @@ contains
     integer :: ele, nelements, node, nnodes
     
     if(size(positions, 1) /= TREE_DIM) then
-      FLAbort("Invalid dimension")
+      libsupermesh_abort("Invalid dimension")
     end if
     nnodes = size(positions, 2)
     if(nnodes == 0) then
-      FLAbort("No nodes")
+      libsupermesh_abort("No nodes")
     end if
     if(size(enlist, 1) == 0) then
-      FLAbort("No element local nodes")
+      libsupermesh_abort("No element local nodes")
     end if
     nelements = size(enlist, 2)
     

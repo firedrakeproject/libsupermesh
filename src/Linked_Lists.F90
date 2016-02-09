@@ -2,7 +2,7 @@
 
 module libsupermesh_linked_lists
   ! A module to provide linked lists and operations on them.
-  use libsupermesh_fldebug
+  use libsupermesh_debug
   implicit none
 
   ! Define a linked list for integers
@@ -232,7 +232,7 @@ contains
 
     end do
 
-    FLAbort("Walked off the end of the list. This can't happen.")
+    libsupermesh_abort("Walked off the end of the list. This can't happen.")
 
   end subroutine iinsert_ascending
 

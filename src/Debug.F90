@@ -27,106 +27,55 @@
 
 #include "fdebug.h"
 
-module libsupermesh_fldebug
-  !!< This module allows pure fortran programs to use the fdebug.h headers.
-
-  use iso_c_binding
+module libsupermesh_debug
       
-  use libsupermesh_fldebug_parameters
+  use libsupermesh_debug_parameters, only : current_debug_level, &
+    & debug_error_unit, debug_log_unit
   
   implicit none
+  
+#include <mpif.h>
+  
+  private
+  
+  public :: current_debug_level, debug_unit, abort_pinpoint
 
   interface print_backtrace
     subroutine libsupermesh_print_backtrace() bind(c)
       implicit none
     end subroutine libsupermesh_print_backtrace
   end interface print_backtrace
-
-  interface write_minmax
-    module procedure write_minmax_real_array
-  end interface
   
 contains
   
-  function debug_unit(priority)
-    !!< Decide where to send output based on the level of the error.
-    
-    integer :: debug_unit
+  function debug_unit(priority)    
     integer, intent(in) :: priority
     
-    if (priority<1) then
-       debug_unit=debug_error_unit
+    integer :: debug_unit
+    
+    if(priority < 1) then
+       debug_unit = debug_error_unit
     else
-       debug_unit=debug_log_unit
+       debug_unit = debug_log_unit
     end if
     
   end function debug_unit
 
-  function debug_level()
-    ! Simply return the current debug level. This makes the debug level
-    ! effectively global.
-    use libsupermesh_fldebug_parameters
-    implicit none  
-    integer :: debug_level
+  subroutine abort_pinpoint(error, file, line_number)
+    character(len = *), intent(in) :: error
+    character(len = *), intent(in) :: file
+    integer, intent(in) :: line_number
     
-    debug_level=current_debug_level
+    integer :: ierr, mpi_init
     
-  end function debug_level
-
-  SUBROUTINE FLAbort_pinpoint(ErrorStr, FromFile, LineNumber)
-
-    CHARACTER*(*) ErrorStr, FromFile
-    INTEGER LineNumber
-    LOGICAL UsingMPI
-    INTEGER IERR
-#include <mpif.h>
-    
-    CALL MPI_INITIALIZED(UsingMPI, IERR)
-    ewrite(-1,FMT='(A)') "*** FLUIDITY ERROR ***"
-    ewrite(-1,FMT='(3A,I5,A)') "Source location: (",FromFile,",",LineNumber,")"
-    ewrite(-1,FMT='(2A)') "Error message: ",ErrorStr
-    ewrite(-1,FMT='(A)') "Backtrace will follow if it is available:"
+    call MPI_Initialized(mpi_init, ierr)
+    ewrite(-1, "(a)")      "*** libsupermesh error ***"
+    ewrite(-1, "(a,i0,a)") "Source location: (" // trim(file) // ",", line_number, ")"
+    ewrite(-1, "(a)")      "Error message: ", trim(error)
     call print_backtrace()
-    ewrite(-1,FMT='(A)') "Use addr2line -e <binary> <address> to decipher."
-    ewrite(-1,FMT='(A)') "Error is terminal."
-    IF(UsingMPI) THEN
-       !mpi_comm_femtools not required here.
-       CALL MPI_ABORT(MPI_COMM_WORLD, MPI_ERR_OTHER, IERR)
-    END IF
+    if(mpi_init /= 0) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+    stop 1
     
-    STOP 1
-  END SUBROUTINE FLAbort_pinpoint
+  end subroutine abort_pinpoint
 
-  SUBROUTINE FLExit_pinpoint(ErrorStr, FromFile, LineNumber)
-
-    CHARACTER*(*) ErrorStr, FromFile
-    INTEGER LineNumber
-    LOGICAL UsingMPI
-    INTEGER IERR
-#include <mpif.h>
-    
-    CALL MPI_INITIALIZED(UsingMPI, IERR)
-    ewrite(-1,FMT='(A)') "*** ERROR ***"
-#ifndef NDEBUG
-    ewrite(-1,FMT='(3A,I5,A)') "Source location: (",FromFile,",",LineNumber,")"
-#endif
-    ewrite(-1,FMT='(2A)') "Error message: ",ErrorStr
-    IF(UsingMPI) THEN
-       !mpi_comm_femtools not required here.
-       CALL MPI_ABORT(MPI_COMM_WORLD, MPI_ERR_OTHER, IERR)
-    END IF
-    
-    STOP
-  END SUBROUTINE FLExit_pinpoint
-
-  subroutine write_minmax_real_array(array, array_expression)
-    ! the array to print its min and max of
-    real, dimension(:), intent(in):: array
-    ! the actual array expression in the code
-    character(len=*), intent(in):: array_expression
-
-    ewrite(2,*) "Min, max of "//array_expression//" = ",minval(array), maxval(array)
-
-  end subroutine write_minmax_real_array
-
-end module libsupermesh_fldebug
+end module libsupermesh_debug

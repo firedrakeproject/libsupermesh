@@ -2,7 +2,7 @@
 
 module libsupermesh_halo_ownership
 
-  use libsupermesh_fldebug
+  use libsupermesh_debug
   use libsupermesh_read_halos
 
   implicit none

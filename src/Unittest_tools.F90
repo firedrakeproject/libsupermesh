@@ -2,7 +2,7 @@
 
 module libsupermesh_unittest_tools
 !!< This module contains utility functions for the unit testing framework.
-  use libsupermesh_fldebug
+  use libsupermesh_debug
   implicit none
 
   private

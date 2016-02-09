@@ -59,7 +59,7 @@
 
 module libsupermesh_tri_intersection_2_module
 
-  use libsupermesh_fldebug
+  use libsupermesh_debug
 
   implicit none
 
@@ -179,7 +179,7 @@ contains
                w0 * tri%V(:, pos_idx(1)) + w1 * tri%V(:, neg_idx(i))
         end do
       case default
-        FLAbort("Error. Found more than three points.")
+        libsupermesh_abort("Error. Found more than three points.")
       end select
     case(2)
       select case(neg_cnt)
@@ -205,7 +205,7 @@ contains
         tri_array_tmp(tri_cnt_tmp)%V(:, pos_idx(2)) = tri_tmp%V(:, 2)
         tri_array_tmp(tri_cnt_tmp)%V(:, neg_idx(1)) = tri%V(:, pos_idx(2))
       case default
-        FLAbort("Error. Found more than three points.")
+        libsupermesh_abort("Error. Found more than three points.")
       end select
     end select
   end subroutine clip_old

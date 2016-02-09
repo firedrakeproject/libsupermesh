@@ -4,7 +4,7 @@ module libsupermesh_read_halos
 
   use iso_c_binding
 
-  use libsupermesh_fldebug
+  use libsupermesh_debug
 
   implicit none
 
@@ -75,15 +75,15 @@ contains
 
     call MPI_Comm_rank(MPI_COMM_WORLD, halo%process, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to determine process number")
+      libsupermesh_abort("Unable to determine process number")
     end if
     call MPI_Comm_size(MPI_COMM_WORLD, halo%nprocs, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to determine number of processes")
+      libsupermesh_abort("Unable to determine number of processes")
     end if
     errorCount = halo_reader_set_input(trim(filename), len_trim(filename), halo%process, halo%nprocs)
     if(errorCount /= 0) then
-      FLExit("Unable to read halo file '" // trim(filename) // "'")
+      libsupermesh_abort("Unable to read halo file '" // trim(filename) // "'")
     end if
 
     if(present(level)) then

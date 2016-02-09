@@ -2,7 +2,7 @@
 
 module libsupermesh_fields
 
-  use libsupermesh_fldebug
+  use libsupermesh_debug
 
   implicit none
 
@@ -249,7 +249,7 @@ contains
               eelist%n(i) = eelist%n(i) + 1
 #ifndef NDEBUG
               if(eelist%n(i) > nneigh_ele) then
-                FLAbort("Invalid connectivity")
+                libsupermesh_abort("Invalid connectivity")
               end if
 #endif
               eelist%v(eelist%n(i), i) = ele
@@ -257,7 +257,7 @@ contains
               if(eelist%n(i) == nneigh_ele) exit loc_loop
 #else
             else if(seen(ele) > sloc) then
-              FLAbort("Invalid connectivity")
+              libsupermesh_abort("Invalid connectivity")
 #endif
             end if
           end if

@@ -26,19 +26,19 @@
 !    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !    USA
 
-#include "confdefs.h"
+#include "fdebug.h"
 
-module libsupermesh_fldebug_parameters
-  !!< Debug specific global parameters
+module libsupermesh_debug_parameters  
+
+  use iso_fortran_env, only : error_unit, output_unit
 
   implicit none
+  
+  private
+  
+  public :: current_debug_level, debug_error_unit, debug_log_unit
 
-  !------------------------------------------------------------------------
-  ! Parameters controlling diagnostic output.
-  !------------------------------------------------------------------------
+  integer, save :: current_debug_level = -1
+  integer, save :: debug_error_unit = error_unit, debug_log_unit = output_unit
 
-  integer, save :: current_debug_level=-1, global_debug_level=-1
-  !! These defaults are an assumption which may not be true on all platforms.
-  integer, save :: debug_error_unit=0, debug_log_unit=6
-
-end module libsupermesh_fldebug_parameters
+end module libsupermesh_debug_parameters

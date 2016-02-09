@@ -2,7 +2,7 @@
 
 module libsupermesh_construction
 
-  use libsupermesh_fldebug
+  use libsupermesh_debug
   use libsupermesh_fields
   use libsupermesh_tri_intersection_module
   use libsupermesh_tet_intersection_module
@@ -46,7 +46,7 @@ module libsupermesh_construction
 
       call intersect_tets(tetA%v, tetB%v, simplexC_real, n_C)
     case default
-      FLAbort("intersect_elements: Unsupported dimension.")
+      libsupermesh_abort("intersect_elements: Unsupported dimension.")
     end select
 
   end subroutine intersect_elements

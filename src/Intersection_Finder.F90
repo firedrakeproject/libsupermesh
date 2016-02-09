@@ -4,9 +4,9 @@ module libsupermesh_intersection_finder
 
   use iso_c_binding, only : c_double, c_int
   
-  use libsupermesh_fields, only : eelist_type, mesh_eelist, sloc, deallocate
-  use libsupermesh_fldebug, only : flabort_pinpoint, current_debug_level, &
+  use libsupermesh_debug, only : abort_pinpoint, current_debug_level, &
     & debug_unit
+  use libsupermesh_fields, only : eelist_type, mesh_eelist, sloc, deallocate
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
   use libsupermesh_octtree_intersection_finder, only : octtree_node, &
@@ -210,7 +210,7 @@ contains
       case(2:3)
         call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
   
   end subroutine intersection_finder_intersections
@@ -236,7 +236,7 @@ contains
       case(2:3)
         call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
   
   end subroutine intersection_finder_csr_sparsity
@@ -265,7 +265,7 @@ contains
       case(2:3)
         call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, lmap_ab)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
     do ele_a = 1, nelements_a
       do i = 1, lmap_ab(ele_a)%n
@@ -503,7 +503,7 @@ contains
 
     dim = size(positions, 1)
     if(.not. any(dim == (/2, 3/))) then
-      FLAbort("Invalid dimension")
+      libsupermesh_abort("Invalid dimension")
     end if
     nnodes = size(positions, 2)
     loc = size(enlist, 1)
@@ -598,7 +598,7 @@ contains
       case(3)
         tree_octtree = build_octtree(positions, enlist)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
     allocate(tree_eles(tree_nelements), tree_seen_ele(tree_nelements))
     tree_neles = 0 
@@ -627,7 +627,7 @@ contains
       case(3)
         call query_octtree(tree_octtree, bbox, tree_eles, tree_neles, tree_seen_ele)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
     
   end subroutine tree_intersection_finder_find
@@ -656,7 +656,7 @@ contains
       case(3)
         call deallocate(tree_octtree)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
     tree_dim = 0
     tree_nelements = 0  
@@ -683,7 +683,7 @@ contains
       case(3)
         call octtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
 
   end subroutine tree_intersection_finder_intersections
@@ -709,7 +709,7 @@ contains
       case(3)
         call octtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
 
   end subroutine tree_intersection_finder_csr_sparsity

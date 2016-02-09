@@ -4,8 +4,8 @@ module libsupermesh_parallel_supermesh
 
   use iso_fortran_env, only : output_unit
   use iso_c_binding, only : c_int8_t
+  use libsupermesh_debug
   use libsupermesh_integer_hash_table
-  use libsupermesh_fldebug
   use libsupermesh_read_halos
   use libsupermesh_intersection_finder
   use libsupermesh_tri_intersection_module
@@ -127,11 +127,11 @@ contains
 
     CALL MPI_Comm_rank(mpi_comm, rank, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("MPI_Comm_rank error")
+      libsupermesh_abort("MPI_Comm_rank error")
     end if
     CALL MPI_Comm_size(mpi_comm, nprocs, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("MPI_Comm_size error")
+      libsupermesh_abort("MPI_Comm_size error")
     end if
 
     ! 0. Allocate and initialise arrays
@@ -193,14 +193,14 @@ contains
       & parallel_bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION,    &
       & mpi_comm, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to MPI_Allgather bbox_a(s) to parallel_bbox_a.")
+      libsupermesh_abort("Unable to MPI_Allgather bbox_a(s) to parallel_bbox_a.")
     end if
 
     call MPI_Allgather(bbox_b, 2 * size(positions_b,1), MPI_DOUBLE_PRECISION, &
       & parallel_bbox_b, 2 * size(positions_b,1), MPI_DOUBLE_PRECISION,    &
       & mpi_comm, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to MPI_Allgather bbox_b(s) to parallel_bbox_b.")
+      libsupermesh_abort("Unable to MPI_Allgather bbox_b(s) to parallel_bbox_b.")
     end if
 #ifdef PROFILE
     all_to_all = mpi_wtime() - t0
@@ -278,11 +278,11 @@ contains
 
     call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("MPI_TYPE_EXTENT double precision error")
+      libsupermesh_abort("MPI_TYPE_EXTENT double precision error")
     end if
     call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("MPI_TYPE_EXTENT integer error")
+      libsupermesh_abort("MPI_TYPE_EXTENT integer error")
     end if
 
     allocate(partition_intersection_recv(0:nprocs - 1), partition_intersection_send(0:nprocs - 1))
@@ -375,37 +375,37 @@ contains
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack number of elements error")
+            libsupermesh_abort("MPI_Pack number of elements error")
           end if
           call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack number of nodes error")
+            libsupermesh_abort("MPI_Pack number of nodes error")
           end if
           call MPI_Pack(send_nodes_connectivity(i)%p,                &
                & size(send_nodes_connectivity(i)%p),                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack connectivity error")
+            libsupermesh_abort("MPI_Pack connectivity error")
           end if
           call MPI_Pack(send_nodes_values(i)%p,                     &
                & size(send_nodes_values(i)%p),                      &
                & MPI_DOUBLE_PRECISION, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack values error")
+            libsupermesh_abort("MPI_Pack values error")
           end if
           call MPI_Pack(size(data),                                 &
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack size of data error")
+            libsupermesh_abort("MPI_Pack size of data error")
           end if
           call MPI_Pack(data,                                       &
                & size(data),                                        &
                & MPI_BYTE, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack data error")
+            libsupermesh_abort("MPI_Pack data error")
           end if
 
           allocate(send_buffer(i)%p(buffer_size))
@@ -421,13 +421,13 @@ contains
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack number of elements error")
+            libsupermesh_abort("MPI_Pack number of elements error")
           end if
           call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
           if(ierr /= MPI_SUCCESS) then
-            FLAbort("MPI_Pack number of nodes error")
+            libsupermesh_abort("MPI_Pack number of nodes error")
           end if
 
           allocate(send_buffer(i)%p(buffer_size))
@@ -445,7 +445,7 @@ contains
                & MPI_PACKED,             &
                & i, 0, MPI_COMM_WORLD, request_send(sends), ierr)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_Isend error")
+          libsupermesh_abort("MPI_Isend error")
         end if
         deallocate(buffer_mpi)
     end if
@@ -508,18 +508,18 @@ contains
       if(partition_intersection_recv(i)) then
         call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_Probe error")
+          libsupermesh_abort("MPI_Probe error")
         end if
         call MPI_Get_Count(status, MPI_PACKED, icount, ierr)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_Get_Count error")
+          libsupermesh_abort("MPI_Get_Count error")
         end if
 
         allocate(recv_buffer(i)%p(icount))
         call MPI_Recv (recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
                   &  i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_Recv error")
+          libsupermesh_abort("MPI_Recv error")
         end if
       end if
     end do
@@ -527,7 +527,7 @@ contains
     sends = sends + 1
     call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Waitall(send).")
+      libsupermesh_abort("Unable to setup MPI_Waitall(send).")
     end if
 
 #ifdef PROFILE
@@ -553,7 +553,7 @@ contains
         allocate(positions_c(3, 4, tet_buf_size), &
                & nodes_A(3, 4), nodes_B(3, 4))
       case default
-        FLAbort("Invalid dimension")
+        libsupermesh_abort("Invalid dimension")
     end select
     nodes_A = 0.0
     nodes_B = 0.0
@@ -594,18 +594,18 @@ contains
 #ifdef OVERLAP_COMPUTE_COMMS
         call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_Probe error")
+          libsupermesh_abort("MPI_Probe error")
         end if
         call MPI_Get_Count(status, MPI_PACKED, icount, ierr)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_Get_Count error")
+          libsupermesh_abort("MPI_Get_Count error")
         end if
 
         allocate(recv_buffer(i)%p(icount))
         call MPI_Recv (recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
                   &  i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_Recv error")
+          libsupermesh_abort("MPI_Recv error")
         end if
 #endif
         buffer_size = size(recv_buffer(i)%p)
@@ -615,7 +615,7 @@ contains
              & 1,                              &
              & MPI_INTEGER, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_UnPack number of elements error")
+          libsupermesh_abort("MPI_UnPack number of elements error")
         end if
         allocate(recv_nodes_connectivity(i)%p(nelements * size(enlist_b, 1)))
 
@@ -624,7 +624,7 @@ contains
              & 1,                              &
              & MPI_INTEGER, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_UnPack number of nodes error")
+          libsupermesh_abort("MPI_UnPack number of nodes error")
         end if
 
         allocate(recv_nodes_values(i)%p(nnodes * (size(positions_b,1))))
@@ -638,7 +638,7 @@ contains
              & size(recv_nodes_connectivity(i)%p),         &
              & MPI_INTEGER, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_UnPack connectivity error")
+          libsupermesh_abort("MPI_UnPack connectivity error")
         end if
 
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
@@ -646,7 +646,7 @@ contains
              & size(recv_nodes_values(i)%p),              &
              & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_UnPack values error")
+          libsupermesh_abort("MPI_UnPack values error")
         end if
 
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
@@ -654,7 +654,7 @@ contains
              & 1,                                         &
              & MPI_INTEGER, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_UnPack size of data error")
+          libsupermesh_abort("MPI_UnPack size of data error")
         end if
 
         allocate(ldata(k))
@@ -663,7 +663,7 @@ contains
              & k,                                         &
              & MPI_BYTE, MPI_COMM_WORLD, IERR)
         if(ierr /= MPI_SUCCESS) then
-          FLAbort("MPI_UnPack data error")
+          libsupermesh_abort("MPI_UnPack data error")
         end if
 
         call unpack_data_b(ldata)
@@ -706,7 +706,7 @@ contains
     sends = sends + 1
     call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Waitall(send).")
+      libsupermesh_abort("Unable to setup MPI_Waitall(send).")
     end if
 #endif
 
@@ -804,62 +804,62 @@ contains
 #ifdef PROFILE
     call MPI_Allreduce(point_to_point, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(point_to_point_min).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(point_to_point_min).")
     end if
 
     call MPI_Allreduce(point_to_point, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(point_to_point_max).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(point_to_point_max).")
     end if
 
     call MPI_Allreduce(point_to_point, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(point_to_point_sum).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(point_to_point_sum).")
     end if
 
     call MPI_Allreduce(all_to_all, all_to_all_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(all_to_all_min).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(all_to_all_min).")
     end if
 
     call MPI_Allreduce(all_to_all, all_to_all_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(all_to_all_max).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(all_to_all_max).")
     end if
 
     call MPI_Allreduce(all_to_all, all_to_all_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(all_to_all_sum).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(all_to_all_sum).")
     end if
 
     call MPI_Allreduce(local_compute, local_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(local_compute_min).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(local_compute_min).")
     end if
 
     call MPI_Allreduce(local_compute, local_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(local_compute_max).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(local_compute_max).")
     end if
 
     call MPI_Allreduce(local_compute, local_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(local_compute_sum).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(local_compute_sum).")
     end if
 
     call MPI_Allreduce(remote_compute, remote_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(remote_compute_min).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(remote_compute_min).")
     end if
       
     call MPI_Allreduce(remote_compute, remote_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(remote_compute_max).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(remote_compute_max).")
     end if
 
     call MPI_Allreduce(remote_compute, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
     if(ierr /= MPI_SUCCESS) then
-      FLAbort("Unable to setup MPI_Allreduce(remote_compute_sum).")
+      libsupermesh_abort("Unable to setup MPI_Allreduce(remote_compute_sum).")
     end if
 
     if (rank == 0) then

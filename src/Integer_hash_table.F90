@@ -3,7 +3,7 @@
 module libsupermesh_integer_hash_table
 
   use iso_c_binding
-  use libsupermesh_fldebug
+  use libsupermesh_debug
 
   implicit none
 

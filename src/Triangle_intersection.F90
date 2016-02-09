@@ -5,7 +5,7 @@ module libsupermesh_tri_intersection_module
 
   use iso_c_binding
 
-  use libsupermesh_fldebug
+  use libsupermesh_debug
   use libsupermesh_tri_intersection_2_module, only : tri_type, &
         & intersect_tris_dt_old
 

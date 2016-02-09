@@ -37,13 +37,12 @@
 #define __LINE__ "unknown"
 #endif
 
-#define ewrite(priority, format) if(priority <= current_debug_level) write(debug_unit(priority), format)
+#define ewrite(priority, format) if(priority <= current_debug_level) write(debug_unit(priority), format) 
 
-#define FLAbort(X) call FLAbort_pinpoint(X, __FILE__, __LINE__)
-#define FLExit(X) call FLExit_pinpoint(X, __FILE__, __LINE__)
+#define libsupermesh_abort(X) call abort_pinpoint(X, __FILE__, __LINE__)
 
 #ifdef NDEBUG
 #define assert(X)
 #else
-#define assert(X) if(.not. (X)) FLAbort("Failed assertion " // "X")
+#define assert(X) if(.not. (X)) libsupermesh_abort("Failed assertion " // "X")
 #endif

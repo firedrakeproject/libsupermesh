@@ -2,8 +2,8 @@
 
 module libsupermesh_read_triangle
 
+  use libsupermesh_debug
   use libsupermesh_fields
-  use libsupermesh_fldebug
 
   implicit none
 
@@ -39,16 +39,16 @@ contains
 
     read(unit, *) nnodes, ldim, nattrs, nbm
     if(nnodes < 0) then
-      FLAbort("Invalid number of vertices")
+      libsupermesh_abort("Invalid number of vertices")
     end if
     if(ldim /= dim) then
-      FLAbort("Invalid dimension")
+      libsupermesh_abort("Invalid dimension")
     end if
     if(nattrs < 0) then
-      FLAbort("Invalid number of attributes")
+      libsupermesh_abort("Invalid number of attributes")
     end if
     if(nbm < 0 .or. nbm > 1) then
-      FLAbort("Invalid number of boundary markers")
+      libsupermesh_abort("Invalid number of boundary markers")
     end if
 
     allocate(coords(dim, nnodes))
@@ -69,7 +69,7 @@ contains
         read(unit, *) ind, coord
       end if
       if(i /= ind) then
-        FLAbort("Invalid vertex number")
+        libsupermesh_abort("Invalid vertex number")
       end if
       coords(:, i) = coord
       if(present(attributes) .and. nattrs > 0) attributes(:, i) = attribute
@@ -106,13 +106,13 @@ contains
 
     read(unit, *) nelements, ncell_nodes, nattrs
     if(nelements < 0) then
-      FLAbort("Invalid number of simplices")
+      libsupermesh_abort("Invalid number of simplices")
     end if
     if(ncell_nodes /= dim + 1) then
-      FLAbort( "Invalid number of nodes per simplex")
+      libsupermesh_abort( "Invalid number of nodes per simplex")
     end if
     if(nattrs < 0) then
-      FLAbort("Invalid number of attributes")
+      libsupermesh_abort("Invalid number of attributes")
     end if
 
     allocate(enlist(ncell_nodes, nelements))
@@ -126,14 +126,14 @@ contains
         read(unit, *) ind, cell_nodes
       end if
       if(i /= ind) then
-        FLAbort("Invalid simplex number")
+        libsupermesh_abort("Invalid simplex number")
       end if
       if(any(cell_nodes < 1)) then
-        FLAbort("Invalid node")
+        libsupermesh_abort("Invalid node")
       end if
       if(present(nnodes)) then
         if(any(cell_nodes > nnodes)) then
-          FLAbort("Invalid node")
+          libsupermesh_abort("Invalid node")
         end if
       end if
       enlist(:, i) = cell_nodes
