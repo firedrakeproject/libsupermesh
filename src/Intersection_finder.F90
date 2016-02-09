@@ -6,7 +6,6 @@ module libsupermesh_intersection_finder
   use iso_c_binding
   use libsupermesh_fields
   use libsupermesh_linked_lists
-  use libsupermesh_mpi_interfaces
 
   implicit none
 
