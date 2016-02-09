@@ -18,7 +18,8 @@ module libsupermesh_parallel_supermesh
 
   private
 
-  public :: parallel_supermesh, get_times
+  public :: parallel_supermesh, print_profile_times, printOverlapMode
+  private :: returnOverlapMode
 
   type pointer_real
     real, dimension(:), pointer :: p
@@ -56,7 +57,7 @@ module libsupermesh_parallel_supermesh
   integer(kind = c_int8_t), dimension(:), allocatable, save :: ldata
 
   integer, save :: mpi_comm, nprocs, rank
-  real :: t0, all_to_all, point_to_point
+  real :: t0, all_to_all, point_to_point, local_compute, remote_compute, t1
 
 #include "mpif.h"
 
@@ -176,6 +177,13 @@ contains
     ! Bounding box all-to-all
 #if PROFILE == 1
     t0 = mpi_wtime()
+#else
+    point_to_point = 0.0D0
+    all_to_all = 0.0D0
+    t0 = 0.0D0
+    local_compute = 0.0D0
+    remote_compute = 0.0D0
+    t1 = 0.0D0
 #endif
     call MPI_Allgather(bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION, &
       & parallel_bbox_a, 2 * size(positions_a,1), MPI_DOUBLE_PRECISION,    &
@@ -489,7 +497,7 @@ contains
       end subroutine intersection_calculation
     end interface
 
-#if PROFILE == 1
+#if OVERLAP_COMPUTE_COMMS == 0
     do i = 0, nprocs - 1
       if(i == rank) cycle
 
@@ -518,11 +526,13 @@ contains
       FLAbort("Unable to setup MPI_Waitall(send).")
     end if
 
+#if PROFILE == 1
     if ( t0 .gt. 0 ) then
       point_to_point = mpi_wtime() - t0
     else
       point_to_point = 0.0D0
     end if
+#endif
 #endif
 
     select case(size(positions_a, 1))
@@ -547,6 +557,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#if PROFILE == 1
+    t1 = mpi_wtime()
+#endif
     call rtree_intersection_finder_set_input(positions_a, enlist_a)
     do ele_B = 1, size(enlist_b, 2)
       if(ele_owner_b(ele_B) /= rank) cycle
@@ -563,6 +576,9 @@ contains
 
       end do
     end do
+#if PROFILE == 1
+    local_compute = mpi_wtime() - t1
+#endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-other runtime test !!!
@@ -571,7 +587,7 @@ contains
       if(i == rank) cycle
 
       if(partition_intersection_recv(i)) then
-#if PROFILE == 0
+#if OVERLAP_COMPUTE_COMMS == 1
         call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           FLAbort("MPI_Probe error")
@@ -648,6 +664,9 @@ contains
 
         call unpack_data_b(ldata)
 
+#if PROFILE == 1
+    t1 = mpi_wtime()
+#endif
         do ele_B = 1, nelements
           do k = 1, size(enlist_b, 1)
             do j = 1, size(positions_b, 1)
@@ -667,7 +686,9 @@ contains
             call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), recv_nodes_connectivity(i)%p((ele_B - 1) * size(enlist_b, 1) + 1:ele_B * size(enlist_B, 1)), ele_A, ele_B, .false.)
           end do
         end do
-
+#if PROFILE == 1
+    remote_compute = mpi_wtime() - t1
+#endif
         ! Deallocate arrays now, to conserve memory
         deallocate(recv_nodes_values(i)%p)
         deallocate(recv_nodes_connectivity(i)%p)
@@ -677,15 +698,12 @@ contains
 
     deallocate(positions_c, nodes_A, nodes_B)
 
-#if PROFILE == 0
+#if OVERLAP_COMPUTE_COMMS == 1
     sends = sends + 1
     call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to setup MPI_Waitall(send).")
     end if
-    point_to_point = 0.0D0
-    all_to_all = 0.0D0
-    t0 = 0.0D0
 #endif
 
   end subroutine step_3
@@ -771,13 +789,15 @@ contains
 
   end subroutine finalise_parallel_supermesh
 
-  subroutine get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
-                       point_to_point_max, point_to_point_min, point_to_point_sum)
-    real, intent(out)  :: all_to_all_max, all_to_all_min, all_to_all_sum
-    real, intent(out)  :: point_to_point_max, point_to_point_min, point_to_point_sum
+  subroutine print_profile_times()
+    real  :: all_to_all_max, all_to_all_min, all_to_all_sum
+    real  :: point_to_point_max, point_to_point_min, point_to_point_sum
+    real  :: local_compute_max, local_compute_min, local_compute_sum
+    real  :: remote_compute_max, remote_compute_min, remote_compute_sum
 
     integer :: ierr
 
+#if PROFILE == 1
     call MPI_Allreduce(point_to_point, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
     if(ierr /= MPI_SUCCESS) then
       FLAbort("Unable to setup MPI_Allreduce(point_to_point_min).")
@@ -808,6 +828,67 @@ contains
       FLAbort("Unable to setup MPI_Allreduce(all_to_all_sum).")
     end if
 
-  end subroutine get_times
+    call MPI_Allreduce(local_compute, local_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(local_compute_min).")
+    end if
+
+    call MPI_Allreduce(local_compute, local_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(local_compute_max).")
+    end if
+
+    call MPI_Allreduce(local_compute, local_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(local_compute_sum).")
+    end if
+
+    call MPI_Allreduce(remote_compute, remote_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(remote_compute_min).")
+    end if
+      
+    call MPI_Allreduce(remote_compute, remote_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(remote_compute_max).")
+    end if
+
+    call MPI_Allreduce(remote_compute, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) then
+      FLAbort("Unable to setup MPI_Allreduce(remote_compute_sum).")
+    end if
+
+    if (rank == 0) then
+      print *, "All to all     (MIN, MAX, AVG) :", all_to_all_min, all_to_all_max, all_to_all_sum/nprocs
+      print *, "Point to point (MIN, MAX, AVG) :", point_to_point_min, point_to_point_max, point_to_point_sum/nprocs
+      print *, "Local compute  (MIN, MAX, AVG) :", local_compute_min, local_compute_max, local_compute_sum/nprocs
+      print *, "Remote compute (MIN, MAX, AVG) :", remote_compute_min, remote_compute_max, remote_compute_sum/nprocs
+    end if
+#else
+    if ( rank == 0 ) then
+      print *, "Not using profile"
+    end if
+#endif
+
+  end subroutine print_profile_times
+
+  subroutine printOverlapMode()
+
+#if OVERLAP_COMPUTE_COMMS == 1
+    print *, "Using Overlap Compute/Comms"
+#else
+    print *, "NOT using Overlap Compute/Comms"
+#endif
+  end subroutine printOverlapMode
+
+  function returnOverlapMode() result(mode)
+    integer :: mode 
+
+#if OVERLAP_COMPUTE_COMMS == 1
+    mode = 1
+#else
+    mode = 0
+#endif
+  end function returnOverlapMode
 
 end module libsupermesh_parallel_supermesh

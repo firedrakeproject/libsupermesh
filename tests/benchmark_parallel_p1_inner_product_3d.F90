@@ -4,7 +4,7 @@ subroutine benchmark_parallel_p1_inner_product_3d
 
   use libsupermesh_fields, only : tetrahedron_volume
   use libsupermesh_halo_ownership, only : element_ownership
-  use libsupermesh_parallel_supermesh, only : parallel_supermesh, get_times
+  use libsupermesh_parallel_supermesh, only : parallel_supermesh, print_profile_times, printOverlapMode
   use libsupermesh_read_halos, only : halo_type, deallocate, read_halo
   use libsupermesh_read_triangle, only : read_ele, read_node
 
@@ -14,8 +14,8 @@ subroutine benchmark_parallel_p1_inner_product_3d
 #include "fdebug.h"
 
   ! Input Triangle mesh base names
-  character(len = *), parameter :: basename_a = "data/pyramid_0_9", &
-                                 & basename_b = "data/cube_0_9"
+  character(len = *), parameter :: basename_a = "pyramid_0_5", &
+                                 & basename_b = "cube_0_5"
 
   character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, size_chr
   integer :: ierr, integer_extent, rank, real_extent
@@ -95,6 +95,7 @@ subroutine benchmark_parallel_p1_inner_product_3d
   field_b = positions_b(2, :)
 
   if (rank == 0) print"(a,i15,a,i15)", " A:", nelements_a, ", B:", nelements_b
+  if (rank == 0) call printOverlapMode()
 
   t0 = mpi_wtime()
   ! Perform multi-mesh integration
@@ -121,12 +122,11 @@ subroutine benchmark_parallel_p1_inner_product_3d
   call MPI_Allreduce(parallel_read_time, parallel_time_read_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
   call MPI_Allreduce(parallel_read_time, parallel_time_read_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
   call MPI_Allreduce(parallel_read_time, parallel_time_read_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-#if PROFILE == 1
-  call get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
-                 point_to_point_max, point_to_point_min, point_to_point_sum)
-#endif
+
+  call print_profile_times()
 
   if(rank == 0) then
+    print "(a)" , ""
     print "(a,f20.10)", "(MIN) Time, parallel = ", parallel_time_min
     print "(a,f20.10)", "(MAX) Time, parallel = ", parallel_time_max
     print "(a,f20.10)", "(SUM) Time, parallel = ", parallel_time_sum
@@ -137,17 +137,6 @@ subroutine benchmark_parallel_p1_inner_product_3d
     print "(a,f20.10)", "(SUM) Read Time, parallel = ", parallel_time_read_sum
     print "(a,f20.10)", "(AVG) Read Time, parallel = ", parallel_time_read_sum / nprocs
     print "(a)" , ""
-#if PROFILE == 1
-    print "(a,f20.10)", "(MIN) All to all comms = ", all_to_all_min
-    print "(a,f20.10)", "(MAX) All to all comms = ", all_to_all_max
-    print "(a,f20.10)", "(SUM) All to all comms = ", all_to_all_sum
-    print "(a,f20.10)", "(AVG) All to all comms = ", all_to_all_sum / nprocs
-    print "(a,f20.10)", "(MIN) Point to point comms = ", point_to_point_min
-    print "(a,f20.10)", "(MAX) Point to point comms = ", point_to_point_max
-    print "(a,f20.10)", "(SUM) Point to point comms = ", point_to_point_sum
-    print "(a,f20.10)", "(AVG) Point to point comms = ", point_to_point_sum / nprocs
-    print "(a)" , ""
-#endif
     ! Display the multi-mesh integrals on rank 0
     print "(a,e26.18e3,a,e26.18e3,a)", "Volume   = ", volume_parallel, " (error = ", abs(volume_parallel - 3.3333333333333331D+02), ")"
     print "(a,e26.18e3,a,e26.18e3,a)", "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - 1.2499999999999989D+04), ")"

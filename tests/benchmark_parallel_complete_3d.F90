@@ -12,11 +12,12 @@ subroutine benchmark_parallel_complete_3D
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
   use libsupermesh_halo_ownership
-  use libsupermesh_parallel_supermesh, only : parallel_supermesh
+  use libsupermesh_parallel_supermesh, only : parallel_supermesh, print_profile_times, printOverlapMode
 
   implicit none
 
 #include <finclude/petsc.h90>
+#include "fdebug.h"
 
   character(len = 1024) :: buffer, hostname
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
@@ -55,7 +56,7 @@ subroutine benchmark_parallel_complete_3D
   hostname = "unknown"
 #endif
   write(buffer, "(a,a,a,i0,a)") "Running on '", trim(hostname), "' with ", nprocs, " processes"
-  if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
+  if ((rank == 0) .or. (mod(rank,20) == 0)) print *, trim(buffer)
 
   t0 = mpi_wtime()
   positionsA = read_triangle_files(trim("data/pyramid_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
@@ -64,8 +65,8 @@ subroutine benchmark_parallel_complete_3D
   call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/pyramid_0_9_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/pyramid_0_9"//"_"//trim(nprocs_character), halo, level = 2)
+  positionsB = read_triangle_files(trim("data/cube_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_halo("data/cube_0_5"//"_"//trim(nprocs_character), halo, level = 2)
   allocate(ele_ownerB(ele_count(positionsB)))
   call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
   test_parallel_ele_B = count(ele_ownerB == rank)
@@ -73,6 +74,7 @@ subroutine benchmark_parallel_complete_3D
   parallel_read_time = mpi_wtime() - t0
   
   if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
+  if (rank == 0) call printOverlapMode()
 
   t0 = mpi_wtime()
   allocate(valsB(test_parallel_ele_B))
@@ -100,10 +102,6 @@ subroutine benchmark_parallel_complete_3D
   call MPI_Allreduce(parallel_time, parallel_time_tot_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-#if PROFILE == 1
-  call get_times(all_to_all_max, all_to_all_min, all_to_all_sum, &
-                 point_to_point_max, point_to_point_min, point_to_point_sum)
-#endif
 
   call deallocate(positionsA)
   call deallocate(positionsB)
@@ -111,7 +109,10 @@ subroutine benchmark_parallel_complete_3D
   vols_serial = 1125.0
   integral_serial = 5625.0
 
+  call print_profile_times()
+
   if(rank == root) then
+    write(output_unit, "(a)") ""
     write(output_unit, "(a,f20.10)") "Time, serial         = ", serial_time
     write(output_unit, "(a,f20.10)") "(MIN) Time, parallel = ", parallel_time_tot_min
     write(output_unit, "(a,f20.10)") "(MAX) Time, parallel = ", parallel_time_tot_max
@@ -124,17 +125,7 @@ subroutine benchmark_parallel_complete_3D
     write(output_unit, "(a,f19.14)") "Volume, parallel = ", vols_parallel
     write(output_unit, "(a)") ""
     write(output_unit, "(a,f19.14)") "Integral, parallel = ", integral_parallel
-#if PROFILE == 1
-    write(output_unit, "(a,f20.10)") "(MIN) All to all comms = ", all_to_all_min
-    write(output_unit, "(a,f20.10)") "(MAX) All to all comms = ", all_to_all_max
-    write(output_unit, "(a,f20.10)") "(SUM) All to all comms = ", all_to_all_sum
-    write(output_unit, "(a,f20.10)") "(AVG) All to all comms = ", all_to_all_sum / nprocs
-    write(output_unit, "(a,f20.10)") "(MIN) Point to point comms = ", point_to_point_min
-    write(output_unit, "(a,f20.10)") "(MAX) Point to point comms = ", point_to_point_max
-    write(output_unit, "(a,f20.10)") "(SUM) Point to point comms = ", point_to_point_sum
-    write(output_unit, "(a,f20.10)") "(AVG) Point to point comms = ", point_to_point_sum / nprocs
     write(output_unit, "(a)") ""
-#endif
 
     fail = fnequals(vols_parallel, vols_serial, tol = tol)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")

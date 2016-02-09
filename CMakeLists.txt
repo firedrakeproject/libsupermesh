@@ -292,6 +292,23 @@ configure_file (
   )
 
 set (SuperMesh_HAVE_MPI 1)
+
+option (USE_CODE_PROFILE
+        "Add profile timers and print statements" OFF)
+if (USE_CODE_PROFILE)
+  set (SuperMesh_PROFILE 1)
+else()
+  set (SuperMesh_PROFILE 0)
+endif (USE_CODE_PROFILE)
+
+option (USE_OVERLAP_COMPUTE_COMMS
+        "Use overlap compute/comms. Make sure that your MPI impementation supports overlapping" OFF)
+if (USE_OVERLAP_COMPUTE_COMMS)
+  set (SuperMesh_OVERLAP_COMPUTE_COMMS 1)
+else()
+  set (SuperMesh_OVERLAP_COMPUTE_COMMS 0)
+endif (USE_OVERLAP_COMPUTE_COMMS)
+
 if (lower_build_type MATCHES debug)
   set (SuperMesh_DEBUG 1)
 else ()
