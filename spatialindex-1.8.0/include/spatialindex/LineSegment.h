@@ -27,9 +27,9 @@
 
 #pragma once
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
-	class SIDX_DLL LineSegment : public LibSupermesh_Tools::IObject, public virtual IShape
+	class SIDX_DLL LineSegment : public libsupermesh::Tools::IObject, public virtual IShape
 	{
 	public:
 		LineSegment();
@@ -85,5 +85,5 @@ namespace LibSupermesh_SpatialIndex
 	}; // Point
 
 	SIDX_DLL std::ostream& operator<<(std::ostream& os, const LineSegment& pt);
-}
+} }
 

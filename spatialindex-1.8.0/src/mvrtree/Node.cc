@@ -36,15 +36,15 @@
 #include "Index.h"
 #include "Leaf.h"
 
-using namespace LibSupermesh_SpatialIndex;
-using namespace LibSupermesh_SpatialIndex::MVRTree;
+using namespace libsupermesh::SpatialIndex;
+using namespace libsupermesh::SpatialIndex::MVRTree;
 
 //
 // Tools::IObject interface
 //
-LibSupermesh_Tools::IObject* Node::clone()
+libsupermesh::Tools::IObject* Node::clone()
 {
-	throw LibSupermesh_Tools::NotSupportedException("IObject::clone should never be called.");
+	throw libsupermesh::Tools::NotSupportedException("IObject::clone should never be called.");
 }
 
 //
@@ -180,7 +180,7 @@ void Node::storeToByteArray(byte** data, uint32_t& len)
 //
 // SpatialIndex::IEntry interface
 //
-LibSupermesh_SpatialIndex::id_type Node::getIdentifier() const
+libsupermesh::SpatialIndex::id_type Node::getIdentifier() const
 {
 	return m_identifier;
 }
@@ -198,16 +198,16 @@ uint32_t Node::getChildrenCount() const
 	return m_children;
 }
 
-LibSupermesh_SpatialIndex::id_type Node::getChildIdentifier(uint32_t index) const
+libsupermesh::SpatialIndex::id_type Node::getChildIdentifier(uint32_t index) const
 {
-	if (index >= m_children) throw LibSupermesh_Tools::IndexOutOfBoundsException(index);
+	if (index >= m_children) throw libsupermesh::Tools::IndexOutOfBoundsException(index);
 
 	return m_pIdentifier[index];
 }
 
 void Node::getChildShape(uint32_t index, IShape** out) const
 {
-	if (index >= m_children) throw LibSupermesh_Tools::IndexOutOfBoundsException(index);
+	if (index >= m_children) throw libsupermesh::Tools::IndexOutOfBoundsException(index);
 
 	*out = new TimeRegion(*(m_ptrMBR[index]));
 }
@@ -215,7 +215,7 @@ void Node::getChildShape(uint32_t index, IShape** out) const
 
 void Node::getChildData(uint32_t index, uint32_t& length, byte** data) const
 {
-        if (index >= m_children) throw LibSupermesh_Tools::IndexOutOfBoundsException(index);
+        if (index >= m_children) throw libsupermesh::Tools::IndexOutOfBoundsException(index);
         if (m_pData[index] == NULL)
         {
                 length = 0;
@@ -261,7 +261,7 @@ Node::Node() :
 {
 }
 
-	Node::Node(LibSupermesh_SpatialIndex::MVRTree::MVRTree* pTree, id_type id, uint32_t level, uint32_t capacity) :
+	Node::Node(libsupermesh::SpatialIndex::MVRTree::MVRTree* pTree, id_type id, uint32_t level, uint32_t capacity) :
 	m_pTree(pTree),
 	m_level(level),
 	m_identifier(id),
@@ -311,7 +311,7 @@ Node::~Node()
 
 Node& Node::operator=(const Node& n)
 {
-	throw LibSupermesh_Tools::IllegalStateException("operator =: This should never be called.");
+	throw libsupermesh::Tools::IllegalStateException("operator =: This should never be called.");
 }
 
 void Node::insertEntry(uint32_t dataLength, byte* pData, TimeRegion& mbr, id_type id)
@@ -1492,7 +1492,7 @@ void Node::pickSeeds(uint32_t& index1, uint32_t& index2, uint32_t total)
 
 			break;
 		default:
-			throw LibSupermesh_Tools::NotSupportedException("Node::pickSeeds: Tree variant not supported.");
+			throw libsupermesh::Tools::NotSupportedException("Node::pickSeeds: Tree variant not supported.");
 	}
 }
 

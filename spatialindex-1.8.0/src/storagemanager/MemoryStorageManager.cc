@@ -31,22 +31,22 @@
 #include <spatialindex/SpatialIndex.h>
 #include "MemoryStorageManager.h"
 
-using namespace LibSupermesh_SpatialIndex;
-using namespace LibSupermesh_SpatialIndex::StorageManager;
+using namespace libsupermesh::SpatialIndex;
+using namespace libsupermesh::SpatialIndex::StorageManager;
 
-LibSupermesh_SpatialIndex::IStorageManager* LibSupermesh_SpatialIndex::StorageManager::returnMemoryStorageManager(LibSupermesh_Tools::PropertySet& ps)
+libsupermesh::SpatialIndex::IStorageManager* libsupermesh::SpatialIndex::StorageManager::returnMemoryStorageManager(libsupermesh::Tools::PropertySet& ps)
 {
 	IStorageManager* sm = new MemoryStorageManager(ps);
 	return sm;
 }
 
-LibSupermesh_SpatialIndex::IStorageManager* LibSupermesh_SpatialIndex::StorageManager::createNewMemoryStorageManager()
+libsupermesh::SpatialIndex::IStorageManager* libsupermesh::SpatialIndex::StorageManager::createNewMemoryStorageManager()
 {
-	LibSupermesh_Tools::PropertySet ps;
+	libsupermesh::Tools::PropertySet ps;
 	return returnMemoryStorageManager(ps);
 }
 
-MemoryStorageManager::MemoryStorageManager(LibSupermesh_Tools::PropertySet& ps)
+MemoryStorageManager::MemoryStorageManager(libsupermesh::Tools::PropertySet& ps)
 {
 }
 

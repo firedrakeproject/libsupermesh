@@ -32,7 +32,7 @@
 // include library header file.
 #include <spatialindex/SpatialIndex.h>
 
-using namespace LibSupermesh_SpatialIndex;
+using namespace libsupermesh::SpatialIndex;
 using namespace std;
 
 #define INSERT 1
@@ -85,7 +85,7 @@ public:
 
 // example of a Strategy pattern.
 // traverses the tree by level.
-class MyQueryStrategy : public LibSupermesh_SpatialIndex::IQueryStrategy
+class MyQueryStrategy : public libsupermesh::SpatialIndex::IQueryStrategy
 {
 private:
 	queue<id_type> ids;
@@ -260,7 +260,7 @@ int main(int argc, char** argv)
 			// delete the buffer first, then the storage manager
 			// (otherwise the the buffer will fail writting the dirty entries).
 	}
-	catch (LibSupermesh_Tools::Exception& e)
+	catch (libsupermesh::Tools::Exception& e)
 	{
 		cerr << "******ERROR******" << endl;
 		std::string s = e.what();

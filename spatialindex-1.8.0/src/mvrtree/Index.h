@@ -21,7 +21,7 @@
 
 #pragma once
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace MVRTree
 	{
@@ -71,5 +71,5 @@ namespace LibSupermesh_SpatialIndex
 			friend class Node;
 		}; // Index
 	}
-}
+} }
 

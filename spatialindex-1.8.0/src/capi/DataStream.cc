@@ -29,7 +29,7 @@
 #include <spatialindex/capi/sidx_impl.h>
 
 
-DataStream::DataStream(int (*readNext)(LibSupermesh_SpatialIndex::id_type * id, 
+DataStream::DataStream(int (*readNext)(libsupermesh::SpatialIndex::id_type * id, 
 					   double **pMin, 
 					   double **pMax, 
 					   uint32_t *nDimension, 
@@ -51,7 +51,7 @@ DataStream::~DataStream()
 
 bool DataStream::readData()
 {
-	LibSupermesh_SpatialIndex::id_type id;
+	libsupermesh::SpatialIndex::id_type id;
 	double *pMin=0;
 	double *pMax=0;
 	uint32_t nDimension=0;
@@ -72,38 +72,38 @@ bool DataStream::readData()
 		return false;
 	}
 	
-	LibSupermesh_SpatialIndex::Region r = LibSupermesh_SpatialIndex::Region(pMin, pMax, nDimension);
+	libsupermesh::SpatialIndex::Region r = libsupermesh::SpatialIndex::Region(pMin, pMax, nDimension);
 	
 	// Data gets copied here anyway. We should fix this part of SpatialIndex::RTree::Data's constructor
-	m_pNext = new LibSupermesh_SpatialIndex::RTree::Data(nDataLength, p_data, r, id);
+	m_pNext = new libsupermesh::SpatialIndex::RTree::Data(nDataLength, p_data, r, id);
 
 	return true;
 }
 
 
-LibSupermesh_SpatialIndex::IData* DataStream::getNext()
+libsupermesh::SpatialIndex::IData* DataStream::getNext()
 {
 	if (m_pNext == 0) return 0;
 
-	LibSupermesh_SpatialIndex::RTree::Data* ret = m_pNext;
+	libsupermesh::SpatialIndex::RTree::Data* ret = m_pNext;
 	m_pNext = 0;
 	readData();
 	return ret;
 }
 
-bool DataStream::hasNext() throw (LibSupermesh_Tools::NotSupportedException)
+bool DataStream::hasNext() throw (libsupermesh::Tools::NotSupportedException)
 {
 	return (m_pNext != 0);
 }
 
-uint32_t DataStream::size() throw (LibSupermesh_Tools::NotSupportedException)
+uint32_t DataStream::size() throw (libsupermesh::Tools::NotSupportedException)
 {
-	throw LibSupermesh_Tools::NotSupportedException("Operation not supported.");
+	throw libsupermesh::Tools::NotSupportedException("Operation not supported.");
 }
 
-void DataStream::rewind() throw (LibSupermesh_Tools::NotSupportedException)
+void DataStream::rewind() throw (libsupermesh::Tools::NotSupportedException)
 {
-	throw LibSupermesh_Tools::NotSupportedException("Operation not supported.");
+	throw libsupermesh::Tools::NotSupportedException("Operation not supported.");
 
 	if (m_pNext != 0)
 	{

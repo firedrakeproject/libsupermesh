@@ -27,14 +27,14 @@
 
 #pragma once
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace StorageManager
 	{
-		class DiskStorageManager : public LibSupermesh_SpatialIndex::IStorageManager
+		class DiskStorageManager : public libsupermesh::SpatialIndex::IStorageManager
 		{
 		public:
-			DiskStorageManager(LibSupermesh_Tools::PropertySet&);
+			DiskStorageManager(libsupermesh::Tools::PropertySet&);
 			virtual ~DiskStorageManager();
 
 			virtual void flush();
@@ -60,4 +60,4 @@ namespace LibSupermesh_SpatialIndex
 			byte* m_buffer;
 		}; // DiskStorageManager
 	}
-}
+} }

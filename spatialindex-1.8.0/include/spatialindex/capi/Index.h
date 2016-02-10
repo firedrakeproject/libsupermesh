@@ -32,11 +32,11 @@ class Index
 {
 
 public:
-    Index(const LibSupermesh_Tools::PropertySet& poProperties);
-    Index(const LibSupermesh_Tools::PropertySet& poProperties, int (*readNext)(LibSupermesh_SpatialIndex::id_type *id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength));
+    Index(const libsupermesh::Tools::PropertySet& poProperties);
+    Index(const libsupermesh::Tools::PropertySet& poProperties, int (*readNext)(libsupermesh::SpatialIndex::id_type *id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength));
     ~Index();
 
-    const LibSupermesh_Tools::PropertySet& GetProperties() { return m_properties; }
+    const libsupermesh::Tools::PropertySet& GetProperties() { return m_properties; }
 
     bool insertFeature(uint64_t id, double *min, double *max);
     
@@ -49,21 +49,21 @@ public:
     RTIndexVariant GetIndexVariant();
     void SetIndexVariant(RTStorageType v);
     
-    LibSupermesh_SpatialIndex::ISpatialIndex& index() {return *m_rtree;}
-    LibSupermesh_SpatialIndex::StorageManager::IBuffer& buffer() {return *m_buffer;}
+    libsupermesh::SpatialIndex::ISpatialIndex& index() {return *m_rtree;}
+    libsupermesh::SpatialIndex::StorageManager::IBuffer& buffer() {return *m_buffer;}
 
 private:
 
     void Initialize();
-    LibSupermesh_SpatialIndex::IStorageManager* m_storage;
-    LibSupermesh_SpatialIndex::StorageManager::IBuffer* m_buffer;
-    LibSupermesh_SpatialIndex::ISpatialIndex* m_rtree;
+    libsupermesh::SpatialIndex::IStorageManager* m_storage;
+    libsupermesh::SpatialIndex::StorageManager::IBuffer* m_buffer;
+    libsupermesh::SpatialIndex::ISpatialIndex* m_rtree;
     
-    LibSupermesh_Tools::PropertySet m_properties;
+    libsupermesh::Tools::PropertySet m_properties;
 
 
     void Setup();
-    LibSupermesh_SpatialIndex::IStorageManager* CreateStorage();
-    LibSupermesh_SpatialIndex::StorageManager::IBuffer* CreateIndexBuffer(LibSupermesh_SpatialIndex::IStorageManager& storage);
-    LibSupermesh_SpatialIndex::ISpatialIndex* CreateIndex();
+    libsupermesh::SpatialIndex::IStorageManager* CreateStorage();
+    libsupermesh::SpatialIndex::StorageManager::IBuffer* CreateIndexBuffer(libsupermesh::SpatialIndex::IStorageManager& storage);
+    libsupermesh::SpatialIndex::ISpatialIndex* CreateIndex();
 };

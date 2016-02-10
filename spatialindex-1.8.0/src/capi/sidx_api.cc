@@ -103,11 +103,11 @@ SIDX_C_DLL int Error_GetErrorCount(void) {
 SIDX_C_DLL IndexH Index_Create(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "Index_Create", NULL);	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 	
 	try { 
 		return (IndexH) new Index(*prop); 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -129,16 +129,16 @@ SIDX_C_DLL IndexH Index_Create(IndexPropertyH hProp)
 }
 
 SIDX_C_DLL IndexH Index_CreateWithStream( IndexPropertyH hProp,
-										int (*readNext)(LibSupermesh_SpatialIndex::id_type *id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength)
+										int (*readNext)(libsupermesh::SpatialIndex::id_type *id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength)
 									   )
 {
 	VALIDATE_POINTER1(hProp, "Index_CreateWithStream", NULL);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	
 	try { 
 		return (IndexH) new Index(*prop, readNext); 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -177,9 +177,9 @@ SIDX_C_DLL RTError Index_DeleteData(  IndexH index,
 	Index* idx = static_cast<Index*>(index);
 
 	try {	 
-		idx->index().deleteData(LibSupermesh_SpatialIndex::Region(pdMin, pdMax, nDimension), id);
+		idx->index().deleteData(libsupermesh::SpatialIndex::Region(pdMin, pdMax, nDimension), id);
 		return RT_None;
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -217,7 +217,7 @@ SIDX_C_DLL RTError Index_InsertData(  IndexH index,
 	// instead of a SpatialIndex::Region
 	
 	bool isPoint = false;
-	LibSupermesh_SpatialIndex::IShape* shape = 0;
+	libsupermesh::SpatialIndex::IShape* shape = 0;
 	double const epsilon = std::numeric_limits<double>::epsilon(); 
 	
 	double length(0);
@@ -231,9 +231,9 @@ SIDX_C_DLL RTError Index_InsertData(  IndexH index,
 	}
 
 	if (isPoint == true) {
-		shape = new LibSupermesh_SpatialIndex::Point(pdMin, nDimension);
+		shape = new libsupermesh::SpatialIndex::Point(pdMin, nDimension);
 	} else {
-		shape = new LibSupermesh_SpatialIndex::Region(pdMin, pdMax, nDimension);
+		shape = new libsupermesh::SpatialIndex::Region(pdMin, pdMax, nDimension);
 	}
 	try {
 		idx->index().insertData(nDataLength, 
@@ -244,7 +244,7 @@ SIDX_C_DLL RTError Index_InsertData(  IndexH index,
 		delete shape;
 		return RT_None;
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -280,13 +280,13 @@ SIDX_C_DLL RTError Index_Intersects_obj(  IndexH index,
 
 	ObjVisitor* visitor = new ObjVisitor;
 	try {	 
-        LibSupermesh_SpatialIndex::Region* r = new LibSupermesh_SpatialIndex::Region(pdMin, pdMax, nDimension);
+        libsupermesh::SpatialIndex::Region* r = new libsupermesh::SpatialIndex::Region(pdMin, pdMax, nDimension);
 		idx->index().intersectsWithQuery(	*r, 
 											*visitor);
 
-		*items = (LibSupermesh_SpatialIndex::IData**) malloc (visitor->GetResultCount() * sizeof(LibSupermesh_SpatialIndex::IData*));
+		*items = (libsupermesh::SpatialIndex::IData**) malloc (visitor->GetResultCount() * sizeof(libsupermesh::SpatialIndex::IData*));
 		
-		std::vector<LibSupermesh_SpatialIndex::IData*>& results = visitor->GetResults();
+		std::vector<libsupermesh::SpatialIndex::IData*>& results = visitor->GetResults();
 
 		// copy the Items into the newly allocated item array
 		// we need to make sure to copy the actual Item instead 
@@ -294,8 +294,8 @@ SIDX_C_DLL RTError Index_Intersects_obj(  IndexH index,
 		// upon ~
 		for (uint32_t i=0; i < visitor->GetResultCount(); ++i)
 		{
-			LibSupermesh_SpatialIndex::IData* result =results[i];
-			(*items)[i] =  dynamic_cast<LibSupermesh_SpatialIndex::IData*>(result->clone());
+			libsupermesh::SpatialIndex::IData* result =results[i];
+			(*items)[i] =  dynamic_cast<libsupermesh::SpatialIndex::IData*>(result->clone());
 
 		}
 		*nResults = visitor->GetResultCount();
@@ -303,7 +303,7 @@ SIDX_C_DLL RTError Index_Intersects_obj(  IndexH index,
         delete r;
 		delete visitor;
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -339,7 +339,7 @@ SIDX_C_DLL RTError Index_Intersects_id(	  IndexH index,
 
 	IdVisitor* visitor = new IdVisitor;
 	try {
-        LibSupermesh_SpatialIndex::Region* r = new LibSupermesh_SpatialIndex::Region(pdMin, pdMax, nDimension);
+        libsupermesh::SpatialIndex::Region* r = new libsupermesh::SpatialIndex::Region(pdMin, pdMax, nDimension);
 		idx->index().intersectsWithQuery(	*r, 
 											*visitor);
 
@@ -358,7 +358,7 @@ SIDX_C_DLL RTError Index_Intersects_id(	  IndexH index,
         delete r;
 		delete visitor;
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -393,7 +393,7 @@ SIDX_C_DLL RTError Index_Intersects_count(	  IndexH index,
 
 	CountVisitor* visitor = new CountVisitor;
 	try {
-        LibSupermesh_SpatialIndex::Region* r = new LibSupermesh_SpatialIndex::Region(pdMin, pdMax, nDimension);
+        libsupermesh::SpatialIndex::Region* r = new libsupermesh::SpatialIndex::Region(pdMin, pdMax, nDimension);
 		idx->index().intersectsWithQuery(	*r, 
 											*visitor);
 
@@ -402,7 +402,7 @@ SIDX_C_DLL RTError Index_Intersects_count(	  IndexH index,
 		delete r;
 		delete visitor;
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -440,7 +440,7 @@ SIDX_C_DLL RTError Index_NearestNeighbors_id(IndexH index,
 
 	try {	 
 		idx->index().nearestNeighborQuery(	*nResults,
-											LibSupermesh_SpatialIndex::Region(pdMin, pdMax, nDimension), 
+											libsupermesh::SpatialIndex::Region(pdMin, pdMax, nDimension), 
 											*visitor);
 		
 		*ids = (int64_t*) malloc (visitor->GetResultCount() * sizeof(int64_t));
@@ -458,7 +458,7 @@ SIDX_C_DLL RTError Index_NearestNeighbors_id(IndexH index,
 		
 		delete visitor;
 		
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -495,13 +495,13 @@ SIDX_C_DLL RTError Index_NearestNeighbors_obj(IndexH index,
 	ObjVisitor* visitor = new ObjVisitor;
 	try {	 
 		idx->index().nearestNeighborQuery(	*nResults,
-											LibSupermesh_SpatialIndex::Region(pdMin, pdMax, nDimension), 
+											libsupermesh::SpatialIndex::Region(pdMin, pdMax, nDimension), 
 											*visitor);
 
 				
-		*items = (LibSupermesh_SpatialIndex::IData**) malloc (visitor->GetResultCount() * sizeof(Item*));
+		*items = (libsupermesh::SpatialIndex::IData**) malloc (visitor->GetResultCount() * sizeof(Item*));
 		
-		std::vector<LibSupermesh_SpatialIndex::IData*> results = visitor->GetResults();
+		std::vector<libsupermesh::SpatialIndex::IData*> results = visitor->GetResults();
 		*nResults = results.size();
 		
 		// copy the Items into the newly allocated item array
@@ -510,14 +510,14 @@ SIDX_C_DLL RTError Index_NearestNeighbors_obj(IndexH index,
 		// upon ~
 		for (uint32_t i=0; i < visitor->GetResultCount(); ++i)
 		{
-			LibSupermesh_SpatialIndex::IData* result = results[i];
-			(*items)[i] =  dynamic_cast<LibSupermesh_SpatialIndex::IData*>(result->clone());
+			libsupermesh::SpatialIndex::IData* result = results[i];
+			(*items)[i] =  dynamic_cast<libsupermesh::SpatialIndex::IData*>(result->clone());
 
 		}
 		
 		delete visitor;
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -554,7 +554,7 @@ SIDX_C_DLL RTError Index_GetBounds(	  IndexH index,
 	try {	 
 		idx->index().queryStrategy( *query);
 		
-		const LibSupermesh_SpatialIndex::Region* bounds = query->GetBounds();
+		const libsupermesh::SpatialIndex::Region* bounds = query->GetBounds();
 		if (bounds == 0) { 
 			*nDimension = 0;
 			delete query;
@@ -573,7 +573,7 @@ SIDX_C_DLL RTError Index_GetBounds(	  IndexH index,
 		
 		delete query;
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -608,7 +608,7 @@ SIDX_C_DLL IndexPropertyH Index_GetProperties(IndexH index)
 {
 	VALIDATE_POINTER1(index, "Index_GetProperties", 0); 
 	Index* idx = static_cast<Index*>(index);
-	LibSupermesh_Tools::PropertySet* ps = new LibSupermesh_Tools::PropertySet;
+	libsupermesh::Tools::PropertySet* ps = new libsupermesh::Tools::PropertySet;
 	
 	idx->index().getIndexProperties(*ps);
 	return (IndexPropertyH)ps;
@@ -624,10 +624,10 @@ SIDX_C_DLL void Index_ClearBuffer(IndexH index)
 SIDX_C_DLL void Index_DestroyObjResults(IndexItemH* results, uint32_t nResults)
 {
 	VALIDATE_POINTER0(results, "Index_DestroyObjResults");
-	LibSupermesh_SpatialIndex::IData* it;
+	libsupermesh::SpatialIndex::IData* it;
 	for (uint32_t i=0; i< nResults; ++i) {
 		if (results[i] != NULL) {
-			it = static_cast<LibSupermesh_SpatialIndex::IData*>(results[i]);
+			it = static_cast<libsupermesh::SpatialIndex::IData*>(results[i]);
 			if (it != 0) 
 				delete it;
 		}
@@ -660,15 +660,15 @@ SIDX_C_DLL RTError Index_GetLeaves(	IndexH index,
 	LeafQuery* query = new LeafQuery;
 
 	// Fetch the dimensionality of the index
-	LibSupermesh_Tools::PropertySet ps;
+	libsupermesh::Tools::PropertySet ps;
 	idx->index().getIndexProperties(ps);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = ps.getProperty("Dimension");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property Dimension must be Tools::VT_ULONG", 
 							"Index_GetLeaves");
@@ -695,8 +695,8 @@ SIDX_C_DLL RTError Index_GetLeaves(	IndexH index,
 		uint32_t k=0;
 		for (i = results.begin(); i != results.end(); ++i)
 		{
-			std::vector<LibSupermesh_SpatialIndex::id_type> const& ids = (*i).GetIDs();
-			const LibSupermesh_SpatialIndex::Region* b = (*i).GetBounds();
+			std::vector<libsupermesh::SpatialIndex::id_type> const& ids = (*i).GetIDs();
+			const libsupermesh::SpatialIndex::Region* b = (*i).GetBounds();
 			
 			(*nLeafIDs)[k] = (*i).getIdentifier();
 			(*nLeafSizes)[k] = ids.size();
@@ -718,7 +718,7 @@ SIDX_C_DLL RTError Index_GetLeaves(	IndexH index,
 		
 		delete query;
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -746,7 +746,7 @@ SIDX_C_DLL RTError Index_GetLeaves(	IndexH index,
 SIDX_C_DLL void IndexItem_Destroy(IndexItemH item)
 {
 	VALIDATE_POINTER0(item, "IndexItem_Destroy"); 
-	LibSupermesh_SpatialIndex::IData* it = static_cast<LibSupermesh_SpatialIndex::IData*>(item);
+	libsupermesh::SpatialIndex::IData* it = static_cast<libsupermesh::SpatialIndex::IData*>(item);
 	if (it != 0) delete it;
 }
 
@@ -755,7 +755,7 @@ SIDX_C_DLL RTError IndexItem_GetData( IndexItemH item,
 									uint64_t* length)
 {
 	VALIDATE_POINTER1(item, "IndexItem_GetData", RT_Failure);  
-	LibSupermesh_SpatialIndex::IData* it = static_cast<LibSupermesh_SpatialIndex::IData*>(item);
+	libsupermesh::SpatialIndex::IData* it = static_cast<libsupermesh::SpatialIndex::IData*>(item);
     uint8_t* p_data;
     uint32_t* l= new uint32_t;
 
@@ -773,7 +773,7 @@ SIDX_C_DLL RTError IndexItem_GetData( IndexItemH item,
 SIDX_C_DLL int64_t IndexItem_GetID(IndexItemH item) 
 {
 	VALIDATE_POINTER1(item, "IndexItem_GetID",0); 
-	LibSupermesh_SpatialIndex::IData* it = static_cast<LibSupermesh_SpatialIndex::IData*>(item);
+	libsupermesh::SpatialIndex::IData* it = static_cast<libsupermesh::SpatialIndex::IData*>(item);
 	int64_t value = it->getIdentifier();
 	return value;
 }
@@ -784,12 +784,12 @@ SIDX_C_DLL RTError IndexItem_GetBounds(	  IndexItemH item,
 										uint32_t* nDimension)
 {
 	VALIDATE_POINTER1(item, "IndexItem_GetBounds", RT_Failure);
-	LibSupermesh_SpatialIndex::IData* it = static_cast<LibSupermesh_SpatialIndex::IData*>(item);
+	libsupermesh::SpatialIndex::IData* it = static_cast<libsupermesh::SpatialIndex::IData*>(item);
 	
-	LibSupermesh_SpatialIndex::IShape* s;
+	libsupermesh::SpatialIndex::IShape* s;
     it->getShape(&s);
     
-	LibSupermesh_SpatialIndex::Region *bounds = new LibSupermesh_SpatialIndex::Region();
+	libsupermesh::SpatialIndex::Region *bounds = new libsupermesh::SpatialIndex::Region();
     s->getMBR(*bounds);
 	
 	if (bounds == 0) { 
@@ -820,15 +820,15 @@ SIDX_C_DLL RTError IndexItem_GetBounds(	  IndexItemH item,
 }
 SIDX_C_DLL IndexPropertyH IndexProperty_Create()
 {
-	LibSupermesh_Tools::PropertySet* ps = GetDefaults();
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::PropertySet* ps = GetDefaults();
+	libsupermesh::Tools::Variant var;
 	return (IndexPropertyH)ps;
 }
 
 SIDX_C_DLL void IndexProperty_Destroy(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER0(hProp, "IndexProperty_Destroy");	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 	if (prop != 0) delete prop;
 }
 
@@ -836,20 +836,20 @@ SIDX_C_DLL RTError IndexProperty_SetIndexType(IndexPropertyH hProp,
 											RTIndexType value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetIndexType", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
 		if (!(value == RT_RTree || value == RT_MVRTree || value == RT_TPRTree)) {
 			throw std::runtime_error("Inputted value is not a valid index type");
 		}
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("IndexType", var);
 
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -873,14 +873,14 @@ SIDX_C_DLL RTError IndexProperty_SetIndexType(IndexPropertyH hProp,
 SIDX_C_DLL RTIndexType IndexProperty_GetIndexType(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetIndexType", RT_InvalidIndexType);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("IndexType");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property IndexType must be Tools::VT_ULONG", 
 							"IndexProperty_GetIndexType");
@@ -899,15 +899,15 @@ SIDX_C_DLL RTIndexType IndexProperty_GetIndexType(IndexPropertyH hProp)
 SIDX_C_DLL RTError IndexProperty_SetDimension(IndexPropertyH hProp, uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetDimension", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("Dimension", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -931,14 +931,14 @@ SIDX_C_DLL RTError IndexProperty_SetDimension(IndexPropertyH hProp, uint32_t val
 SIDX_C_DLL uint32_t IndexProperty_GetDimension(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetDimension", RT_InvalidIndexType);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("Dimension");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property IndexType must be Tools::VT_ULONG", 
 							"IndexProperty_GetDimension");
@@ -958,12 +958,12 @@ SIDX_C_DLL uint32_t IndexProperty_GetDimension(IndexPropertyH hProp)
 SIDX_C_DLL RTError IndexProperty_SetIndexVariant( IndexPropertyH hProp, 
 												RTIndexVariant value)
 {
-	using namespace LibSupermesh_SpatialIndex;
+	using namespace libsupermesh::SpatialIndex;
 
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetIndexVariant", RT_Failure);	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	
 	try
 	{
@@ -972,7 +972,7 @@ SIDX_C_DLL RTError IndexProperty_SetIndexVariant( IndexPropertyH hProp,
 			throw std::runtime_error("Inputted value is not a valid index variant");
 		}
 		
-		var.m_varType = LibSupermesh_Tools::VT_LONG;
+		var.m_varType = libsupermesh::Tools::VT_LONG;
 		RTIndexType type = IndexProperty_GetIndexType(hProp);
 		if (type == RT_InvalidIndexType ) {
 			Error_PushError(RT_Failure, 
@@ -991,7 +991,7 @@ SIDX_C_DLL RTError IndexProperty_SetIndexVariant( IndexPropertyH hProp,
 			prop->setProperty("TreeVariant", var);	 
 		}
 	
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1018,15 +1018,15 @@ SIDX_C_DLL RTIndexVariant IndexProperty_GetIndexVariant(IndexPropertyH hProp)
 						"IndexProperty_GetIndexVariant", 
 						RT_InvalidIndexVariant);
 
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("TreeVariant");
 
 	
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_LONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_LONG) {
 			Error_PushError(RT_Failure, 
 							"Property IndexVariant must be Tools::VT_LONG", 
 							"IndexProperty_GetIndexVariant");
@@ -1048,18 +1048,18 @@ SIDX_C_DLL RTError IndexProperty_SetIndexStorage( IndexPropertyH hProp,
 												RTStorageType value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetIndexStorage", RT_Failure);	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
 		if (!(value == RT_Disk || value == RT_Memory || value == RT_Custom)) {
 			throw std::runtime_error("Inputted value is not a valid index storage type");
 		}
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("IndexStorageType", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1086,14 +1086,14 @@ SIDX_C_DLL RTStorageType IndexProperty_GetIndexStorage(IndexPropertyH hProp)
 						"IndexProperty_GetIndexStorage", 
 						RT_InvalidStorageType);
 
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("IndexStorageType");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property IndexStorage must be Tools::VT_ULONG", 
 							"IndexProperty_GetIndexStorage");
@@ -1115,15 +1115,15 @@ SIDX_C_DLL RTError IndexProperty_SetIndexCapacity(IndexPropertyH hProp,
 												uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetIndexCapacity", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("IndexCapacity", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1147,14 +1147,14 @@ SIDX_C_DLL RTError IndexProperty_SetIndexCapacity(IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetIndexCapacity(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetIndexCapacity", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("IndexCapacity");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property IndexCapacity must be Tools::VT_ULONG", 
 							"IndexProperty_GetIndexCapacity");
@@ -1175,15 +1175,15 @@ SIDX_C_DLL RTError IndexProperty_SetLeafCapacity( IndexPropertyH hProp,
 												uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetLeafCapacity", RT_Failure);	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("LeafCapacity", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1207,14 +1207,14 @@ SIDX_C_DLL RTError IndexProperty_SetLeafCapacity( IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetLeafCapacity(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetLeafCapacity", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("LeafCapacity");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property LeafCapacity must be Tools::VT_ULONG", 
 							"IndexProperty_GetLeafCapacity");
@@ -1235,15 +1235,15 @@ SIDX_C_DLL RTError IndexProperty_SetPagesize( IndexPropertyH hProp,
 											uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetPagesize", RT_Failure);	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("PageSize", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1267,14 +1267,14 @@ SIDX_C_DLL RTError IndexProperty_SetPagesize( IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetPagesize(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetPagesize", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("PageSize");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property PageSize must be Tools::VT_ULONG", 
 							"IndexProperty_GetPagesize");
@@ -1295,15 +1295,15 @@ SIDX_C_DLL RTError IndexProperty_SetLeafPoolCapacity( IndexPropertyH hProp,
 													uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetLeafPoolCapacity", RT_Failure);	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("LeafPoolCapacity", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1327,14 +1327,14 @@ SIDX_C_DLL RTError IndexProperty_SetLeafPoolCapacity( IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetLeafPoolCapacity(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetLeafPoolCapacity", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("LeafPoolCapacity");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property LeafPoolCapacity must be Tools::VT_ULONG", 
 							"IndexProperty_GetLeafPoolCapacity");
@@ -1355,15 +1355,15 @@ SIDX_C_DLL RTError IndexProperty_SetIndexPoolCapacity(IndexPropertyH hProp,
 													uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetIndexPoolCapacity", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("IndexPoolCapacity", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1387,14 +1387,14 @@ SIDX_C_DLL RTError IndexProperty_SetIndexPoolCapacity(IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetIndexPoolCapacity(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetIndexPoolCapacity", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("IndexPoolCapacity");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property IndexPoolCapacity must be Tools::VT_ULONG", 
 							"IndexProperty_GetIndexPoolCapacity");
@@ -1415,15 +1415,15 @@ SIDX_C_DLL RTError IndexProperty_SetRegionPoolCapacity(IndexPropertyH hProp,
 													uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetRegionPoolCapacity", RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("RegionPoolCapacity", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1447,14 +1447,14 @@ SIDX_C_DLL RTError IndexProperty_SetRegionPoolCapacity(IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetRegionPoolCapacity(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetRegionPoolCapacity", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("RegionPoolCapacity");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property RegionPoolCapacity must be Tools::VT_ULONG", 
 							"IndexProperty_GetRegionPoolCapacity");
@@ -1475,15 +1475,15 @@ SIDX_C_DLL RTError IndexProperty_SetPointPoolCapacity(IndexPropertyH hProp,
 													uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetPointPoolCapacity", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("PointPoolCapacity", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1507,14 +1507,14 @@ SIDX_C_DLL RTError IndexProperty_SetPointPoolCapacity(IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetPointPoolCapacity(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetPointPoolCapacity", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("PointPoolCapacity");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property PointPoolCapacity must be Tools::VT_ULONG", 
 							"IndexProperty_GetPointPoolCapacity");
@@ -1537,15 +1537,15 @@ SIDX_C_DLL RTError IndexProperty_SetNearMinimumOverlapFactor( IndexPropertyH hPr
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetNearMinimumOverlapFactor", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("NearMinimumOverlapFactor", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1569,14 +1569,14 @@ SIDX_C_DLL RTError IndexProperty_SetNearMinimumOverlapFactor( IndexPropertyH hPr
 SIDX_C_DLL uint32_t IndexProperty_GetNearMinimumOverlapFactor(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetNearMinimumOverlapFactor", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("NearMinimumOverlapFactor");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property NearMinimumOverlapFactor must be Tools::VT_ULONG", 
 							"IndexProperty_GetNearMinimumOverlapFactor");
@@ -1598,15 +1598,15 @@ SIDX_C_DLL RTError IndexProperty_SetBufferingCapacity(IndexPropertyH hProp,
 												uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetBufferingCapacity", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("Capacity", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1630,14 +1630,14 @@ SIDX_C_DLL RTError IndexProperty_SetBufferingCapacity(IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetBufferingCapacity(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetBufferingCapacity", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("Capacity");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
 							"Property Capacity must be Tools::VT_ULONG", 
 							"IndexProperty_GetBufferingCapacity");
@@ -1658,7 +1658,7 @@ SIDX_C_DLL RTError IndexProperty_SetEnsureTightMBRs(  IndexPropertyH hProp,
 													uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetEnsureTightMBRs", RT_Failure);	 
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
@@ -1668,11 +1668,11 @@ SIDX_C_DLL RTError IndexProperty_SetEnsureTightMBRs(  IndexPropertyH hProp,
 							"IndexProperty_SetEnsureTightMBRs");
 			return RT_Failure;
 		}
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_BOOL;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_BOOL;
 		var.m_val.blVal = (bool)value;
 		prop->setProperty("EnsureTightMBRs", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1696,14 +1696,14 @@ SIDX_C_DLL RTError IndexProperty_SetEnsureTightMBRs(  IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetEnsureTightMBRs(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetEnsureTightMBRs", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("EnsureTightMBRs");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_BOOL) {
+		if (var.m_varType != libsupermesh::Tools::VT_BOOL) {
 			Error_PushError(RT_Failure, 
 							"Property EnsureTightMBRs must be Tools::VT_BOOL", 
 							"IndexProperty_GetEnsureTightMBRs");
@@ -1724,7 +1724,7 @@ SIDX_C_DLL RTError IndexProperty_SetWriteThrough(IndexPropertyH hProp,
 													uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetWriteThrough", RT_Failure);	  
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
@@ -1734,11 +1734,11 @@ SIDX_C_DLL RTError IndexProperty_SetWriteThrough(IndexPropertyH hProp,
 							"IndexProperty_SetWriteThrough");
 			return RT_Failure;
 		}
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_BOOL;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_BOOL;
 		var.m_val.blVal = value;
 		prop->setProperty("WriteThrough", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1762,14 +1762,14 @@ SIDX_C_DLL RTError IndexProperty_SetWriteThrough(IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetWriteThrough(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetWriteThrough", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("WriteThrough");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_BOOL) {
+		if (var.m_varType != libsupermesh::Tools::VT_BOOL) {
 			Error_PushError(RT_Failure, 
 							"Property WriteThrough must be Tools::VT_BOOL", 
 							"IndexProperty_GetWriteThrough");
@@ -1790,7 +1790,7 @@ SIDX_C_DLL RTError IndexProperty_SetOverwrite(IndexPropertyH hProp,
 											uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetOverwrite", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
@@ -1800,11 +1800,11 @@ SIDX_C_DLL RTError IndexProperty_SetOverwrite(IndexPropertyH hProp,
 							"IndexProperty_SetOverwrite");
 			return RT_Failure;
 		}
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_BOOL;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_BOOL;
 		var.m_val.blVal = value;
 		prop->setProperty("Overwrite", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1828,14 +1828,14 @@ SIDX_C_DLL RTError IndexProperty_SetOverwrite(IndexPropertyH hProp,
 SIDX_C_DLL uint32_t IndexProperty_GetOverwrite(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetOverwrite", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("Overwrite");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_BOOL) {
+		if (var.m_varType != libsupermesh::Tools::VT_BOOL) {
 			Error_PushError(RT_Failure, 
 							"Property Overwrite must be Tools::VT_BOOL", 
 							"IndexProperty_GetOverwrite");
@@ -1857,15 +1857,15 @@ SIDX_C_DLL RTError IndexProperty_SetFillFactor(	  IndexPropertyH hProp,
 												double value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetFillFactor", RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_DOUBLE;
 		var.m_val.dblVal = value;
 		prop->setProperty("FillFactor", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1889,14 +1889,14 @@ SIDX_C_DLL RTError IndexProperty_SetFillFactor(	  IndexPropertyH hProp,
 SIDX_C_DLL double IndexProperty_GetFillFactor(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetFillFactor", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("FillFactor");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE) {
+		if (var.m_varType != libsupermesh::Tools::VT_DOUBLE) {
 			Error_PushError(RT_Failure, 
 							"Property FillFactor must be Tools::VT_DOUBLE", 
 							"IndexProperty_GetFillFactor");
@@ -1919,15 +1919,15 @@ SIDX_C_DLL RTError IndexProperty_SetSplitDistributionFactor(  IndexPropertyH hPr
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetSplitDistributionFactor", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_DOUBLE;
 		var.m_val.dblVal = value;
 		prop->setProperty("SplitDistributionFactor", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -1951,14 +1951,14 @@ SIDX_C_DLL RTError IndexProperty_SetSplitDistributionFactor(  IndexPropertyH hPr
 SIDX_C_DLL double IndexProperty_GetSplitDistributionFactor(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetSplitDistributionFactor", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("SplitDistributionFactor");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE) {
+		if (var.m_varType != libsupermesh::Tools::VT_DOUBLE) {
 			Error_PushError(RT_Failure, 
 							"Property SplitDistributionFactor must be Tools::VT_DOUBLE", 
 							"IndexProperty_GetSplitDistributionFactor");
@@ -1981,15 +1981,15 @@ SIDX_C_DLL RTError IndexProperty_SetTPRHorizon(IndexPropertyH hProp,
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetTPRHorizon", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_DOUBLE;
 		var.m_val.dblVal = value;
 		prop->setProperty("Horizon", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2013,14 +2013,14 @@ SIDX_C_DLL RTError IndexProperty_SetTPRHorizon(IndexPropertyH hProp,
 SIDX_C_DLL double IndexProperty_GetTPRHorizon(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetTPRHorizon", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("Horizon");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE) {
+		if (var.m_varType != libsupermesh::Tools::VT_DOUBLE) {
 			Error_PushError(RT_Failure, 
 							"Property Horizon must be Tools::VT_DOUBLE", 
 							"IndexProperty_GetTPRHorizon");
@@ -2043,15 +2043,15 @@ SIDX_C_DLL RTError IndexProperty_SetReinsertFactor(	  IndexPropertyH hProp,
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetReinsertFactor", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_DOUBLE;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_DOUBLE;
 		var.m_val.dblVal = value;
 		prop->setProperty("ReinsertFactor", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2075,14 +2075,14 @@ SIDX_C_DLL RTError IndexProperty_SetReinsertFactor(	  IndexPropertyH hProp,
 SIDX_C_DLL double IndexProperty_GetReinsertFactor(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetReinsertFactor", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("ReinsertFactor");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_DOUBLE) {
+		if (var.m_varType != libsupermesh::Tools::VT_DOUBLE) {
 			Error_PushError(RT_Failure, 
 							"Property ReinsertFactor must be Tools::VT_DOUBLE", 
 							"IndexProperty_GetReinsertFactor");
@@ -2105,15 +2105,15 @@ SIDX_C_DLL RTError IndexProperty_SetFileName( IndexPropertyH hProp,
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetFileName", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_PCHAR;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_PCHAR;
 		var.m_val.pcVal = STRDUP(value); // not sure if we should copy here
 		prop->setProperty("FileName", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2137,14 +2137,14 @@ SIDX_C_DLL RTError IndexProperty_SetFileName( IndexPropertyH hProp,
 SIDX_C_DLL char* IndexProperty_GetFileName(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetFileName", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("FileName");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_PCHAR) {
+		if (var.m_varType != libsupermesh::Tools::VT_PCHAR) {
 			Error_PushError(RT_Failure, 
 							"Property FileName must be Tools::VT_PCHAR", 
 							"IndexProperty_GetFileName");
@@ -2168,16 +2168,16 @@ SIDX_C_DLL RTError IndexProperty_SetFileNameExtensionDat( IndexPropertyH hProp,
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetFileNameExtensionDat", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_PCHAR;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_PCHAR;
 		var.m_val.pcVal = STRDUP(value); // not sure if we should copy here
 		prop->setProperty("FileNameDat", var);
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2201,14 +2201,14 @@ SIDX_C_DLL RTError IndexProperty_SetFileNameExtensionDat( IndexPropertyH hProp,
 SIDX_C_DLL char* IndexProperty_GetFileNameExtensionDat(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetFileNameExtensionDat", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("FileNameDat");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_PCHAR) {
+		if (var.m_varType != libsupermesh::Tools::VT_PCHAR) {
 			Error_PushError(RT_Failure, 
 							"Property FileNameDat must be Tools::VT_PCHAR", 
 							"IndexProperty_GetFileNameExtensionDat");
@@ -2231,16 +2231,16 @@ SIDX_C_DLL RTError IndexProperty_SetFileNameExtensionIdx( IndexPropertyH hProp,
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetFileNameExtensionIdx", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_PCHAR;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_PCHAR;
 		var.m_val.pcVal = STRDUP(value); // not sure if we should copy here
 		prop->setProperty("FileNameIdx", var);
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2264,14 +2264,14 @@ SIDX_C_DLL RTError IndexProperty_SetFileNameExtensionIdx( IndexPropertyH hProp,
 SIDX_C_DLL char* IndexProperty_GetFileNameExtensionIdx(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetFileNameExtensionIdx", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("FileNameIdx");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_PCHAR) {
+		if (var.m_varType != libsupermesh::Tools::VT_PCHAR) {
 			Error_PushError(RT_Failure, 
 							"Property FileNameIdx must be Tools::VT_PCHAR", 
 							"IndexProperty_GetFileNameExtensionIdx");
@@ -2292,15 +2292,15 @@ SIDX_C_DLL RTError IndexProperty_SetCustomStorageCallbacksSize(IndexPropertyH hP
 												uint32_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetCustomStorageCallbacksSize", RT_Failure);	   
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_ULONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_ULONG;
 		var.m_val.ulVal = value;
 		prop->setProperty("CustomStorageCallbacksSize", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2324,16 +2324,16 @@ SIDX_C_DLL RTError IndexProperty_SetCustomStorageCallbacksSize(IndexPropertyH hP
 SIDX_C_DLL uint32_t IndexProperty_GetCustomStorageCallbacksSize(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetCustomStorageCallbacksSize", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("CustomStorageCallbacksSize");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) {
 			Error_PushError(RT_Failure, 
-							"Property CustomStorageCallbacksSize must be LibSupermesh_Tools::VT_ULONG", 
+							"Property CustomStorageCallbacksSize must be libsupermesh::Tools::VT_ULONG", 
 							"IndexProperty_GetCustomStorageCallbacksSize");
 			return 0;
 		}
@@ -2354,16 +2354,16 @@ SIDX_C_DLL RTError IndexProperty_SetCustomStorageCallbacks( IndexPropertyH hProp
 	VALIDATE_POINTER1(	hProp, 
 						"IndexProperty_SetCustomStorageCallbacks", 
 						RT_Failure);	
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
     // check if the CustomStorageCallbacksSize is alright, so we can make a copy of the passed in structure
-  	LibSupermesh_Tools::Variant varSize;
+  	libsupermesh::Tools::Variant varSize;
     varSize = prop->getProperty("CustomStorageCallbacksSize");
-    if ( varSize.m_val.ulVal != sizeof(LibSupermesh_SpatialIndex::StorageManager::CustomStorageManagerCallbacks) )
+    if ( varSize.m_val.ulVal != sizeof(libsupermesh::SpatialIndex::StorageManager::CustomStorageManagerCallbacks) )
     {
         std::ostringstream ss;
         ss << "The supplied storage callbacks size is wrong, expected "
-            << sizeof(LibSupermesh_SpatialIndex::StorageManager::CustomStorageManagerCallbacks) 
+            << sizeof(libsupermesh::SpatialIndex::StorageManager::CustomStorageManagerCallbacks) 
            << ", got " << varSize.m_val.ulVal;
 		Error_PushError(RT_Failure, 
 						ss.str().c_str(), 
@@ -2373,16 +2373,16 @@ SIDX_C_DLL RTError IndexProperty_SetCustomStorageCallbacks( IndexPropertyH hProp
 
     try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_PVOID;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_PVOID;
         var.m_val.pvVal = value ? 
-                            new LibSupermesh_SpatialIndex::StorageManager::CustomStorageManagerCallbacks( 
-                                    *static_cast<const LibSupermesh_SpatialIndex::StorageManager::CustomStorageManagerCallbacks*>(value) 
+                            new libsupermesh::SpatialIndex::StorageManager::CustomStorageManagerCallbacks( 
+                                    *static_cast<const libsupermesh::SpatialIndex::StorageManager::CustomStorageManagerCallbacks*>(value) 
                                     ) 
                             : 0;
 		prop->setProperty("CustomStorageCallbacks", var);
 
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2406,14 +2406,14 @@ SIDX_C_DLL RTError IndexProperty_SetCustomStorageCallbacks( IndexPropertyH hProp
 SIDX_C_DLL void* IndexProperty_GetCustomStorageCallbacks(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetCustomStorageCallbacks", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("CustomStorageCallbacks");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_PVOID) {
+		if (var.m_varType != libsupermesh::Tools::VT_PVOID) {
 			Error_PushError(RT_Failure, 
 							"Property CustomStorageCallbacks must be Tools::VT_PVOID", 
 							"IndexProperty_GetCustomStorageCallbacks");
@@ -2434,15 +2434,15 @@ SIDX_C_DLL RTError IndexProperty_SetIndexID(IndexPropertyH hProp,
 											int64_t value)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_SetIndexID", RT_Failure);	 
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
 	try
 	{
-		LibSupermesh_Tools::Variant var;
-		var.m_varType = LibSupermesh_Tools::VT_LONGLONG;
+		libsupermesh::Tools::Variant var;
+		var.m_varType = libsupermesh::Tools::VT_LONGLONG;
 		var.m_val.llVal = value;
 		prop->setProperty("IndexIdentifier", var);
-	} catch (LibSupermesh_Tools::Exception& e)
+	} catch (libsupermesh::Tools::Exception& e)
 	{
 		Error_PushError(RT_Failure, 
 						e.what().c_str(), 
@@ -2466,14 +2466,14 @@ SIDX_C_DLL RTError IndexProperty_SetIndexID(IndexPropertyH hProp,
 SIDX_C_DLL int64_t IndexProperty_GetIndexID(IndexPropertyH hProp)
 {
 	VALIDATE_POINTER1(hProp, "IndexProperty_GetIndexID", 0);
-	LibSupermesh_Tools::PropertySet* prop = static_cast<LibSupermesh_Tools::PropertySet*>(hProp);
+	libsupermesh::Tools::PropertySet* prop = static_cast<libsupermesh::Tools::PropertySet*>(hProp);
 
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 	var = prop->getProperty("IndexIdentifier");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_LONGLONG) {
+		if (var.m_varType != libsupermesh::Tools::VT_LONGLONG) {
 			Error_PushError(RT_Failure, 
 							"Property IndexIdentifier must be Tools::VT_LONGLONG", 
 							"IndexProperty_GetIndexID");

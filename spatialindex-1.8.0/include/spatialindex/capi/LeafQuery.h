@@ -30,17 +30,17 @@
 
 class LeafQueryResult;
 
-class LeafQuery : public LibSupermesh_SpatialIndex::IQueryStrategy
+class LeafQuery : public libsupermesh::SpatialIndex::IQueryStrategy
 {
 private:
-	std::queue<LibSupermesh_SpatialIndex::id_type> m_ids;
+	std::queue<libsupermesh::SpatialIndex::id_type> m_ids;
 	std::vector<LeafQueryResult> m_results;
 public:
 
 	LeafQuery();
 	~LeafQuery() { }
-	void getNextEntry(	const LibSupermesh_SpatialIndex::IEntry& entry, 
-						LibSupermesh_SpatialIndex::id_type& nextEntry, 
+	void getNextEntry(	const libsupermesh::SpatialIndex::IEntry& entry, 
+						libsupermesh::SpatialIndex::id_type& nextEntry, 
 						bool& hasNext);
 	std::vector<LeafQueryResult> const& GetResults() const {return m_results;}
 };
@@ -48,8 +48,8 @@ public:
 class LeafQueryResult 
 {
 private:
-    std::vector<LibSupermesh_SpatialIndex::id_type> ids;
-    LibSupermesh_SpatialIndex::Region* bounds;
+    std::vector<libsupermesh::SpatialIndex::id_type> ids;
+    libsupermesh::SpatialIndex::Region* bounds;
     uint32_t m_id;
     LeafQueryResult();
 public:
@@ -62,10 +62,10 @@ public:
     /// Assignment operator.
     LeafQueryResult& operator=(LeafQueryResult const& rhs);
         
-    std::vector<LibSupermesh_SpatialIndex::id_type> const& GetIDs() const;
-    void SetIDs(std::vector<LibSupermesh_SpatialIndex::id_type>& v);
-    const LibSupermesh_SpatialIndex::Region* GetBounds() const;
-    void SetBounds(const LibSupermesh_SpatialIndex::Region*  b);
+    std::vector<libsupermesh::SpatialIndex::id_type> const& GetIDs() const;
+    void SetIDs(std::vector<libsupermesh::SpatialIndex::id_type>& v);
+    const libsupermesh::SpatialIndex::Region* GetBounds() const;
+    void SetBounds(const libsupermesh::SpatialIndex::Region*  b);
     uint32_t getIdentifier() const {return m_id;}
     void setIdentifier(uint32_t v) {m_id = v;}
 };

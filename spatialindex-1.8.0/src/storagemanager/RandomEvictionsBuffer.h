@@ -29,14 +29,14 @@
 
 #include "Buffer.h"
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace StorageManager
 	{
 		class RandomEvictionsBuffer : public Buffer
 		{
 		public:
-			RandomEvictionsBuffer(IStorageManager&, LibSupermesh_Tools::PropertySet& ps);
+			RandomEvictionsBuffer(IStorageManager&, libsupermesh::Tools::PropertySet& ps);
 				// see Buffer.h for available properties.
 
 			virtual ~RandomEvictionsBuffer();
@@ -45,4 +45,4 @@ namespace LibSupermesh_SpatialIndex
 			virtual void removeEntry();
 		}; // RandomEvictionsBuffer
 	}
-}
+} }

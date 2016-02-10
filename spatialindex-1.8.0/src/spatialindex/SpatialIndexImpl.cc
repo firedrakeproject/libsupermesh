@@ -30,35 +30,35 @@
 #include "../mvrtree/MVRTree.h"
 #include "../tprtree/TPRTree.h"
 
-LibSupermesh_SpatialIndex::InvalidPageException::InvalidPageException(id_type id)
+libsupermesh::SpatialIndex::InvalidPageException::InvalidPageException(id_type id)
 {
 	std::ostringstream s;
 	s << "Unknown page id " << id;
 	m_error = s.str();
 }
 
-std::string LibSupermesh_SpatialIndex::InvalidPageException::what()
+std::string libsupermesh::SpatialIndex::InvalidPageException::what()
 {
 	return "InvalidPageException: " + m_error;
 }
 
-std::ostream& LibSupermesh_SpatialIndex::operator<<(std::ostream& os, const ISpatialIndex& i)
+std::ostream& libsupermesh::SpatialIndex::operator<<(std::ostream& os, const ISpatialIndex& i)
 {
-	const LibSupermesh_SpatialIndex::RTree::RTree* pRTree = dynamic_cast<const LibSupermesh_SpatialIndex::RTree::RTree*>(&i);
+	const libsupermesh::SpatialIndex::RTree::RTree* pRTree = dynamic_cast<const libsupermesh::SpatialIndex::RTree::RTree*>(&i);
 	if (pRTree != 0)
 	{
 		os << *pRTree;
 		return os;
 	}
 
-	const LibSupermesh_SpatialIndex::MVRTree::MVRTree* pMVRTree = dynamic_cast<const LibSupermesh_SpatialIndex::MVRTree::MVRTree*>(&i);
+	const libsupermesh::SpatialIndex::MVRTree::MVRTree* pMVRTree = dynamic_cast<const libsupermesh::SpatialIndex::MVRTree::MVRTree*>(&i);
 	if (pMVRTree != 0)
 	{
 		os << *pMVRTree;
 		return os;
 	}
 
-	const LibSupermesh_SpatialIndex::TPRTree::TPRTree* pTPRTree = dynamic_cast<const LibSupermesh_SpatialIndex::TPRTree::TPRTree*>(&i);
+	const libsupermesh::SpatialIndex::TPRTree::TPRTree* pTPRTree = dynamic_cast<const libsupermesh::SpatialIndex::TPRTree::TPRTree*>(&i);
 	if (pTPRTree != 0)
 	{
 		os << *pTPRTree;
@@ -69,23 +69,23 @@ std::ostream& LibSupermesh_SpatialIndex::operator<<(std::ostream& os, const ISpa
 	return os;
 }
 
-std::ostream& LibSupermesh_SpatialIndex::operator<<(std::ostream& os, const IStatistics& s)
+std::ostream& libsupermesh::SpatialIndex::operator<<(std::ostream& os, const IStatistics& s)
 {
-	const LibSupermesh_SpatialIndex::RTree::Statistics* pRTreeStats = dynamic_cast<const LibSupermesh_SpatialIndex::RTree::Statistics*>(&s);
+	const libsupermesh::SpatialIndex::RTree::Statistics* pRTreeStats = dynamic_cast<const libsupermesh::SpatialIndex::RTree::Statistics*>(&s);
 	if (pRTreeStats != 0)
 	{
 		os << *pRTreeStats;
 		return os;
 	}
 
-	const LibSupermesh_SpatialIndex::MVRTree::Statistics* pMVRTreeStats = dynamic_cast<const LibSupermesh_SpatialIndex::MVRTree::Statistics*>(&s);
+	const libsupermesh::SpatialIndex::MVRTree::Statistics* pMVRTreeStats = dynamic_cast<const libsupermesh::SpatialIndex::MVRTree::Statistics*>(&s);
 	if (pMVRTreeStats != 0)
 	{
 		os << * pMVRTreeStats;
 		return os;
 	}
 
-	const LibSupermesh_SpatialIndex::TPRTree::Statistics* pTPRTreeStats = dynamic_cast<const LibSupermesh_SpatialIndex::TPRTree::Statistics*>(&s);
+	const libsupermesh::SpatialIndex::TPRTree::Statistics* pTPRTreeStats = dynamic_cast<const libsupermesh::SpatialIndex::TPRTree::Statistics*>(&s);
 	if (pTPRTreeStats != 0)
 	{
 		os << * pTPRTreeStats;

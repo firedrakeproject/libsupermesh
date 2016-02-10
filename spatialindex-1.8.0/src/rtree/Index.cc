@@ -33,14 +33,14 @@
 #include "Leaf.h"
 #include "Index.h"
 
-using namespace LibSupermesh_SpatialIndex;
-using namespace LibSupermesh_SpatialIndex::RTree;
+using namespace libsupermesh::SpatialIndex;
+using namespace libsupermesh::SpatialIndex::RTree;
 
 Index::~Index()
 {
 }
 
-Index::Index(LibSupermesh_SpatialIndex::RTree::RTree* pTree, id_type id, uint32_t level) : Node(pTree, id, level, pTree->m_indexCapacity)
+Index::Index(libsupermesh::SpatialIndex::RTree::RTree* pTree, id_type id, uint32_t level) : Node(pTree, id, level, pTree->m_indexCapacity)
 {
 }
 
@@ -70,7 +70,7 @@ NodePtr Index::chooseSubtree(const Region& mbr, uint32_t insertionLevel, std::st
 			}
 		break;
 		default:
-			throw LibSupermesh_Tools::NotSupportedException("Index::chooseSubtree: Tree variant not supported.");
+			throw libsupermesh::Tools::NotSupportedException("Index::chooseSubtree: Tree variant not supported.");
 	}
 	assert(child != std::numeric_limits<uint32_t>::max());
 
@@ -118,7 +118,7 @@ void Index::split(uint32_t dataLength, byte* pData, Region& mbr, id_type id, Nod
 			rstarSplit(dataLength, pData, mbr, id, g1, g2);
 			break;
 		default:
-			throw LibSupermesh_Tools::NotSupportedException("Index::split: Tree variant not supported.");
+			throw libsupermesh::Tools::NotSupportedException("Index::split: Tree variant not supported.");
 	}
 
 	ptrLeft = m_pTree->m_indexPool.acquire();

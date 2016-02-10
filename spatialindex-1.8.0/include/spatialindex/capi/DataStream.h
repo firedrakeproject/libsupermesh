@@ -28,24 +28,24 @@
  
 #pragma once
 
-class DataStream : public LibSupermesh_SpatialIndex::IDataStream
+class DataStream : public libsupermesh::SpatialIndex::IDataStream
 {
 public:
-    DataStream(int (*readNext)(LibSupermesh_SpatialIndex::id_type* id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength));
+    DataStream(int (*readNext)(libsupermesh::SpatialIndex::id_type* id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength));
     ~DataStream();
 
-    LibSupermesh_SpatialIndex::IData* getNext();
-    bool hasNext() throw (LibSupermesh_Tools::NotSupportedException);
+    libsupermesh::SpatialIndex::IData* getNext();
+    bool hasNext() throw (libsupermesh::Tools::NotSupportedException);
 
-    uint32_t size() throw (LibSupermesh_Tools::NotSupportedException);
-    void rewind() throw (LibSupermesh_Tools::NotSupportedException);
+    uint32_t size() throw (libsupermesh::Tools::NotSupportedException);
+    void rewind() throw (libsupermesh::Tools::NotSupportedException);
 
 protected:
-    LibSupermesh_SpatialIndex::RTree::Data* m_pNext;
-    LibSupermesh_SpatialIndex::id_type m_id;
+    libsupermesh::SpatialIndex::RTree::Data* m_pNext;
+    libsupermesh::SpatialIndex::id_type m_id;
 
 private:
-    int (*iterfunct)(LibSupermesh_SpatialIndex::id_type *id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength);
+    int (*iterfunct)(libsupermesh::SpatialIndex::id_type *id, double **pMin, double **pMax, uint32_t *nDimension, const uint8_t **pData, uint32_t *nDataLength);
     
     bool readData();
     bool m_bDoneReading;

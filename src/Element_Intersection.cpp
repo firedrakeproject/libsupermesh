@@ -29,7 +29,7 @@
 #include "Element_Intersection.h"
 
 using namespace LibSupermesh;
-using namespace LibSupermesh_SpatialIndex;
+using namespace libsupermesh::SpatialIndex;
 
 MeshDataStream::MeshDataStream(const double*& positions, const int& nnodes, const int& dim,
                                const int*& enlist, const int& nelements, const int& loc)
@@ -98,7 +98,7 @@ IData* MeshDataStream::getNext()
     }
   }
       
-  LibSupermesh_SpatialIndex::Region region = LibSupermesh_SpatialIndex::Region(low, high, dim);
+  libsupermesh::SpatialIndex::Region region = libsupermesh::SpatialIndex::Region(low, high, dim);
   IData* data = new RTree::Data(0, 0, region, ++index);
 
   return data;
@@ -195,7 +195,7 @@ void ElementIntersectionFinder::SetTestElement(const double*& positions, const i
     }
   }
   
-  LibSupermesh_SpatialIndex::Region* region = new LibSupermesh_SpatialIndex::Region(low, high, dim);
+  libsupermesh::SpatialIndex::Region* region = new libsupermesh::SpatialIndex::Region(low, high, dim);
   rTree->intersectsWithQuery(*region, visitor);
   
   delete region;

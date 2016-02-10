@@ -27,9 +27,9 @@
 
 #pragma once
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
-	class SIDX_DLL Region : public LibSupermesh_Tools::IObject, public virtual IShape
+	class SIDX_DLL Region : public libsupermesh::Tools::IObject, public virtual IShape
 	{
 	public:
 		Region();
@@ -99,6 +99,6 @@ namespace LibSupermesh_SpatialIndex
 		friend SIDX_DLL std::ostream& operator<<(std::ostream& os, const Region& r);
 	}; // Region
 	
-	typedef LibSupermesh_Tools::PoolPointer<Region> RegionPtr;
+	typedef libsupermesh::Tools::PoolPointer<Region> RegionPtr;
 	SIDX_DLL std::ostream& operator<<(std::ostream& os, const Region& r);
-}
+} }

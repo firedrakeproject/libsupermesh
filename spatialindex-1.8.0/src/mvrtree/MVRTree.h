@@ -31,7 +31,7 @@
 #include "Node.h"
 #include "PointerPoolNode.h"
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace MVRTree
 	{
@@ -41,7 +41,7 @@ namespace LibSupermesh_SpatialIndex
 			class RootEntry;
 
 		public:
-			MVRTree(IStorageManager&, LibSupermesh_Tools::PropertySet&);
+			MVRTree(IStorageManager&, libsupermesh::Tools::PropertySet&);
 				// String                   Value     Description
 				// ----------------------------------------------
 				// IndexIndentifier         VT_LONG   If specified an existing index will be openened from the supplied
@@ -77,14 +77,14 @@ namespace LibSupermesh_SpatialIndex
 			virtual void nearestNeighborQuery(uint32_t k, const IShape& query, IVisitor& v);
 			virtual void selfJoinQuery(const IShape& s, IVisitor& v);
 			virtual void queryStrategy(IQueryStrategy& qs);
-			virtual void getIndexProperties(LibSupermesh_Tools::PropertySet& out) const;
+			virtual void getIndexProperties(libsupermesh::Tools::PropertySet& out) const;
 			virtual void addCommand(ICommand* pCommand, CommandType ct);
 			virtual bool isIndexValid();
 			virtual void getStatistics(IStatistics** out) const;
 
 		private:
-			void initNew(LibSupermesh_Tools::PropertySet&);
-			void initOld(LibSupermesh_Tools::PropertySet& ps);
+			void initNew(libsupermesh::Tools::PropertySet&);
+			void initOld(libsupermesh::Tools::PropertySet& ps);
 			void storeHeader();
 			void loadHeader();
 
@@ -98,7 +98,7 @@ namespace LibSupermesh_SpatialIndex
 
 			void rangeQuery(RangeQueryType type, const IShape& query, IVisitor& v);
 
-			void findRootIdentifiers(const LibSupermesh_Tools::IInterval& ti, std::vector<id_type>& ids);
+			void findRootIdentifiers(const libsupermesh::Tools::IInterval& ti, std::vector<id_type>& ids);
 			std::string printRootInfo() const;
 
 			IStorageManager* m_pStorageManager;
@@ -137,7 +137,7 @@ namespace LibSupermesh_SpatialIndex
 
 			TimeRegion m_infiniteRegion;
 
-			LibSupermesh_SpatialIndex::MVRTree::Statistics m_stats;
+			libsupermesh::SpatialIndex::MVRTree::Statistics m_stats;
 
 			bool m_bTightMBRs;
 
@@ -145,14 +145,14 @@ namespace LibSupermesh_SpatialIndex
 
 			double m_currentTime;
 
-			LibSupermesh_Tools::PointerPool<Point> m_pointPool;
-			LibSupermesh_Tools::PointerPool<TimeRegion> m_regionPool;
-			LibSupermesh_Tools::PointerPool<Node> m_indexPool;
-			LibSupermesh_Tools::PointerPool<Node> m_leafPool;
+			libsupermesh::Tools::PointerPool<Point> m_pointPool;
+			libsupermesh::Tools::PointerPool<TimeRegion> m_regionPool;
+			libsupermesh::Tools::PointerPool<Node> m_indexPool;
+			libsupermesh::Tools::PointerPool<Node> m_leafPool;
 
-			std::vector<LibSupermesh_Tools::SmartPointer<ICommand> > m_writeNodeCommands;
-			std::vector<LibSupermesh_Tools::SmartPointer<ICommand> > m_readNodeCommands;
-			std::vector<LibSupermesh_Tools::SmartPointer<ICommand> > m_deleteNodeCommands;
+			std::vector<libsupermesh::Tools::SmartPointer<ICommand> > m_writeNodeCommands;
+			std::vector<libsupermesh::Tools::SmartPointer<ICommand> > m_readNodeCommands;
+			std::vector<libsupermesh::Tools::SmartPointer<ICommand> > m_deleteNodeCommands;
 
 #ifdef HAVE_PTHREAD_H
 			pthread_mutex_t m_lock;
@@ -222,5 +222,5 @@ namespace LibSupermesh_SpatialIndex
 
 		std::ostream& operator<<(std::ostream& os, const MVRTree& t);
 	}
-}
+} }
 

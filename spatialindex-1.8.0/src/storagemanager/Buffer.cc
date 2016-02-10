@@ -30,23 +30,23 @@
 #include <spatialindex/SpatialIndex.h>
 #include "Buffer.h"
 
-Buffer::Buffer(IStorageManager& sm, LibSupermesh_Tools::PropertySet& ps) :
+Buffer::Buffer(IStorageManager& sm, libsupermesh::Tools::PropertySet& ps) :
 	m_capacity(10),
 	m_bWriteThrough(false),
 	m_pStorageManager(&sm),
 	m_u64Hits(0)
 {
-	LibSupermesh_Tools::Variant var = ps.getProperty("Capacity");
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	libsupermesh::Tools::Variant var = ps.getProperty("Capacity");
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_ULONG) throw LibSupermesh_Tools::IllegalArgumentException("Property Capacity must be Tools::VT_ULONG");
+		if (var.m_varType != libsupermesh::Tools::VT_ULONG) throw libsupermesh::Tools::IllegalArgumentException("Property Capacity must be Tools::VT_ULONG");
 		m_capacity = var.m_val.ulVal;
 	}
 
 	var = ps.getProperty("WriteThrough");
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_BOOL) throw LibSupermesh_Tools::IllegalArgumentException("Property WriteThrough must be Tools::VT_BOOL");
+		if (var.m_varType != libsupermesh::Tools::VT_BOOL) throw libsupermesh::Tools::IllegalArgumentException("Property WriteThrough must be Tools::VT_BOOL");
 		m_bWriteThrough = var.m_val.blVal;
 	}
 }

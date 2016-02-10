@@ -29,17 +29,17 @@
 
 #include <cstring>
 
-using namespace LibSupermesh_SpatialIndex;
-using namespace LibSupermesh_SpatialIndex::StorageManager;
+using namespace libsupermesh::SpatialIndex;
+using namespace libsupermesh::SpatialIndex::StorageManager;
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace StorageManager
 	{
 		class Buffer : public IBuffer
 		{
 		public:
-			Buffer(IStorageManager& sm, LibSupermesh_Tools::PropertySet& ps);
+			Buffer(IStorageManager& sm, libsupermesh::Tools::PropertySet& ps);
 				// String                   Value     Description
 				// ----------------------------------------------
 				// Capacity		VT_ULONG	Buffer maximum capacity.
@@ -82,4 +82,4 @@ namespace LibSupermesh_SpatialIndex
 			uint64_t m_u64Hits;
 		}; // Buffer
 	}
-}
+} }

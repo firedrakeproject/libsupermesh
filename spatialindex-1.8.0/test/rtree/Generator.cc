@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 	size_t simulationLength = atol(argv[2]);
 	size_t numberOfObjects = atol(argv[1]);
 	std::map<size_t, Region> data;
-	LibSupermesh_Tools::Random rnd;
+	libsupermesh::Tools::Random rnd;
 
 	for (size_t i = 0; i < numberOfObjects; i++)
 	{

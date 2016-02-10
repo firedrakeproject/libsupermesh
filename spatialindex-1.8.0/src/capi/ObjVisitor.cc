@@ -34,28 +34,28 @@ ObjVisitor::ObjVisitor(): nResults(0)
 
 ObjVisitor::~ObjVisitor()
 {
-	std::vector<LibSupermesh_SpatialIndex::IData*>::iterator it;
+	std::vector<libsupermesh::SpatialIndex::IData*>::iterator it;
 	for (it = m_vector.begin(); it != m_vector.end(); it++) {
 		delete *it;
 	}
 
 }
 
-void ObjVisitor::visitNode(const LibSupermesh_SpatialIndex::INode& n)
+void ObjVisitor::visitNode(const libsupermesh::SpatialIndex::INode& n)
 {
 }
 
-void ObjVisitor::visitData(const LibSupermesh_SpatialIndex::IData& d)
+void ObjVisitor::visitData(const libsupermesh::SpatialIndex::IData& d)
 {
 
-	LibSupermesh_SpatialIndex::IData* item = dynamic_cast<LibSupermesh_SpatialIndex::IData*>(const_cast<LibSupermesh_SpatialIndex::IData&>(d).clone()) ; 
+	libsupermesh::SpatialIndex::IData* item = dynamic_cast<libsupermesh::SpatialIndex::IData*>(const_cast<libsupermesh::SpatialIndex::IData&>(d).clone()) ; 
 	
 	nResults += 1;
 	
 	m_vector.push_back(item);
 }
 
-void ObjVisitor::visitData(std::vector<const LibSupermesh_SpatialIndex::IData*>& v)
+void ObjVisitor::visitData(std::vector<const libsupermesh::SpatialIndex::IData*>& v)
 {
 }
 

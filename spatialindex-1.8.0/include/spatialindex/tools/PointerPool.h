@@ -29,7 +29,7 @@
 
 #include "PoolPointer.h"
 
-namespace LibSupermesh_Tools
+namespace libsupermesh { namespace Tools
 {
 	template <class X> class PointerPool
 	{
@@ -116,5 +116,5 @@ namespace LibSupermesh_Tools
 		uint64_t m_pointerCount;
 	#endif
 	};
-}
+} }
 

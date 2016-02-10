@@ -29,7 +29,7 @@
 
 #include "Statistics.h"
 
-using namespace LibSupermesh_SpatialIndex::RTree;
+using namespace libsupermesh::SpatialIndex::RTree;
 
 Statistics::Statistics()
 {
@@ -134,7 +134,7 @@ uint32_t Statistics::getNumberOfNodesInLevel(uint32_t l) const
 	}
 	catch (...)
 	{
-		throw LibSupermesh_Tools::IndexOutOfBoundsException(l);
+		throw libsupermesh::Tools::IndexOutOfBoundsException(l);
 	}
 
 	return u32Nodes;
@@ -155,7 +155,7 @@ void Statistics::reset()
 	m_nodesInLevel.clear();
 }
 
-std::ostream& LibSupermesh_SpatialIndex::RTree::operator<<(std::ostream& os, const Statistics& s)
+std::ostream& libsupermesh::SpatialIndex::RTree::operator<<(std::ostream& os, const Statistics& s)
 {
 	os	<< "Reads: " << s.m_u64Reads << std::endl
 		<< "Writes: " << s.m_u64Writes << std::endl

@@ -34,14 +34,14 @@
 #include "Leaf.h"
 #include "Index.h"
 
-using namespace LibSupermesh_SpatialIndex;
-using namespace LibSupermesh_SpatialIndex::TPRTree;
+using namespace libsupermesh::SpatialIndex;
+using namespace libsupermesh::SpatialIndex::TPRTree;
 
 Index::~Index()
 {
 }
 
-Index::Index(LibSupermesh_SpatialIndex::TPRTree::TPRTree* pTree, id_type id, uint32_t level) : Node(pTree, id, level, pTree->m_indexCapacity)
+Index::Index(libsupermesh::SpatialIndex::TPRTree::TPRTree* pTree, id_type id, uint32_t level) : Node(pTree, id, level, pTree->m_indexCapacity)
 {
 }
 
@@ -67,7 +67,7 @@ NodePtr Index::chooseSubtree(const MovingRegion& mbr, uint32_t insertionLevel, s
 			}
 		break;
 		default:
-			throw LibSupermesh_Tools::NotSupportedException("Index::chooseSubtree: Tree variant not supported.");
+			throw libsupermesh::Tools::NotSupportedException("Index::chooseSubtree: Tree variant not supported.");
 	}
 	assert(child != std::numeric_limits<uint32_t>::max());
 
@@ -111,7 +111,7 @@ void Index::split(uint32_t dataLength, byte* pData, MovingRegion& mbr, id_type i
 			rstarSplit(dataLength, pData, mbr, id, g1, g2);
 			break;
 		default:
-			throw LibSupermesh_Tools::NotSupportedException("Index::split: Tree variant not supported.");
+			throw libsupermesh::Tools::NotSupportedException("Index::split: Tree variant not supported.");
 	}
 
 	pLeft = m_pTree->m_indexPool.acquire();
@@ -142,7 +142,7 @@ uint32_t Index::findLeastEnlargement(const MovingRegion& r) const
 	uint32_t best = std::numeric_limits<uint32_t>::max();
 
 	MovingRegionPtr t = m_pTree->m_regionPool.acquire();
-	LibSupermesh_Tools::Interval ivT(m_pTree->m_currentTime, m_pTree->m_currentTime + m_pTree->m_horizon);
+	libsupermesh::Tools::Interval ivT(m_pTree->m_currentTime, m_pTree->m_currentTime + m_pTree->m_horizon);
 
 	for (uint32_t cChild = 0; cChild < m_children; ++cChild)
 	{
@@ -177,7 +177,7 @@ uint32_t Index::findLeastOverlap(const MovingRegion& r) const
 	double me = std::numeric_limits<double>::max();
 	OverlapEntry* best = 0;
 
-	LibSupermesh_Tools::Interval ivT(m_pTree->m_currentTime, m_pTree->m_currentTime + m_pTree->m_horizon);
+	libsupermesh::Tools::Interval ivT(m_pTree->m_currentTime, m_pTree->m_currentTime + m_pTree->m_horizon);
 
 	// find combined region and enlargement of every entry and store it.
 	for (uint32_t cChild = 0; cChild < m_children; ++cChild)

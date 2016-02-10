@@ -37,16 +37,16 @@ CountVisitor::~CountVisitor()
 
 }
 
-void CountVisitor::visitNode(const LibSupermesh_SpatialIndex::INode& n)
+void CountVisitor::visitNode(const libsupermesh::SpatialIndex::INode& n)
 {
 
 }
 
-void CountVisitor::visitData(const LibSupermesh_SpatialIndex::IData& d)
+void CountVisitor::visitData(const libsupermesh::SpatialIndex::IData& d)
 {
    nResults += 1;
 }
 
-void CountVisitor::visitData(std::vector<const LibSupermesh_SpatialIndex::IData*>& v)
+void CountVisitor::visitData(std::vector<const libsupermesh::SpatialIndex::IData*>& v)
 {
 }

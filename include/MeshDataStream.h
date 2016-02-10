@@ -37,13 +37,13 @@ namespace LibSupermesh{
   
   // Customised version of MyDataStream class in
   // regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0
-  class MeshDataStream : public LibSupermesh_SpatialIndex::IDataStream{
+  class MeshDataStream : public libsupermesh::SpatialIndex::IDataStream{
   public:
     MeshDataStream(const double*& positions, const int& nnodes, const int& dim,
                    const int*& enlist, const int& nelements, const int& loc);
     virtual ~MeshDataStream();
     
-    virtual LibSupermesh_SpatialIndex::IData* getNext();
+    virtual libsupermesh::SpatialIndex::IData* getNext();
     virtual bool hasNext();
     virtual uint32_t size();
     virtual void rewind();

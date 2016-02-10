@@ -28,7 +28,7 @@
 
 #pragma once
 
-class IdVisitor : public LibSupermesh_SpatialIndex::IVisitor
+class IdVisitor : public libsupermesh::SpatialIndex::IVisitor
 {
 private:
     std::vector<uint64_t> m_vector;
@@ -42,7 +42,7 @@ public:
     uint64_t GetResultCount() const { return nResults; }
     std::vector<uint64_t>& GetResults()  { return m_vector; }
     
-    void visitNode(const LibSupermesh_SpatialIndex::INode& n);
-    void visitData(const LibSupermesh_SpatialIndex::IData& d);
-    void visitData(std::vector<const LibSupermesh_SpatialIndex::IData*>& v);
+    void visitNode(const libsupermesh::SpatialIndex::INode& n);
+    void visitData(const libsupermesh::SpatialIndex::IData& d);
+    void visitData(std::vector<const libsupermesh::SpatialIndex::IData*>& v);
 };

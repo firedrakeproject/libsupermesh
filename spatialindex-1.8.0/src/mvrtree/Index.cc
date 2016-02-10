@@ -34,14 +34,14 @@
 #include "Leaf.h"
 #include "Index.h"
 
-using namespace LibSupermesh_SpatialIndex;
-using namespace LibSupermesh_SpatialIndex::MVRTree;
+using namespace libsupermesh::SpatialIndex;
+using namespace libsupermesh::SpatialIndex::MVRTree;
 
 Index::~Index()
 {
 }
 
-Index::Index(LibSupermesh_SpatialIndex::MVRTree::MVRTree* pTree, id_type id, uint32_t level) : Node(pTree, id, level, pTree->m_indexCapacity)
+Index::Index(libsupermesh::SpatialIndex::MVRTree::MVRTree* pTree, id_type id, uint32_t level) : Node(pTree, id, level, pTree->m_indexCapacity)
 {
 }
 
@@ -71,7 +71,7 @@ NodePtr Index::chooseSubtree(const TimeRegion& mbr, uint32_t insertionLevel, std
 			}
 		break;
 		default:
-			throw LibSupermesh_Tools::NotSupportedException("Index::chooseSubtree: Tree variant not supported.");
+			throw libsupermesh::Tools::NotSupportedException("Index::chooseSubtree: Tree variant not supported.");
 	}
 	assert (child != std::numeric_limits<uint32_t>::max());
 
@@ -126,7 +126,7 @@ void Index::split(
 			rstarSplit(dataLength, pData, mbr, id, g1, g2, mbr2, id2, bInsertMbr2);
 			break;
 		default:
-			throw LibSupermesh_Tools::NotSupportedException("Index::split: Tree variant not supported.");
+			throw libsupermesh::Tools::NotSupportedException("Index::split: Tree variant not supported.");
 	}
 
 	pLeft = m_pTree->m_indexPool.acquire();
@@ -186,7 +186,7 @@ uint32_t Index::findLeastEnlargement(const TimeRegion& r) const
 	{
 		std::ostringstream s;
 		s << "findLeastEnlargement: All entries of node " << m_identifier << " are dead.";
-		throw LibSupermesh_Tools::IllegalStateException(s.str());
+		throw libsupermesh::Tools::IllegalStateException(s.str());
 	}
 #endif
 
@@ -243,7 +243,7 @@ uint32_t Index::findLeastOverlap(const TimeRegion& r) const
 	{
 		std::ostringstream s;
 		s << "findLeastOverlap: All entries of node " << m_identifier << " are dead.";
-		throw LibSupermesh_Tools::IllegalStateException(s.str());
+		throw libsupermesh::Tools::IllegalStateException(s.str());
 	}
 #endif
 

@@ -29,9 +29,9 @@
 
 #include "Node.h"
 
-namespace LibSupermesh_Tools
+namespace libsupermesh { namespace Tools
 {
-	template<> class PointerPool<LibSupermesh_SpatialIndex::MVRTree::Node>
+	template<> class PointerPool<libsupermesh::SpatialIndex::MVRTree::Node>
 	{
 	public:
 		explicit PointerPool(uint32_t capacity) : m_capacity(capacity)
@@ -49,7 +49,7 @@ namespace LibSupermesh_Tools
 
 			while (! m_pool.empty())
 			{
-				LibSupermesh_SpatialIndex::MVRTree::Node* x = m_pool.top(); m_pool.pop();
+				libsupermesh::SpatialIndex::MVRTree::Node* x = m_pool.top(); m_pool.pop();
 				#ifndef NDEBUG
 				--m_pointerCount;
 				#endif
@@ -58,16 +58,16 @@ namespace LibSupermesh_Tools
 
 		}
 
-		PoolPointer<LibSupermesh_SpatialIndex::MVRTree::Node> acquire()
+		PoolPointer<libsupermesh::SpatialIndex::MVRTree::Node> acquire()
 		{
 			if (! m_pool.empty())
 			{
-				LibSupermesh_SpatialIndex::MVRTree::Node* p = m_pool.top(); m_pool.pop();
+				libsupermesh::SpatialIndex::MVRTree::Node* p = m_pool.top(); m_pool.pop();
 				#ifndef NDEBUG
 				++m_hits;
 				#endif
 
-				return PoolPointer<LibSupermesh_SpatialIndex::MVRTree::Node>(p, this);
+				return PoolPointer<libsupermesh::SpatialIndex::MVRTree::Node>(p, this);
 			}
 			#ifndef NDEBUG
 			else
@@ -78,10 +78,10 @@ namespace LibSupermesh_Tools
 			}
 			#endif
 
-			return PoolPointer<LibSupermesh_SpatialIndex::MVRTree::Node>();
+			return PoolPointer<libsupermesh::SpatialIndex::MVRTree::Node>();
 		}
 
-		void release(LibSupermesh_SpatialIndex::MVRTree::Node* p)
+		void release(libsupermesh::SpatialIndex::MVRTree::Node* p)
 		{
 			if (p != 0)
 			{
@@ -123,7 +123,7 @@ namespace LibSupermesh_Tools
 
 	protected:
 		uint32_t m_capacity;
-		std::stack<LibSupermesh_SpatialIndex::MVRTree::Node*> m_pool;
+		std::stack<libsupermesh::SpatialIndex::MVRTree::Node*> m_pool;
 
 	#ifndef NDEBUG
 	public:
@@ -132,5 +132,5 @@ namespace LibSupermesh_Tools
 		uint64_t m_pointerCount;
 	#endif
 	};
-}
+} }
 

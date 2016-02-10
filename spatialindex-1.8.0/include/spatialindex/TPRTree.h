@@ -28,7 +28,7 @@
 
 #pragma once
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace TPRTree
 	{
@@ -49,7 +49,7 @@ namespace LibSupermesh_SpatialIndex
 			IntersectionQuery = 0x2
 		};
 
-		class SIDX_DLL Data : public IData, public LibSupermesh_Tools::ISerializable
+		class SIDX_DLL Data : public IData, public libsupermesh::Tools::ISerializable
 		{
 		public:
 			Data(uint32_t len, byte* pData, MovingRegion& r, id_type id);
@@ -69,7 +69,7 @@ namespace LibSupermesh_SpatialIndex
 			uint32_t m_dataLength;
 		}; // Data
 
-		SIDX_DLL ISpatialIndex* returnTPRTree(IStorageManager& ind, LibSupermesh_Tools::PropertySet& in);
+		SIDX_DLL ISpatialIndex* returnTPRTree(IStorageManager& ind, libsupermesh::Tools::PropertySet& in);
 		SIDX_DLL ISpatialIndex* createNewTPRTree(
 			IStorageManager& sm,
 			double fillFactor,
@@ -82,4 +82,4 @@ namespace LibSupermesh_SpatialIndex
 		);
 		SIDX_DLL ISpatialIndex* loadTPRTree(IStorageManager& in, id_type indexIdentifier);
 	}
-}
+} }

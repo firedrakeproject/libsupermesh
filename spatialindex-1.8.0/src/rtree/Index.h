@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace RTree
 	{
@@ -76,4 +76,4 @@ namespace LibSupermesh_SpatialIndex
 			friend class BulkLoader;
 		}; // Index
 	}
-}
+} }

@@ -27,7 +27,7 @@
 
 #pragma once
 
-namespace LibSupermesh_SpatialIndex
+namespace libsupermesh { namespace SpatialIndex
 {
 	namespace RTree
 	{
@@ -36,7 +36,7 @@ namespace LibSupermesh_SpatialIndex
 		class Leaf;
 		class Index;
 
-		class Statistics : public LibSupermesh_SpatialIndex::IStatistics
+		class Statistics : public libsupermesh::SpatialIndex::IStatistics
 		{
 		public:
 			Statistics();
@@ -96,4 +96,4 @@ namespace LibSupermesh_SpatialIndex
 
 		std::ostream& operator<<(std::ostream& os, const Statistics& s);
 	}
-}
+} }

@@ -44,7 +44,7 @@ namespace LibSupermesh
   const int writeThrough = false;
 
   // R-Tree parameters
-  const LibSupermesh_SpatialIndex::RTree::RTreeVariant variant = LibSupermesh_SpatialIndex::RTree::RV_RSTAR;
+  const libsupermesh::SpatialIndex::RTree::RTreeVariant variant = libsupermesh::SpatialIndex::RTree::RV_RSTAR;
   // Minimum fraction (of maximum) of entries in any node (index or leaf)
   const double fillFactor = 0.7;
   // Node index capacity in the rtree
@@ -54,14 +54,14 @@ namespace LibSupermesh
   
   // Customised version of PyListVisitor class in
   // wrapper.cc in Rtree 0.4.1
-  class ElementListVisitor : public LibSupermesh_SpatialIndex::IVisitor, public std::vector< int >
+  class ElementListVisitor : public libsupermesh::SpatialIndex::IVisitor, public std::vector< int >
   {
     public:
       inline ElementListVisitor() {}      
       inline virtual ~ElementListVisitor() {}      
-      inline virtual void visitNode(const LibSupermesh_SpatialIndex::INode& node) {}      
-      inline virtual void visitData(const LibSupermesh_SpatialIndex::IData& data) {push_back(data.getIdentifier());}
-      inline virtual void visitData(std::vector< const LibSupermesh_SpatialIndex::IData* >& vector) {}
+      inline virtual void visitNode(const libsupermesh::SpatialIndex::INode& node) {}      
+      inline virtual void visitData(const libsupermesh::SpatialIndex::IData& data) {push_back(data.getIdentifier());}
+      inline virtual void visitData(std::vector< const libsupermesh::SpatialIndex::IData* >& vector) {}
   };
 
   // Interface to spatialindex to calculate element intersection lists between
@@ -84,9 +84,9 @@ namespace LibSupermesh
       void Free();
     
       int dim, loc;
-      LibSupermesh_SpatialIndex::IStorageManager* storageManager;
-      LibSupermesh_SpatialIndex::StorageManager::IBuffer* storage;
-      LibSupermesh_SpatialIndex::ISpatialIndex* rTree;
+      libsupermesh::SpatialIndex::IStorageManager* storageManager;
+      libsupermesh::SpatialIndex::StorageManager::IBuffer* storage;
+      libsupermesh::SpatialIndex::ISpatialIndex* rTree;
       ElementListVisitor visitor;
   };
 }

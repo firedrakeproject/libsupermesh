@@ -35,10 +35,10 @@
 #include "DiskStorageManager.h"
 #include <spatialindex/tools/Tools.h>
 
-using namespace LibSupermesh_SpatialIndex;
-using namespace LibSupermesh_SpatialIndex::StorageManager;
+using namespace libsupermesh::SpatialIndex;
+using namespace libsupermesh::SpatialIndex::StorageManager;
 
-bool CheckFilesExists(LibSupermesh_Tools::PropertySet& ps)
+bool CheckFilesExists(libsupermesh::Tools::PropertySet& ps)
 {
 	bool bExists = false;
 
@@ -46,17 +46,17 @@ bool CheckFilesExists(LibSupermesh_Tools::PropertySet& ps)
 	std::string idx("idx");
 	std::string dat("dat");
 
-	LibSupermesh_Tools::Variant idx_name;
-	LibSupermesh_Tools::Variant dat_name;
-	LibSupermesh_Tools::Variant fn;
+	libsupermesh::Tools::Variant idx_name;
+	libsupermesh::Tools::Variant dat_name;
+	libsupermesh::Tools::Variant fn;
 
 	idx_name = ps.getProperty("FileNameIdx");
 	dat_name = ps.getProperty("FileNameDat");
 	fn = ps.getProperty("FileName");
 
-	if (idx_name.m_varType != LibSupermesh_Tools::VT_EMPTY) dat = std::string(idx_name.m_val.pcVal);
-	if (dat_name.m_varType != LibSupermesh_Tools::VT_EMPTY) idx = std::string(dat_name.m_val.pcVal);
-	if (fn.m_varType != LibSupermesh_Tools::VT_EMPTY) filename = std::string(fn.m_val.pcVal);
+	if (idx_name.m_varType != libsupermesh::Tools::VT_EMPTY) dat = std::string(idx_name.m_val.pcVal);
+	if (dat_name.m_varType != libsupermesh::Tools::VT_EMPTY) idx = std::string(dat_name.m_val.pcVal);
+	if (fn.m_varType != libsupermesh::Tools::VT_EMPTY) filename = std::string(fn.m_val.pcVal);
 
 	struct stat stats;
 
@@ -77,28 +77,28 @@ bool CheckFilesExists(LibSupermesh_Tools::PropertySet& ps)
 
 	return bExists;
 }
-LibSupermesh_SpatialIndex::IStorageManager* LibSupermesh_SpatialIndex::StorageManager::returnDiskStorageManager(LibSupermesh_Tools::PropertySet& ps)
+libsupermesh::SpatialIndex::IStorageManager* libsupermesh::SpatialIndex::StorageManager::returnDiskStorageManager(libsupermesh::Tools::PropertySet& ps)
 {
 	IStorageManager* sm = new DiskStorageManager(ps);
 	return sm;
 }
 
-LibSupermesh_SpatialIndex::IStorageManager* LibSupermesh_SpatialIndex::StorageManager::createNewDiskStorageManager(std::string& baseName, uint32_t pageSize)
+libsupermesh::SpatialIndex::IStorageManager* libsupermesh::SpatialIndex::StorageManager::createNewDiskStorageManager(std::string& baseName, uint32_t pageSize)
 {
-	LibSupermesh_Tools::Variant var;
-	LibSupermesh_Tools::PropertySet ps;
+	libsupermesh::Tools::Variant var;
+	libsupermesh::Tools::PropertySet ps;
 
-	var.m_varType = LibSupermesh_Tools::VT_BOOL;
+	var.m_varType = libsupermesh::Tools::VT_BOOL;
 	var.m_val.blVal = true;
 	ps.setProperty("Overwrite", var);
 		// overwrite the file if it exists.
 
-	var.m_varType = LibSupermesh_Tools::VT_PCHAR;
+	var.m_varType = libsupermesh::Tools::VT_PCHAR;
 	var.m_val.pcVal = const_cast<char*>(baseName.c_str());
 	ps.setProperty("FileName", var);
 		// .idx and .dat extensions will be added.
 
-	var.m_varType = LibSupermesh_Tools::VT_ULONG;
+	var.m_varType = libsupermesh::Tools::VT_ULONG;
 	var.m_val.ulVal = pageSize;
 	ps.setProperty("PageSize", var);
 		// specify the page size. Since the index may also contain user defined data
@@ -108,12 +108,12 @@ LibSupermesh_SpatialIndex::IStorageManager* LibSupermesh_SpatialIndex::StorageMa
 	return returnDiskStorageManager(ps);
 }
 
-LibSupermesh_SpatialIndex::IStorageManager* LibSupermesh_SpatialIndex::StorageManager::loadDiskStorageManager(std::string& baseName)
+libsupermesh::SpatialIndex::IStorageManager* libsupermesh::SpatialIndex::StorageManager::loadDiskStorageManager(std::string& baseName)
 {
-	LibSupermesh_Tools::Variant var;
-	LibSupermesh_Tools::PropertySet ps;
+	libsupermesh::Tools::Variant var;
+	libsupermesh::Tools::PropertySet ps;
 
-	var.m_varType = LibSupermesh_Tools::VT_PCHAR;
+	var.m_varType = libsupermesh::Tools::VT_PCHAR;
 	var.m_val.pcVal = const_cast<char*>(baseName.c_str());
 	ps.setProperty("FileName", var);
 		// .idx and .dat extensions will be added.
@@ -121,37 +121,37 @@ LibSupermesh_SpatialIndex::IStorageManager* LibSupermesh_SpatialIndex::StorageMa
 	return returnDiskStorageManager(ps);
 }
 
-DiskStorageManager::DiskStorageManager(LibSupermesh_Tools::PropertySet& ps) : m_pageSize(0), m_nextPage(-1), m_buffer(0)
+DiskStorageManager::DiskStorageManager(libsupermesh::Tools::PropertySet& ps) : m_pageSize(0), m_nextPage(-1), m_buffer(0)
 {
-	LibSupermesh_Tools::Variant var;
+	libsupermesh::Tools::Variant var;
 
 	// Open/Create flag.
 	bool bOverwrite = false;
 	var = ps.getProperty("Overwrite");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_BOOL)
-			throw LibSupermesh_Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property Overwrite must be Tools::VT_BOOL");
+		if (var.m_varType != libsupermesh::Tools::VT_BOOL)
+			throw libsupermesh::Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property Overwrite must be Tools::VT_BOOL");
 		bOverwrite = var.m_val.blVal;
 	}
 
 	// storage filename.
 	var = ps.getProperty("FileName");
 
-	if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+	if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 	{
-		if (var.m_varType != LibSupermesh_Tools::VT_PCHAR)
-			throw LibSupermesh_Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property FileName must be Tools::VT_PCHAR");
+		if (var.m_varType != libsupermesh::Tools::VT_PCHAR)
+			throw libsupermesh::Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property FileName must be Tools::VT_PCHAR");
 
 		std::string idx("idx");
 		std::string dat("dat");
 
-		LibSupermesh_Tools::Variant idx_name = ps.getProperty("FileNameIdx");
-		if (idx_name.m_varType != LibSupermesh_Tools::VT_EMPTY) idx = std::string(idx_name.m_val.pcVal);
+		libsupermesh::Tools::Variant idx_name = ps.getProperty("FileNameIdx");
+		if (idx_name.m_varType != libsupermesh::Tools::VT_EMPTY) idx = std::string(idx_name.m_val.pcVal);
 
-		LibSupermesh_Tools::Variant dat_name = ps.getProperty("FileNameDat");
-		if (dat_name.m_varType != LibSupermesh_Tools::VT_EMPTY) dat = std::string(dat_name.m_val.pcVal);
+		libsupermesh::Tools::Variant dat_name = ps.getProperty("FileNameDat");
+		if (dat_name.m_varType != libsupermesh::Tools::VT_EMPTY) dat = std::string(dat_name.m_val.pcVal);
 
 		std::string sIndexFile = std::string(var.m_val.pcVal) + "." + idx;
 		std::string sDataFile = std::string(var.m_val.pcVal) + "." + dat;
@@ -166,7 +166,7 @@ DiskStorageManager::DiskStorageManager(LibSupermesh_Tools::PropertySet& ps) : m_
 			m_dataFile.open(sDataFile.c_str(), std::ios::in | std::ios::out | std::ios::binary);
 
 			if (m_indexFile.fail() || m_dataFile.fail())
-				throw LibSupermesh_Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Index/Data file cannot be read/writen.");
+				throw libsupermesh::Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Index/Data file cannot be read/writen.");
 		}
 		else
 		{
@@ -174,13 +174,13 @@ DiskStorageManager::DiskStorageManager(LibSupermesh_Tools::PropertySet& ps) : m_
 			m_dataFile.open(sDataFile.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
 
 			if (m_indexFile.fail() || m_dataFile.fail())
-				throw LibSupermesh_Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Index/Data file cannot be created.");
+				throw libsupermesh::Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Index/Data file cannot be created.");
 
 		}
 	}
 	else
 	{
-		throw LibSupermesh_Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property FileName was not specified.");
+		throw libsupermesh::Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property FileName was not specified.");
 	}
 
 	// find page size.
@@ -188,27 +188,27 @@ DiskStorageManager::DiskStorageManager(LibSupermesh_Tools::PropertySet& ps) : m_
 	{
 		var = ps.getProperty("PageSize");
 
-		if (var.m_varType != LibSupermesh_Tools::VT_EMPTY)
+		if (var.m_varType != libsupermesh::Tools::VT_EMPTY)
 		{
-			if (var.m_varType != LibSupermesh_Tools::VT_ULONG)
-				throw LibSupermesh_Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property PageSize must be Tools::VT_ULONG");
+			if (var.m_varType != libsupermesh::Tools::VT_ULONG)
+				throw libsupermesh::Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: Property PageSize must be Tools::VT_ULONG");
 			m_pageSize = var.m_val.ulVal;
 			m_nextPage = 0;
 		}
 		else
 		{
-			throw LibSupermesh_Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: A new storage manager is created and property PageSize was not specified.");
+			throw libsupermesh::Tools::IllegalArgumentException("SpatialIndex::DiskStorageManager: A new storage manager is created and property PageSize was not specified.");
 		}
 	}
 	else
 	{
 		m_indexFile.read(reinterpret_cast<char*>(&m_pageSize), sizeof(uint32_t));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Failed reading pageSize.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Failed reading pageSize.");
 
 		m_indexFile.read(reinterpret_cast<char*>(&m_nextPage), sizeof(id_type));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Failed reading nextPage.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Failed reading nextPage.");
 	}
 
 	// create buffer.
@@ -223,20 +223,20 @@ DiskStorageManager::DiskStorageManager(LibSupermesh_Tools::PropertySet& ps) : m_
 		// load empty pages in memory.
 		m_indexFile.read(reinterpret_cast<char*>(&count), sizeof(uint32_t));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 		for (uint32_t cCount = 0; cCount < count; ++cCount)
 		{
 			m_indexFile.read(reinterpret_cast<char*>(&page), sizeof(id_type));
 			if (m_indexFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 			m_emptyPages.insert(page);
 		}
 
 		// load index table in memory.
 		m_indexFile.read(reinterpret_cast<char*>(&count), sizeof(uint32_t));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 		for (uint32_t cCount = 0; cCount < count; ++cCount)
 		{
@@ -244,22 +244,22 @@ DiskStorageManager::DiskStorageManager(LibSupermesh_Tools::PropertySet& ps) : m_
 
 			m_indexFile.read(reinterpret_cast<char*>(&id), sizeof(id_type));
 			if (m_indexFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 			m_indexFile.read(reinterpret_cast<char*>(&(e->m_length)), sizeof(uint32_t));
 			if (m_indexFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 			uint32_t count2;
 			m_indexFile.read(reinterpret_cast<char*>(&count2), sizeof(uint32_t));
 			if (m_indexFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 			for (uint32_t cCount2 = 0; cCount2 < count2; ++cCount2)
 			{
 				m_indexFile.read(reinterpret_cast<char*>(&page), sizeof(id_type));
 				if (m_indexFile.fail())
-					throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+					throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 				e->m_pages.push_back(page);
 			}
 			m_pageIndex.insert(std::pair<id_type, Entry* >(id, e));
@@ -282,53 +282,53 @@ void DiskStorageManager::flush()
 {
 	m_indexFile.seekp(0, std::ios_base::beg);
 	if (m_indexFile.fail())
-		throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+		throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 	m_indexFile.write(reinterpret_cast<const char*>(&m_pageSize), sizeof(uint32_t));
 	if (m_indexFile.fail())
-		throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+		throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 	m_indexFile.write(reinterpret_cast<const char*>(&m_nextPage), sizeof(id_type));
 	if (m_indexFile.fail())
-		throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+		throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 	uint32_t count = static_cast<uint32_t>(m_emptyPages.size());
 	m_indexFile.write(reinterpret_cast<const char*>(&count), sizeof(uint32_t));
 	if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 	for (std::set<id_type>::const_iterator it = m_emptyPages.begin(); it != m_emptyPages.end(); ++it)
 	{
 		m_indexFile.write(reinterpret_cast<const char*>(&(*it)), sizeof(id_type));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 	}
 
 	count = static_cast<uint32_t>(m_pageIndex.size());
 	m_indexFile.write(reinterpret_cast<const char*>(&count), sizeof(uint32_t));
 	if (m_indexFile.fail())
-		throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+		throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 	for (std::map<id_type, Entry*>::iterator it = m_pageIndex.begin(); it != m_pageIndex.end(); ++it)
 	{
 		m_indexFile.write(reinterpret_cast<const char*>(&((*it).first)), sizeof(id_type));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 		m_indexFile.write(reinterpret_cast<const char*>(&((*it).second->m_length)), sizeof(uint32_t));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 		count = static_cast<uint32_t>((*it).second->m_pages.size());
 		m_indexFile.write(reinterpret_cast<const char*>(&count), sizeof(uint32_t));
 		if (m_indexFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 
 		for (uint32_t cIndex = 0; cIndex < count; ++cIndex)
 		{
 			m_indexFile.write(reinterpret_cast<const char*>(&((*it).second->m_pages[cIndex])), sizeof(id_type));
 			if (m_indexFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted storage manager index file.");
 		}
 	}
 
@@ -358,11 +358,11 @@ void DiskStorageManager::loadByteArray(const id_type page, uint32_t& len, byte**
 	{
 		m_dataFile.seekg(pages[cNext] * m_pageSize, std::ios_base::beg);
 		if (m_dataFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
 
 		m_dataFile.read(reinterpret_cast<char*>(m_buffer), m_pageSize);
 		if (m_dataFile.fail())
-			throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
+			throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
 
 		cLen = (cRem > m_pageSize) ? m_pageSize : cRem;
 		memcpy(ptr, m_buffer, cLen);
@@ -404,11 +404,11 @@ void DiskStorageManager::storeByteArray(id_type& page, const uint32_t len, const
 
 			m_dataFile.seekp(cPage * m_pageSize, std::ios_base::beg);
 			if (m_dataFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
 
 			m_dataFile.write(reinterpret_cast<const char*>(m_buffer), m_pageSize);
 			if (m_dataFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
 
 			ptr += cLen;
 			cRem -= cLen;
@@ -462,11 +462,11 @@ void DiskStorageManager::storeByteArray(id_type& page, const uint32_t len, const
 
 			m_dataFile.seekp(cPage * m_pageSize, std::ios_base::beg);
 			if (m_dataFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
 
 			m_dataFile.write(reinterpret_cast<const char*>(m_buffer), m_pageSize);
 			if (m_dataFile.fail())
-				throw LibSupermesh_Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
+				throw libsupermesh::Tools::IllegalStateException("SpatialIndex::DiskStorageManager: Corrupted data file.");
 
 			ptr += cLen;
 			cRem -= cLen;
