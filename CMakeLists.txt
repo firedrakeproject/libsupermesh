@@ -275,45 +275,45 @@ ADD_DEFINITIONS(${PETSC_DEFINITIONS})
 #endif()
 
 # The version number.
-set (SuperMesh_VERSION_MAJOR 0)
-set (SuperMesh_VERSION_MINOR 0)
-set (SuperMesh_VERSION_MINOR_CHANGE 1)
+set (libsupermesh_VERSION_MAJOR 0)
+set (libsupermesh_VERSION_MINOR 0)
+set (libsupermesh_VERSION_MINOR_CHANGE 1)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/config/SuperMesh.pc.in"
-  "${PROJECT_BINARY_DIR}/include/SuperMesh.pc"
+  "${PROJECT_SOURCE_DIR}/config/libsupermesh.pc.in"
+  "${PROJECT_BINARY_DIR}/include/libsupermesh.pc"
   )
 
-set (SuperMesh_HAVE_MPI 1)
+set (libsupermesh_HAVE_MPI 1)
 
 option (USE_CODE_PROFILE
         "Add profile timers and print statements" OFF)
 if (USE_CODE_PROFILE)
-  set (SuperMesh_PROFILE 1)
+  set (libsupermesh_PROFILE 1)
 else()
-  set (SuperMesh_PROFILE 0)
+  set (libsupermesh_PROFILE 0)
 endif (USE_CODE_PROFILE)
 
 option (USE_OVERLAP_COMPUTE_COMMS
         "Use overlap compute/comms. Make sure that your MPI impementation supports overlapping" OFF)
 if (USE_OVERLAP_COMPUTE_COMMS)
-  set (SuperMesh_OVERLAP_COMPUTE_COMMS 1)
+  set (libsupermesh_OVERLAP_COMPUTE_COMMS 1)
 else()
-  set (SuperMesh_OVERLAP_COMPUTE_COMMS 0)
+  set (libsupermesh_OVERLAP_COMPUTE_COMMS 0)
 endif (USE_OVERLAP_COMPUTE_COMMS)
 
 if (lower_build_type MATCHES debug)
-  set (SuperMesh_DEBUG 1)
+  set (libsupermesh_DEBUG 1)
 else ()
-  set (SuperMesh_DEBUG 0)
+  set (libsupermesh_DEBUG 0)
 endif (lower_build_type MATCHES debug)
 if (PETSC_FOUND)
-  set (SuperMesh_HAVE_PETSC 1)
+  set (libsupermesh_HAVE_PETSC 1)
 else ()
-  set (SuperMesh_HAVE_PETSC 0)
+  set (libsupermesh_HAVE_PETSC 0)
 endif (PETSC_FOUND)
 
 configure_file (
@@ -424,9 +424,8 @@ set (CPP_TEST_SOURCE_FILES
 )
 
 
-# Create a library called "SuperMesh" which includes the source files.
+# Create a library called "supermesh" which includes the source files.
 # The extension is already found. Any number of sources could be listed here.
-#add_library (SuperMesh STATIC ${PROJECT_SOURCE_DIR}/src/Element_Intersection.cpp ${PROJECT_SOURCE_DIR}/src/Intersection_finder.F90 ${PROJECT_SOURCE_DIR}/src/Linked_Lists.F90)
 FILE(GLOB CPP_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 FILE(GLOB C_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.c)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
@@ -469,9 +468,9 @@ foreach (file ${FORTRAN_SRCFILES})
   endif()
 endforeach()
 
-add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
+add_library (supermesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
 
-add_dependencies(SuperMesh libjudy spatialindex)
+add_dependencies(supermesh libjudy spatialindex)
 
 set (UNITTESTS
   test_interval_intersector
@@ -589,36 +588,31 @@ add_custom_target(distclean
 )
 
 if(UNIX AND NOT APPLE)
-  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
+  target_link_libraries(supermesh ${MPI_Fortran_LIBRARIES} rt)
 
   foreach (test ${UNITTESTS})
-    target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+    target_link_libraries(${test} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
   endforeach()
   foreach (benchmark ${BENCHMARKTESTS})
-    target_link_libraries(${benchmark} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
+    target_link_libraries(${benchmark} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
   endforeach()
 else ()
-  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES})
+  target_link_libraries(supermesh ${MPI_Fortran_LIBRARIES})
 
   foreach (test ${UNITTESTS})
-    target_link_libraries(${test} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+    target_link_libraries(${test} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
   endforeach()
   foreach (benchmark ${BENCHMARKTESTS})
-    target_link_libraries(${benchmark} SuperMesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
+    target_link_libraries(${benchmark} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
   endforeach()
 endif()
 
-#get_property(supermesh_sources_files TARGET SuperMesh PROPERTY SOURCES)
-#message(STATUS "SuperMesh SOURCES:" ${supermesh_sources_files} ".")
-
-#if (MPI_Fortran_FOUND)
-  set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
-  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${LAPACK_LINKER_FLAGS}")
-  target_link_libraries(SuperMesh ${MPI_Fortran_LIBRARIES} rt)
-#endif()
+set_target_properties(supermesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
+set_target_properties(supermesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${LAPACK_LINKER_FLAGS}")
+target_link_libraries(supermesh ${MPI_Fortran_LIBRARIES} rt)
 
 if(MPI_Fortran_COMPILE_FLAGS)
-  set_target_properties(SuperMesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
+  set_target_properties(supermesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
   foreach (test ${UNITTESTS})
     set_target_properties(${test} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
   endforeach()
@@ -628,7 +622,7 @@ if(MPI_Fortran_COMPILE_FLAGS)
 endif()
 
 if(MPI_Fortran_LINK_FLAGS)
-  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
+  set_target_properties(supermesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
   foreach (test ${UNITTESTS})
     set_target_properties(${test} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
   endforeach()
@@ -637,16 +631,8 @@ if(MPI_Fortran_LINK_FLAGS)
   endforeach()
 endif()
 
-#if(CMAKE_THREAD_LIBS_INIT)
-#  set_target_properties(SuperMesh            PROPERTIES LINK_FLAGS_DEBUG "${CMAKE_THREAD_LIBS_INIT}")
-####  set_target_properties(test_tri_intersector PROPERTIES LINK_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
-#  target_link_libraries(SuperMesh            ${CMAKE_THREAD_LIBS_INIT})
-####  target_link_libraries(test_tri_intersector ${CMAKE_THREAD_LIBS_INIT})
-#endif()
 
-
-
-install (FILES "${PROJECT_BINARY_DIR}/libSuperMesh.a"                       DESTINATION lib)
+install (FILES "${PROJECT_BINARY_DIR}/libsupermesh.a"                       DESTINATION lib)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_construction.mod"        DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fldebug.mod"             DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fldebug_parameters.mod"  DESTINATION include)
@@ -654,4 +640,4 @@ install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_linked_lists.mod"        DEST
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder.mod" DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod"  DESTINATION include)
 install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection_module.mod"  DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/include/SuperMesh.pc"                 DESTINATION lib/pkgconfig)
+install (FILES "${PROJECT_BINARY_DIR}/include/libsupermesh.pc"                 DESTINATION lib/pkgconfig)

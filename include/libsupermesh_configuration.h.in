@@ -1,25 +1,25 @@
 #pragma once
 
-#define libsupermesh_VERSION_MAJOR @SuperMesh_VERSION_MAJOR@
-#define libsupermesh_VERSION_MINOR @SuperMesh_VERSION_MINOR@
-#define libsupermesh_VERSION_MINOR_CHANGE @SuperMesh_VERSION_MINOR_CHANGE@
+#define libsupermesh_VERSION_MAJOR @libsupermesh_VERSION_MAJOR@
+#define libsupermesh_VERSION_MINOR @libsupermesh_VERSION_MINOR@
+#define libsupermesh_VERSION_MINOR_CHANGE @libsupermesh_VERSION_MINOR_CHANGE@
 
-#define PROFILE @SuperMesh_PROFILE@
+#define PROFILE @libsupermesh_PROFILE@
 #if PROFILE == 0
 #undef PROFILE
 #endif
 
-#define OVERLAP_COMPUTE_COMMS @SuperMesh_OVERLAP_COMPUTE_COMMS@
+#define OVERLAP_COMPUTE_COMMS @libsupermesh_OVERLAP_COMPUTE_COMMS@
 #if OVERLAP_COMPUTE_COMMS == 0
 #undef OVERLAP_COMPUTE_COMMS
 #endif
 
-#define HAVE_PETSC @SuperMesh_HAVE_PETSC@
+#define HAVE_PETSC @libsupermesh_HAVE_PETSC@
 #if HAVE_PETSC == 0
 #undef HAVE_PETSC
 #endif
 
-#define DDEBUG @SuperMesh_DEBUG@
+#define DDEBUG @libsupermesh_DEBUG@
 #if DDEBUG == 0
 #undef DDEBUG
 #define NDEBUG

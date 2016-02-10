@@ -37,7 +37,7 @@
 #include <cassert>
 #include <vector>
 
-namespace LibSupermesh
+namespace libsupermesh
 {
   // StorageManager parameters
   const int capacity = 10;
@@ -91,13 +91,13 @@ namespace LibSupermesh
   };
 }
 
-extern LibSupermesh::ElementIntersectionFinder elementIntersectionFinder_LibSuperMesh;
+extern libsupermesh::ElementIntersectionFinder libsupermesh_elementIntersectionFinder;
 
 extern "C"
 {
-  void libsupermesh_cintersection_finder_reset();
-  void libsupermesh_cintersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
-  void libsupermesh_cintersection_finder_find(const double* positions, const int* dim, const int* loc);  
-  void libsupermesh_cintersection_finder_query_output(int* nelms);
-  void libsupermesh_cintersection_finder_get_output(int* id, const int* index);
+  void libsupermesh_rtree_intersection_finder_reset();
+  void libsupermesh_rtree_intersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
+  void libsupermesh_rtree_intersection_finder_find(const double* positions, const int* dim, const int* loc);  
+  void libsupermesh_rtree_intersection_finder_query_output(int* nelms);
+  void libsupermesh_rtree_intersection_finder_get_output(int* id, const int* index);
 }

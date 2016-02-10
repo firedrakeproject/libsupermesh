@@ -66,7 +66,7 @@ subroutine test_parallel_partition_b
       tri_A%v = ele_val(positionsA, ele_A)
 
       do ele_B=1,ele_count(positionsB) 
-        ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
+        ! B. Use the libsupermesh internal triangle intersector (using derived types as input)
         tri_B%v = ele_val(positionsB, ele_B)
 
         call intersect_tris(tri_A, tri_B, trisC, n_trisC)
@@ -132,7 +132,7 @@ subroutine test_parallel_partition_b
         call FLUSH()
         tri_A%v = ele_val(positionsA, ele_A)
         do ele_B=1,ele_count(positionsB) 
-          ! B. Use the libSuperMesh internal triangle intersector (using derived types as input)
+          ! B. Use the libsupermesh internal triangle intersector (using derived types as input)
           if(ele_owner(ele_B) /= mpi_my_id) cycle
           tri_B%v = ele_val(positionsB, ele_B)
 

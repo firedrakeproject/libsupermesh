@@ -33,7 +33,7 @@
 #include <strings.h>
 #include <spatialindex/SpatialIndex.h>
 
-namespace LibSupermesh{
+namespace libsupermesh {
   
   // Customised version of MyDataStream class in
   // regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0

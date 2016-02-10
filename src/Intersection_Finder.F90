@@ -19,45 +19,45 @@ module libsupermesh_intersection_finder
   private
 
   interface crtree_intersection_finder_set_input
-    subroutine libsupermesh_cintersection_finder_set_input(positions, enlist, dim, loc, nnodes, nelements) bind(c)
+    subroutine libsupermesh_rtree_intersection_finder_set_input(positions, enlist, dim, loc, nnodes, nelements) bind(c)
       use iso_c_binding, only : c_double, c_int
       implicit none
       integer(kind = c_int), intent(in) :: dim, loc, nnodes, nelements
       real(kind = c_double), intent(in), dimension(dim, nnodes) :: positions
       integer(kind = c_int), intent(in), dimension(loc, nelements) :: enlist
-    end subroutine libsupermesh_cintersection_finder_set_input
+    end subroutine libsupermesh_rtree_intersection_finder_set_input
   end interface crtree_intersection_finder_set_input
 
   interface crtree_intersection_finder_find
-    subroutine libsupermesh_cintersection_finder_find(positions, dim, loc) bind(c)
+    subroutine libsupermesh_rtree_intersection_finder_find(positions, dim, loc) bind(c)
       use iso_c_binding, only : c_double, c_int
       implicit none
       integer(kind = c_int), intent(in) :: dim, loc
       real(kind = c_double), dimension(dim, loc) :: positions
-    end subroutine libsupermesh_cintersection_finder_find
+    end subroutine libsupermesh_rtree_intersection_finder_find
   end interface crtree_intersection_finder_find
 
   interface rtree_intersection_finder_query_output
-    subroutine libsupermesh_cintersection_finder_query_output(nelements) bind(c)
+    subroutine libsupermesh_rtree_intersection_finder_query_output(nelements) bind(c)
       use iso_c_binding, only : c_int
       implicit none
       integer(kind = c_int), intent(out) :: nelements
-    end subroutine libsupermesh_cintersection_finder_query_output
+    end subroutine libsupermesh_rtree_intersection_finder_query_output
   end interface rtree_intersection_finder_query_output
 
   interface rtree_intersection_finder_get_output
-    subroutine libsupermesh_cintersection_finder_get_output(ele, i) bind(c)
+    subroutine libsupermesh_rtree_intersection_finder_get_output(ele, i) bind(c)
       use iso_c_binding, only : c_int
       implicit none
       integer(kind = c_int), intent(out) :: ele
       integer(kind = c_int), intent(in) :: i
-    end subroutine libsupermesh_cintersection_finder_get_output
+    end subroutine libsupermesh_rtree_intersection_finder_get_output
   end interface rtree_intersection_finder_get_output
 
   interface rtree_intersection_finder_reset
-    subroutine libsupermesh_cintersection_finder_reset() bind(c)
+    subroutine libsupermesh_rtree_intersection_finder_reset() bind(c)
       implicit none
-    end subroutine libsupermesh_cintersection_finder_reset
+    end subroutine libsupermesh_rtree_intersection_finder_reset
   end interface rtree_intersection_finder_reset
 
   public :: intersections, deallocate, connected, intersection_finder, &

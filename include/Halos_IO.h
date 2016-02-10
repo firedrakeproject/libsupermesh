@@ -43,7 +43,7 @@
 
 #include "tinyxml.h"
 
-namespace LibSupermesh {
+namespace libsupermesh {
 
   enum HaloReadError{
     HALO_READ_SUCCESS = 0,
@@ -73,9 +73,9 @@ namespace LibSupermesh {
 }
 
 extern "C" {
-  void cLibSuperMesh_halo_reader_reset();
-  int cLibSuperMesh_halo_reader_set_input(char* filename, int* filename_len, int* process, int* nprocs);
-  void cLibSuperMesh_halo_reader_query_output(int* level, int* nprocs, int* nsends, int* nreceives);
-  void cLibSuperMesh_halo_reader_get_output(int* level, int* nprocs, int* nsends, int* nreceives,
+  void libsupermesh_halo_reader_reset();
+  int libsupermesh_halo_reader_set_input(char* filename, int* filename_len, int* process, int* nprocs);
+  void libsupermesh_halo_reader_query_output(int* level, int* nprocs, int* nsends, int* nreceives);
+  void libsupermesh_halo_reader_get_output(int* level, int* nprocs, int* nsends, int* nreceives,
     int* npnodes, int* send, int* recv);
 }

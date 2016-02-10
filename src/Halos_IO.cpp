@@ -30,9 +30,9 @@
 
 using namespace std;
 
-using namespace LibSupermesh;
+using namespace libsupermesh;
 
-HaloReadError LibSupermesh::ReadHalos(const string& filename, int& process, int& nprocs, map<int, int>& npnodes, map<int, vector<vector<int> > >& send, map<int, vector<vector<int> > >& recv){ 
+HaloReadError libsupermesh::ReadHalos(const string& filename, int& process, int& nprocs, map<int, int>& npnodes, map<int, vector<vector<int> > >& send, map<int, vector<vector<int> > >& recv){ 
   // Read the halo file
   TiXmlDocument doc(filename);
   if(!doc.LoadFile()){
@@ -173,32 +173,32 @@ HaloReadError LibSupermesh::ReadHalos(const string& filename, int& process, int&
   return HALO_READ_SUCCESS;
 }
 
-namespace LibSuperMesh{
+namespace libsupermesh {
   HaloData* readHaloData = NULL;
 }
   
 extern "C"{
-  void cLibSuperMesh_halo_reader_reset(){
-    if(LibSuperMesh::readHaloData){
-      delete LibSuperMesh::readHaloData;
-      LibSuperMesh::readHaloData = NULL;
+  void libsupermesh_halo_reader_reset(){
+    if(readHaloData){
+      delete readHaloData;
+      readHaloData = NULL;
     }
   
     return;
   }
   
-  int cLibSuperMesh_halo_reader_set_input(char* filename, int* filename_len, int* process, int* nprocs){    
-    if(LibSuperMesh::readHaloData){
-      delete LibSuperMesh::readHaloData;
-      LibSuperMesh::readHaloData = NULL;
+  int libsupermesh_halo_reader_set_input(char* filename, int* filename_len, int* process, int* nprocs){    
+    if(readHaloData){
+      delete readHaloData;
+      readHaloData = NULL;
     }
-    LibSuperMesh::readHaloData = new HaloData();    
+    readHaloData = new HaloData();    
   
     ostringstream buffer;
     buffer << string(filename, *filename_len) << "_" << *process << ".halo";
     HaloReadError ret = ReadHalos(buffer.str(), 
-      LibSuperMesh::readHaloData->process, LibSuperMesh::readHaloData->nprocs,
-      LibSuperMesh::readHaloData->npnodes, LibSuperMesh::readHaloData->send, LibSuperMesh::readHaloData->recv);
+      readHaloData->process, readHaloData->nprocs,
+      readHaloData->npnodes, readHaloData->send, readHaloData->recv);
   
     int errorCount = 0;
     if(ret == HALO_READ_FILE_NOT_FOUND){
@@ -207,11 +207,11 @@ extern "C"{
              << "Zero process file not found" << endl;
         errorCount++;
       }else{
-        LibSuperMesh::readHaloData->process = *process;
-        LibSuperMesh::readHaloData->nprocs = *nprocs;
-        LibSuperMesh::readHaloData->npnodes.clear();
-        LibSuperMesh::readHaloData->send.clear();
-        LibSuperMesh::readHaloData->recv.clear();
+        readHaloData->process = *process;
+        readHaloData->nprocs = *nprocs;
+        readHaloData->npnodes.clear();
+        readHaloData->send.clear();
+        readHaloData->recv.clear();
       }
     }else if(ret != HALO_READ_SUCCESS){
       cerr << "Error reading halo file " << buffer.str() << "\n";
@@ -225,13 +225,13 @@ extern "C"{
           break;
       }
       errorCount++;
-    }else if(LibSuperMesh::readHaloData->process != *process){
+    }else if(readHaloData->process != *process){
       cerr << "Error reading halo file " << buffer.str() << "\n"
            << "Unexpected process number in .halo file" << endl;
       errorCount++;
-    }else if(LibSuperMesh::readHaloData->nprocs > *nprocs){
+    }else if(readHaloData->nprocs > *nprocs){
       cerr << "Error reading halo file " << buffer.str() << "\n"
-           << "Number of processes in .halo file: " << LibSuperMesh::readHaloData->nprocs << "\n"
+           << "Number of processes in .halo file: " << readHaloData->nprocs << "\n"
            << "Number of running processes: " << *nprocs << "\n"
            << "Number of processes in .halo file exceeds number of running processes" << endl;
       errorCount++;
@@ -240,25 +240,25 @@ extern "C"{
     return errorCount;
   }
   
-  void cLibSuperMesh_halo_reader_query_output(int* level, int* nprocs, int* nsends, int* nreceives){
-    assert(LibSuperMesh::readHaloData);
-    assert(*nprocs >= LibSuperMesh::readHaloData->nprocs);
+  void libsupermesh_halo_reader_query_output(int* level, int* nprocs, int* nsends, int* nreceives){
+    assert(readHaloData);
+    assert(*nprocs >= readHaloData->nprocs);
     
-    if(LibSuperMesh::readHaloData->send.count(*level) == 0){
-      assert(LibSuperMesh::readHaloData->recv.count(*level) == 0);
+    if(readHaloData->send.count(*level) == 0){
+      assert(readHaloData->recv.count(*level) == 0);
       
       for(int i = 0;i < *nprocs;i++){
         nsends[i] = 0;
         nreceives[i] = 0;
       }
     }else{
-      assert(LibSuperMesh::readHaloData->recv.count(*level) > 0);
+      assert(readHaloData->recv.count(*level) > 0);
       
-      for(int i = 0;i < LibSuperMesh::readHaloData->nprocs;i++){
-        nsends[i] = LibSuperMesh::readHaloData->send[*level][i].size();
-        nreceives[i] = LibSuperMesh::readHaloData->recv[*level][i].size();
+      for(int i = 0;i < readHaloData->nprocs;i++){
+        nsends[i] = readHaloData->send[*level][i].size();
+        nreceives[i] = readHaloData->recv[*level][i].size();
       }
-      for(int i = LibSuperMesh::readHaloData->nprocs;i < *nprocs;i++){
+      for(int i = readHaloData->nprocs;i < *nprocs;i++){
         nsends[i] = 0;
         nreceives[i] = 0;
       }
@@ -267,17 +267,17 @@ extern "C"{
     return;
   }
   
-  void cLibSuperMesh_halo_reader_get_output(int* level, int* nprocs, int* nsends, int* nreceives,
+  void libsupermesh_halo_reader_get_output(int* level, int* nprocs, int* nsends, int* nreceives,
     int* npnodes, int* send, int* recv){
     
 #ifdef DDEBUG
-    assert(LibSuperMesh::readHaloData);
-    assert(*nprocs >= LibSuperMesh::readHaloData->nprocs);
+    assert(readHaloData);
+    assert(*nprocs >= readHaloData->nprocs);
     int* lnsends = (int*)malloc(*nprocs * sizeof(int));
     assert(lnsends);
     int* lnreceives = (int*)malloc(*nprocs * sizeof(int));
     assert(lnreceives);
-    cLibSuperMesh_halo_reader_query_output(level, nprocs, lnsends, lnreceives);
+    libsupermesh_halo_reader_query_output(level, nprocs, lnsends, lnreceives);
     for(int i = 0;i < *nprocs;i++){
       assert(nsends[i] == lnsends[i]);
       assert(nreceives[i] == lnreceives[i]);
@@ -286,31 +286,31 @@ extern "C"{
     free(lnreceives);
 #endif
 
-    if(LibSuperMesh::readHaloData->send.count(*level) == 0){
+    if(readHaloData->send.count(*level) == 0){
 #ifdef DDEBUG
-      assert(LibSuperMesh::readHaloData->recv.count(*level) == 0);
+      assert(readHaloData->recv.count(*level) == 0);
       for(int i = 0;i < *nprocs;i++){
         assert(nsends[i] == 0);
         assert(nreceives[i] == 0);
       }
 #endif
     }else{
-      assert(LibSuperMesh::readHaloData->recv.count(*level) > 0);
+      assert(readHaloData->recv.count(*level) > 0);
       
       int sendIndex = 0, recvIndex = 0;;
-      for(int i = 0;i < LibSuperMesh::readHaloData->nprocs;i++){
+      for(int i = 0;i < readHaloData->nprocs;i++){
         for(int j = 0;j < nsends[i];j++){
-          send[sendIndex] = LibSuperMesh::readHaloData->send[*level][i][j];
+          send[sendIndex] = readHaloData->send[*level][i][j];
           sendIndex++;
         }
         for(int j = 0;j < nreceives[i];j++){
-          recv[recvIndex] = LibSuperMesh::readHaloData->recv[*level][i][j];
+          recv[recvIndex] = readHaloData->recv[*level][i][j];
           recvIndex++;
         }
       }
     }
     
-    *npnodes = LibSuperMesh::readHaloData->npnodes[*level];
+    *npnodes = readHaloData->npnodes[*level];
     
     return;
     }

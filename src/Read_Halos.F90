@@ -17,11 +17,11 @@ module libsupermesh_read_halos
   public :: int_array, halo_type, read_halo, deallocate
 
   interface
-    subroutine halo_reader_reset() bind(c, name = "cLibSuperMesh_halo_reader_reset")
+    subroutine halo_reader_reset() bind(c, name = "libsupermesh_halo_reader_reset")
       implicit none
     end subroutine halo_reader_reset
 
-    function halo_reader_set_input(filename, filename_len, process, nprocs) bind(c, name = "cLibSuperMesh_halo_reader_set_input") result(errorCount)
+    function halo_reader_set_input(filename, filename_len, process, nprocs) bind(c, name = "libsupermesh_halo_reader_set_input") result(errorCount)
       use iso_c_binding, only : c_char, c_int
       implicit none
       integer(kind = c_int) :: filename_len, process, nprocs
@@ -29,14 +29,14 @@ module libsupermesh_read_halos
       integer(kind = c_int) :: errorCount
     end function halo_reader_set_input
 
-    subroutine halo_reader_query_output(level, nprocs, nsends, nreceives) bind(c, name = "cLibSuperMesh_halo_reader_query_output")
+    subroutine halo_reader_query_output(level, nprocs, nsends, nreceives) bind(c, name = "libsupermesh_halo_reader_query_output")
       use iso_c_binding, only : c_int
       implicit none
       integer(kind = c_int) :: level, nprocs
       integer(kind = c_int), dimension(nprocs) :: nsends, nreceives
     end subroutine halo_reader_query_output
 
-    subroutine halo_reader_get_output(level, nprocs, nsends, nreceives, npnodes, send, recv) bind(c, name = "cLibSuperMesh_halo_reader_get_output")
+    subroutine halo_reader_get_output(level, nprocs, nsends, nreceives, npnodes, send, recv) bind(c, name = "libsupermesh_halo_reader_get_output")
       use iso_c_binding, only : c_int
       implicit none
       integer(kind = c_int) :: level, nprocs, npnodes

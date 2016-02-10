@@ -28,7 +28,7 @@
 
 #include "Element_Intersection.h"
 
-using namespace LibSupermesh;
+using namespace libsupermesh;
 using namespace libsupermesh::SpatialIndex;
 
 MeshDataStream::MeshDataStream(const double*& positions, const int& nnodes, const int& dim,
@@ -98,7 +98,7 @@ IData* MeshDataStream::getNext()
     }
   }
       
-  libsupermesh::SpatialIndex::Region region = libsupermesh::SpatialIndex::Region(low, high, dim);
+  Region region = Region(low, high, dim);
   IData* data = new RTree::Data(0, 0, region, ++index);
 
   return data;
@@ -195,7 +195,7 @@ void ElementIntersectionFinder::SetTestElement(const double*& positions, const i
     }
   }
   
-  libsupermesh::SpatialIndex::Region* region = new libsupermesh::SpatialIndex::Region(low, high, dim);
+  Region* region = new Region(low, high, dim);
   rTree->intersectsWithQuery(*region, visitor);
   
   delete region;
@@ -245,49 +245,49 @@ void ElementIntersectionFinder::Free()
   return;
 }
 
-ElementIntersectionFinder elementIntersectionFinder_LibSuperMesh;
+ElementIntersectionFinder libsupermesh_elementIntersectionFinder;
 
 extern "C"
 {
-  void libsupermesh_cintersection_finder_reset()
+  void libsupermesh_rtree_intersection_finder_reset()
   {
-    elementIntersectionFinder_LibSuperMesh.Reset();
+    libsupermesh_elementIntersectionFinder.Reset();
     
     return;
   }
 
-  void libsupermesh_cintersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements)
+  void libsupermesh_rtree_intersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements)
   {
     assert(*dim >= 0);
     assert(*loc >= 0);
     assert(*nnodes >= 0);
     assert(*nelements >= 0);
     
-    elementIntersectionFinder_LibSuperMesh.SetInput(positions, *nnodes, *dim, enlist, *nelements, *loc);
+    libsupermesh_elementIntersectionFinder.SetInput(positions, *nnodes, *dim, enlist, *nelements, *loc);
     
     return;
   }
 
-  void libsupermesh_cintersection_finder_find(const double* positions, const int* dim, const int* loc)
+  void libsupermesh_rtree_intersection_finder_find(const double* positions, const int* dim, const int* loc)
   {
     assert(*dim >= 0);
     assert(*loc >= 0);
     
-    elementIntersectionFinder_LibSuperMesh.SetTestElement(positions, *dim, *loc);
+    libsupermesh_elementIntersectionFinder.SetTestElement(positions, *dim, *loc);
     
     return;
   }
 
-  void libsupermesh_cintersection_finder_query_output(int* nelms)
+  void libsupermesh_rtree_intersection_finder_query_output(int* nelms)
   {
-    elementIntersectionFinder_LibSuperMesh.QueryOutput(*nelms);
+    libsupermesh_elementIntersectionFinder.QueryOutput(*nelms);
     
     return;
   }
 
-  void libsupermesh_cintersection_finder_get_output(int* id, const int* index)
+  void libsupermesh_rtree_intersection_finder_get_output(int* id, const int* index)
   {
-    elementIntersectionFinder_LibSuperMesh.GetOutput(*id, *index);
+    libsupermesh_elementIntersectionFinder.GetOutput(*id, *index);
     
     return;
   }
