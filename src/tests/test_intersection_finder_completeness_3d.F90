@@ -8,7 +8,7 @@ subroutine test_intersection_finder_completeness_3d()
     & rtree_intersection_finder, brute_force_intersection_finder
   use libsupermesh_fields, only : tetrahedron_volume
   use libsupermesh_read_triangle, only : read_ele, read_node
-  use libsupermesh_tet_intersection_module, only : intersect_tets, tet_buf_size
+  use libsupermesh_tet_intersection, only : intersect_tets, tet_buf_size
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
 
   implicit none

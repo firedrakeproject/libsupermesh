@@ -9,7 +9,7 @@ module libsupermesh_parallel_supermesh
   use libsupermesh_read_halos
   use libsupermesh_intersection_finder
   use libsupermesh_tri_intersection
-  use libsupermesh_tet_intersection_module
+  use libsupermesh_tet_intersection
   use libsupermesh_construction
   use libsupermesh_fields, only : triangle_area
   use libsupermesh_integer_set

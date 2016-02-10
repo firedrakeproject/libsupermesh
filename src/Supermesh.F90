@@ -4,7 +4,7 @@ module libsupermesh_construction
 
   use libsupermesh_debug
   use libsupermesh_tri_intersection
-  use libsupermesh_tet_intersection_module
+  use libsupermesh_tet_intersection
 
   implicit none
 

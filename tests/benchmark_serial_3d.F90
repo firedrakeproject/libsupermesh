@@ -7,7 +7,7 @@ subroutine benchmark_serial_3D
   use libsupermesh_construction
   use libsupermesh_fields
   use libsupermesh_read_triangle
-  use libsupermesh_tet_intersection_module
+  use libsupermesh_tet_intersection
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos

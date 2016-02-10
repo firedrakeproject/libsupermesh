@@ -1,20 +1,18 @@
-#define BUF_SIZE 729
 #include "fdebug.h"
 
-module libsupermesh_tet_intersection_module
+#define BUF_SIZE 81
 
-  use libsupermesh_debug
-  use libsupermesh_tri_intersection
+module libsupermesh_tet_intersection
 
   implicit none
 
   private
 
-  public :: tet_type, plane_type, intersect_tets, intersect_tets_dt_public, &
-    & intersect_tets_dt_real, get_planes
+  public :: tet_type, plane_type, max_n_tetsC, intersect_tets, get_planes, &
+    & tetrahedron_volume
 
   type tet_type
-    real, dimension(3, 4) :: V ! vertices of the tet
+    real, dimension(3, 4) :: v ! vertices of the tet
     integer, dimension(4) :: colours = -1 ! surface colours
   end type tet_type
 
@@ -23,24 +21,27 @@ module libsupermesh_tet_intersection_module
     real :: c
   end type plane_type
 
-  type(tet_type), dimension(BUF_SIZE), save :: tet_array_tmp
-  integer, save :: tet_cnt_tmp = 0
-  logical, save :: mesh_allocated = .false.
-
   interface intersect_tets
-    module procedure intersect_tets_dt, intersect_tets_dt_public, &
-        intersect_tets_dt_real
+    module procedure intersect_tets_real, intersect_tets_tet, &
+      & intersect_tets_planes
   end interface intersect_tets
 
   interface get_planes
     module procedure get_planes_tet
   end interface get_planes
+  
+  interface tetrahedron_volume
+    module procedure tetrahedron_volume_real, tetrahedron_volume_tet
+  end interface tetrahedron_volume
 
   integer, parameter, public :: tet_buf_size = BUF_SIZE
 
+  type(tet_type), dimension(BUF_SIZE), save :: tets_tmp_buf
+  integer, save :: n_tets_tmp = 0
+
 contains
 
-  subroutine intersect_tets_dt_real(tetA, tetB, tetsC, n_tetsC)
+  subroutine intersect_tets_real(tetA, tetB, tetsC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA
     real, dimension(3, 4), intent(in) :: tetB
     real, dimension(3, 4, BUF_SIZE), intent(inout) :: tetsC
@@ -52,73 +53,133 @@ contains
 
     tetA_t%v = tetA
     tetB_t%v = tetB
-    call intersect_tets_dt_public(tetA_t, tetB_t, tetsC_t, n_tetsC)
+    call intersect_tets(tetA_t, tetB_t, tetsC_t, n_tetsC)
 
     do i = 1, n_tetsC
       tetsC(:, :, i) = tetsC_t(i)%v
     end do
 
-  end subroutine intersect_tets_dt_real
+  end subroutine intersect_tets_real
 
-  subroutine intersect_tets_dt_public(tetA, tetB, tetsC, n_tetsC)
+  subroutine intersect_tets_tet(tetA, tetB, tetsC, n_tetsC)
     type(tet_type), intent(in) :: tetA
     type(tet_type), intent(in) :: tetB
     type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
 
-    call intersect_tets_dt(tetA, get_planes(tetB), tetsC, n_tetsC, volB = tet_volume(tetB))
+    call intersect_tets_planes_buf(tetA, get_planes(tetB), tetsC, n_tetsC, volB = tetrahedron_volume(tetB))
 
-  end subroutine intersect_tets_dt_public
+  end subroutine intersect_tets_tet
 
-  subroutine intersect_tets_dt(tetA, planesB, tetsC, n_tetsC, volB)
+  subroutine intersect_tets_planes_buf(tetA, planesB, tetsC, n_tetsC, volB)
     type(tet_type), intent(in) :: tetA
     type(plane_type), dimension(4), intent(in)  :: planesB
     type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
     integer, intent(out) :: n_tetsC
     real, optional, intent(in) :: volB
 
-    integer :: colour_tmp, i, j
-    real, dimension(3) :: vec_tmp
+    integer :: i, j
     real :: tol, vol
 
     n_tetsC = 1
     tetsC(1) = tetA
 
     if(present(volB)) then
-      tol = 10.0 * min(spacing(tet_volume(tetA)), spacing(volB))
+      tol = 10.0 * min(spacing(tetrahedron_volume(tetA)), spacing(volB))
     else
-      tol = 10.0 * spacing(tet_volume(tetA))
+      tol = 10.0 * spacing(tetrahedron_volume(tetA))
     end if
-    do i=1,size(planesB)
+    do i = 1, size(planesB)
       ! Clip the tet_array against the i'th plane
-      tet_cnt_tmp = 0
+      n_tets_tmp = 0
 
-      do j=1,n_tetsC
-        call clip(planesB(i), tetsC(j))
+      do j = 1, n_tetsC
+        call clip_buf(planesB(i), tetsC(j))
       end do
 
-      if (i /= size(planesB)) then
-        n_tetsC = tet_cnt_tmp
-        tetsC(1:n_tetsC) = tet_array_tmp(1:n_tetsC)
+      if(i /= size(planesB)) then
+        n_tetsC = n_tets_tmp
+        tetsC(:n_tetsC) = tets_tmp_buf(:n_tetsC)
       else
         ! Copy the result if the volume is >= tol
         n_tetsC = 0
-        do j=1,tet_cnt_tmp
-          vol = tet_volume(tet_array_tmp(j))
-
-          if (vol >= tol) then
+        do j = 1, n_tets_tmp
+          vol = tetrahedron_volume(tets_tmp_buf(j))
+          if(vol >= tol) then
             n_tetsC = n_tetsC + 1
-            tetsC(n_tetsC) = tet_array_tmp(j)
+            tetsC(n_tetsC) = tets_tmp_buf(j)
           end if
         end do
       end if
     end do
 
-  end subroutine intersect_tets_dt
+  end subroutine intersect_tets_planes_buf
+  
+  pure function max_n_tetsC(n_planesB)
+    integer, intent(in) :: n_planesB
+    
+    integer :: max_n_tetsC
+    
+    max_n_tetsC = 3 ** n_planesB
+    
+  end function max_n_tetsC
+  
+  subroutine intersect_tets_planes(tetA, planesB, tetsC, n_tetsC, volB, work)
+    type(tet_type), intent(in) :: tetA
+    type(plane_type), dimension(:), intent(in)  :: planesB
+    type(tet_type), dimension(:), intent(inout) :: tetsC
+    integer, intent(out) :: n_tetsC
+    real, optional, intent(in) :: volB
+    type(tet_type), dimension(:), target, optional, intent(inout) :: work
 
-  subroutine clip(plane, tet)
-  ! Clip tet against the plane
-  ! and append any output to tet_array_tmp.
+    integer :: i, j, ntets_new
+    real :: tol, vol
+    type(tet_type), dimension(:), pointer :: tets_new
+    
+    if(present(work)) then
+      tets_new => work
+    else
+      allocate(tets_new(max_n_tetsC(size(planesB))))
+    end if
+
+    n_tetsC = 1
+    tetsC(1) = tetA
+
+    if(present(volB)) then
+      tol = 10.0 * min(spacing(tetrahedron_volume(tetA)), spacing(volB))
+    else
+      tol = 10.0 * spacing(tetrahedron_volume(tetA))
+    end if
+    do i = 1, size(planesB)
+      ! Clip the tet_array against the i'th plane
+      ntets_new = 0
+
+      do j = 1, n_tetsC
+        call clip(planesB(i), tetsC(j), tets_new, ntets_new)
+      end do
+
+      if(i /= size(planesB)) then
+        n_tetsC = ntets_new
+        tetsC(:n_tetsC) = tets_new(:n_tetsC)
+      else
+        ! Copy the result if the volume is >= tol
+        n_tetsC = 0
+        do j = 1, ntets_new
+          vol = tetrahedron_volume(tets_new(j))
+          if(vol >= tol) then
+            n_tetsC = n_tetsC + 1
+            tetsC(n_tetsC) = tets_new(j)
+          end if
+        end do
+      end if
+    end do
+    
+    if(.not. present(work)) deallocate(tets_new)
+  
+  end subroutine intersect_tets_planes
+
+  subroutine clip_buf(plane, tet)
+    ! Clip tet against the plane and append any output to tets_tmp_buf.
     type(plane_type), intent(in) :: plane
     type(tet_type), intent(in) :: tet
 
@@ -158,8 +219,8 @@ contains
 
     if (pos_cnt == 0) then
       ! tet is completely on negative side of plane, no clip
-      tet_cnt_tmp = tet_cnt_tmp + 1
-      tet_array_tmp(tet_cnt_tmp) = tet
+      n_tets_tmp = n_tets_tmp + 1
+      tets_tmp_buf(n_tets_tmp) = tet
       return
     end if
 
@@ -168,19 +229,19 @@ contains
     select case(pos_cnt)
     case(3)
       ! +++-
-      tet_cnt_tmp = tet_cnt_tmp + 1
-      tet_array_tmp(tet_cnt_tmp) = tet
+      n_tets_tmp = n_tets_tmp + 1
+      tets_tmp_buf(n_tets_tmp) = tet
       do i=1,pos_cnt
         invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(i)) * invdiff
-        tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(i)) = &
-           w0 * tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(i)) + &
-           w1 * tet_array_tmp(tet_cnt_tmp)%V(:, neg_idx(1))
+        tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) = &
+           w0 * tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) + &
+           w1 * tets_tmp_buf(n_tets_tmp)%v(:, neg_idx(1))
       end do
       ! The colours will have been inherited already; we just need to zero
       ! the one corresponding to the plane cut
-      tet_array_tmp(tet_cnt_tmp)%colours(face_no(pos_idx(1), pos_idx(2), pos_idx(3))) = 0
+      tets_tmp_buf(n_tets_tmp)%colours(face_no(pos_idx(1), pos_idx(2), pos_idx(3))) = 0
     case(2)
       select case(neg_cnt)
       case(2)
@@ -189,54 +250,54 @@ contains
           invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
-          tet_tmp%V(:, i) = w0 * tet%V(:, pos_idx(i)) + w1 * tet%V(:, neg_idx(1))
+          tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(1))
         end do
         do i=1,neg_cnt
           invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
           w0 = -dists(neg_idx(2)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
-          tet_tmp%V(:, i+2) = w0 * tet%V(:, pos_idx(i)) + w1 * tet%V(:, neg_idx(2))
+          tet_tmp%v(:, i+2) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(2))
         end do
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp) = tet
-        tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(1)) = tet_tmp%V(:, 3)
-        tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(2)) = tet_tmp%V(:, 2)
-        tet_array_tmp(tet_cnt_tmp)%colours(neg_idx(1)) = 0
-        tet_array_tmp(tet_cnt_tmp)%colours(neg_idx(2)) = 0
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp) = tet
+        tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(1)) = tet_tmp%v(:, 3)
+        tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(2)) = tet_tmp%v(:, 2)
+        tets_tmp_buf(n_tets_tmp)%colours(neg_idx(1)) = 0
+        tets_tmp_buf(n_tets_tmp)%colours(neg_idx(2)) = 0
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp)%V(:, 1) = tet%V(:, neg_idx(2))
-        tet_array_tmp(tet_cnt_tmp)%colours(1) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 2) = tet_tmp%V(:, 4)
-        tet_array_tmp(tet_cnt_tmp)%colours(2) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 3) = tet_tmp%V(:, 3)
-        tet_array_tmp(tet_cnt_tmp)%colours(3) = tet%colours(pos_idx(1))
-        tet_array_tmp(tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 2)
-        tet_array_tmp(tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(1))
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp)%v(:, 1) = tet%v(:, neg_idx(2))
+        tets_tmp_buf(n_tets_tmp)%colours(1) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 2) = tet_tmp%v(:, 4)
+        tets_tmp_buf(n_tets_tmp)%colours(2) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 3) = tet_tmp%v(:, 3)
+        tets_tmp_buf(n_tets_tmp)%colours(3) = tet%colours(pos_idx(1))
+        tets_tmp_buf(n_tets_tmp)%v(:, 4) = tet_tmp%v(:, 2)
+        tets_tmp_buf(n_tets_tmp)%colours(4) = tet%colours(neg_idx(1))
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp)%V(:, 1) = tet%V(:, neg_idx(1))
-        tet_array_tmp(tet_cnt_tmp)%colours(1) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 2) = tet_tmp%V(:, 1)
-        tet_array_tmp(tet_cnt_tmp)%colours(2) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 3) = tet_tmp%V(:, 2)
-        tet_array_tmp(tet_cnt_tmp)%colours(3) = tet%colours(pos_idx(2))
-        tet_array_tmp(tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 3)
-        tet_array_tmp(tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(2))
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp)%v(:, 1) = tet%v(:, neg_idx(1))
+        tets_tmp_buf(n_tets_tmp)%colours(1) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 2) = tet_tmp%v(:, 1)
+        tets_tmp_buf(n_tets_tmp)%colours(2) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 3) = tet_tmp%v(:, 2)
+        tets_tmp_buf(n_tets_tmp)%colours(3) = tet%colours(pos_idx(2))
+        tets_tmp_buf(n_tets_tmp)%v(:, 4) = tet_tmp%v(:, 3)
+        tets_tmp_buf(n_tets_tmp)%colours(4) = tet%colours(neg_idx(2))
       case(1)
         ! ++-0
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp) = tet
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp) = tet
         do i=1,pos_cnt
           invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
-          tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(i)) = &
-             w0 * tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(i)) + &
-             w1 * tet_array_tmp(tet_cnt_tmp)%V(:, neg_idx(1))
+          tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) = &
+             w0 * tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) + &
+             w1 * tets_tmp_buf(n_tets_tmp)%v(:, neg_idx(1))
         end do
-        tet_array_tmp(tet_cnt_tmp)%colours(neg_idx(1)) = 0
+        tets_tmp_buf(n_tets_tmp)%colours(neg_idx(1)) = 0
       end select
     case(1)
       select case(neg_cnt)
@@ -246,66 +307,262 @@ contains
           invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
-          tet_tmp%V(:, i) = w0 * tet%V(:, pos_idx(1)) + w1 * tet%V(:, neg_idx(i))
+          tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
         end do
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp) = tet
-        tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(1)) = tet_tmp%V(:, 1)
-        tet_array_tmp(tet_cnt_tmp)%colours(neg_idx(1)) = 0
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp) = tet
+        tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(1)) = tet_tmp%v(:, 1)
+        tets_tmp_buf(n_tets_tmp)%colours(neg_idx(1)) = 0
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp)%V(:, 1) = tet_tmp%V(:, 1)
-        tet_array_tmp(tet_cnt_tmp)%colours(1) = tet%colours(neg_idx(1))
-        tet_array_tmp(tet_cnt_tmp)%V(:, 2) = tet%V(:, neg_idx(2))
-        tet_array_tmp(tet_cnt_tmp)%colours(2) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 3) = tet%V(:, neg_idx(3))
-        tet_array_tmp(tet_cnt_tmp)%colours(3) = tet%colours(neg_idx(3))
-        tet_array_tmp(tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 2)
-        tet_array_tmp(tet_cnt_tmp)%colours(4) = 0
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp)%v(:, 1) = tet_tmp%v(:, 1)
+        tets_tmp_buf(n_tets_tmp)%colours(1) = tet%colours(neg_idx(1))
+        tets_tmp_buf(n_tets_tmp)%v(:, 2) = tet%v(:, neg_idx(2))
+        tets_tmp_buf(n_tets_tmp)%colours(2) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 3) = tet%v(:, neg_idx(3))
+        tets_tmp_buf(n_tets_tmp)%colours(3) = tet%colours(neg_idx(3))
+        tets_tmp_buf(n_tets_tmp)%v(:, 4) = tet_tmp%v(:, 2)
+        tets_tmp_buf(n_tets_tmp)%colours(4) = 0
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp)%V(:, 1) = tet%V(:, neg_idx(3))
-        tet_array_tmp(tet_cnt_tmp)%colours(1) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 2) = tet_tmp%V(:, 2)
-        tet_array_tmp(tet_cnt_tmp)%colours(2) = tet%colours(neg_idx(2))
-        tet_array_tmp(tet_cnt_tmp)%V(:, 3) = tet_tmp%V(:, 3)
-        tet_array_tmp(tet_cnt_tmp)%colours(3) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 1)
-        tet_array_tmp(tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(1))
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp)%v(:, 1) = tet%v(:, neg_idx(3))
+        tets_tmp_buf(n_tets_tmp)%colours(1) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 2) = tet_tmp%v(:, 2)
+        tets_tmp_buf(n_tets_tmp)%colours(2) = tet%colours(neg_idx(2))
+        tets_tmp_buf(n_tets_tmp)%v(:, 3) = tet_tmp%v(:, 3)
+        tets_tmp_buf(n_tets_tmp)%colours(3) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 4) = tet_tmp%v(:, 1)
+        tets_tmp_buf(n_tets_tmp)%colours(4) = tet%colours(neg_idx(1))
       case(2)
         ! +--0
         do i=1,neg_cnt
           invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
-          tet_tmp%V(:, i) = w0 * tet%V(:, pos_idx(1)) + w1 * tet%V(:, neg_idx(i))
+          tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
         end do
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp) = tet
-        tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(1)) = tet_tmp%V(:, 1)
-        tet_array_tmp(tet_cnt_tmp)%colours(neg_idx(1)) = 0
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp) = tet
+        tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(1)) = tet_tmp%v(:, 1)
+        tets_tmp_buf(n_tets_tmp)%colours(neg_idx(1)) = 0
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp)%V(:, 1) = tet_tmp%V(:, 2)
-        tet_array_tmp(tet_cnt_tmp)%colours(1) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 2) = tet%V(:, zer_idx(1))
-        tet_array_tmp(tet_cnt_tmp)%colours(2) = tet%colours(zer_idx(1))
-        tet_array_tmp(tet_cnt_tmp)%V(:, 3) = tet%V(:, neg_idx(2))
-        tet_array_tmp(tet_cnt_tmp)%colours(3) = 0
-        tet_array_tmp(tet_cnt_tmp)%V(:, 4) = tet_tmp%V(:, 1)
-        tet_array_tmp(tet_cnt_tmp)%colours(4) = tet%colours(neg_idx(1))
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp)%v(:, 1) = tet_tmp%v(:, 2)
+        tets_tmp_buf(n_tets_tmp)%colours(1) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 2) = tet%v(:, zer_idx(1))
+        tets_tmp_buf(n_tets_tmp)%colours(2) = tet%colours(zer_idx(1))
+        tets_tmp_buf(n_tets_tmp)%v(:, 3) = tet%v(:, neg_idx(2))
+        tets_tmp_buf(n_tets_tmp)%colours(3) = 0
+        tets_tmp_buf(n_tets_tmp)%v(:, 4) = tet_tmp%v(:, 1)
+        tets_tmp_buf(n_tets_tmp)%colours(4) = tet%colours(neg_idx(1))
       case(1)
         ! +-00
         invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(1)) * invdiff
 
-        tet_cnt_tmp = tet_cnt_tmp + 1
-        tet_array_tmp(tet_cnt_tmp) = tet
-        tet_array_tmp(tet_cnt_tmp)%V(:, pos_idx(1)) = w0 * tet%V(:, pos_idx(1)) + w1 * tet%V(:, neg_idx(1))
-        tet_array_tmp(tet_cnt_tmp)%colours(neg_idx(1)) = 0
+        n_tets_tmp = n_tets_tmp + 1
+        tets_tmp_buf(n_tets_tmp) = tet
+        tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(1)) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(1))
+        tets_tmp_buf(n_tets_tmp)%colours(neg_idx(1)) = 0
+      end select
+    end select
+
+  end subroutine clip_buf
+
+  subroutine clip(plane, tet, tets_new, ntets_new)
+    ! Clip tet against the plane.
+    type(plane_type), intent(in) :: plane
+    type(tet_type), intent(in) :: tet
+    type(tet_type), dimension(:), intent(inout) :: tets_new
+    integer, intent(out) :: ntets_new
+
+    real, dimension(4) :: dists
+    integer :: neg_cnt, pos_cnt, zer_cnt
+    integer, dimension(4) :: neg_idx, pos_idx, zer_idx
+    integer :: i
+
+    real :: invdiff, w0, w1
+    type(tet_type) :: tet_tmp
+
+    ! Negative == inside
+    ! Positive == outside
+
+    neg_cnt = 0
+    pos_cnt = 0
+    zer_cnt = 0
+
+    dists = distances_to_plane(plane, tet)
+    do i=1,4
+      if (abs(dists(i)) < epsilon(0.0)) then
+        zer_cnt = zer_cnt + 1
+        zer_idx(zer_cnt) = i
+      else if (dists(i) < 0.0) then
+        neg_cnt = neg_cnt + 1
+        neg_idx(neg_cnt) = i
+      else if (dists(i) > 0.0) then
+        pos_cnt = pos_cnt + 1
+        pos_idx(pos_cnt) = i
+      end if
+    end do
+
+    if (neg_cnt == 0) then
+      ! tet is completely on positive side of plane, full clip
+      return
+    end if
+
+    if (pos_cnt == 0) then
+      ! tet is completely on negative side of plane, no clip
+      ntets_new = ntets_new + 1
+      tets_new(ntets_new) = tet
+      return
+    end if
+
+    ! The tet is split by the plane, so we have more work to do.
+
+    select case(pos_cnt)
+    case(3)
+      ! +++-
+      ntets_new = ntets_new + 1
+      tets_new(ntets_new) = tet
+      do i=1,pos_cnt
+        invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+        w0 = -dists(neg_idx(1)) * invdiff
+        w1 =  dists(pos_idx(i)) * invdiff
+        tets_new(ntets_new)%v(:, pos_idx(i)) = &
+           w0 * tets_new(ntets_new)%v(:, pos_idx(i)) + &
+           w1 * tets_new(ntets_new)%v(:, neg_idx(1))
+      end do
+      ! The colours will have been inherited already; we just need to zero
+      ! the one corresponding to the plane cut
+      tets_new(ntets_new)%colours(face_no(pos_idx(1), pos_idx(2), pos_idx(3))) = 0
+    case(2)
+      select case(neg_cnt)
+      case(2)
+        ! ++--
+        do i=1,pos_cnt
+          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          w0 = -dists(neg_idx(1)) * invdiff
+          w1 =  dists(pos_idx(i)) * invdiff
+          tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(1))
+        end do
+        do i=1,neg_cnt
+          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
+          w0 = -dists(neg_idx(2)) * invdiff
+          w1 =  dists(pos_idx(i)) * invdiff
+          tet_tmp%v(:, i+2) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(2))
+        end do
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new) = tet
+        tets_new(ntets_new)%v(:, pos_idx(1)) = tet_tmp%v(:, 3)
+        tets_new(ntets_new)%v(:, pos_idx(2)) = tet_tmp%v(:, 2)
+        tets_new(ntets_new)%colours(neg_idx(1)) = 0
+        tets_new(ntets_new)%colours(neg_idx(2)) = 0
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new)%v(:, 1) = tet%v(:, neg_idx(2))
+        tets_new(ntets_new)%colours(1) = 0
+        tets_new(ntets_new)%v(:, 2) = tet_tmp%v(:, 4)
+        tets_new(ntets_new)%colours(2) = 0
+        tets_new(ntets_new)%v(:, 3) = tet_tmp%v(:, 3)
+        tets_new(ntets_new)%colours(3) = tet%colours(pos_idx(1))
+        tets_new(ntets_new)%v(:, 4) = tet_tmp%v(:, 2)
+        tets_new(ntets_new)%colours(4) = tet%colours(neg_idx(1))
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new)%v(:, 1) = tet%v(:, neg_idx(1))
+        tets_new(ntets_new)%colours(1) = 0
+        tets_new(ntets_new)%v(:, 2) = tet_tmp%v(:, 1)
+        tets_new(ntets_new)%colours(2) = 0
+        tets_new(ntets_new)%v(:, 3) = tet_tmp%v(:, 2)
+        tets_new(ntets_new)%colours(3) = tet%colours(pos_idx(2))
+        tets_new(ntets_new)%v(:, 4) = tet_tmp%v(:, 3)
+        tets_new(ntets_new)%colours(4) = tet%colours(neg_idx(2))
+      case(1)
+        ! ++-0
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new) = tet
+        do i=1,pos_cnt
+          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          w0 = -dists(neg_idx(1)) * invdiff
+          w1 =  dists(pos_idx(i)) * invdiff
+          tets_new(ntets_new)%v(:, pos_idx(i)) = &
+             w0 * tets_new(ntets_new)%v(:, pos_idx(i)) + &
+             w1 * tets_new(ntets_new)%v(:, neg_idx(1))
+        end do
+        tets_new(ntets_new)%colours(neg_idx(1)) = 0
+      end select
+    case(1)
+      select case(neg_cnt)
+      case(3)
+        ! +---
+        do i=1,neg_cnt
+          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          w0 = -dists(neg_idx(i)) * invdiff
+          w1 =  dists(pos_idx(1)) * invdiff
+          tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
+        end do
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new) = tet
+        tets_new(ntets_new)%v(:, pos_idx(1)) = tet_tmp%v(:, 1)
+        tets_new(ntets_new)%colours(neg_idx(1)) = 0
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new)%v(:, 1) = tet_tmp%v(:, 1)
+        tets_new(ntets_new)%colours(1) = tet%colours(neg_idx(1))
+        tets_new(ntets_new)%v(:, 2) = tet%v(:, neg_idx(2))
+        tets_new(ntets_new)%colours(2) = 0
+        tets_new(ntets_new)%v(:, 3) = tet%v(:, neg_idx(3))
+        tets_new(ntets_new)%colours(3) = tet%colours(neg_idx(3))
+        tets_new(ntets_new)%v(:, 4) = tet_tmp%v(:, 2)
+        tets_new(ntets_new)%colours(4) = 0
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new)%v(:, 1) = tet%v(:, neg_idx(3))
+        tets_new(ntets_new)%colours(1) = 0
+        tets_new(ntets_new)%v(:, 2) = tet_tmp%v(:, 2)
+        tets_new(ntets_new)%colours(2) = tet%colours(neg_idx(2))
+        tets_new(ntets_new)%v(:, 3) = tet_tmp%v(:, 3)
+        tets_new(ntets_new)%colours(3) = 0
+        tets_new(ntets_new)%v(:, 4) = tet_tmp%v(:, 1)
+        tets_new(ntets_new)%colours(4) = tet%colours(neg_idx(1))
+      case(2)
+        ! +--0
+        do i=1,neg_cnt
+          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          w0 = -dists(neg_idx(i)) * invdiff
+          w1 =  dists(pos_idx(1)) * invdiff
+          tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
+        end do
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new) = tet
+        tets_new(ntets_new)%v(:, pos_idx(1)) = tet_tmp%v(:, 1)
+        tets_new(ntets_new)%colours(neg_idx(1)) = 0
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new)%v(:, 1) = tet_tmp%v(:, 2)
+        tets_new(ntets_new)%colours(1) = 0
+        tets_new(ntets_new)%v(:, 2) = tet%v(:, zer_idx(1))
+        tets_new(ntets_new)%colours(2) = tet%colours(zer_idx(1))
+        tets_new(ntets_new)%v(:, 3) = tet%v(:, neg_idx(2))
+        tets_new(ntets_new)%colours(3) = 0
+        tets_new(ntets_new)%v(:, 4) = tet_tmp%v(:, 1)
+        tets_new(ntets_new)%colours(4) = tet%colours(neg_idx(1))
+      case(1)
+        ! +-00
+        invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
+        w0 = -dists(neg_idx(1)) * invdiff
+        w1 =  dists(pos_idx(1)) * invdiff
+
+        ntets_new = ntets_new + 1
+        tets_new(ntets_new) = tet
+        tets_new(ntets_new)%v(:, pos_idx(1)) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(1))
+        tets_new(ntets_new)%colours(neg_idx(1)) = 0
       end select
     end select
 
@@ -319,11 +576,11 @@ contains
     real :: det
     integer :: i
 
-    edge10 = tet%V(:, 2) - tet%V(:, 1);
-    edge20 = tet%V(:, 3) - tet%V(:, 1);
-    edge30 = tet%V(:, 4) - tet%V(:, 1);
-    edge21 = tet%V(:, 3) - tet%V(:, 2);
-    edge31 = tet%V(:, 4) - tet%V(:, 2);
+    edge10 = tet%v(:, 2) - tet%v(:, 1);
+    edge20 = tet%v(:, 3) - tet%v(:, 1);
+    edge30 = tet%v(:, 4) - tet%v(:, 1);
+    edge21 = tet%v(:, 3) - tet%v(:, 2);
+    edge31 = tet%v(:, 4) - tet%v(:, 2);
 
     plane(1)%normal = unit_cross(edge20, edge10)
     plane(2)%normal = unit_cross(edge10, edge30)
@@ -340,44 +597,10 @@ contains
     ! And calibrate what is the zero of this plane by dotting with
     ! a point we know to be on it
     do i=1,4
-      plane(i)%c = dot_product(tet%V(:, i), plane(i)%normal)
+      plane(i)%c = dot_product(tet%v(:, i), plane(i)%normal)
     end do
 
   end function get_planes_tet
-
-!   function get_planes_hex(positions, ele) result(plane)
-!     type(vector_field), intent(in) :: positions
-!     integer, intent(in) :: ele
-!     type(plane_type), dimension(6) :: plane
-!     integer, dimension(:), pointer :: faces
-!     integer :: i, face
-!     integer, dimension(4) :: fnodes
-!     real, dimension(positions%dim, face_ngi(positions, ele)) :: normals
-! 
-!     ! This could be done much more efficiently by exploiting
-!     ! more information about how we number faces and such on a hex
-! 
-!     assert(positions%mesh%shape%numbering%family == FAMILY_CUBE)
-!     assert(positions%mesh%faces%shape%numbering%family == FAMILY_CUBE)
-!     assert(positions%mesh%shape%degree == 1)
-!     assert(has_faces(positions%mesh))
-! 
-!     faces => ele_faces(positions, ele)
-!     assert(size(faces) == 6)
-! 
-!     do i=1,size(faces)
-!       face = faces(i)
-!       fnodes = face_global_nodes(positions, face)
-! 
-!       call transform_facet_to_physical(positions, face, normal=normals)
-!       plane(i)%normal = normals(:, 1)
-! 
-!       ! Now we calibrate the constant (setting the 'zero level' of the plane, as it were)
-!       ! with a node we know is on the face
-!       plane(i)%c = dot_product(plane(i)%normal, node_val(positions, fnodes(1)))
-! 
-!     end do
-!   end function get_planes_hex
 
   pure function unit_cross(vecA, vecB) result(cross)
     real, dimension(3), intent(in) :: vecA, vecB
@@ -396,27 +619,45 @@ contains
     integer :: i
 
     forall(i=1:4)
-      dists(i) = dot_product(plane%normal, tet%V(:, i)) - plane%c
+      dists(i) = dot_product(plane%normal, tet%v(:, i)) - plane%c
     end forall
   end function distances_to_plane
 
-  pure function tet_volume(tet) result(vol)
+  pure function tetrahedron_volume_real(tet) result(volume)
+    real, dimension(3, 4), intent(in) :: tet
+
+    real :: volume
+
+    real, dimension(3) :: e1, e2, e3
+
+    e1 = tet(:, 2) - tet(:, 1)
+    e2 = tet(:, 3) - tet(:, 1)
+    e3 = tet(:, 4) - tet(:, 1)
+
+    volume = (1.0 / 6.0) * abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
+                           & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
+                           & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
+
+  end function tetrahedron_volume_real
+
+  pure function tetrahedron_volume_tet(tet) result(vol)
     type(tet_type), intent(in) :: tet
     real :: vol
     real, dimension(3) :: cross, vecA, vecB, vecC
 
-    vecA = tet%V(:, 1) - tet%V(:, 4)
-    vecB = tet%V(:, 2) - tet%V(:, 4)
-    vecC = tet%V(:, 3) - tet%V(:, 4)
+    vecA = tet%v(:, 1) - tet%v(:, 4)
+    vecB = tet%v(:, 2) - tet%v(:, 4)
+    vecC = tet%v(:, 3) - tet%v(:, 4)
 
     cross(1) = vecB(2) * vecC(3) - vecB(3) * vecC(2)
     cross(2) = vecB(3) * vecC(1) - vecB(1) * vecC(3)
     cross(3) = vecB(1) * vecC(2) - vecB(2) * vecC(1)
 
     vol = abs(dot_product(vecA, cross)) / 6.0
-  end function tet_volume
+    
+  end function tetrahedron_volume_tet
 
-  function face_no(i, j, k) result(face)
+  pure function face_no(i, j, k) result(face)
     ! Given three local node numbers, what is the face that they share?
     integer, intent(in) :: i, j, k
     integer :: face
@@ -427,4 +668,4 @@ contains
 
   end function face_no
 
-end module libsupermesh_tet_intersection_module
+end module libsupermesh_tet_intersection

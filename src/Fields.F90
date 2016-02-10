@@ -3,6 +3,7 @@
 module libsupermesh_fields
 
   use libsupermesh_debug
+  use libsupermesh_tet_intersection, only : tetrahedron_volume
   use libsupermesh_tri_intersection, only : triangle_area
 
   implicit none
@@ -440,22 +441,5 @@ contains
     end select
   
   end function simplex_volume
-
-  pure function tetrahedron_volume(cell_coords) result(volume)
-    real, dimension(3, 4), intent(in) :: cell_coords
-
-    real :: volume
-
-    real, dimension(3) :: e1, e2, e3
-
-    e1 = cell_coords(:, 2) - cell_coords(:, 1)
-    e2 = cell_coords(:, 3) - cell_coords(:, 1)
-    e3 = cell_coords(:, 4) - cell_coords(:, 1)
-
-    volume = (1.0 / 6.0) * abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
-                           & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
-                           & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
-
-  end function tetrahedron_volume
 
 end module libsupermesh_fields
