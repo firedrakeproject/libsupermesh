@@ -22,7 +22,13 @@ must not be misrepresented as being the original software.
 distribution.
 */
 
+/*
+This is a modified version of TinyXML for use with libsupermesh.
+Code first added 2016-02-10.
+*/
+
 #include "tinyxml.h"
+using namespace libsupermesh;
 
 // The goal of the seperate error file is to make the first
 // step towards localization. tinyxml (currently) only supports
@@ -31,12 +37,11 @@ distribution.
 // It also cleans up the code a bit.
 //
 
-const char* TiXmlBase::errorString[ TIXML_ERROR_STRING_COUNT ] =
+const char* TiXmlBase::errorString[ TiXmlBase::TIXML_ERROR_STRING_COUNT ] =
 {
 	"No error",
 	"Error",
 	"Failed to open file",
-	"Memory allocation failed.",
 	"Error parsing Element.",
 	"Failed to read Element name",
 	"Error reading Element value.",

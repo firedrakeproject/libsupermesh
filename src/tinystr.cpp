@@ -1,6 +1,5 @@
 /*
 www.sourceforge.net/projects/tinyxml
-Original file by Yves Berquin.
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any
@@ -23,13 +22,14 @@ distribution.
 */
 
 /*
- * THIS FILE WAS ALTERED BY Tyge Løvset, 7. April 2005.
- */
-
+This is a modified version of TinyXML for use with libsupermesh.
+Code first added 2016-02-10.
+*/
 
 #ifndef TIXML_USE_STL
 
 #include "tinystr.h"
+using namespace libsupermesh;
 
 // Error value for find primitive
 const TiXmlString::size_type TiXmlString::npos = static_cast< TiXmlString::size_type >(-1);

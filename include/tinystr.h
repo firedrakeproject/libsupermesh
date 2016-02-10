@@ -1,6 +1,5 @@
 /*
 www.sourceforge.net/projects/tinyxml
-Original file by Yves Berquin.
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any
@@ -23,16 +22,10 @@ distribution.
 */
 
 /*
- * THIS FILE WAS ALTERED BY Tyge Lovset, 7. April 2005.
- *
- * - completely rewritten. compact, clean, and fast implementation.
- * - sizeof(TiXmlString) = pointer size (4 bytes on 32-bit systems)
- * - fixed reserve() to work as per specification.
- * - fixed buggy compares operator==(), operator<(), and operator>()
- * - fixed operator+=() to take a const ref argument, following spec.
- * - added "copy" constructor with length, and most compare operators.
- * - added swap(), clear(), size(), capacity(), operator+().
- */
+This is a modified version of TinyXML for use with libsupermesh.
+Code first added 2016-02-10.
+*/
+
 
 #ifndef TIXML_USE_STL
 
@@ -64,6 +57,7 @@ distribution.
    The buffer allocation is made by a simplistic power of 2 like mechanism : if we increase
    a string and there's no more room, we allocate a buffer twice as big as we need.
 */
+namespace libsupermesh {
 class TiXmlString
 {
   public :
@@ -106,13 +100,11 @@ class TiXmlString
 		quit();
 	}
 
-	// = operator
 	TiXmlString& operator = (const char * copy)
 	{
 		return assign( copy, (size_type)strlen(copy));
 	}
 
-	// = operator
 	TiXmlString& operator = (const TiXmlString & copy)
 	{
 		return assign(copy.start(), copy.length());
@@ -314,6 +306,7 @@ public :
 	}
 
 } ;
+}
 
 #endif	// TIXML_STRING_INCLUDED
 #endif	// TIXML_USE_STL

@@ -34,7 +34,7 @@ using namespace libsupermesh;
 
 HaloReadError libsupermesh::ReadHalos(const string& filename, int& process, int& nprocs, map<int, int>& npnodes, map<int, vector<vector<int> > >& send, map<int, vector<vector<int> > >& recv){ 
   // Read the halo file
-  TiXmlDocument doc(filename);
+  TiXmlDocument doc(filename.c_str());
   if(!doc.LoadFile()){
     doc.ErrorDesc();
     return HALO_READ_FILE_NOT_FOUND;
@@ -45,7 +45,7 @@ HaloReadError libsupermesh::ReadHalos(const string& filename, int& process, int&
    
   // Extract the XML header
   TiXmlNode* header = doc.FirstChild();
-  while(header != NULL and header->Type() != TiXmlNode::DECLARATION){
+  while(header != NULL and header->Type() != TiXmlNode::TINYXML_DECLARATION){
     header = header->NextSibling();
   }
 
@@ -140,12 +140,12 @@ HaloReadError libsupermesh::ReadHalos(const string& filename, int& process, int&
       TiXmlNode* sendDataNode = dataEle->FirstChildElement("send");
       if(sendDataNode != NULL){
         TiXmlNode* sendDataTextNode = sendDataNode->FirstChild();
-        while(sendDataTextNode != NULL and sendDataTextNode->Type() != TiXmlNode::TEXT){
+        while(sendDataTextNode != NULL and sendDataTextNode->Type() != TiXmlNode::TINYXML_TEXT){
           sendDataTextNode = sendDataTextNode->NextSibling();
         }
         if(sendDataTextNode != NULL){
           vector<string> tokens;
-          Tokenize(sendDataTextNode->ValueStr(), tokens, " ");
+          Tokenize(string(sendDataTextNode->Value()), tokens, " ");
           for(size_t i = 0;i < tokens.size();i++){
             send[level][proc].push_back(atoi(tokens[i].c_str()));
           }
@@ -156,12 +156,12 @@ HaloReadError libsupermesh::ReadHalos(const string& filename, int& process, int&
       TiXmlNode* recvDataNode = dataEle->FirstChildElement("receive");
       if(recvDataNode != NULL){
       TiXmlNode* recvDataTextNode = recvDataNode->FirstChild();
-        while(recvDataTextNode != NULL and recvDataTextNode->Type() != TiXmlNode::TEXT){
+        while(recvDataTextNode != NULL and recvDataTextNode->Type() != TiXmlNode::TINYXML_TEXT){
           recvDataTextNode = recvDataTextNode->NextSibling();
         }
         if(recvDataTextNode != NULL){
           vector<string> tokens;
-          Tokenize(recvDataTextNode->ValueStr(), tokens, " ");
+          Tokenize(string(recvDataTextNode->Value()), tokens, " ");
           for(size_t i = 0;i < tokens.size();i++){
             recv[level][proc].push_back(atoi(tokens[i].c_str()));
           }

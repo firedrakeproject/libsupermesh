@@ -31,14 +31,11 @@
 #include "libsupermesh_configuration.h"
 #include "Tokenize.h"
 
-#include <algorithm>
 #include <cassert>
-#include <cmath>
-#include <deque>
 #include <iostream>
 #include <map>
-#include <set>
-#include <string.h>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "tinyxml.h"
