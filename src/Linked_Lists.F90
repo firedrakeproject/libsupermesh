@@ -1,4 +1,4 @@
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 module libsupermesh_linked_lists
   ! A module to provide linked lists and operations on them.

@@ -26,7 +26,7 @@
 !    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !    USA
 
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 module libsupermesh_debug_parameters  
 

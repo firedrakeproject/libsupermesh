@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "confdefs.h"
+#include "libsupermesh_configuration.h"
 #include "MeshDataStream.h"
 
 #include <strings.h>

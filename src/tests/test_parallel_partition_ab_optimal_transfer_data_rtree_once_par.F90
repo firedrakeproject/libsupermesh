@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once_par
 
   use iso_fortran_env, only : output_unit

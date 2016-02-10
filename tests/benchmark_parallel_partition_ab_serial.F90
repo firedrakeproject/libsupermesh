@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine benchmark_parallel_partition_ab_serial
 
   use iso_fortran_env, only : output_unit

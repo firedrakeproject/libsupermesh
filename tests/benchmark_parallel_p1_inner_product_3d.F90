@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine benchmark_parallel_p1_inner_product_3d
 
   use iso_c_binding, only : c_int8_t
@@ -11,7 +13,6 @@ subroutine benchmark_parallel_p1_inner_product_3d
   implicit none
 
 #include <finclude/petsc.h90>
-#include "fdebug.h"
 
   ! Input Triangle mesh base names
   character(len = *), parameter :: basename_a = "pyramid_0_5", &

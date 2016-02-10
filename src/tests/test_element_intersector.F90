@@ -1,4 +1,4 @@
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 subroutine test_element_intersector()
 

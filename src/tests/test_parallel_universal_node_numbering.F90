@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine test_parallel_universal_node_numbering
 
   use iso_fortran_env, only : output_unit

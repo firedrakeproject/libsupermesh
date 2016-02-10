@@ -1,4 +1,4 @@
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 module libsupermesh_read_halos
 
@@ -8,11 +8,12 @@ module libsupermesh_read_halos
 
   implicit none
 
-#include "mpif.h"
+#include <mpif.h>
 
   private
 
-  public :: halo_reader_reset, halo_reader_set_input, halo_reader_query_output, halo_reader_get_output
+  public :: halo_reader_reset, halo_reader_set_input, &
+    & halo_reader_query_output, halo_reader_get_output
   public :: int_array, halo_type, read_halo, deallocate
 
   interface

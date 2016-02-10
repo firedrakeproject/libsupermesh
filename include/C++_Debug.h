@@ -26,11 +26,10 @@
     USA
 */
 
-#ifndef CXXDEBUG_H
-#define CXXDEBUG_H
+#pragma once
 
-extern "C"{
+#include "libsupermesh_configuration.h"
+
+extern "C" {
   void libsupermesh_print_backtrace();
 }
-
-#endif

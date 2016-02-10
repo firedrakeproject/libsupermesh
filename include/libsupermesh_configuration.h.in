@@ -1,5 +1,9 @@
 #pragma once
 
+#define libsupermesh_VERSION_MAJOR @SuperMesh_VERSION_MAJOR@
+#define libsupermesh_VERSION_MINOR @SuperMesh_VERSION_MINOR@
+#define libsupermesh_VERSION_MINOR_CHANGE @SuperMesh_VERSION_MINOR_CHANGE@
+
 #define PROFILE @SuperMesh_PROFILE@
 #if PROFILE == 0
 #undef PROFILE

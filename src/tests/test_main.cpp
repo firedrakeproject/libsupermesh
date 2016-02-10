@@ -26,7 +26,7 @@
     USA
 */
 
-#include "confdefs.h"
+#include "libsupermesh_configuration.h"
 
 #include <mpi.h>
 #ifdef HAVE_PETSC

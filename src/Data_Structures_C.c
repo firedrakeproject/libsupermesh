@@ -1,3 +1,5 @@
+#include "libsupermesh_configuration.h"
+
 #include "Judy.h"
 #include "stdio.h"
 #include "assert.h"

@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "confdefs.h"
+#include "libsupermesh_configuration.h"
 
 #ifndef __FILE__
 #define __FILE__ "unknown"

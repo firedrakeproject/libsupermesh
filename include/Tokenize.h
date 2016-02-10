@@ -25,8 +25,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
     USA
 */
-#ifndef TOKENISE_H
-#define  TOKENISE_H
+
+#pragma once
+
+#include "libsupermesh_configuration.h"
 
 #include <string>
 #include <vector>
@@ -35,4 +37,3 @@ void Tokenize(const std::string& str,
               std::vector<std::string>& tokens,
               const std::string& delimiters = " ");
 
-#endif

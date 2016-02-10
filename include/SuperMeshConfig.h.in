@@ -1,5 +1,0 @@
-// the configured options and settings for Tutorial
-#define SuperMesh_VERSION_MAJOR @SuperMesh_VERSION_MAJOR@
-#define SuperMesh_VERSION_MINOR @SuperMesh_VERSION_MINOR@
-#define SuperMesh_VERSION_MINOR_CHANGE @SuperMesh_VERSION_MINOR_CHANGE@
-

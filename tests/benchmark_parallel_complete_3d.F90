@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine benchmark_parallel_complete_3D
 
   use iso_c_binding, only : c_ptr, c_int8_t
@@ -17,7 +19,6 @@ subroutine benchmark_parallel_complete_3D
   implicit none
 
 #include <finclude/petsc.h90>
-#include "fdebug.h"
 
   character(len = 1024) :: buffer, hostname
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character

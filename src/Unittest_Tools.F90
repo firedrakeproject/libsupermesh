@@ -1,4 +1,4 @@
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 module libsupermesh_unittest_tools
 !!< This module contains utility functions for the unit testing framework.

@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine test_parallel_partition_complete_ab
 
   use iso_c_binding, only : c_ptr, c_int8_t

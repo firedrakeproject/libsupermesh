@@ -1,4 +1,4 @@
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 #define TREE_DIM 2
 #define TREE_NCHILDREN 4

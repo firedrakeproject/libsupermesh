@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine test_parallel_partition_b
 
   use libsupermesh_unittest_tools

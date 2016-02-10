@@ -1,3 +1,5 @@
+#include "libsupermesh_debug.h"
+
 subroutine benchmark_serial_same_algo
 
   use iso_c_binding, only : c_ptr, c_int8_t

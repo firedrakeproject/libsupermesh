@@ -1,4 +1,4 @@
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 module libsupermesh_halo_ownership
 
@@ -7,7 +7,7 @@ module libsupermesh_halo_ownership
 
   implicit none
 
-#include "mpif.h"
+#include <mpif.h>
 
   private
 

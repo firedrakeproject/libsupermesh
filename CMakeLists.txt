@@ -281,10 +281,6 @@ set (SuperMesh_VERSION_MINOR_CHANGE 1)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
-configure_file (
-  "${PROJECT_SOURCE_DIR}/include/SuperMeshConfig.h.in"
-  "${PROJECT_BINARY_DIR}/include/SuperMeshConfig.h"
-  )
 
 configure_file (
   "${PROJECT_SOURCE_DIR}/config/SuperMesh.pc.in"
@@ -321,8 +317,8 @@ else ()
 endif (PETSC_FOUND)
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/include/confdefs.h.in"
-  "${PROJECT_BINARY_DIR}/include/confdefs.h"
+  "${PROJECT_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
+  "${PROJECT_BINARY_DIR}/include/libsupermesh_configuration.h"
   )
 # add the binary tree/include to the search path for include files
 # so that we will find the files

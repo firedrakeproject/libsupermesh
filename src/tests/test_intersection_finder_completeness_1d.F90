@@ -1,4 +1,4 @@
-#include "fdebug.h"
+#include "libsupermesh_debug.h"
 
 subroutine test_intersection_finder_completeness_1d()
 
