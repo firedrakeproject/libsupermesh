@@ -29,6 +29,7 @@
 #include "Tokenize.h"
 
 using namespace std;
+using namespace libsupermesh;
 
 void Tokenize(const string& str,
               vector<string>& tokens,

@@ -33,7 +33,9 @@
 #include <string>
 #include <vector>
 
+namespace libsupermesh {
 void Tokenize(const std::string& str,
               std::vector<std::string>& tokens,
               const std::string& delimiters = " ");
 
+}

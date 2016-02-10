@@ -37,10 +37,9 @@ Code first added 2016-02-10.
 #include "tinyxml.h"
 using namespace libsupermesh;
 
-FILE* TiXmlFOpen( const char* filename, const char* mode );
-
 bool TiXmlBase::condenseWhiteSpace = true;
 
+namespace libsupermesh {
 // Microsoft compiler security
 FILE* TiXmlFOpen( const char* filename, const char* mode )
 {
@@ -53,6 +52,7 @@ FILE* TiXmlFOpen( const char* filename, const char* mode )
 	#else
 		return fopen( filename, mode );
 	#endif
+}
 }
 
 void TiXmlBase::EncodeString( const TIXML_STRING& str, TIXML_STRING* outString )
