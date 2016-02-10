@@ -18,19 +18,19 @@ module libsupermesh_integer_set
   end type integer_set_vector
 
   interface
-    subroutine integer_set_create_c(i) bind(c)
+    subroutine integer_set_create_c(i) bind(c, name = "libsupermesh_integer_set_create_c")
       use iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: i
     end subroutine integer_set_create_c
 
-    subroutine integer_set_delete_c(i) bind(c)
+    subroutine integer_set_delete_c(i) bind(c, name = "libsupermesh_integer_set_delete_c")
       use iso_c_binding
       implicit none
       type(c_ptr), intent(inout) :: i
     end subroutine integer_set_delete_c
 
-    subroutine integer_set_insert_c(i, v, c) bind(c)
+    subroutine integer_set_insert_c(i, v, c) bind(c, name = "libsupermesh_integer_set_insert_c")
       use iso_c_binding
       implicit none
       type(c_ptr), intent(inout) :: i
@@ -38,14 +38,14 @@ module libsupermesh_integer_set
       integer(kind = c_int), intent(out) :: c
     end subroutine integer_set_insert_c
 
-    pure subroutine integer_set_length_c(i, l) bind(c)
+    pure subroutine integer_set_length_c(i, l) bind(c, name = "libsupermesh_integer_set_length_c")
       use iso_c_binding
       implicit none
       type(c_ptr), intent(in) :: i
       integer(kind = c_int), intent(out) :: l
     end subroutine integer_set_length_c
 
-    subroutine integer_set_fetch_c(i, idx, val) bind(c)
+    subroutine integer_set_fetch_c(i, idx, val) bind(c, name = "libsupermesh_integer_set_fetch_c")
       use iso_c_binding
       implicit none
       type(c_ptr), intent(in) :: i
@@ -53,7 +53,7 @@ module libsupermesh_integer_set
       integer(kind = c_int), intent(out) :: val
     end subroutine integer_set_fetch_c
 
-    subroutine integer_set_remove_c(i, idx, stat) bind(c)
+    subroutine integer_set_remove_c(i, idx, stat) bind(c, name = "libsupermesh_integer_set_remove_c")
       use iso_c_binding
       implicit none
       type(c_ptr), intent(in) :: i
@@ -61,7 +61,7 @@ module libsupermesh_integer_set
       integer(kind = c_int), intent(out) :: stat
     end subroutine integer_set_remove_c
 
-    subroutine integer_set_has_value_c(i, val, bool) bind(c)
+    subroutine integer_set_has_value_c(i, val, bool) bind(c, name = "libsupermesh_integer_set_has_value_c")
       use iso_c_binding
       implicit none
       type(c_ptr), intent(in) :: i

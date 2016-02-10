@@ -8,12 +8,12 @@
    http://judy.sourceforge.net/doc/Judy1_3x.htm and
    http://judy.sourceforge.net/doc/JudyL_3x.htm */
 
-void integer_set_create_c(Pvoid_t* i)
+void libsupermesh_integer_set_create_c(Pvoid_t* i)
 {
   *i = (Pvoid_t) NULL;
 }
 
-void integer_set_delete_c(Pvoid_t* i)
+void libsupermesh_integer_set_delete_c(Pvoid_t* i)
 {
   Word_t mem_freed;
   Pvoid_t ptr = (Pvoid_t) *i;
@@ -21,7 +21,7 @@ void integer_set_delete_c(Pvoid_t* i)
   *i = ptr;
 }
 
-void integer_set_insert_c(Pvoid_t* i, int* v, int* c)
+void libsupermesh_integer_set_insert_c(Pvoid_t* i, int* v, int* c)
 {
   int changed;
   Word_t index = *v;
@@ -31,7 +31,7 @@ void integer_set_insert_c(Pvoid_t* i, int* v, int* c)
   *i = ptr;
 }
 
-void integer_set_length_c(Pvoid_t* i, int* l)
+void libsupermesh_integer_set_length_c(Pvoid_t* i, int* l)
 {
   Word_t len;
   Pvoid_t ptr = (Pvoid_t) *i;
@@ -40,7 +40,7 @@ void integer_set_length_c(Pvoid_t* i, int* l)
   *i = ptr;
 }
 
-void integer_set_fetch_c(Pvoid_t* i, int* idx, int* val)
+void libsupermesh_integer_set_fetch_c(Pvoid_t* i, int* idx, int* val)
 {
   Word_t index = *idx, value;
   int worked;
@@ -51,7 +51,7 @@ void integer_set_fetch_c(Pvoid_t* i, int* idx, int* val)
   *i = ptr;
 }
 
-void integer_set_remove_c(Pvoid_t* i, int* idx, int* status)
+void libsupermesh_integer_set_remove_c(Pvoid_t* i, int* idx, int* status)
 {
   Word_t index = *idx;
   int stat;
@@ -61,7 +61,7 @@ void integer_set_remove_c(Pvoid_t* i, int* idx, int* status)
   *i = ptr;
 }
 
-void integer_set_has_value_c(Pvoid_t* i, int* val, int* present)
+void libsupermesh_integer_set_has_value_c(Pvoid_t* i, int* val, int* present)
 {
   Word_t value = *val;
   int wpresent;
@@ -70,13 +70,13 @@ void integer_set_has_value_c(Pvoid_t* i, int* val, int* present)
   *present = wpresent;
 }
 
-void integer_hash_table_create_c(Pvoid_t* i)
+void libsupermesh_integer_hash_table_create_c(Pvoid_t* i)
 {
   assert(sizeof(int*) == sizeof(Pvoid_t));
   *i = (Pvoid_t) NULL;
 }
 
-void integer_hash_table_delete_c(Pvoid_t* i)
+void libsupermesh_integer_hash_table_delete_c(Pvoid_t* i)
 {
   Word_t mem_freed;
   Pvoid_t ptr = (Pvoid_t) *i;
@@ -84,7 +84,7 @@ void integer_hash_table_delete_c(Pvoid_t* i)
   *i = ptr;
 }
 
-void integer_hash_table_insert_c(Pvoid_t* i, int* k, int* v)
+void libsupermesh_integer_hash_table_insert_c(Pvoid_t* i, int* k, int* v)
 {
   Word_t key = *k;
   PWord_t pvalue;
@@ -94,7 +94,7 @@ void integer_hash_table_insert_c(Pvoid_t* i, int* k, int* v)
   *i = ptr;
 }
 
-void integer_hash_table_length_c(Pvoid_t* i, int* l)
+void libsupermesh_integer_hash_table_length_c(Pvoid_t* i, int* l)
 {
   Word_t len;
   Pvoid_t ptr = (Pvoid_t) *i;
@@ -103,7 +103,7 @@ void integer_hash_table_length_c(Pvoid_t* i, int* l)
   *i = ptr;
 }
 
-void integer_hash_table_fetch_c(Pvoid_t* i, int* k, int* v)
+void libsupermesh_integer_hash_table_fetch_c(Pvoid_t* i, int* k, int* v)
 {
   Word_t key = *k, value;
   PWord_t pvalue = &value;
@@ -118,7 +118,7 @@ void integer_hash_table_fetch_c(Pvoid_t* i, int* k, int* v)
   *i = ptr;
 }
 
-void integer_hash_table_remove_c(Pvoid_t* i, int* k, int* status)
+void libsupermesh_integer_hash_table_remove_c(Pvoid_t* i, int* k, int* status)
 {
   Word_t key = *k;
   int stat;
@@ -128,7 +128,7 @@ void integer_hash_table_remove_c(Pvoid_t* i, int* k, int* status)
   *i = ptr;
 }
 
-void integer_hash_table_has_key_c(Pvoid_t* i, int* k, int* present)
+void libsupermesh_integer_hash_table_has_key_c(Pvoid_t* i, int* k, int* present)
 {
   Word_t key = *k, value;
   PWord_t pvalue = &value;
@@ -138,7 +138,7 @@ void integer_hash_table_has_key_c(Pvoid_t* i, int* k, int* present)
   *i = ptr;
 }
 
-void integer_hash_table_fetch_pair_c(Pvoid_t* i, int* idx, int* key, int* val)
+void libsupermesh_integer_hash_table_fetch_pair_c(Pvoid_t* i, int* idx, int* key, int* val)
 {
   Word_t nth = *idx; /* what Judy calls nth is what I am calling index */
   Word_t index; /* what Judy calls index is what I am calling key */
