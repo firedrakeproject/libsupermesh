@@ -1,10 +1,11 @@
 #include "libsupermesh_debug.h"
 
-subroutine benchmark_parallel_complete_3D
+subroutine benchmark_parallel_complete_3D() bind(c)
 
   use iso_c_binding, only : c_ptr, c_int8_t
   use iso_fortran_env, only : output_unit
 
+  use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
   use libsupermesh_fields
@@ -18,7 +19,7 @@ subroutine benchmark_parallel_complete_3D
 
   implicit none
 
-#include <finclude/petsc.h90>
+#include <mpif.h>
 
   character(len = 1024) :: buffer, hostname
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
@@ -27,7 +28,6 @@ subroutine benchmark_parallel_complete_3D
   integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB
   type(halo_type) :: halo
   type(vector_field) :: positionsA, positionsB
-  real, parameter :: tol = 1.0e3 * epsilon(0.0)
   real :: t0, serial_time, parallel_time, serial_read_time, parallel_read_time
   real :: parallel_time_tot_min, parallel_time_tot_max, parallel_time_tot_sum 
   logical :: fail
@@ -44,8 +44,8 @@ subroutine benchmark_parallel_complete_3D
   integer, dimension(2) :: data_b_header
   real, dimension(:), allocatable :: data_b_data
 
-  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
-  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
+  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
+  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
   write(rank_character, "(i0)") rank
   rank_character = adjustl(rank_character)
@@ -82,8 +82,8 @@ subroutine benchmark_parallel_complete_3D
   do ele_B = 1, test_parallel_ele_B
     valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 4.0
   end do
-  call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr);  CHKERRQ(ierr)
-  call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr);  CHKERRQ(ierr)
+  call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr);  assert(ierr == MPI_SUCCESS)
   vols_parallel = 0.0
   integral_parallel = 0.0
 
@@ -96,13 +96,13 @@ subroutine benchmark_parallel_complete_3D
            &  local_donor_ele_data, local_unpack_data_b, local_intersection_calculation)
   parallel_time = mpi_wtime() - t0
 
-  call MPI_Allreduce(MPI_IN_PLACE, vols_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Allreduce(parallel_time, parallel_time_tot_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-  call MPI_Allreduce(parallel_time, parallel_time_tot_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-  call MPI_Allreduce(parallel_time, parallel_time_tot_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr); CHKERRQ(ierr)
-  call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(MPI_IN_PLACE, vols_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(parallel_time, parallel_time_tot_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(parallel_time, parallel_time_tot_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(parallel_time, parallel_time_tot_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   call deallocate(positionsA)
   call deallocate(positionsB)
@@ -128,14 +128,14 @@ subroutine benchmark_parallel_complete_3D
     write(output_unit, "(a,f19.14)") "Integral, parallel = ", integral_parallel
     write(output_unit, "(a)") ""
 
-    fail = fnequals(vols_parallel, vols_serial, tol = tol)
+    fail = fnequals(vols_parallel, vols_serial)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Volume, serial   =", vols_serial, &
                                        & ": Volume, parallel =", vols_parallel
     end if
 
-    fail = fnequals(integral_parallel, integral_serial, tol = tol)
+    fail = fnequals(integral_parallel, integral_serial)
     call report_test("[test_parallel_partition_complete_ab integrals]", fail, .FALSE., "Should give the same values of integration")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Integral, serial   =", integral_serial, &
@@ -159,8 +159,8 @@ contains
     ndata = 2 * int_extent + size(eles) * dp_extent
     allocate(data(ndata))
     position = 0
-    call MPI_Pack((/size(eles), size(eles)/), 2, MPI_INTEGER, data, ndata, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-    call MPI_Pack(ldata, size(eles), MPI_DOUBLE_PRECISION, data, ndata, position, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Pack((/size(eles), size(eles)/), 2, MPI_INTEGER, data, ndata, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Pack(ldata, size(eles), MPI_DOUBLE_PRECISION, data, ndata, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
     deallocate(ldata)
 
@@ -174,9 +174,9 @@ contains
     call cleanup_data_b(data_b)
 
     position = 0
-    call MPI_Unpack(data_b, size(data_b), position, data_b_header, 2, MPI_INTEGER, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Unpack(data_b, size(data_b), position, data_b_header, 2, MPI_INTEGER, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     allocate(data_b_data(data_b_header(2)))
-    call MPI_Unpack(data_b, size(data_b), position, data_b_data, size(data_b_data), MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Unpack(data_b, size(data_b), position, data_b_data, size(data_b_data), MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   end subroutine local_unpack_data_b
 

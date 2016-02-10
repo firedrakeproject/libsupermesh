@@ -1,6 +1,6 @@
 #include "libsupermesh_debug.h"
 
-subroutine test_tet_intersector()
+subroutine test_tet_intersector() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder

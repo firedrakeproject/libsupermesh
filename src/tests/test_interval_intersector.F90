@@ -1,6 +1,6 @@
 #include "libsupermesh_debug.h"
 
-subroutine test_interval_intersector()
+subroutine test_interval_intersector() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder

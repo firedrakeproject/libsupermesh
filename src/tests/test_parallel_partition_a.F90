@@ -1,7 +1,8 @@
 #include "libsupermesh_debug.h"
 
-subroutine test_parallel_partition_a
+subroutine test_parallel_partition_a() bind(c)
 
+  use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
   use libsupermesh_fields
@@ -14,7 +15,7 @@ subroutine test_parallel_partition_a
   
   implicit none
 
-#include <finclude/petsc.h90>
+#include <mpif.h>
 
   integer :: i, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
        & serial_ele_A, serial_ele_B, parallel_ele_A, parallel_ele_B, local_sum
@@ -29,18 +30,17 @@ subroutine test_parallel_partition_a
   integer, parameter :: dim = 2, loc = 3
   character(len=9999) :: filenameA, filenameB
   integer, parameter :: mpi_my_root = 0
-  real, parameter :: tol = 1.0e3 * epsilon(0.0)
   logical :: fail = .FALSE.
   character(len=128) :: hostname
 
   integer, dimension(:), allocatable :: ele_owner
   type(halo_type) :: halo
 
-!  call MPI_INIT ( mpi_my_error ); CHKERRQ(mpi_my_error)
+!  call MPI_INIT ( mpi_my_error );  assert(mpi_my_error == MPI_SUCCESS)
 
 ! find out MY process ID, and how many processes were started.
-  call MPI_COMM_RANK (MPI_COMM_WORLD, mpi_my_id, mpi_my_error); CHKERRQ(mpi_my_error)
-  call MPI_COMM_SIZE (MPI_COMM_WORLD, mpi_num_procs, mpi_my_error); CHKERRQ(mpi_my_error)
+  call MPI_COMM_RANK (MPI_COMM_WORLD, mpi_my_id, mpi_my_error);  assert(mpi_my_error == MPI_SUCCESS)
+  call MPI_COMM_SIZE (MPI_COMM_WORLD, mpi_num_procs, mpi_my_error);  assert(mpi_my_error == MPI_SUCCESS)
 
   write(mpi_num_procs_character,'(I5)') mpi_num_procs
   call hostnm(hostname)
@@ -177,7 +177,7 @@ subroutine test_parallel_partition_a
 !    write (*,*) areas_parallel
 !    print "(i5,a,e25.17e3,a)", mpi_my_id, ": Total parallel intersection time:", sum(times_parallel),"."
 !    print "(i5,a,e25.17e3,a)", mpi_my_id, ": Total parallel intersection area:", sum(areas_parallel),"."
-    fail = fnequals(sum(areas_parallel), area_serial, tol = tol)
+    fail = fnequals(sum(areas_parallel), area_serial)
     call report_test("[test_parallel_partition_a areas]", fail, .false., "Should give the same areas of intersection")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Total parallel intersection area:", sum(areas_parallel),&

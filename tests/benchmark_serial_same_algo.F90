@@ -1,10 +1,11 @@
 #include "libsupermesh_debug.h"
 
-subroutine benchmark_serial_same_algo
+subroutine benchmark_serial_same_algo() bind(c)
 
   use iso_c_binding, only : c_ptr, c_int8_t
   use iso_fortran_env, only : output_unit
 
+  use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
   use libsupermesh_fields
@@ -18,7 +19,7 @@ subroutine benchmark_serial_same_algo
 
   implicit none
 
-#include <finclude/petsc.h90>
+#include <mpif.h>
 
   character(len = 1024) :: buffer, hostname
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
@@ -27,15 +28,14 @@ subroutine benchmark_serial_same_algo
   type(tri_type) :: tri_A, tri_B
   type(tri_type), dimension(tri_buf_size) :: trisC
   type(vector_field) :: positionsA, positionsB
-  real, parameter :: tol = 1.0e3 * epsilon(0.0)
   real :: t0, serial_time, serial_read_time
   logical :: fail
 
   real :: area_parallel, area_serial, integral_parallel, integral_serial
   real, dimension(:), allocatable :: valsB
 
-  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
-  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
+  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
+  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
   write(rank_character, "(i0)") rank
   rank_character = adjustl(rank_character)
@@ -94,8 +94,8 @@ subroutine benchmark_serial_same_algo
     serial_time = mpi_wtime() - t0
   end if
 
-  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   area_parallel = 45.0
   integral_parallel = 225.0
 
@@ -107,14 +107,14 @@ subroutine benchmark_serial_same_algo
     write(output_unit, "(a,f19.14)") "Area, serial       =", area_serial
     write(output_unit, "(a,f19.14)") "Integral, serial   =", integral_serial
 
-    fail = fnequals(area_parallel, area_serial, tol = tol)
+    fail = fnequals(area_parallel, area_serial)
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Area, serial   =", area_serial, &
                                        & ": Area, parallel =", area_parallel
     end if
 
-    fail = fnequals(integral_parallel, integral_serial, tol = tol)
+    fail = fnequals(integral_parallel, integral_serial)
     call report_test("[test_parallel_partition_complete_ab integrals]", fail, .FALSE., "Should give the same values of integration")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Integral, serial   =", integral_serial, &

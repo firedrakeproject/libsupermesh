@@ -1,6 +1,6 @@
 #include "libsupermesh_debug.h"
 
-subroutine test_intersection_finder_2d()
+subroutine test_intersection_finder_2d() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate
   use libsupermesh_intersection_finder, only : &

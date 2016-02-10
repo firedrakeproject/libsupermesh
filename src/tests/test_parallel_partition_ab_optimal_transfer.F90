@@ -1,9 +1,10 @@
 #include "libsupermesh_debug.h"
 
-subroutine test_parallel_partition_ab_optimal_transfer
+subroutine test_parallel_partition_ab_optimal_transfer() bind(c)
 
   use iso_fortran_env, only : output_unit
 
+  use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
   use libsupermesh_fields
@@ -29,7 +30,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
     integer, dimension(:), pointer :: p
   end type pointer_integer
 
-#include <finclude/petsc.h90>
+#include <mpif.h>
 
   integer :: i, j, k, l, m, n, sends, recvs, ele_A, ele_B, ele_C, n_trisC, nprocs, &
        & rank, ierr, serial_ele_A, serial_ele_B, parallel_ele_A, &
@@ -55,7 +56,6 @@ subroutine test_parallel_partition_ab_optimal_transfer
   type(vector_field) :: positionsA, positionsB
   integer, parameter :: dim = 2
   integer, parameter :: root = 0
-  real, parameter :: tol = 1.0e3 * epsilon(0.0)
   logical :: fail
   logical, dimension(:), allocatable :: partition_intersection_recv, partition_intersection_send
   real, dimension(:,:), allocatable :: bbox_a, bbox_b
@@ -84,8 +84,8 @@ subroutine test_parallel_partition_ab_optimal_transfer
   integer elements_nodes_datatype, oldtypes(0:1), blockcounts(0:1), offsets(0:1)
 
 ! find out MY process ID, and how many processes were started.
-  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
-  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
+  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
+  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
   write(rank_character, "(i0)") rank
   rank_character = adjustl(rank_character)
@@ -165,7 +165,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
     call deallocate(positionsB)
   end if
 
-  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   allocate(parallel_ele_B_array(0:nprocs - 1))
   if(rank == root) then
@@ -182,7 +182,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
 
   area_parallel = 0.0
 
-  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   t0 = mpi_wtime()
   positionsA = read_triangle_files(trim("data/square_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
@@ -216,15 +216,15 @@ subroutine test_parallel_partition_ab_optimal_transfer
   ! Bounding box all-to-all
   call MPI_Allgather(bbox_a, 4, MPI_DOUBLE_PRECISION, &
     & parallel_bbox_a, 4, MPI_DOUBLE_PRECISION,    &
-    & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   call MPI_Allgather(bbox_b, 4, MPI_DOUBLE_PRECISION, &
     & parallel_bbox_b, 4, MPI_DOUBLE_PRECISION,    &
-    & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   call MPI_Allgather(parallel_ele_B, 1, MPI_INTEGER, &
     & parallel_ele_B_array, 1, MPI_INTEGER,    &
-    & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   allocate(send_element_uns(0:nprocs-1))
   do i=0,size(send_element_uns(:))-1
@@ -271,8 +271,8 @@ subroutine test_parallel_partition_ab_optimal_transfer
    blockcounts(0) = 2
 !  Now define structured type and commit it 
   call MPI_TYPE_STRUCT(1, blockcounts, offsets, oldtypes,   &
-                &      elements_nodes_datatype, ierr) ;  CHKERRQ(ierr)
-  call MPI_TYPE_COMMIT(elements_nodes_datatype, ierr) ;  CHKERRQ(ierr)
+                &      elements_nodes_datatype, ierr) ;  assert(ierr == MPI_SUCCESS)
+  call MPI_TYPE_COMMIT(elements_nodes_datatype, ierr) ;  assert(ierr == MPI_SUCCESS)
   allocate(number_of_elements_and_nodes_to_receive(2,0:nprocs - 1), number_of_elements_and_nodes_to_send(2,0:nprocs - 1))
   number_of_elements_and_nodes_to_receive = 0
   number_of_elements_and_nodes_to_send = 0
@@ -292,7 +292,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
 
         call MPI_Irecv(number_of_elements_and_nodes_to_receive(:, i), 1, elements_nodes_datatype, &
               & i, i, MPI_COMM_WORLD, &
-              & request_recv(recvs), ierr);  CHKERRQ(ierr)
+              & request_recv(recvs), ierr);  assert(ierr == MPI_SUCCESS)
       end if
     end if
 
@@ -341,7 +341,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
 
         call MPI_Isend(number_of_elements_and_nodes_to_send(:, i), 1, elements_nodes_datatype, &
             & i, rank, MPI_COMM_WORLD, &
-            & request_send(sends), ierr);  CHKERRQ(ierr)
+            & request_send(sends), ierr);  assert(ierr == MPI_SUCCESS)
 
         allocate(send_element_uns(i)%p(l))
         send_element_uns(i)%p = temp_elements_uns(1:l)
@@ -378,7 +378,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
   end do
 
   recvs = recvs + 1
-  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
+  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  assert(ierr == MPI_SUCCESS)
 
   do i = 0, nprocs - 1
     if(partition_intersection_recv(i)) then
@@ -409,7 +409,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
   end do
 
   sends = sends + 1
-  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
+  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  assert(ierr == MPI_SUCCESS)
 
   forall(i = 0: nprocs - 1)
     status_send(:, i) = MPI_STATUS_IGNORE
@@ -430,7 +430,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
         & size(recv_buffer(i)%p), &
         & MPI_PACKED, &
         & i, MPI_ANY_TAG, MPI_COMM_WORLD, &
-        & request_recv(recvs), ierr);  CHKERRQ(ierr)
+        & request_recv(recvs), ierr);  assert(ierr == MPI_SUCCESS)
     end if
 
     if( (partition_intersection_send(i)) .and. (size(send_buffer(i)%p) /=0) ) then
@@ -439,7 +439,7 @@ subroutine test_parallel_partition_ab_optimal_transfer
       call MPI_Isend(send_buffer(i)%p, &
         & size(send_buffer(i)%p), &
         & MPI_PACKED, &
-        & i, 0, MPI_COMM_WORLD, request_send(sends), ierr);  CHKERRQ(ierr)
+        & i, 0, MPI_COMM_WORLD, request_send(sends), ierr);  assert(ierr == MPI_SUCCESS)
     end if
   end do
 
@@ -473,8 +473,8 @@ subroutine test_parallel_partition_ab_optimal_transfer
 write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
   sends = sends + 1
   recvs = recvs + 1
-  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  CHKERRQ(ierr)
-  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  CHKERRQ(ierr)
+  call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Waitall(recvs, request_recv(0:recvs), status_recv(:,0:recvs), ierr);  assert(ierr == MPI_SUCCESS)
 
 
   do i = 0, nprocs - 1
@@ -484,11 +484,11 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
       call MPI_UnPack ( recv_buffer(i)%p, buffer_size, &
           & position, recv_nodes_conectivity(i)%p,     &
           & size(recv_nodes_conectivity(i)%p),         &
-          & MPI_INTEGER, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+          & MPI_INTEGER, MPI_COMM_WORLD, IERR);  assert(ierr == MPI_SUCCESS)
       call MPI_UnPack ( recv_buffer(i)%p, buffer_size, &
           & position, recv_nodes_values(i)%p,          &
           & size(recv_nodes_values(i)%p),              &
-          & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, IERR); CHKERRQ(ierr)
+          & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, IERR);  assert(ierr == MPI_SUCCESS)
     end if
   end do
 
@@ -546,29 +546,29 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
   ! Gather remote results:
   call MPI_Gather(area_parallel, 1, MPI_DOUBLE_PRECISION, &
     & areas_parallel, 1, MPI_DOUBLE_PRECISION, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Gather(local_time, 1, MPI_DOUBLE_PRECISION, &
     & times_parallel, 1, MPI_DOUBLE_PRECISION, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Gather(local_read_time, 1, MPI_DOUBLE_PRECISION, &
     & times_read_time_parallel, 1, MPI_DOUBLE_PRECISION, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Gather(local_other_time, 1, MPI_DOUBLE_PRECISION, &
     & other_times_parallel, 1, MPI_DOUBLE_PRECISION, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Gather(local_time_intersection_only, 1, MPI_DOUBLE_PRECISION, &
     & times_intersection_only_parallel, 1, MPI_DOUBLE_PRECISION, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Gather(local_iter, 1, MPI_INTEGER, &
     & iters_parallel, 1, MPI_INTEGER, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Gather(local_iter_actual, 1, MPI_INTEGER, &
     & iter_actual_parallel, 1, MPI_INTEGER, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Reduce(parallel_ele_A, local_sum_a, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
-  call MPI_Reduce(parallel_ele_B, local_sum_b, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Reduce(parallel_ele_A, local_sum_a, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Reduce(parallel_ele_B, local_sum_b, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
-  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   if(rank == root) then
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial read time          : ", serial_read_time," ."
@@ -589,7 +589,7 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total serial intersection area     : ", area_serial," ."
     write(output_unit, "(i5,a,F19.15,a)") rank, ": Total parallel intersection area   : ", sum(areas_parallel)," ."
 
-    fail = fnequals(sum(areas_parallel), area_serial, tol = tol)
+    fail = fnequals(sum(areas_parallel), area_serial)
     call report_test("[test_parallel_partition_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Total parallel intersection area:", sum(areas_parallel),&
@@ -663,7 +663,7 @@ write(*,*) rank,": area_parallel:",area_parallel,", integral_parallel:"
   end do
   deallocate(recv_nodes_values)
 
-  call MPI_TYPE_FREE(elements_nodes_datatype, ierr);  CHKERRQ(ierr)
+  call MPI_TYPE_FREE(elements_nodes_datatype, ierr);  assert(ierr == MPI_SUCCESS)
 
   deallocate(areas_parallel, times_parallel, times_read_time_parallel, other_times_parallel)
   deallocate(iters_parallel, iter_actual_parallel, times_intersection_only_parallel)
@@ -682,7 +682,7 @@ contains
 
     integer :: i, ierr
 
-    call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     flush(output_unit)
     do i = 1, nprocs
       if(i == rank + 1) then
@@ -690,7 +690,7 @@ contains
         write(output_unit, "(a)") trim(msg)
         flush(output_unit)
       end if
-      call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+      call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
       flush(output_unit)
     end do
 

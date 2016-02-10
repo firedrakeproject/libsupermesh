@@ -22,7 +22,7 @@ if(DEFINED ENV{ARCHER})
   set (PETSC_LIBRARY_SINGLE "${MY_PETSC_LIBRARY_DIR}${MY_LIBRARY_SUBDIR}${MY_PETSC_LIBRARY}")
 endif()
 
-FIND_PACKAGE(PETSc REQUIRED)
+FIND_PACKAGE(PETSc)
 find_package(MPI REQUIRED)
 find_package(Threads)
 if(DEFINED ENV{ARCHER})
@@ -34,11 +34,11 @@ endif()
 #find_package(PythonInterp 2.7 REQUIRED)
 #find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT REQUIRED)
 
-if ("${PETSC_VERSION}" VERSION_LESS 3.4)
-  message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
-elseif ("${PETSC_VERSION}" VERSION_GREATER 3.6)
-  message(FATAL_ERROR "PETSc version 3.4 is required, but not found.. (Found version:" ${PETSC_VERSION} ".")
-endif ()
+#if ("${PETSC_VERSION}" VERSION_LESS 3.4)
+#  message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
+#elseif ("${PETSC_VERSION}" VERSION_GREATER 3.6)
+#  message(FATAL_ERROR "PETSc version 3.4 is required, but not found.. (Found version:" ${PETSC_VERSION} ".")
+#endif ()
 
 if (PETSC_FOUND)
   set (PETSC_EXECUTABLE_RUNS YES                  CACHE BOOL "Disable checking if this setup works" FORCE)
@@ -286,8 +286,6 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/config/libsupermesh.pc.in"
   "${PROJECT_BINARY_DIR}/include/libsupermesh.pc"
   )
-
-set (libsupermesh_HAVE_MPI 1)
 
 option (USE_CODE_PROFILE
         "Add profile timers and print statements" OFF)
@@ -543,16 +541,16 @@ add_executable (benchmark_parallel_p2_inner_product EXCLUDE_FROM_ALL ${FORTRAN_B
 #add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 foreach (test ${UNITTESTS})
- SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}_;HAVE_MPI")
+ SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}")
  if (test MATCHES parallel)
-   ADD_TEST("test_${test}" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${test})
+   ADD_TEST("${test}" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${test})
  else()
-   ADD_TEST("test_${test}" ${test})
+   ADD_TEST("${test}" ${test})
  endif (test MATCHES parallel)
- SET_TESTS_PROPERTIES("test_${test}" PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
+ SET_TESTS_PROPERTIES("${test}" PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
 endforeach()
 foreach (benchmark ${BENCHMARKTESTS})
- SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_;HAVE_MPI")
+ SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}")
 endforeach()
 
 add_custom_target(benchmark DEPENDS benchmark_parallel_partition_ab benchmark_parallel_partition_ab_serial benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d benchmark_parallel_p1_inner_product benchmark_parallel_p1_inner_product_3d benchmark_parallel_p2_inner_product)

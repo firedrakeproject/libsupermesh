@@ -2,8 +2,8 @@
 
 module libsupermesh_read_triangle
 
-  use libsupermesh_debug
-  use libsupermesh_fields
+  use libsupermesh_debug, only : abort_pinpoint
+  use libsupermesh_fields, only : mesh_type, vector_field, allocate, deallocate
 
   implicit none
 

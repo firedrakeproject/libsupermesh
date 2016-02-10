@@ -1,6 +1,6 @@
 #include "libsupermesh_debug.h"
 
-subroutine test_intersection_finder_completeness_3d()
+subroutine test_intersection_finder_completeness_3d() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder, advancing_front_intersection_finder, &

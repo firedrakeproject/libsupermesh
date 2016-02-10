@@ -1,9 +1,10 @@
 #include "libsupermesh_debug.h"
 
-subroutine test_parallel_universal_node_numbering
+subroutine test_parallel_universal_node_numbering() bind(c)
 
   use iso_fortran_env, only : output_unit
 
+  use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
   use libsupermesh_fields
@@ -24,7 +25,7 @@ subroutine test_parallel_universal_node_numbering
     integer, dimension(:), pointer :: p
   end type pointer_integer
 
-#include <finclude/petsc.h90>
+#include <mpif.h>
 
   integer :: i, j, k, l, nprocs, rank, ierr, oldsize, &
        & serial_ele_A, serial_ele_B, parallel_ele_A, &
@@ -39,7 +40,6 @@ subroutine test_parallel_universal_node_numbering
   type(vector_field) :: positionsA, positionsB
   integer, parameter :: dim = 2
   integer, parameter :: root = 0
-  real, parameter :: tol = 1.0e3 * epsilon(0.0)
   logical :: fail
   real, dimension(:,:), allocatable :: meshA_node_val_parallel, meshB_node_val_parallel
 
@@ -53,8 +53,8 @@ subroutine test_parallel_universal_node_numbering
   CHARACTER             :: mpi_buffer ( buffsize )
 
 ! find out MY process ID, and how many processes were started.
-  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr); CHKERRQ(ierr)
-  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr); CHKERRQ(ierr)
+  CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
+  CALL MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
   write(rank_character, "(i0)") rank
   rank_character = adjustl(rank_character)
@@ -80,7 +80,7 @@ subroutine test_parallel_universal_node_numbering
     serial_read_time = mpi_wtime() - t0
   end if
 
-  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   if(rank == root) then
     allocate(meshA_nodes_parallel(0:nprocs - 1), meshB_nodes_parallel(0:nprocs - 1), times_parallel(0:nprocs - 1), other_times_parallel(0:nprocs - 1))
@@ -93,8 +93,8 @@ subroutine test_parallel_universal_node_numbering
 
   area_parallel = 0.0
 
-  call MPI_Buffer_Attach(mpi_buffer, buffsize, ierr);  CHKERRQ(ierr)
-  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  call MPI_Buffer_Attach(mpi_buffer, buffsize, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   t0 = mpi_wtime()
   positionsA = read_triangle_files(trim("data/square_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
@@ -108,27 +108,27 @@ subroutine test_parallel_universal_node_numbering
   ! Gather remote results:
   call MPI_Gather(meshA_nodes, 1, MPI_INTEGER, &
     & meshA_nodes_parallel, 1, MPI_INTEGER, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   call MPI_Bsend(positionsA%val, meshA_nodes * 2, MPI_DOUBLE_PRECISION, 0, rank, &
-          & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(meshA_node_val_parallel(maxval(meshA_nodes_parallel) * 2, 0:nprocs - 1))
     meshA_node_val_parallel = 0.0
     do i=0, nprocs - 1
       call MPI_Recv(meshA_node_val_parallel(:,i), meshA_nodes_parallel(i) * 2, MPI_DOUBLE_PRECISION, &
-          & i, i, MPI_COMM_WORLD, status, ierr);  CHKERRQ(ierr)
+          & i, i, MPI_COMM_WORLD, status, ierr);  assert(ierr == MPI_SUCCESS)
     end do
   end if
 
   call MPI_Bsend(unsA, meshA_nodes, MPI_INTEGER, 0, rank, &
-          & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(unsA_parallel(maxval(meshA_nodes_parallel), 0:nprocs - 1))
     unsA_parallel = 0
     do i=0, nprocs - 1
       call MPI_recv(unsA_parallel(:,i), meshA_nodes_parallel(i), MPI_INTEGER, &
-          & i, i, MPI_COMM_WORLD, status, ierr);  CHKERRQ(ierr)
+          & i, i, MPI_COMM_WORLD, status, ierr);  assert(ierr == MPI_SUCCESS)
     end do
   end if
   call deallocate(halo)
@@ -145,27 +145,27 @@ subroutine test_parallel_universal_node_numbering
   ! Gather remote results:
   call MPI_Gather(meshB_nodes, 1, MPI_INTEGER, &
     & meshB_nodes_parallel, 1, MPI_INTEGER, &
-    & root, MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   call MPI_Bsend(positionsB%val, meshB_nodes * 2, MPI_DOUBLE_PRECISION, 0, rank, &
-          & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(meshB_node_val_parallel(maxval(meshB_nodes_parallel) * 2, 0:nprocs - 1))
     meshB_node_val_parallel = 0.0
     do i=0, nprocs - 1
       call MPI_Recv(meshB_node_val_parallel(:,i), meshB_nodes_parallel(i) * 2, MPI_DOUBLE_PRECISION, &
-          & i, i, MPI_COMM_WORLD, status, ierr);  CHKERRQ(ierr)
+          & i, i, MPI_COMM_WORLD, status, ierr);  assert(ierr == MPI_SUCCESS)
     end do
   end if
 
   call MPI_Bsend(unsB, meshB_nodes, MPI_INTEGER, 0, rank, &
-          & MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+          & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(unsB_parallel(maxval(meshB_nodes_parallel), 0:nprocs - 1))
     unsB_parallel = 0
     do i=0, nprocs - 1
       call MPI_recv(unsB_parallel(:,i), meshB_nodes_parallel(i), MPI_INTEGER, &
-          & i, i, MPI_COMM_WORLD, status, ierr);  CHKERRQ(ierr)
+          & i, i, MPI_COMM_WORLD, status, ierr);  assert(ierr == MPI_SUCCESS)
     end do
   end if
 
@@ -179,8 +179,8 @@ subroutine test_parallel_universal_node_numbering
           if (k == i) cycle
           do l=1, meshA_nodes_parallel(k)
             if (unsA_parallel(j,i) == unsA_parallel(l,k)) then
-              fail = (fnequals((meshA_node_val_parallel(j*2 - 1,i)), (meshA_node_val_parallel(l*2 - 1,k)), tol = tol) .or. &
-                   &  fnequals((meshA_node_val_parallel(j*2    ,i)), (meshA_node_val_parallel(l*2    ,k)), tol = tol)) .or. fail
+              fail = (fnequals((meshA_node_val_parallel(j*2 - 1,i)), (meshA_node_val_parallel(l*2 - 1,k))) .or. &
+                   &  fnequals((meshA_node_val_parallel(j*2    ,i)), (meshA_node_val_parallel(l*2    ,k)))) .or. fail
               no_of_same_nodes_A = no_of_same_nodes_A + 1
 
               if (fail) then
@@ -205,8 +205,8 @@ subroutine test_parallel_universal_node_numbering
           if (k == i) cycle
           do l=1, meshB_nodes_parallel(k)
             if (unsB_parallel(j,i) == unsB_parallel(l,k)) then
-              fail = (fnequals((meshB_node_val_parallel(j*2 - 1,i)), (meshB_node_val_parallel(l*2 - 1,k)), tol = tol) .or. &
-                   &  fnequals((meshB_node_val_parallel(j*2    ,i)), (meshB_node_val_parallel(l*2    ,k)), tol = tol)) .or. fail
+              fail = (fnequals((meshB_node_val_parallel(j*2 - 1,i)), (meshB_node_val_parallel(l*2 - 1,k))) .or. &
+                   &  fnequals((meshB_node_val_parallel(j*2    ,i)), (meshB_node_val_parallel(l*2    ,k)))) .or. fail
               no_of_same_nodes_B = no_of_same_nodes_B + 1
 
               if (fail) then
@@ -224,8 +224,8 @@ subroutine test_parallel_universal_node_numbering
 
   end if
 
-  CALL MPI_Buffer_Detach ( mpi_buffer, oldsize, ierr);  CHKERRQ(ierr)
-  call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+  CALL MPI_Buffer_Detach ( mpi_buffer, oldsize, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   deallocate(unsA, unsB)
   call deallocate(halo)
@@ -239,7 +239,7 @@ contains
 
     integer :: i, ierr
 
-    call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+    call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     flush(output_unit)
     do i = 1, nprocs
       if(i == rank + 1) then
@@ -247,7 +247,7 @@ contains
         write(output_unit, "(a)") trim(msg)
         flush(output_unit)
       end if
-      call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
+      call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
       flush(output_unit)
     end do
 

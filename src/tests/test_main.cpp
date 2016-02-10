@@ -40,17 +40,21 @@ extern "C" {
 int main(int argc, char **argv) 
 {
   MPI::Init(argc, argv);
+/*
 #ifdef HAVE_PETSC  
   PetscErrorCode ierr;
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);  CHKERRQ(ierr);
   ierr = PetscInitializeFortran();  CHKERRQ(ierr);
 #endif
-  
+*/
+
   TESTNAME();
 
+/*
 #ifdef HAVE_PETSC  
   PetscFinalize();
 #endif
+*/
   MPI::Finalize();
 
   return 0;

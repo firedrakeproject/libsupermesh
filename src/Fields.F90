@@ -2,18 +2,15 @@
 
 module libsupermesh_fields
 
-  use libsupermesh_debug
-  use libsupermesh_tet_intersection, only : tetrahedron_volume
-  use libsupermesh_tri_intersection, only : triangle_area
+  use libsupermesh_debug, only : abort_pinpoint
 
   implicit none
 
   private
 
   public :: mesh_type, vector_field, eelist_type, allocate, deallocate, &
-    & mesh_nelist, mesh_eelist, sloc, extract_eelist, ele_count, node_count, &
-    & ele_val, ele_loc, node_val, row_m_ptr, ele_nodes, set, set_ele_nodes, &
-    & simplex_volume, triangle_area, tetrahedron_volume
+    & mesh_nelist, mesh_eelist, sloc, ele_count, node_count, ele_val, ele_loc, &
+    & node_val, ele_nodes
 
   type mesh_type
     integer :: dim
@@ -22,8 +19,6 @@ module libsupermesh_fields
     integer :: loc
     integer :: sloc
     integer, dimension(:), pointer :: ndglno
-    integer :: continuity
-    type(eelist_ptr), pointer :: eelist
 
     integer, pointer :: refcount
   end type mesh_type
@@ -41,10 +36,6 @@ module libsupermesh_fields
     integer, dimension(:), pointer :: n
   end type eelist_type
 
-  type eelist_ptr
-    type(eelist_type), pointer :: ptr
-  end type eelist_ptr
-
   interface allocate
     module procedure allocate_mesh, allocate_vector_field
   end interface allocate
@@ -52,10 +43,6 @@ module libsupermesh_fields
   interface deallocate
     module procedure deallocate_mesh, deallocate_vector_field, deallocate_eelist
   end interface deallocate
-
-  interface extract_eelist
-    module procedure extract_eelist_mesh, extract_eelist_vector_field
-  end interface extract_eelist
 
   interface ele_count
     module procedure ele_count_vector_field
@@ -77,21 +64,9 @@ module libsupermesh_fields
     module procedure node_val_vector_field
   end interface node_val
 
-  interface row_m_ptr
-    module procedure row_m_ptr_eelist
-  end interface row_m_ptr
-
   interface ele_nodes
     module procedure ele_nodes_vector_field
   end interface ele_nodes
-
-  interface set
-    module procedure set_vector_field_nodes, set_vector_field_node
-  end interface set
-
-  interface set_ele_nodes
-    module procedure set_ele_nodes_mesh
-  end interface set_ele_nodes
 
 contains
 
@@ -108,9 +83,6 @@ contains
     mesh%loc = loc
     mesh%sloc = sloc(dim, loc)
     allocate(mesh%ndglno(nelements * loc))
-    allocate(mesh%eelist)
-    nullify(mesh%eelist%ptr)
-    mesh%continuity = 0
 
     allocate(mesh%refcount)
     mesh%refcount = 1
@@ -122,15 +94,7 @@ contains
 
     mesh%refcount = mesh%refcount - 1
     if(mesh%refcount == 0) then
-
-      deallocate(mesh%ndglno)
-      if(associated(mesh%eelist%ptr)) then
-        call deallocate(mesh%eelist%ptr)
-        deallocate(mesh%eelist%ptr)
-      end if
-      deallocate(mesh%eelist)
-
-      deallocate(mesh%refcount)
+      deallocate(mesh%ndglno, mesh%refcount)
     end if
 
   end subroutine deallocate_mesh
@@ -298,28 +262,6 @@ contains
 
   end subroutine deallocate_eelist
 
-  function extract_eelist_mesh(mesh) result(eelist)
-    type(mesh_type), intent(inout) :: mesh
-
-    type(eelist_type), pointer :: eelist
-
-    if(.not. associated(mesh%eelist%ptr)) then
-      allocate(mesh%eelist%ptr)
-      call mesh_eelist(mesh%nnodes, reshape(mesh%ndglno, (/mesh%loc, mesh%nelements/)), mesh%sloc, mesh%eelist%ptr)
-    end if
-    eelist => mesh%eelist%ptr
-
-  end function extract_eelist_mesh
-
-  function extract_eelist_vector_field(field) result(eelist)
-    type(vector_field), intent(inout) :: field
-
-    type(eelist_type), pointer :: eelist
-
-    eelist => extract_eelist(field%mesh)
-
-  end function extract_eelist_vector_field
-
   pure function ele_count_vector_field(field) result(ele_count)
     type(vector_field), intent(in) :: field
 
@@ -373,16 +315,6 @@ contains
 
   end function node_val_vector_field
 
-  function row_m_ptr_eelist(eelist, i) result(row_m_ptr)
-    type(eelist_type), intent(in) :: eelist
-    integer, intent(in) :: i
-
-    integer, dimension(:), pointer :: row_m_ptr
-
-    row_m_ptr => eelist%v(:eelist%n(i), i)
-
-  end function row_m_ptr_eelist
-
   function ele_nodes_vector_field(field, ele) result(nodes)
     type(vector_field), intent(in) :: field
     integer, intent(in) :: ele
@@ -392,54 +324,5 @@ contains
     nodes => field%mesh%ndglno((ele - 1) * field%mesh%loc + 1:ele * field%mesh%loc)
 
   end function ele_nodes_vector_field
-
-  pure subroutine set_vector_field_nodes(field, nodes, val)
-    type(vector_field), intent(inout) :: field
-    integer, dimension(:), intent(in) :: nodes
-    ! dim x loc
-    real, dimension(:, :), intent(in) :: val
-
-    field%val(:, nodes) = val
-
-  end subroutine set_vector_field_nodes
-
-  pure subroutine set_vector_field_node(field, node, val)
-    type(vector_field), intent(inout) :: field
-    integer, intent(in) :: node
-    ! dim
-    real, dimension(:), intent(in) :: val
-
-    field%val(:, node) = val
-
-  end subroutine set_vector_field_node
-
-  pure subroutine set_ele_nodes_mesh(mesh, ele, nodes)
-    type(mesh_type), intent(inout) :: mesh
-    integer, intent(in) :: ele
-    ! loc
-    integer, dimension(:), intent(in) :: nodes
-
-    mesh%ndglno((ele - 1) * mesh%loc + 1:ele * mesh%loc) = nodes
-
-  end subroutine set_ele_nodes_mesh
-
-  pure function simplex_volume(cell_coords) result(volume)
-    ! dim x loc
-    real, dimension(:, :), intent(in) :: cell_coords
-
-    real :: volume
-
-    select case(size(cell_coords, 1))
-      case(1)
-        volume = abs(cell_coords(1, 2) - cell_coords(1, 1))
-      case(2)
-        volume = triangle_area(cell_coords)
-      case(3)
-        volume = tetrahedron_volume(cell_coords)
-      case default
-        volume = -huge(0.0)
-    end select
-  
-  end function simplex_volume
 
 end module libsupermesh_fields
