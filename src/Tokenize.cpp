@@ -29,11 +29,10 @@
 #include "Tokenize.h"
 
 using namespace std;
-using namespace libsupermesh;
 
-void Tokenize(const string& str,
-              vector<string>& tokens,
-              const string& delimiters){
+void libsupermesh::Tokenize(const string& str,
+                            vector<string>& tokens,
+                            const string& delimiters){
   tokens.clear();
   
   // Skip delimiters at beginning.
