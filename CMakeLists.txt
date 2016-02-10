@@ -371,17 +371,6 @@ set (CPP_SPATIALINDEX_O_FILES
   ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/Statistics.cc.o
   ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/BulkLoader.cc.o
   ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/Node.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/ObjVisitor.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/Utility.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/BoundsQuery.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/Error.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/Index.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/CountVisitor.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/CustomStorage.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/IdVisitor.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/LeafQuery.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/sidx_api.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex_c.dir/capi/DataStream.cc.o
 )
 foreach (test ${CPP_SPATIALINDEX_O_FILES})
  SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
@@ -482,8 +471,7 @@ endforeach()
 
 add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
 
-#add_dependencies(SuperMesh spatialindex spatialindex_c libjudy)
-add_dependencies(SuperMesh libjudy spatialindex spatialindex_c)
+add_dependencies(SuperMesh libjudy spatialindex)
 
 set (UNITTESTS
   test_interval_intersector
