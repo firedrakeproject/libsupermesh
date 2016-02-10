@@ -4,7 +4,7 @@ subroutine test_parallel_partition_a
   use libsupermesh_construction
   use libsupermesh_fields
   use libsupermesh_read_triangle
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
@@ -14,7 +14,7 @@ subroutine test_parallel_partition_a
 
 #include <finclude/petsc.h90>
 
-  integer :: i, nnodes, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
+  integer :: i, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
        & serial_ele_A, serial_ele_B, parallel_ele_A, parallel_ele_B, local_sum
   character(len=5) :: mpi_my_id_character, mpi_num_procs_character
   type(tri_type) :: tri_A, tri_B
@@ -104,7 +104,6 @@ subroutine test_parallel_partition_a
       t_0 = mpi_wtime()
       filenameA = trim(adjustl("data/square_0_5_"))//trim(adjustl(mpi_num_procs_character))//"_"//trim(adjustl(mpi_my_id_character))
 
-!      print "(a,i5,a,i10,a,a,a)", "MPI Process:",mpi_my_id,", has nodes:",nnodes,", read from:",trim(filenameA),"."
       call FLUSH()
 
       positionsA = read_triangle_files(trim(filenameA), dim)
@@ -200,7 +199,5 @@ subroutine test_parallel_partition_a
   end if
   
   deallocate(areas_parallel, times_parallel)
-
-  call cintersection_finder_reset(nnodes)
 
 end subroutine test_parallel_partition_a

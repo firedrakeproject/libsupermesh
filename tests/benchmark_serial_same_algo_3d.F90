@@ -8,7 +8,6 @@ subroutine benchmark_serial_same_algo_3D
   use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tet_intersection_module
-  use libsupermesh_tri_intersection_module, only : cintersection_finder_reset
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
@@ -89,7 +88,6 @@ subroutine benchmark_serial_same_algo_3D
     deallocate(valsB)
     call deallocate(positionsA)
     call deallocate(positionsB)
-    call cintersection_finder_reset(nintersections)
 
     serial_time = mpi_wtime() - t0
   end if

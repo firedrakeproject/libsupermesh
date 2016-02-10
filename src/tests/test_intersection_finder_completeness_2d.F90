@@ -8,7 +8,7 @@ subroutine test_intersection_finder_completeness_2d()
     & rtree_intersection_finder, brute_force_intersection_finder
   use libsupermesh_fields, only : triangle_area
   use libsupermesh_read_triangle, only : read_ele, read_node
-  use libsupermesh_tri_intersection_module, only : intersect_tris, tri_buf_size
+  use libsupermesh_tri_intersection, only : intersect_tris, tri_buf_size
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
 
   implicit none

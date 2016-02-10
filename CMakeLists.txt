@@ -342,17 +342,7 @@ endif (USE_MYLIB)
 
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
-include_directories ("${PROJECT_SOURCE_DIR}/libwm/")
 include_directories ("${PROJECT_BINARY_DIR}/libjudy/src/")
-
-set(CPP_WM4_FILES "")
-set(CPP_WM4_FILES
-  ${PROJECT_SOURCE_DIR}/libwm/Wm4Command.cpp
-  ${PROJECT_SOURCE_DIR}/libwm/Wm4System.cpp
-  ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector2.cpp
-  ${PROJECT_SOURCE_DIR}/libwm/Wm4Vector3.cpp
-  ${PROJECT_SOURCE_DIR}/libwm/Wm4Math.cpp
-)
 
 set (CPP_SPATIALINDEX_O_FILES "")
 set (CPP_SPATIALINDEX_O_FILES
@@ -472,8 +462,6 @@ FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE_PA
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_SAME_ALGO_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab_same_algo.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_universal_node_numbering.F90)
-FILE(GLOB FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tri_intersector.F90)
-FILE(GLOB FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_tet_intersector.F90)
 FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_partition_ab.F90)
 FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_SERIAL_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_partition_ab_serial.F90)
 FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_COMPLETE_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_complete.F90)
@@ -494,7 +482,7 @@ foreach (file ${FORTRAN_SRCFILES})
   endif()
 endforeach()
 
-add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_WM4_FILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
+add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
 
 #add_dependencies(SuperMesh spatialindex spatialindex_c libjudy)
 add_dependencies(SuperMesh libjudy spatialindex spatialindex_c)
@@ -520,8 +508,6 @@ set (UNITTESTS
 )
 
 set (BENCHMARKTESTS
-  benchmark_tri_intersector
-  benchmark_tet_intersector
   benchmark_parallel_partition_ab
   benchmark_parallel_partition_ab_serial
   benchmark_parallel_complete
@@ -553,8 +539,6 @@ add_executable (test_parallel_partition_ab_optimal_transfer_data_rtree_once_par 
 add_executable (test_parallel_partition_complete_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES})
 add_executable (test_parallel_partition_complete_ab_same_algo ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_SAME_ALGO_FILES})
 add_executable (test_parallel_universal_node_numbering ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES})
-add_executable (benchmark_tri_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TRI_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_tet_intersector EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_TET_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_partition_ab EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_partition_ab_serial EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_SERIAL_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_complete EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_COMPLETE_FILES} ${CPP_TEST_SOURCE_FILES})
@@ -582,7 +566,7 @@ foreach (benchmark ${BENCHMARKTESTS})
  SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}_;HAVE_MPI")
 endforeach()
 
-add_custom_target(benchmark DEPENDS benchmark_tri_intersector benchmark_tet_intersector benchmark_parallel_partition_ab benchmark_parallel_partition_ab_serial benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d benchmark_parallel_p1_inner_product benchmark_parallel_p1_inner_product_3d benchmark_parallel_p2_inner_product)
+add_custom_target(benchmark DEPENDS benchmark_parallel_partition_ab benchmark_parallel_partition_ab_serial benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d benchmark_parallel_p1_inner_product benchmark_parallel_p1_inner_product_3d benchmark_parallel_p2_inner_product)
 
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD

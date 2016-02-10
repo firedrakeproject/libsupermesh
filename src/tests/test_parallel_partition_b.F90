@@ -4,7 +4,7 @@ subroutine test_parallel_partition_b
   use libsupermesh_construction
   use libsupermesh_fields
   use libsupermesh_read_triangle
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
@@ -14,7 +14,7 @@ subroutine test_parallel_partition_b
 
 #include <finclude/petsc.h90>
 
-  integer :: i, nnodes, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
+  integer :: i, ele_A, ele_B, ele_C, n_trisC, mpi_num_procs, mpi_my_id, mpi_my_error, &
        & serial_ele_A, serial_ele_B, parallel_ele_A, parallel_ele_B, local_sum
   character(len=5) :: mpi_my_id_character, mpi_num_procs_character
   type(tri_type) :: tri_A, tri_B
@@ -195,7 +195,5 @@ subroutine test_parallel_partition_b
   end if
   
   deallocate(areas_parallel, times_parallel)
-
-  call cintersection_finder_reset(nnodes)
 
 end subroutine test_parallel_partition_b

@@ -6,7 +6,7 @@ subroutine benchmark_parallel_partition_ab_serial
   use libsupermesh_construction
   use libsupermesh_fields
   use libsupermesh_read_triangle
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
@@ -25,7 +25,7 @@ subroutine benchmark_parallel_partition_ab_serial
 
 #include <finclude/petsc.h90>
 
-  integer :: i, j, k, l, m, sends, recvs, nnodes, ele_A, ele_B, ele_C, n_trisC, nprocs, &
+  integer :: i, j, k, l, m, sends, recvs, ele_A, ele_B, ele_C, n_trisC, nprocs, &
        & rank, ierr, serial_ele_A, serial_ele_B, parallel_ele_A, &
        & parallel_ele_B
   integer :: local_sum_a, local_sum_b, triangles, &
@@ -532,9 +532,6 @@ subroutine benchmark_parallel_partition_ab_serial
   call deallocate(positionsB)
   deallocate(ele_ownerA, ele_ownerB)
   deallocate(comms_A_parallel, comms_B_parallel)
-
-
-  call cintersection_finder_reset(nnodes)
 
 contains
 

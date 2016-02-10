@@ -7,7 +7,7 @@ subroutine benchmark_parallel_complete_3D
   use libsupermesh_construction
   use libsupermesh_fields
   use libsupermesh_read_triangle
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos

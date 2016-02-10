@@ -8,7 +8,7 @@ module libsupermesh_parallel_supermesh
   use libsupermesh_integer_hash_table
   use libsupermesh_read_halos
   use libsupermesh_intersection_finder
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
   use libsupermesh_tet_intersection_module
   use libsupermesh_construction
   use libsupermesh_fields, only : triangle_area
@@ -737,7 +737,7 @@ contains
   end subroutine initialise_parallel_supermesh
 
   subroutine finalise_parallel_supermesh()
-    integer :: i, ntests
+    integer :: i
 
     if(parallel_supermesh_allocated) then
       do i=0,size(send_element_uns(:))-1
@@ -789,7 +789,6 @@ contains
 
       parallel_supermesh_allocated = .false.
     end if
-    call cintersection_finder_reset(ntests)
 
   end subroutine finalise_parallel_supermesh
 

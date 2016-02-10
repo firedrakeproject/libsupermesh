@@ -30,23 +30,12 @@
 
 #include "confdefs.h"
 #include "MeshDataStream.h"
-#include "Wm4Intersector.h"
-#include "Wm4IntrTriangle2Triangle2.h"
-#include "Wm4Triangle2.h"
-#include "Wm4IntrQuad2Quad2.h"
-#include "Wm4Quad2.h"
-#include "Wm4IntrTetrahedron3Tetrahedron3.h"
-#include "Wm4Tetrahedron3.h"
-#include "Wm4Vector3.h"
 
 #include <strings.h>
 #include <spatialindex/SpatialIndex.h>
 
 #include <cassert>
-#include <iostream>
 #include <vector>
-
-#define GEOM_REAL double
 
 namespace LibSupermesh
 {
@@ -100,166 +89,12 @@ namespace LibSupermesh
       LibSupermesh_SpatialIndex::ISpatialIndex* rTree;
       ElementListVisitor visitor;
   };
-
-  class ElementIntersector
-  {
-    public:
-      virtual ~ElementIntersector();
-      
-      virtual unsigned int GetDim() const = 0;
-      
-      virtual void SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc);
-      virtual void Intersect() = 0;
-      virtual void QueryOutput(int& nnodes, int& nelms) const = 0; 
-      virtual void GetOutput(double*& positions, int*& enlist) const = 0;
-    protected:
-      ElementIntersector();
-      
-      double* positionsA;
-      double* positionsB;
-      int loc;
-      int dim;
-  };
-  
-  class ElementIntersector1D : public ElementIntersector
-  {
-    public:
-      ElementIntersector1D();
-      virtual ~ElementIntersector1D();
-      
-      inline virtual unsigned int GetDim() const
-      {
-        return 1;
-      }
-      
-      inline virtual void SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
-      {
-        assert(dim == 1);
-        assert(loc == 2);
-        ElementIntersector::SetInput(positionsA, positionsB, dim, loc);
-        
-        return;
-      }
-      
-      virtual void Intersect();
-      virtual void QueryOutput(int& nnodes, int& nelms) const; 
-      virtual void GetOutput(double*& positions, int*& enlist) const;
-    protected:
-      double positionsC[2];
-      bool intersection;
-  };
-
-  class ElementIntersector2D : public ElementIntersector
-  {
-    public:
-      ElementIntersector2D();
-      virtual ~ElementIntersector2D();
-      
-      inline virtual unsigned int GetDim() const
-      {
-        return 2;
-      }
-      
-      inline virtual void SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
-      {
-        assert(dim == 2);
-        assert(loc == 3 || loc == 4);
-        ElementIntersector::SetInput(positionsA, positionsB, dim, loc);
-      
-        return;
-      }
-      virtual void Intersect();
-      virtual void QueryOutput(int& nnodes, int& nelms) const; 
-      virtual void GetOutput(double*& positions, int*& enlist) const;
-      
-      typedef LibSupermesh_Wm4::IntrTriangle2Triangle2<GEOM_REAL> IntrTriangle2Triangle2;
-      typedef LibSupermesh_Wm4::Triangle2<GEOM_REAL> Triangle2;
-      typedef LibSupermesh_Wm4::Vector2<GEOM_REAL> Vector2;
-      typedef LibSupermesh_Wm4::IntrQuad2Quad2<GEOM_REAL> IntrQuad2Quad2;
-      typedef LibSupermesh_Wm4::Quad2<GEOM_REAL> Quad2;
-      typedef LibSupermesh_Wm4::Intersector<GEOM_REAL, Vector2> Intersector2d;
-
-    protected:
-       Intersector2d* intersection;
-  };
-
-  class ElementIntersector3D : public ElementIntersector
-  {
-    public:
-      inline ElementIntersector3D() {return;}
-      inline virtual ~ElementIntersector3D() {return;}
-
-      inline virtual unsigned int GetDim() const
-      {
-        return 3;
-      }
-      
-      inline virtual void SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
-      {
-        assert(dim == 3);
-      
-        ElementIntersector::SetInput(positionsA, positionsB, dim, loc);
-        
-        return;
-      }
-
-      virtual void Intersect() = 0;
-      virtual void QueryOutput(int& nnodes, int& nelms) const = 0; 
-      virtual void GetOutput(double*& positions, int*& enlist) const = 0;
-  };
-
-  class WmElementIntersector3D : public ElementIntersector3D
-  {
-    public:
-      WmElementIntersector3D();
-      virtual ~WmElementIntersector3D();
-      
-      inline virtual void SetInput(double*& positionsA, double*& positionsB, const int& dim, const int& loc)
-      {
-        assert(loc == 4);
-        ElementIntersector3D::SetInput(positionsA, positionsB, dim, loc);
-        
-        return;
-      }
-
-      virtual void Intersect();
-      virtual void QueryOutput(int& nnodes, int& nelms) const; 
-      virtual void GetOutput(double*& positions, int*& enlist) const;
-      
-      typedef LibSupermesh_Wm4::IntrTetrahedron3Tetrahedron3<GEOM_REAL> IntrTetrahedron3Tetrahedron3;
-      typedef LibSupermesh_Wm4::Tetrahedron3<GEOM_REAL> Tetrahedron3;
-      typedef LibSupermesh_Wm4::Vector3<GEOM_REAL> Vector3;
-    protected:
-      IntrTetrahedron3Tetrahedron3* intersection;
-      std::vector<GEOM_REAL>* volumes;
-      int nodes, elements;
-  };
 }
-
-extern LibSupermesh::ElementIntersector* elementIntersector_LibSuperMesh;
 
 extern LibSupermesh::ElementIntersectionFinder elementIntersectionFinder_LibSuperMesh;
 
 extern "C"
 {
-#define cLibSuperMeshIntersectorGetDimension libsupermesh_cintersector_get_dimension
-  int cLibSuperMeshIntersectorGetDimension();
-
-#define cLibSuperMeshIntersectorSetDimension libsupermesh_cintersector_set_dimension
-  void cLibSuperMeshIntersectorSetDimension(const int* dim);
-
-#define cLibSuperMeshIntersectorSetInput libsupermesh_cintersector_set_input
-  void cLibSuperMeshIntersectorSetInput(double* positionsA, double* positionsB, const int* dim, const int* loc);
-
-#define cLibSuperMeshIntersectorDrive libsupermesh_cintersector_drive
-  void cLibSuperMeshIntersectorDrive();
-  
-#define cLibSuperMeshIntersectorQuery libsupermesh_cintersector_query
-  void cLibSuperMeshIntersectorQuery(int* nnodes, int* nelms);
-  
-#define cLibSuperMeshIntersectorGetOutput libsupermesh_cintersector_get_output
-  void cLibSuperMeshIntersectorGetOutput(const int* nnodes, const int* nelms, const int* dim, const int* loc, double* positions, int* enlist);
-
   void libsupermesh_cintersection_finder_reset();
   void libsupermesh_cintersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
   void libsupermesh_cintersection_finder_find(const double* positions, const int* dim, const int* loc);  

@@ -1,113 +1,73 @@
-#define BUF_SIZE 24
 #include "fdebug.h"
 
-module libsupermesh_tri_intersection_module
+#define BUF_SIZE 22
 
-  use iso_c_binding
-
-  use libsupermesh_debug
-  use libsupermesh_tri_intersection_2_module, only : tri_type, &
-        & intersect_tris_dt_old
-
-  use mpi
+module libsupermesh_tri_intersection
 
   implicit none
 
   private
 
-  public :: tri_type, intersect_tris, intersect_tris_dt_old
+  public :: tri_type, line_type, max_n_trisC, intersect_tris, intersect_polys, &
+    & get_lines, triangle_area
+
+  type tri_type
+    real, dimension(2, 3) :: v
+  end type tri_type
 
   type line_type
     real, dimension(2) :: normal
     real, dimension(2) :: point
   end type line_type
+  
+  interface max_n_trisC
+    module procedure max_n_trisC_tri, max_n_trisC_poly
+  end interface max_n_trisC
 
   interface intersect_tris
-    module procedure intersect_tris_dt, intersect_tris_dt_public, &
-         & intersect_tris_libwm
+    module procedure intersect_tris_real, intersect_tris_tri
   end interface intersect_tris
+  
+  interface intersect_polys
+    module procedure intersect_tri_lines, intersect_polys_real, &
+      & intersect_polys_lines
+  end interface intersect_polys
 
   interface get_lines
-    module procedure get_lines_tri
+    module procedure get_lines_tri, get_lines_poly
   end interface get_lines
+  
+  interface triangle_area
+    module procedure triangle_area_real, triangle_area_tri
+  end interface triangle_area
 
   integer, parameter, public :: tri_buf_size = BUF_SIZE
 
   real, dimension(2, BUF_SIZE + 2), save :: points_tmp
   integer, save :: n_points_tmp
 
-  interface cintersector_set_input
-    subroutine libsupermesh_cintersector_set_input(nodes_A, nodes_B, ndim, loc) bind(c)
-      use iso_c_binding
-      implicit none
-      integer(kind = c_int), intent(in) :: ndim, loc
-      real(kind = c_double), dimension(ndim, loc), intent(in) :: nodes_A, nodes_B
-    end subroutine libsupermesh_cintersector_set_input
-  end interface cintersector_set_input
-
-  interface cintersector_drive
-    subroutine libsupermesh_cintersector_drive() bind(c)
-      implicit none
-    end subroutine libsupermesh_cintersector_drive
-  end interface cintersector_drive
-
-  interface cintersector_query
-    subroutine libsupermesh_cintersector_query(nonods, totele) bind(c)
-      use iso_c_binding
-      implicit none
-      integer(kind = c_int), intent(out) :: nonods, totele
-    end subroutine libsupermesh_cintersector_query
-  end interface cintersector_query
-
-  interface cintersector_get_output
-    subroutine libsupermesh_cintersector_get_output(nonods, totele, ndim, loc, nodes, enlist) bind(c)
-      use iso_c_binding
-      implicit none
-      integer(kind = c_int), intent(in) :: nonods, totele, ndim, loc
-      real(kind = c_double), dimension(ndim, nonods), intent(out) :: nodes
-      integer(kind = c_int), dimension(loc, totele), intent(out) :: enlist
-    end subroutine libsupermesh_cintersector_get_output
-  end interface cintersector_get_output
-
-  interface cintersector_set_dimension
-    subroutine libsupermesh_cintersector_set_dimension(ndim) bind(c)
-      use iso_c_binding
-      implicit none
-      integer(kind = c_int), intent(in) :: ndim
-    end subroutine libsupermesh_cintersector_set_dimension
-  end interface cintersector_set_dimension
-
-  interface cintersection_finder_reset
-    subroutine libsupermesh_cintersection_finder_reset(ntests) bind(c)
-      use iso_c_binding
-      implicit none
-      integer(kind = c_int), intent(out) :: ntests
-    end subroutine libsupermesh_cintersection_finder_reset
-  end interface cintersection_finder_reset
-
-  public :: cintersector_set_input, cintersector_drive, cintersector_query, &
-    & cintersector_get_output, cintersector_set_dimension, &
-    & cintersection_finder_reset
-
 contains
 
-  subroutine intersect_tris_libwm(triA, triB, nodesC, ndglnoC, n_trisC)
-    real, dimension(2, 3), intent(in) :: triA
-    real, dimension(2, 3), intent(in) :: triB
-    real, dimension(2, BUF_SIZE), intent(out) :: nodesC
-    integer, dimension(3, BUF_SIZE), intent(out) :: ndglnoC
-    integer, intent(out) :: n_trisC
+  pure function max_n_trisC_tri(n_linesB) result(max_n_trisC)
+    integer, intent(in) :: n_linesB
+    
+    integer :: max_n_trisC
+    
+    max_n_trisC = 3 * (2 ** n_linesB) - 2
+    
+  end function max_n_trisC_tri
 
-    integer :: i, nonods
+  pure function max_n_trisC_poly(n_linesA, n_linesB) result(max_n_trisC)
+    integer, intent(in) :: n_linesA
+    integer, intent(in) :: n_linesB
+    
+    integer :: max_n_trisC
+    
+    max_n_trisC = n_linesA * (2 ** n_linesB) - 2
+    
+  end function max_n_trisC_poly
 
-    call cintersector_set_input(triA, triB, 2, 3)
-    call cintersector_drive
-    call cintersector_query(nonods, n_trisC)
-    call cintersector_get_output(nonods, n_trisC, 2, 3, nodesC, ndglnoC)
-
-  end subroutine intersect_tris_libwm
-
-  subroutine intersect_tris_dt_public(triA, triB, trisC, n_trisC)
+  subroutine intersect_tris_real(triA, triB, trisC, n_trisC)
     real, dimension(2, 3), intent(in) :: triA
     real, dimension(2, 3), intent(in) :: triB
     real, dimension(2, 3, BUF_SIZE), intent(out) :: trisC
@@ -117,16 +77,16 @@ contains
     type(tri_type) :: triA_t, triB_t
     type(tri_type), dimension(BUF_SIZE), save :: trisC_t
 
-    triA_t%V = triA
-    triB_t%V = triB
-    call intersect_tris_dt(triA_t, triB_t, trisC_t, n_trisC)
+    triA_t%v = triA
+    triB_t%v = triB
+    call intersect_tris(triA_t, triB_t, trisC_t, n_trisC)
     do i = 1, n_trisC
-      trisC(:, :, i) = trisC_t(i)%V
+      trisC(:, :, i) = trisC_t(i)%v
     end do
 
-  end subroutine intersect_tris_dt_public
+  end subroutine intersect_tris_real
 
-  subroutine intersect_tris_dt(triA, triB, trisC, n_trisC)
+  subroutine intersect_tris_tri(triA, triB, trisC, n_trisC)
     type(tri_type), intent(in) :: triA
     type(tri_type), intent(in) :: triB
     type(tri_type), dimension(BUF_SIZE), intent(out) :: trisC
@@ -134,43 +94,133 @@ contains
 
     integer :: i
     real :: tol
-    type(line_type), dimension(3) :: lines_b
+    type(line_type), dimension(3) :: linesB
 
     real, dimension(2, BUF_SIZE + 2), save :: points
     integer :: n_points
 
-    lines_b = get_lines(triB)
+    linesB = get_lines(triB)
 
     points(:, :3) = triA%v
     n_points = 3
 
     n_trisC = 0
-    call clip(lines_b(1), points, n_points)
+    call clip_buf(linesB(1), points, n_points)
     if(n_points_tmp < 3) return
     points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     n_points = n_points_tmp
-    call clip(lines_b(2), points, n_points)
+    call clip_buf(linesB(2), points, n_points)
     if(n_points_tmp < 3) return
     points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     n_points = n_points_tmp
-    call clip(lines_b(3), points, n_points)
+    call clip_buf(linesB(3), points, n_points)
     if(n_points_tmp < 3) return
 
     tol = 10.0 * min(spacing(triangle_area(triA)), spacing(triangle_area(triB)))
     do i = 1, n_points_tmp - 2
       n_trisC = n_trisC + 1
-      trisC(n_trisC)%V(:, 1) = points_tmp(:, 1)
-      trisC(n_trisC)%V(:, 2) = points_tmp(:, i + 1)
-      trisC(n_trisC)%V(:, 3) = points_tmp(:, i + 2)
+      trisC(n_trisC)%v(:, 1) = points_tmp(:, 1)
+      trisC(n_trisC)%v(:, 2) = points_tmp(:, i + 1)
+      trisC(n_trisC)%v(:, 3) = points_tmp(:, i + 2)
       if(triangle_area(trisC(n_trisC)) < tol) then
         n_trisC = n_trisC - 1
       end if
     end do
 
-  end subroutine intersect_tris_dt
+  end subroutine intersect_tris_tri
 
-  ! Sutherland-Hodgman clipping algorithm
-  subroutine clip(line, points, n_points)
+  subroutine intersect_tri_lines(triA, linesB, trisC, n_trisC, areaB, work)
+    type(tri_type), intent(in) :: triA
+    type(line_type), dimension(:), intent(in) :: linesB
+    type(tri_type), dimension(:), intent(out) :: trisC
+    integer, intent(out) :: n_trisC
+    real, optional, intent(in) :: areaB
+    real, dimension(:, :, :), target, optional, intent(out) :: work
+
+    call intersect_polys(triA%v, linesB, trisC, n_trisC, areaA = triangle_area(triA), areaB = areaB, work = work)
+
+  end subroutine intersect_tri_lines
+  
+  subroutine intersect_polys_real(polyA, polyB, trisC, n_trisC, areaA, areaB, work)
+    ! 2 x loc_a
+    real, dimension(:, :), intent(in) :: polyA
+    ! 2 x loc_b
+    real, dimension(:, :), intent(in) :: polyB
+    type(tri_type), dimension(:), intent(out) :: trisC
+    integer, intent(out) :: n_trisC
+    real, optional, intent(in) :: areaA
+    real, optional, intent(in) :: areaB
+    real, dimension(:, :, :), target, optional, intent(out) :: work
+    
+    call intersect_polys(polyA, get_lines(polyB), trisC, n_trisC, areaA = areaA, areaB = areaB, work = work)
+  
+  end subroutine intersect_polys_real
+
+  subroutine intersect_polys_lines(polyA, linesB, trisC, n_trisC, areaA, areaB, work)
+    ! 2 x loc_a
+    real, dimension(:, :), intent(in) :: polyA
+    ! loc_b
+    type(line_type), dimension(:), intent(in) :: linesB
+    type(tri_type), dimension(:), intent(out) :: trisC
+    integer, intent(out) :: n_trisC
+    real, optional, intent(in) :: areaA
+    real, optional, intent(in) :: areaB
+    real, dimension(:, :, :), target, optional, intent(out) :: work
+
+    integer :: i
+    real :: tol
+
+    real, dimension(:, :), pointer :: points, points_new
+    integer :: n_points, n_points_new
+    
+    if(present(work)) then
+      points => work(:, :, 1)
+      points_new => work(:, :, 2)
+    else
+      allocate(points(2, max_n_trisC(size(polyA, 2), size(linesB)) + 2))
+      allocate(points_new(2, size(points)))
+    end if
+
+    points(:, :size(polyA, 2)) = polyA
+    n_points = size(polyA, 2)
+
+    n_trisC = 0
+    do i = 1, size(linesB)
+      call clip(linesB(i), points, n_points, points_new, n_points_new)
+      if(n_points_new < 3) goto 42
+      points(:, :n_points_new) = points_new(:, :n_points_new)
+      n_points = n_points_new
+    end do
+
+    if(present(areaB)) then
+      if(present(areaA)) then
+        tol = 10.0 * min(spacing(areaA), spacing(areaB))
+      else
+        tol = 10.0 * spacing(areaB)
+      end if
+    else if(present(areaA)) then
+      tol = 10.0 * spacing(areaA)
+    else
+      tol = 10.0 * epsilon(0.0)
+    end if
+    do i = 1, n_points_new - 2
+      n_trisC = n_trisC + 1
+      trisC(n_trisC)%v(:, 1) = points_new(:, 1)
+      trisC(n_trisC)%v(:, 2) = points_new(:, i + 1)
+      trisC(n_trisC)%v(:, 3) = points_new(:, i + 2)
+      if(triangle_area(trisC(n_trisC)) < tol) then
+        n_trisC = n_trisC - 1
+      end if
+    end do
+
+42  if(.not. present(work)) deallocate(points, points_new)
+
+  end subroutine intersect_polys_lines
+
+  ! Sutherland-Hodgman clipping algorithm. See:
+  !   Reentrant polygon clipping, I. E. Sutherland and G. W. Hodgman,
+  !   Communications of the ACM vol. 17, 1974, pp. 32--42.
+  subroutine clip_buf(line, points, n_points)
     type(line_type), intent(in) :: line
     real, dimension(2, BUF_SIZE + 2), intent(in) :: points
     integer, intent(in) :: n_points
@@ -219,31 +269,81 @@ contains
       end if
     end do
 
+  end subroutine clip_buf
+
+  ! Sutherland-Hodgman clipping algorithm. See:
+  !   Reentrant polygon clipping, I. E. Sutherland and G. W. Hodgman,
+  !   Communications of the ACM vol. 17, 1974, pp. 32--42.
+  subroutine clip(line, points, n_points, points_new, n_points_new)
+    type(line_type), intent(in) :: line
+    real, dimension(:, :), intent(in) :: points
+    integer, intent(in) :: n_points
+    real, dimension(:, :), intent(out) :: points_new
+    integer, intent(out) :: n_points_new
+
+    integer :: i
+    real :: d0, d1, d2, f
+    real, dimension(2) :: p1, p2
+
+    d0 = dot_product(line%normal, points(:, 1) - line%point)
+    d2 = d0
+    n_points_new = 0
+    do i = 1, n_points
+      p1 = points(:, i)
+      d1 = d2
+      if(i == n_points) then
+        p2 = points(:, 1)
+        d2 = d0
+      else
+        p2 = points(:, i + 1)
+        d2 = dot_product(line%normal, points(:, i + 1) - line%point)
+      end if
+
+      if(d1 <= 0.0) then
+        if(d2 <= 0.0) then
+          ! No clip
+          n_points_new = n_points_new + 1
+          points_new(:, n_points_new) = p1
+        else
+          ! New point
+          n_points_new = n_points_new + 1
+          points_new(:, n_points_new) = p1
+          n_points_new = n_points_new + 1
+          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0), 0.0)
+          points_new(:, n_points_new) = p1 + f * (p2 - p1)
+        end if
+      else if(d2 <= 0.0) then
+        ! Move point
+        n_points_new = n_points_new + 1
+        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0), 0.0)
+        points_new(:, n_points_new) = p1 + f * (p2 - p1)
+      !else
+        ! Full clip
+      end if
+    end do
+
   end subroutine clip
 
   pure function get_lines_tri(tri) result(lines)
     type(tri_type), intent(in) :: tri
+    
     type(line_type), dimension(3) :: lines
-
-    real :: det
 
     ! Note that the normals are not normalised
 
-    lines(1)%normal(1) = -(tri%V(2, 2) - tri%V(2, 1))
-    lines(1)%normal(2) =  (tri%V(1, 2) - tri%V(1, 1))
-    lines(1)%point = tri%V(:, 1)
+    lines(1)%normal(1) = -(tri%v(2, 2) - tri%v(2, 1))
+    lines(1)%normal(2) =  (tri%v(1, 2) - tri%v(1, 1))
+    lines(1)%point = tri%v(:, 1)
 
-    lines(2)%normal(1) = -(tri%V(2, 3) - tri%V(2, 2))
-    lines(2)%normal(2) =  (tri%V(1, 3) - tri%V(1, 2))
-    lines(2)%point = tri%V(:, 2)
+    lines(2)%normal(1) = -(tri%v(2, 3) - tri%v(2, 2))
+    lines(2)%normal(2) =  (tri%v(1, 3) - tri%v(1, 2))
+    lines(2)%point = tri%v(:, 2)
 
-    lines(3)%normal(1) = -(tri%V(2, 1) - tri%V(2, 3))
-    lines(3)%normal(2) =  (tri%V(1, 1) - tri%V(1, 3))
-    lines(3)%point = tri%V(:, 3)
+    lines(3)%normal(1) = -(tri%v(2, 1) - tri%v(2, 3))
+    lines(3)%normal(2) =  (tri%v(1, 1) - tri%v(1, 3))
+    lines(3)%point = tri%v(:, 3)
 
-    ! Transform the normals so that their direction is consistent (step b).
-    det = dot_product(tri%V(:, 2) - tri%V(:, 1), lines(3)%normal)
-    if(det > 0.0) then
+    if(dot_product(tri%v(:, 2) - tri%v(:, 1), lines(3)%normal) > 0.0) then
       lines(1)%normal = -lines(1)%normal
       lines(2)%normal = -lines(2)%normal
       lines(3)%normal = -lines(3)%normal
@@ -251,17 +351,60 @@ contains
 
   end function get_lines_tri
 
-  pure function triangle_area(tri) result(area)
+  pure function get_lines_poly(poly) result(lines)
+    ! 2 x loc
+    real, dimension(:, :), intent(in) :: poly
+    
+    type(line_type), dimension(size(poly, 2)) :: lines
+
+    integer :: i, loc
+    
+    loc = size(poly, 2)
+  
+    ! Assumes clockwise or anti-clockwise ordering
+    ! Note that the normals are not normalised
+
+    do i = 1, loc - 1
+      lines(i)%normal(1) =  (poly(2, i + 1) - poly(2, i))
+      lines(i)%normal(2) = -(poly(1, i + 1) - poly(1, i))
+      lines(i)%point = poly(:, i)
+    end do
+    lines(loc)%normal(1) =  (poly(2, 1) - poly(2, loc))
+    lines(loc)%normal(2) = -(poly(1, 1) - poly(1, loc))
+    lines(loc)%point = poly(:, loc)
+    
+    if(dot_product(poly(:, 1) - lines(2)%point, lines(2)%normal) > 0.0) then
+      do i = 1, loc
+        lines(i)%normal = -lines(i)%normal
+      end do
+    end if
+ 
+  end function get_lines_poly
+
+  pure function triangle_area_real(tri) result(area)
+    real, dimension(2, 3), intent(in) :: tri
+
+    real :: area
+    real, dimension(2) :: u, v
+
+    u = tri(:, 3) - tri(:, 1)
+    v = tri(:, 2) - tri(:, 1)
+
+    area = 0.5 * abs(u(2) * v(1) - u(1) * v(2))
+
+  end function triangle_area_real
+
+  pure function triangle_area_tri(tri) result(area)
     type(tri_type), intent(in) :: tri
 
     real :: area
     real, dimension(2) :: u, v
 
-    u = tri%V(:, 3) - tri%V(:, 1)
-    v = tri%V(:, 2) - tri%V(:, 1)
+    u = tri%v(:, 3) - tri%v(:, 1)
+    v = tri%v(:, 2) - tri%v(:, 1)
 
     area = 0.5 * abs(u(2) * v(1) - u(1) * v(2))
 
-  end function triangle_area
-
-end module libsupermesh_tri_intersection_module
+  end function triangle_area_tri
+  
+end module libsupermesh_tri_intersection

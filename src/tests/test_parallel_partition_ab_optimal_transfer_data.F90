@@ -7,7 +7,7 @@ subroutine test_parallel_partition_ab_optimal_transfer_data
   use libsupermesh_construction
   use libsupermesh_fields
   use libsupermesh_read_triangle
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
@@ -30,7 +30,7 @@ subroutine test_parallel_partition_ab_optimal_transfer_data
 
 #include <finclude/petsc.h90>
 
-  integer :: i, j, k, l, m, n, sends, recvs, nnodes, ele_A, ele_B, ele_C, n_trisC, nprocs, &
+  integer :: i, j, k, l, m, n, sends, recvs, ele_A, ele_B, ele_C, n_trisC, nprocs, &
        & rank, ierr, serial_ele_A, serial_ele_B, test_parallel_ele_A, &
        & test_parallel_ele_B, position, dp_extent, int_extent, icount
   integer :: local_sum_a, local_sum_b, triangles, &
@@ -709,8 +709,6 @@ subroutine test_parallel_partition_ab_optimal_transfer_data
   deallocate(ele_ownerA, ele_ownerB)
   deallocate(unsB, valsB)
   deallocate(number_of_elements_to_receive, number_of_elements_to_send)
-
-  call cintersection_finder_reset(nnodes)
 
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  CHKERRQ(ierr)
 

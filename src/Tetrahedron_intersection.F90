@@ -4,14 +4,14 @@
 module libsupermesh_tet_intersection_module
 
   use libsupermesh_debug
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
 
   implicit none
 
   private
 
-  public :: tet_type, plane_type, intersect_tets_libwm, intersect_tets, &
-    & intersect_tets_dt_public, intersect_tets_dt_real, get_planes
+  public :: tet_type, plane_type, intersect_tets, intersect_tets_dt_public, &
+    & intersect_tets_dt_real, get_planes
 
   type tet_type
     real, dimension(3, 4) :: V ! vertices of the tet
@@ -39,22 +39,6 @@ module libsupermesh_tet_intersection_module
   integer, parameter, public :: tet_buf_size = BUF_SIZE
 
 contains
-
-  subroutine intersect_tets_libwm(tetA, tetB, nodesC, ndglnoC, n_tetsC)
-    real, dimension(3, 4), intent(in) :: tetA
-    real, dimension(3, 4), intent(in) :: tetB
-    real, dimension(3, BUF_SIZE), intent(inout) :: nodesC
-    integer, dimension(4, BUF_SIZE), intent(inout) :: ndglnoC
-    integer, intent(out) :: n_tetsC
-
-    integer :: i, nonods
-
-    call cintersector_set_input(tetA, tetB, 3, 4)
-    call cintersector_drive
-    call cintersector_query(nonods, n_tetsC)
-    call cintersector_get_output(nonods, n_tetsC, 3, 4, nodesC, ndglnoC)
-
-  end subroutine intersect_tets_libwm
 
   subroutine intersect_tets_dt_real(tetA, tetB, tetsC, n_tetsC)
     real, dimension(3, 4), intent(in) :: tetA

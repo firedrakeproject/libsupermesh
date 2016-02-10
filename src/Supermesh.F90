@@ -3,13 +3,12 @@
 module libsupermesh_construction
 
   use libsupermesh_debug
-  use libsupermesh_fields
-  use libsupermesh_tri_intersection_module
+  use libsupermesh_tri_intersection
   use libsupermesh_tet_intersection_module
 
   implicit none
 
-  public :: intersect_elements, intersect_elements_old
+  public :: intersect_elements
 
   private
 
@@ -91,38 +90,5 @@ module libsupermesh_construction
     end if
 
   end subroutine intersect_intervals
-
-  function intersect_elements_old(positions_A_val, &
-        posB, locA, ndimA) result(intersection)
-
-    real, intent(in), dimension(ndimA, locA) :: positions_A_val
-    integer, intent(in) :: locA, ndimA
-    type(vector_field) :: intersection
-    real, dimension(:, :), intent(in) :: posB
-
-    integer :: i, nonods, totele
-    integer, dimension(:, :), allocatable :: ndglno
-    type(mesh_type) :: intersection_mesh
-
-    call cintersector_set_input(positions_A_val, posB, ndimA, locA)
-    call cintersector_drive
-    call cintersector_query(nonods, totele)
-    call allocate(intersection_mesh, ndimA, nonods, totele, ndimA + 1)
-    intersection_mesh%ndglno = (/ (i, i=1,totele) /)
-    intersection_mesh%continuity = -1
-    call allocate(intersection, ndimA, intersection_mesh)
-    if (nonods > 0) then
-#ifdef DDEBUG
-      intersection_mesh%ndglno = -1
-#endif
-      allocate(ndglno(ndimA + 1, totele))
-      call cintersector_get_output(nonods, totele, ndimA, ndimA + 1, intersection%val, ndglno)
-      intersection_mesh%ndglno = reshape(ndglno, (/(ndimA + 1) * totele/))
-      deallocate(ndglno)
-    end if
-
-    call deallocate(intersection_mesh)
-
-  end function intersect_elements_old
 
 end module libsupermesh_construction
