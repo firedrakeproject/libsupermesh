@@ -16,53 +16,25 @@ module libsupermesh_linked_lists
      TYPE (inode), POINTER :: firstnode=>null()
      type(inode), pointer ::  lastnode => null()
   END TYPE ilist
-
-  ! <pef> I need a linked list for edges in the mesh.
-  ! I'm adding it here.
-
-  TYPE edgenode
-     INTEGER :: i, j
-     TYPE(edgenode), POINTER :: next => null()
-  END TYPE edgenode
-
-  TYPE elist
-     INTEGER :: length = 0
-     TYPE(edgenode), POINTER :: firstnode => null()
-     TYPE(edgenode), POINTER :: lastnode => null()
-  END TYPE elist
-
-  ! <skramer> I need a linked list for reals
-  ! I'm adding it here - sigh, templates anyone?
-
-  type rnode
-     real :: value
-     type (rnode), pointer :: next=>null() ! next node
-  end type rnode
-  
-  type rlist
-     integer :: length=0
-     type (rnode), pointer :: firstnode=>null()
-     type(rnode), pointer ::  lastnode => null()
-  end type rlist
   
   interface insert_ascending
      module procedure iinsert_ascending
   end interface
 
   interface has_value
-     module procedure ihas_value, ehas_value
+     module procedure ihas_value
   end interface
 
   interface deallocate
-    module procedure flush_ilist, flush_elist, flush_ilist_v, flush_rlist, flush_rlist_v
+    module procedure flush_ilist, flush_ilist_v
   end interface
 
   interface insert
-     module procedure einsert, iinsert, rinsert
+     module procedure iinsert
   end interface
 
   interface flush_list
-     module procedure flush_ilist, flush_elist, flush_rlist
+     module procedure flush_ilist
   end interface
   
   interface flush_lists
@@ -70,19 +42,15 @@ module libsupermesh_linked_lists
   end interface flush_lists
   
   interface pop
-     module procedure ipop, epop_fn, rpop
+     module procedure ipop
   end interface
 
   interface fetch
      module procedure ifetch
   end interface
 
-  interface spop ! I need this to be a subroutine, not a function
-     module procedure epop
-  end interface
-
   interface list2vector
-     module procedure ilist2vector, rlist2vector
+     module procedure ilist2vector
   end interface
 
   interface pop_last
@@ -98,7 +66,7 @@ module libsupermesh_linked_lists
   end interface
   
   interface print_list
-    module procedure iprint, eprint
+    module procedure iprint
   end interface
   
   interface intersect_ascending
@@ -286,15 +254,6 @@ contains
       call flush_ilist(lists(i))
     end do
   end subroutine flush_ilist_v
-
-  subroutine flush_rlist_v(lists)
-    type(rlist), intent(inout), dimension(:) :: lists
-    integer :: i
-
-    do i=1,size(lists)
-      call flush_rlist(lists(i))
-    end do
-  end subroutine flush_rlist_v
   
   subroutine flush_ilist_array(lists)
     ! Remove all entries from an array of lists
@@ -382,86 +341,6 @@ contains
 
   end function ilist2vector
 
-  subroutine einsert(list, i, j)
-    type(elist), intent(inout) :: list
-    integer, intent(in) :: i, j
-    
-    ! Special case for zero length lists.
-    if (list%length==0) then
-       allocate(list%firstnode)
-
-       list%firstnode%i=i
-       list%firstnode%j=j
-       ! The following should not be necessary
-       list%firstnode%next=>null()
-       
-       list%length=1
-       list%lastnode=>list%firstnode
-       return
-    end if
-       
-
-    allocate(list%lastnode%next)
-    list%lastnode%next%i = i
-    list%lastnode%next%j = j
-
-    ! The following should not be necessary
-    list%lastnode%next%next => null()
-          
-    list%length = list%length+1
-    list%lastnode => list%lastnode%next
-    return
-
-  end subroutine einsert
-
-  logical function ehas_value(list, i, j)
-    type(elist), intent(inout) :: list
-    integer, intent(in) :: i, j
-    type(edgenode), pointer :: node
-
-    ehas_value = .false.
-
-    node => list%firstnode
-    do while(associated(node))
-      if (node%i == i .and. node%j == j) then
-        ehas_value = .true.
-        return
-      end if
-      node => node%next
-    end do
-  end function ehas_value
-
-  subroutine flush_elist(list)
-    ! Remove all entries from a list.
-    type(elist), intent(inout) ::list
-
-    integer :: i, tmp1, tmp2
-
-    do i=1,list%length
-       call spop(list, tmp1, tmp2)
-    end do
-
-  end subroutine flush_elist
-
-  subroutine epop(list, i, j)
-    ! Pop the first value off list.
-    integer, intent(out) :: i, j
-    type(elist), intent(inout) :: list
-    
-    type(edgenode), pointer :: firstnode
-    
-    i=list%firstnode%i
-    j=list%firstnode%j
-    
-    firstnode=>list%firstnode
-    
-    list%firstnode=>firstnode%next
-
-    deallocate(firstnode)
-
-    list%length=list%length-1
-  end subroutine epop
-
   function isize_intersection(listA, listB) result(x)
     type(ilist), intent(in) :: listA, listB
     type(inode), pointer :: nodeA, nodeB
@@ -505,20 +384,6 @@ contains
     end do
   end function ihas_value_sorted
 
-  function epop_fn(list) result(x)
-    type(elist), intent(inout) :: list
-    integer, dimension(2) :: x
-    type(edgenode), pointer :: firstnode
-
-    x(1) = list%firstnode%i
-    x(2) = list%firstnode%j
-
-    firstnode => list%firstnode
-    list%firstnode => firstnode%next
-    deallocate(firstnode)
-    list%length = list%length - 1
-  end function epop_fn
-
   subroutine iprint(list, priority)
     type(ilist), intent(in) :: list
     integer, intent(in) :: priority
@@ -529,20 +394,6 @@ contains
     node => list%firstnode
     do while (associated(node))
       ewrite(priority, *) " -- ", node%value
-      node => node%next
-    end do
-  end subroutine
-
-  subroutine eprint(list, priority)
-    type(elist), intent(in) :: list
-    integer, intent(in) :: priority
-    type(edgenode), pointer :: node
-
-    ewrite(priority, *) "length: ", list%length
-
-    node => list%firstnode
-    do while (associated(node))
-      ewrite(priority, *) " -- (", node%i, ", ", node%j, ")"
       node => node%next
     end do
   end subroutine
@@ -615,84 +466,5 @@ contains
     end do
 
   end subroutine copy_ilist_array
-  
-    subroutine rinsert(list, value)
-    type(rlist), intent(inout) :: list
-    real, intent(in) :: value
-    type(rnode), pointer :: node
-    
-    ! Special case for zero length lists.
-    if (list%length==0) then
-       allocate(list%firstnode)
-
-       list%firstnode%value=value
-       ! The following should not be necessary
-       list%firstnode%next=>null()
-       
-       list%length=1
-       list%lastnode => list%firstnode
-       return
-    end if
-       
-    node => list%lastnode
-    allocate(node%next)
-    node%next%value = value
-
-    ! The following should not be necessary
-    node%next%next => null()
-          
-    list%length = list%length+1
-    list%lastnode => node%next
-    
-  end subroutine rinsert
-
-  subroutine flush_rlist(list)
-    ! Remove all entries from a list.
-    type(rlist), intent(inout) ::list
-
-    integer :: i, tmp
-
-    do i=1,list%length
-       tmp=pop(list)
-    end do
-
-  end subroutine flush_rlist
-
-  function rpop(list)
-    ! Pop the first value off list.
-    real :: rpop
-    type(rlist), intent(inout) :: list
-    
-    type(rnode), pointer :: firstnode
-    
-    rpop=list%firstnode%value
-    
-    firstnode=>list%firstnode
-    
-    list%firstnode=>firstnode%next
-
-    deallocate(firstnode)
-
-    list%length=list%length-1
-
-  end function rpop
-
-  function rlist2vector(list) result (vector)
-    ! Return a vector containing the contents of rlist
-    type(rlist), intent(in) :: list
-    real, dimension(list%length) :: vector
-    
-    type(rnode), pointer :: this_node
-    integer :: i
-
-    this_node=>list%firstnode
-
-    do i=1, list%length
-       vector(i)=this_node%value
-       
-       this_node=>this_node%next
-    end do
-
-  end function rlist2vector
 
 end module libsupermesh_linked_lists
