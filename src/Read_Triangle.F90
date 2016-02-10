@@ -86,9 +86,8 @@ contains
   ! Comments and empty lines are not supported, and triangles must be indexed
   ! from one. Trailing lines are ignored.
   !
-  ! Expected format differs from that in the Triangle documentation, in that
-  ! arbitrary dimensional linear simplices are supported, and quadratic
-  ! simplices are not supported.
+  ! Expected format differs from that in the Triangle documentation, in that an
+  ! arbitrary number of local nodes is permitted.
   subroutine read_ele(filename, dim, enlist, attributes, nnodes)
     character(len = *), intent(in) :: filename
     integer, intent(in) :: dim
@@ -106,10 +105,7 @@ contains
 
     read(unit, *) nelements, ncell_nodes, nattrs
     if(nelements < 0) then
-      libsupermesh_abort("Invalid number of simplices")
-    end if
-    if(ncell_nodes /= dim + 1) then
-      libsupermesh_abort( "Invalid number of nodes per simplex")
+      libsupermesh_abort("Invalid number of elements")
     end if
     if(nattrs < 0) then
       libsupermesh_abort("Invalid number of attributes")
@@ -126,7 +122,7 @@ contains
         read(unit, *) ind, cell_nodes
       end if
       if(i /= ind) then
-        libsupermesh_abort("Invalid simplex number")
+        libsupermesh_abort("Invalid element number")
       end if
       if(any(cell_nodes < 1)) then
         libsupermesh_abort("Invalid node")

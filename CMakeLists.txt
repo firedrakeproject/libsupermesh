@@ -445,8 +445,10 @@ set (CPP_TEST_SOURCE_FILES
 FILE(GLOB CPP_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 FILE(GLOB C_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.c)
 FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
+FILE(GLOB FORTRAN_TEST_INTERVAL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_interval_intersector.F90)
 FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90)
 FILE(GLOB FORTRAN_TEST_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tet_intersector.F90)
+FILE(GLOB FORTRAN_TEST_ELEMENT_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_element_intersector.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_2d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_3d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_1d.F90)
@@ -488,8 +490,10 @@ add_library (SuperMesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} 
 add_dependencies(SuperMesh libjudy spatialindex spatialindex_c)
 
 set (UNITTESTS
+  test_interval_intersector
   test_tri_intersector
   test_tet_intersector
+  test_element_intersector
   test_intersection_finder_2d
   test_intersection_finder_3d
   test_intersection_finder_completeness_1d
@@ -522,8 +526,10 @@ set (BENCHMARKTESTS
 )
 
 #add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
+add_executable (test_interval_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERVAL_INTERSECTOR_FILES})
 add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_tet_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TET_INTERSECTOR_FILES})
+add_executable (test_element_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_ELEMENT_INTERSECTOR_FILES})
 add_executable (test_intersection_finder_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES})
 add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES})
 add_executable (test_intersection_finder_completeness_1d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES})

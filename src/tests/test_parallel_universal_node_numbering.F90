@@ -3,7 +3,7 @@ subroutine test_parallel_universal_node_numbering
   use iso_fortran_env, only : output_unit
 
   use libsupermesh_unittest_tools
-  use libsupermesh_construction
+  use libsupermesh_supermesh
   use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tri_intersection

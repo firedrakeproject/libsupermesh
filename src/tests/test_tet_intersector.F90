@@ -2,12 +2,13 @@
 
 subroutine test_tet_intersector()
 
-  use libsupermesh_construction, only : intersect_elements
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder
+  use libsupermesh_supermesh, only : intersect_elements, &
+    & intersect_simplices, tetrahedron_volume
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_tet_intersection, only : tet_type, tet_buf_size, &
-    & intersect_tets, get_planes, tetrahedron_volume
+    & intersect_tets, get_planes
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
   
   implicit none
@@ -78,7 +79,20 @@ subroutine test_tet_intersector()
     tetA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_elements(tetA_real, positions_b(:, enlist_b(:, ele_b)), n_tetsC, tetsC_real)
+      call intersect_simplices(tetA_real, positions_b(:, enlist_b(:, ele_b)), tetsC_real, n_tetsC)
+      do ele_c = 1, n_tetsC
+        volume_c = volume_c + tetrahedron_volume(tetsC_real(:, :, ele_c))
+      end do
+    end do    
+  end do
+  call report_test("[intersect_simplices]", volume_c .fne. 1000.0 / 3.0, .false., "Incorrect intersection volume")
+  
+  volume_c = 0.0
+  do ele_a = 1, size(enlist_a, 2)
+    tetA_real = positions_a(:, enlist_a(:, ele_a))
+    do i = 1, map_ab(ele_a)%n
+      ele_b = map_ab(ele_a)%v(i)
+      call intersect_elements(tetA_real, positions_b(:, enlist_b(:, ele_b)), tetsC_real, n_tetsC)
       do ele_c = 1, n_tetsC
         volume_c = volume_c + tetrahedron_volume(tetsC_real(:, :, ele_c))
       end do

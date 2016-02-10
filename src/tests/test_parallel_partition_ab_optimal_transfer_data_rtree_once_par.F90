@@ -4,7 +4,7 @@ subroutine test_parallel_partition_ab_optimal_transfer_data_rtree_once_par
   use iso_c_binding, only : c_double, c_int, c_int8_t, c_ptr, c_f_pointer, c_loc, c_size_t, c_sizeof
 
   use libsupermesh_unittest_tools
-  use libsupermesh_construction
+  use libsupermesh_supermesh
   use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tri_intersection

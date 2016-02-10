@@ -10,8 +10,7 @@ module libsupermesh_parallel_supermesh
   use libsupermesh_intersection_finder
   use libsupermesh_tri_intersection
   use libsupermesh_tet_intersection
-  use libsupermesh_construction
-  use libsupermesh_fields, only : triangle_area
+  use libsupermesh_supermesh
   use libsupermesh_integer_set
 
   implicit none
@@ -539,22 +538,10 @@ contains
 #endif
 #endif
 
-    select case(size(positions_a, 1))
-      case(1)
-       ! 1D intervals
-       allocate(positions_c(1, 2, 5), &
-              & nodes_A(1, 2), nodes_B(1, 2))
-      case(2)
-        ! 2D triangles
-        allocate(positions_c(2, 3, tri_buf_size), &
-               & nodes_A(2, 3), nodes_B(2, 3))
-      case(3)
-        ! 3D tets
-        allocate(positions_c(3, 4, tet_buf_size), &
-               & nodes_A(3, 4), nodes_B(3, 4))
-      case default
-        libsupermesh_abort("Invalid dimension")
-    end select
+    allocate(nodes_A(size(positions_a, 1), size(enlist_a, 1)), &
+           & nodes_B(size(positions_a, 1), size(enlist_b, 1)), &
+           & positions_c(size(positions_a, 1), size(positions_a, 1) + 1, &
+                       & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
     nodes_A = 0.0
     nodes_B = 0.0
 
@@ -575,7 +562,7 @@ contains
         if(ele_owner_a(ele_A) /= rank) cycle
         nodes_A = positions_a(:, enlist_a(:, ele_A))
 
-        call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
+        call intersect_elements(nodes_A, nodes_B, positions_c, n_C)
         call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), enlist_b(:, ele_B), ele_A, ele_B, .true.)
 
       end do
@@ -686,7 +673,7 @@ contains
             if(ele_owner_a(ele_A) /= rank) cycle
             nodes_A = positions_a(:, enlist_a(:, ele_A))
 
-            call intersect_elements(nodes_A, nodes_B, n_C, positions_c)
+            call intersect_elements(nodes_A, nodes_B, positions_c, n_C)
             call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), recv_nodes_connectivity(i)%p((ele_B - 1) * size(enlist_b, 1) + 1:ele_B * size(enlist_B, 1)), ele_A, ele_B, .false.)
           end do
         end do

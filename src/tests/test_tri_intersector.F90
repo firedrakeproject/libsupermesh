@@ -2,12 +2,13 @@
 
 subroutine test_tri_intersector()
 
-  use libsupermesh_construction, only : intersect_elements
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder
   use libsupermesh_read_triangle, only : read_ele, read_node
+  use libsupermesh_supermesh, only : intersect_elements, &
+    & intersect_simplices, triangle_area
   use libsupermesh_tri_intersection, only : tri_type, tri_buf_size, &
-    & intersect_tris, intersect_polys, get_lines, triangle_area
+    & intersect_tris, intersect_polys, get_lines
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
   
   implicit none
@@ -105,7 +106,20 @@ subroutine test_tri_intersector()
     triA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_elements(triA_real, positions_b(:, enlist_b(:, ele_b)), n_trisC, trisC_real)
+      call intersect_simplices(triA_real, positions_b(:, enlist_b(:, ele_b)), trisC_real, n_trisC)
+      do ele_c = 1, n_trisC
+        area_c = area_c + triangle_area(trisC_real(:, :, ele_c))
+      end do
+    end do    
+  end do
+  call report_test("[intersect_simplices]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  
+  area_c = 0.0
+  do ele_a = 1, size(enlist_a, 2)
+    triA_real = positions_a(:, enlist_a(:, ele_a))
+    do i = 1, map_ab(ele_a)%n
+      ele_b = map_ab(ele_a)%v(i)
+      call intersect_elements(triA_real, positions_b(:, enlist_b(:, ele_b)), trisC_real, n_trisC)
       do ele_c = 1, n_trisC
         area_c = area_c + triangle_area(trisC_real(:, :, ele_c))
       end do
