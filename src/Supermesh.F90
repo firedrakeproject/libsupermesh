@@ -5,21 +5,21 @@ module libsupermesh_supermesh
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_interval_intersection, only : intersect_intervals, &
     & interval_buf_size
-  use libsupermesh_tri_intersection, only : tri_type, line_type, max_n_trisC, &
+  use libsupermesh_tri_intersection, only : tri_type, line_type, max_n_tris_c, &
     & intersect_tris, tri_buf_size, intersect_polys, get_lines, triangle_area
-  use libsupermesh_tet_intersection, only : tet_type, plane_type, max_n_tetsC, &
+  use libsupermesh_tet_intersection, only : tet_type, plane_type, max_n_tets_c, &
     & intersect_tets, tet_buf_size, tetrahedron_volume
 
   implicit none
 
   private
 
-  public :: max_n_simplicesC, intersection_buffer_size, intersect_simplices, &
+  public :: max_n_simplices_c, intersection_buffer_size, intersect_simplices, &
     & intersect_elements, simplex_volume, triangle_area, tetrahedron_volume
 
 contains
 
-  pure function max_n_simplicesC(dim) result(size)
+  pure function max_n_simplices_c(dim) result(size)
     integer, intent(in) :: dim
 
     integer :: size
@@ -35,7 +35,7 @@ contains
         size = 0
     end select
 
-  end function max_n_simplicesC
+  end function max_n_simplices_c
 
   pure function intersection_buffer_size(dim, loc_a, loc_b) result(size)
     integer, intent(in) :: dim
@@ -45,23 +45,23 @@ contains
     integer :: size
 
     if(loc_a == dim + 1 .and. loc_b == dim + 1) then
-      size = max_n_simplicesC(dim)
+      size = max_n_simplices_c(dim)
     else if((loc_a == dim + 1 .and. loc_b == 2 ** dim) &
      & .or. (loc_b == dim + 1 .and. loc_a == 2 ** dim)) then
       select case(dim)
         case(2)
-          size = max_n_trisC(n_linesB = 4)
+          size = max_n_tris_c(n_lines_b = 4)
         case(3)
-          size = max_n_tetsC(n_planesB = 6)
+          size = max_n_tets_c(n_planes_b = 6)
         case default
           size = 0
       end select
     else if(loc_a == 2 ** dim .and. loc_b == 2 ** dim) then
       select case(dim)
         case(2)
-          size = max_n_trisC(n_linesA = 4, n_linesB = 4)
+          size = max_n_tris_c(n_lines_a = 4, n_lines_b = 4)
         case(3)
-          size = 5 * max_n_tetsC(n_planesB = 6)
+          size = 5 * max_n_tets_c(n_planes_b = 6)
         case default
           size = 0
       end select
@@ -71,67 +71,67 @@ contains
 
   end function intersection_buffer_size
 
-  subroutine intersect_simplices(simplexA, simplexB, simplicesC, n_simplicesC)
+  subroutine intersect_simplices(simplex_a, simplex_b, simplices_c, n_simplices_c)
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: simplexA
+    real, dimension(:, :), intent(in) :: simplex_a
     ! dim x loc_b
-    real, dimension(:, :), intent(in) :: simplexB
-    real, dimension(:, :, :), intent(inout) :: simplicesC
-    integer, intent(out) :: n_simplicesC
+    real, dimension(:, :), intent(in) :: simplex_b
+    real, dimension(:, :, :), intent(inout) :: simplices_c
+    integer, intent(out) :: n_simplices_c
     
-    select case(size(simplexA, 1))
+    select case(size(simplex_a, 1))
       case(1)
-        call intersect_intervals(simplexA(1, :), simplexB(1, :), simplicesC(1, :, 1), n_simplicesC)
+        call intersect_intervals(simplex_a(1, :), simplex_b(1, :), simplices_c(1, :, 1), n_simplices_c)
       case(2)
-        call intersect_tris(simplexA, simplexB, simplicesC, n_simplicesC)
+        call intersect_tris(simplex_a, simplex_b, simplices_c, n_simplices_c)
       case(3)
-        call intersect_tets(simplexA, simplexB, simplicesC, n_simplicesC)
+        call intersect_tets(simplex_a, simplex_b, simplices_c, n_simplices_c)
       case default
         libsupermesh_abort("Unsupported element type")
     end select
     
   end subroutine intersect_simplices
 
-  subroutine intersect_elements(elementA, elementB, elementsC, n_elementsC)
+  subroutine intersect_elements(element_a, element_b, elements_c, n_elements_c)
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: elementA
+    real, dimension(:, :), intent(in) :: element_a
     ! dim x loc_b
-    real, dimension(:, :), intent(in) :: elementB
-    real, dimension(:, :, :), intent(inout) :: elementsC
-    integer, intent(out) :: n_elementsC
+    real, dimension(:, :), intent(in) :: element_b
+    real, dimension(:, :, :), intent(inout) :: elements_c
+    integer, intent(out) :: n_elements_c
 
     integer :: dim, loc_a, loc_b
   
-    dim = size(elementA, 1)
-    loc_a = size(elementA, 2)
-    loc_b = size(elementB, 2)
+    dim = size(element_a, 1)
+    loc_a = size(element_a, 2)
+    loc_b = size(element_b, 2)
     
     if(loc_a == dim + 1 .and. loc_b == dim + 1) then
-      call intersect_simplices(elementA, elementB, elementsC, n_elementsC)
+      call intersect_simplices(element_a, element_b, elements_c, n_elements_c)
     else if(loc_a == dim + 1 .and. loc_b == 2 ** dim) then
       select case(dim)
         case(2)
-          call intersect_tri_quad(elementA, elementB, elementsC, n_elementsC)
+          call intersect_tri_quad(element_a, element_b, elements_c, n_elements_c)
         case(3)
-          call intersect_tet_hex(elementA, elementB, elementsC, n_elementsC)
+          call intersect_tet_hex(element_a, element_b, elements_c, n_elements_c)
         case default
           libsupermesh_abort("Unsupported element type")
       end select
     else if(loc_a == 2 ** dim .and. loc_b == dim + 1) then
       select case(dim)
         case(2)
-          call intersect_tri_quad(elementB, elementA, elementsC, n_elementsC)
+          call intersect_tri_quad(element_b, element_a, elements_c, n_elements_c)
         case(3)
-          call intersect_tet_hex(elementB, elementA, elementsC, n_elementsC)
+          call intersect_tet_hex(element_b, element_a, elements_c, n_elements_c)
         case default
           libsupermesh_abort("Unsupported element type")
       end select
     else if(loc_a == 2 ** dim .and. loc_b == 2 ** dim) then
       select case(dim)
         case(2)
-          call intersect_quads(elementA, elementB, elementsC, n_elementsC)
+          call intersect_quads(element_a, element_b, elements_c, n_elements_c)
         case(3)
-          call intersect_hexes(elementA, elementB, elementsC, n_elementsC)
+          call intersect_hexes(element_a, element_b, elements_c, n_elements_c)
         case default
           libsupermesh_abort("Unsupported element type")
       end select
@@ -141,143 +141,144 @@ contains
 
   end subroutine intersect_elements
   
-  subroutine intersect_tri_quad(triA, quadB, trisC, n_trisC)
+  subroutine intersect_tri_quad(tri_a, quad_b, tris_c, n_tris_c)
     ! 2 x 3
-    real, dimension(:, :), intent(in) :: triA
+    real, dimension(:, :), intent(in) :: tri_a
     ! 2 x 4
-    real, dimension(:, :), intent(in) :: quadB
-    real, dimension(:, :, :), intent(inout) :: trisC
-    integer, intent(out) :: n_trisC
+    real, dimension(:, :), intent(in) :: quad_b
+    real, dimension(:, :, :), intent(inout) :: tris_c
+    integer, intent(out) :: n_tris_c
     
     integer :: i
     real, dimension(2, 3 * (2 ** 4), 2), save :: work
-    type(tri_type) :: ltriA
-    type(tri_type), dimension(3 * (2 ** 4) - 2), save :: ltrisC
+    type(tri_type) :: ltri_a
+    type(tri_type), dimension(3 * (2 ** 4) - 2), save :: ltris_c
     
-    ltriA%v = triA
-    call intersect_polys(ltriA, get_lines(quadB), ltrisC, n_trisC, work = work)
-    do i = 1, n_trisC
-      trisC(:, :, i) = ltrisC(i)%v
+    ltri_a%v = tri_a
+    call intersect_polys(ltri_a, get_lines(quad_b), ltris_c, n_tris_c, work = work)
+    do i = 1, n_tris_c
+      tris_c(:, :, i) = ltris_c(i)%v
     end do
   
   end subroutine intersect_tri_quad
 
-  subroutine intersect_quads(quadA, quadB, trisC, n_trisC)
+  subroutine intersect_quads(quad_a, quad_b, tris_c, n_tris_c)
     ! 2 x 4
-    real, dimension(:, :), intent(in) :: quadA
+    real, dimension(:, :), intent(in) :: quad_a
     ! 2 x 4
-    real, dimension(:, :), intent(in) :: quadB
-    real, dimension(:, :, :), intent(inout) :: trisC
-    integer, intent(out) :: n_trisC
+    real, dimension(:, :), intent(in) :: quad_b
+    real, dimension(:, :, :), intent(inout) :: tris_c
+    integer, intent(out) :: n_tris_c
     
     integer :: i
     real, dimension(2, 4 * (2 ** 4), 2), save :: work
-    type(tri_type), dimension(4 * (2 ** 4) - 2), save :: ltrisC
+    type(tri_type), dimension(4 * (2 ** 4) - 2), save :: ltris_c
     
-    call intersect_polys(quadA, quadB, ltrisC, n_trisC, work = work)
-    do i = 1, n_trisC
-      trisC(:, :, i) = ltrisC(i)%v
+    call intersect_polys(quad_a, quad_b, ltris_c, n_tris_c, work = work)
+    do i = 1, n_tris_c
+      tris_c(:, :, i) = ltris_c(i)%v
     end do
   
   end subroutine intersect_quads
 
-  subroutine intersect_tet_hex(tetA, hexB, tetsC, n_tetsC)
+  subroutine intersect_tet_hex(tet_a, hex_b, tets_c, n_tets_c)
     ! 3 x 4
-    real, dimension(:, :), intent(in) :: tetA
+    real, dimension(:, :), intent(in) :: tet_a
     ! 4 x 8
-    real, dimension(:, :), intent(in) :: hexB
-    real, dimension(:, :, :), intent(inout) :: tetsC
-    integer, intent(out) :: n_tetsC
+    real, dimension(:, :), intent(in) :: hex_b
+    real, dimension(:, :, :), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
     
-    integer :: i, ln_tetsC
-    type(plane_type), dimension(6) :: planesB
-    type(tet_type) :: ltetA
-    type(tet_type), dimension(3 ** 6), save :: ltetsC, work
+    integer :: i, ln_tets_c
+    type(plane_type), dimension(6) :: planes_b
+    type(tet_type) :: ltet_a
+    type(tet_type), dimension(3 ** 6), save :: ltets_c, work
     
     ! Gmsh node ordering. See:
     !   http://gmsh.info/doc/texinfo/gmsh.html#Node-ordering
     
-    ltetA%v = tetA
-    planesB(1)%normal = unit_cross(hexB(:, 2) - hexB(:, 1), hexB(:, 6) - hexB(:, 1))
-    planesB(1)%c = dot_product(hexB(:, 1), planesB(1)%normal)
-    planesB(2)%normal = unit_cross(hexB(:, 6) - hexB(:, 5), hexB(:, 7) - hexB(:, 5))
-    planesB(2)%c = dot_product(hexB(:, 5), planesB(2)%normal)
-    planesB(3)%normal = unit_cross(hexB(:, 2) - hexB(:, 6), hexB(:, 3) - hexB(:, 6))
-    planesB(3)%c = dot_product(hexB(:, 6), planesB(3)%normal)
-    planesB(4)%normal = unit_cross(hexB(:, 1) - hexB(:, 2), hexB(:, 4) - hexB(:, 2))
-    planesB(4)%c = dot_product(hexB(:, 2), planesB(4)%normal)
-    planesB(5)%normal = unit_cross(hexB(:, 5) - hexB(:, 1), hexB(:, 8) - hexB(:, 1))
-    planesB(5)%c = dot_product(hexB(:, 1), planesB(5)%normal)
-    planesB(6)%normal = unit_cross(hexB(:, 7) - hexB(:, 8), hexB(:, 3) - hexB(:, 8))
-    planesB(6)%c = dot_product(hexB(:, 8), planesB(6)%normal)
+    ltet_a%v = tet_a
+    planes_b(1)%normal = unit_cross(hex_b(:, 2) - hex_b(:, 1), hex_b(:, 6) - hex_b(:, 1))
+    planes_b(1)%c = dot_product(hex_b(:, 1), planes_b(1)%normal)
+    planes_b(2)%normal = unit_cross(hex_b(:, 6) - hex_b(:, 5), hex_b(:, 7) - hex_b(:, 5))
+    planes_b(2)%c = dot_product(hex_b(:, 5), planes_b(2)%normal)
+    planes_b(3)%normal = unit_cross(hex_b(:, 2) - hex_b(:, 6), hex_b(:, 3) - hex_b(:, 6))
+    planes_b(3)%c = dot_product(hex_b(:, 6), planes_b(3)%normal)
+    planes_b(4)%normal = unit_cross(hex_b(:, 1) - hex_b(:, 2), hex_b(:, 4) - hex_b(:, 2))
+    planes_b(4)%c = dot_product(hex_b(:, 2), planes_b(4)%normal)
+    planes_b(5)%normal = unit_cross(hex_b(:, 5) - hex_b(:, 1), hex_b(:, 8) - hex_b(:, 1))
+    planes_b(5)%c = dot_product(hex_b(:, 1), planes_b(5)%normal)
+    planes_b(6)%normal = unit_cross(hex_b(:, 7) - hex_b(:, 8), hex_b(:, 3) - hex_b(:, 8))
+    planes_b(6)%c = dot_product(hex_b(:, 8), planes_b(6)%normal)
     
-    call intersect_tets(ltetA, planesB, ltetsC, ln_tetsC, work = work)
-    do i = 1, ln_tetsC
-      tetsC(:, :, i) = ltetsC(i)%v
+    call intersect_tets(ltet_a, planes_b, ltets_c, ln_tets_c, work = work)
+    do i = 1, ln_tets_c
+      tets_c(:, :, i) = ltets_c(i)%v
     end do
-    n_tetsC = ln_tetsC
+    n_tets_c = ln_tets_c
    
   contains
 
-    pure function unit_cross(vecA, vecB) result(cross)
-      real, dimension(3), intent(in) :: vecA, vecB
+    pure function unit_cross(vec_a, vec_b) result(cross)
+      real, dimension(3), intent(in) :: vec_a, vec_b
+      
       real, dimension(3) :: cross
       
-      cross(1) = vecA(2) * vecB(3) - vecA(3) * vecB(2)
-      cross(2) = vecA(3) * vecB(1) - vecA(1) * vecB(3)
-      cross(3) = vecA(1) * vecB(2) - vecA(2) * vecB(1)
+      cross(1) = vec_a(2) * vec_b(3) - vec_a(3) * vec_b(2)
+      cross(2) = vec_a(3) * vec_b(1) - vec_a(1) * vec_b(3)
+      cross(3) = vec_a(1) * vec_b(2) - vec_a(2) * vec_b(1)
       cross = cross / norm2(cross)
       
     end function unit_cross
    
   end subroutine intersect_tet_hex
 
-  subroutine intersect_hexes(hexA, hexB, tetsC, n_tetsC)
+  subroutine intersect_hexes(hex_a, hex_b, tets_c, n_tets_c)
     ! 3 x 8
-    real, dimension(:, :), intent(in) :: hexA
+    real, dimension(:, :), intent(in) :: hex_a
     ! 3 x 8
-    real, dimension(:, :), intent(in) :: hexB
-    real, dimension(:, :, :), intent(inout) :: tetsC
-    integer, intent(out) :: n_tetsC
+    real, dimension(:, :), intent(in) :: hex_b
+    real, dimension(:, :, :), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
     
-    integer :: ln_tetsC
+    integer :: ln_tets_c
     
     ! Gmsh node ordering. See:
     !   http://gmsh.info/doc/texinfo/gmsh.html#Node-ordering
     
-    ! Cube slicing as, e.g. in:
+    ! Cube slicing as e.g. in:
     !   Isosurfaces: Geometry, Topology, and Algorithms, R. Wenger, CRC Press,
     !   2013, figure 2.29
     
     ! Slicing off two opposite corners on the top ...
-    call intersect_tet_hex(hexA(:, (/3, 6, 7, 8/)), hexB, tetsC, ln_tetsC)
-    n_tetsC = ln_tetsC
-    call intersect_tet_hex(hexA(:, (/1, 3, 4, 8/)), hexB, tetsC(:, :, 1 + n_tetsC:), ln_tetsC)
-    n_tetsC = n_tetsC + ln_tetsC
+    call intersect_tet_hex(hex_a(:, (/3, 6, 7, 8/)), hex_b, tets_c, ln_tets_c)
+    n_tets_c = ln_tets_c
+    call intersect_tet_hex(hex_a(:, (/1, 3, 4, 8/)), hex_b, tets_c(:, :, 1 + n_tets_c:), ln_tets_c)
+    n_tets_c = n_tets_c + ln_tets_c
     ! ... and two opposite corners on the bottom ...
-    call intersect_tet_hex(hexA(:, (/1, 5, 6, 8/)), hexB, tetsC(:, :, 1 + n_tetsC:), ln_tetsC)
-    n_tetsC = n_tetsC + ln_tetsC
-    call intersect_tet_hex(hexA(:, (/1, 2, 3, 6/)), hexB, tetsC(:, :, 1 + n_tetsC:), ln_tetsC)
-    n_tetsC = n_tetsC + ln_tetsC
+    call intersect_tet_hex(hex_a(:, (/1, 5, 6, 8/)), hex_b, tets_c(:, :, 1 + n_tets_c:), ln_tets_c)
+    n_tets_c = n_tets_c + ln_tets_c
+    call intersect_tet_hex(hex_a(:, (/1, 2, 3, 6/)), hex_b, tets_c(:, :, 1 + n_tets_c:), ln_tets_c)
+    n_tets_c = n_tets_c + ln_tets_c
     ! ... to leave a single tetrahedron in the centre
-    call intersect_tet_hex(hexA(:, (/1, 3, 6, 8/)), hexB, tetsC(:, :, 1 + n_tetsC:), ln_tetsC)
-    n_tetsC = n_tetsC + ln_tetsC
+    call intersect_tet_hex(hex_a(:, (/1, 3, 6, 8/)), hex_b, tets_c(:, :, 1 + n_tets_c:), ln_tets_c)
+    n_tets_c = n_tets_c + ln_tets_c
   
   end subroutine intersect_hexes
 
-  pure function simplex_volume(cell_coords) result(volume)
+  pure function simplex_volume(simplex) result(volume)
     ! dim x loc
-    real, dimension(:, :), intent(in) :: cell_coords
+    real, dimension(:, :), intent(in) :: simplex
 
     real :: volume
 
-    select case(size(cell_coords, 1))
+    select case(size(simplex, 1))
       case(1)
-        volume = abs(cell_coords(1, 2) - cell_coords(1, 1))
+        volume = abs(simplex(1, 2) - simplex(1, 1))
       case(2)
-        volume = triangle_area(cell_coords)
+        volume = triangle_area(simplex)
       case(3)
-        volume = tetrahedron_volume(cell_coords)
+        volume = tetrahedron_volume(simplex)
       case default
         volume = -huge(0.0)
     end select

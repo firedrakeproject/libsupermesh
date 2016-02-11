@@ -8,7 +8,7 @@ module libsupermesh_tri_intersection
 
   private
 
-  public :: tri_type, line_type, max_n_trisC, intersect_tris, intersect_polys, &
+  public :: tri_type, line_type, max_n_tris_c, intersect_tris, intersect_polys, &
     & get_lines, triangle_area
 
   type tri_type
@@ -20,9 +20,9 @@ module libsupermesh_tri_intersection
     real, dimension(2) :: point
   end type line_type
   
-  interface max_n_trisC
-    module procedure max_n_trisC_tri, max_n_trisC_poly
-  end interface max_n_trisC
+  interface max_n_tris_c
+    module procedure max_n_tris_c_tri, max_n_tris_c_poly
+  end interface max_n_tris_c
 
   interface intersect_tris
     module procedure intersect_tris_real, intersect_tris_tri
@@ -48,123 +48,123 @@ module libsupermesh_tri_intersection
 
 contains
 
-  pure function max_n_trisC_tri(n_linesB) result(max_n_trisC)
-    integer, intent(in) :: n_linesB
+  pure function max_n_tris_c_tri(n_lines_b) result(max_n_tris_c)
+    integer, intent(in) :: n_lines_b
     
-    integer :: max_n_trisC
+    integer :: max_n_tris_c
     
-    max_n_trisC = 3 * (2 ** n_linesB) - 2
+    max_n_tris_c = 3 * (2 ** n_lines_b) - 2
     
-  end function max_n_trisC_tri
+  end function max_n_tris_c_tri
 
-  pure function max_n_trisC_poly(n_linesA, n_linesB) result(max_n_trisC)
-    integer, intent(in) :: n_linesA
-    integer, intent(in) :: n_linesB
+  pure function max_n_tris_c_poly(n_lines_a, n_lines_b) result(max_n_tris_c)
+    integer, intent(in) :: n_lines_a
+    integer, intent(in) :: n_lines_b
     
-    integer :: max_n_trisC
+    integer :: max_n_tris_c
     
-    max_n_trisC = n_linesA * (2 ** n_linesB) - 2
+    max_n_tris_c = n_lines_a * (2 ** n_lines_b) - 2
     
-  end function max_n_trisC_poly
+  end function max_n_tris_c_poly
 
-  subroutine intersect_tris_real(triA, triB, trisC, n_trisC)
-    real, dimension(2, 3), intent(in) :: triA
-    real, dimension(2, 3), intent(in) :: triB
-    real, dimension(2, 3, BUF_SIZE), intent(out) :: trisC
-    integer, intent(out) :: n_trisC
+  subroutine intersect_tris_real(tri_a, tri_b, tris_c, n_tris_c)
+    real, dimension(2, 3), intent(in) :: tri_a
+    real, dimension(2, 3), intent(in) :: tri_b
+    real, dimension(2, 3, BUF_SIZE), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
 
     integer :: i
-    type(tri_type) :: triA_t, triB_t
-    type(tri_type), dimension(BUF_SIZE), save :: trisC_t
+    type(tri_type) :: tri_a_t, tri_b_t
+    type(tri_type), dimension(BUF_SIZE), save :: tris_c_t
 
-    triA_t%v = triA
-    triB_t%v = triB
-    call intersect_tris(triA_t, triB_t, trisC_t, n_trisC)
-    do i = 1, n_trisC
-      trisC(:, :, i) = trisC_t(i)%v
+    tri_a_t%v = tri_a
+    tri_b_t%v = tri_b
+    call intersect_tris(tri_a_t, tri_b_t, tris_c_t, n_tris_c)
+    do i = 1, n_tris_c
+      tris_c(:, :, i) = tris_c_t(i)%v
     end do
 
   end subroutine intersect_tris_real
 
-  subroutine intersect_tris_tri(triA, triB, trisC, n_trisC)
-    type(tri_type), intent(in) :: triA
-    type(tri_type), intent(in) :: triB
-    type(tri_type), dimension(BUF_SIZE), intent(out) :: trisC
-    integer, intent(out) :: n_trisC
+  subroutine intersect_tris_tri(tri_a, tri_b, tris_c, n_tris_c)
+    type(tri_type), intent(in) :: tri_a
+    type(tri_type), intent(in) :: tri_b
+    type(tri_type), dimension(BUF_SIZE), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
 
     integer :: i
     real :: tol
-    type(line_type), dimension(3) :: linesB
+    type(line_type), dimension(3) :: lines_b
 
     real, dimension(2, BUF_SIZE + 2), save :: points
     integer :: n_points
 
-    linesB = get_lines(triB)
+    lines_b = get_lines(tri_b)
 
-    points(:, :3) = triA%v
+    points(:, :3) = tri_a%v
     n_points = 3
 
-    n_trisC = 0
-    call clip_buf(linesB(1), points, n_points)
+    n_tris_c = 0
+    call clip_buf(lines_b(1), points, n_points)
     if(n_points_tmp < 3) return
     points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     n_points = n_points_tmp
-    call clip_buf(linesB(2), points, n_points)
+    call clip_buf(lines_b(2), points, n_points)
     if(n_points_tmp < 3) return
     points(:, :n_points_tmp) = points_tmp(:, :n_points_tmp)
     n_points = n_points_tmp
-    call clip_buf(linesB(3), points, n_points)
+    call clip_buf(lines_b(3), points, n_points)
     if(n_points_tmp < 3) return
 
-    tol = 10.0 * min(spacing(triangle_area(triA)), spacing(triangle_area(triB)))
+    tol = 10.0 * min(spacing(triangle_area(tri_a)), spacing(triangle_area(tri_b)))
     do i = 1, n_points_tmp - 2
-      n_trisC = n_trisC + 1
-      trisC(n_trisC)%v(:, 1) = points_tmp(:, 1)
-      trisC(n_trisC)%v(:, 2) = points_tmp(:, i + 1)
-      trisC(n_trisC)%v(:, 3) = points_tmp(:, i + 2)
-      if(triangle_area(trisC(n_trisC)) < tol) then
-        n_trisC = n_trisC - 1
+      n_tris_c = n_tris_c + 1
+      tris_c(n_tris_c)%v(:, 1) = points_tmp(:, 1)
+      tris_c(n_tris_c)%v(:, 2) = points_tmp(:, i + 1)
+      tris_c(n_tris_c)%v(:, 3) = points_tmp(:, i + 2)
+      if(triangle_area(tris_c(n_tris_c)) < tol) then
+        n_tris_c = n_tris_c - 1
       end if
     end do
 
   end subroutine intersect_tris_tri
 
-  subroutine intersect_tri_lines(triA, linesB, trisC, n_trisC, areaB, work)
-    type(tri_type), intent(in) :: triA
-    type(line_type), dimension(:), intent(in) :: linesB
-    type(tri_type), dimension(:), intent(out) :: trisC
-    integer, intent(out) :: n_trisC
-    real, optional, intent(in) :: areaB
+  subroutine intersect_tri_lines(tri_a, lines_b, tris_c, n_tris_c, area_b, work)
+    type(tri_type), intent(in) :: tri_a
+    type(line_type), dimension(:), intent(in) :: lines_b
+    type(tri_type), dimension(:), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+    real, optional, intent(in) :: area_b
     real, dimension(:, :, :), target, optional, intent(out) :: work
 
-    call intersect_polys(triA%v, linesB, trisC, n_trisC, areaA = triangle_area(triA), areaB = areaB, work = work)
+    call intersect_polys(tri_a%v, lines_b, tris_c, n_tris_c, area_a = triangle_area(tri_a), area_b = area_b, work = work)
 
   end subroutine intersect_tri_lines
   
-  subroutine intersect_polys_real(polyA, polyB, trisC, n_trisC, areaA, areaB, work)
+  subroutine intersect_polys_real(poly_a, poly_b, tris_c, n_tris_c, area_a, area_b, work)
     ! 2 x loc_a
-    real, dimension(:, :), intent(in) :: polyA
+    real, dimension(:, :), intent(in) :: poly_a
     ! 2 x loc_b
-    real, dimension(:, :), intent(in) :: polyB
-    type(tri_type), dimension(:), intent(out) :: trisC
-    integer, intent(out) :: n_trisC
-    real, optional, intent(in) :: areaA
-    real, optional, intent(in) :: areaB
+    real, dimension(:, :), intent(in) :: poly_b
+    type(tri_type), dimension(:), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+    real, optional, intent(in) :: area_a
+    real, optional, intent(in) :: area_b
     real, dimension(:, :, :), target, optional, intent(out) :: work
     
-    call intersect_polys(polyA, get_lines(polyB), trisC, n_trisC, areaA = areaA, areaB = areaB, work = work)
+    call intersect_polys(poly_a, get_lines(poly_b), tris_c, n_tris_c, area_a = area_a, area_b = area_b, work = work)
   
   end subroutine intersect_polys_real
 
-  subroutine intersect_polys_lines(polyA, linesB, trisC, n_trisC, areaA, areaB, work)
+  subroutine intersect_polys_lines(poly_a, lines_b, tris_c, n_tris_c, area_a, area_b, work)
     ! 2 x loc_a
-    real, dimension(:, :), intent(in) :: polyA
+    real, dimension(:, :), intent(in) :: poly_a
     ! loc_b
-    type(line_type), dimension(:), intent(in) :: linesB
-    type(tri_type), dimension(:), intent(out) :: trisC
-    integer, intent(out) :: n_trisC
-    real, optional, intent(in) :: areaA
-    real, optional, intent(in) :: areaB
+    type(line_type), dimension(:), intent(in) :: lines_b
+    type(tri_type), dimension(:), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+    real, optional, intent(in) :: area_a
+    real, optional, intent(in) :: area_b
     real, dimension(:, :, :), target, optional, intent(out) :: work
 
     integer :: i
@@ -177,39 +177,39 @@ contains
       points => work(:, :, 1)
       points_new => work(:, :, 2)
     else
-      allocate(points(2, max_n_trisC(size(polyA, 2), size(linesB)) + 2))
+      allocate(points(2, max_n_tris_c(size(poly_a, 2), size(lines_b)) + 2))
       allocate(points_new(2, size(points)))
     end if
 
-    points(:, :size(polyA, 2)) = polyA
-    n_points = size(polyA, 2)
+    points(:, :size(poly_a, 2)) = poly_a
+    n_points = size(poly_a, 2)
 
-    n_trisC = 0
-    do i = 1, size(linesB)
-      call clip(linesB(i), points, n_points, points_new, n_points_new)
+    n_tris_c = 0
+    do i = 1, size(lines_b)
+      call clip(lines_b(i), points, n_points, points_new, n_points_new)
       if(n_points_new < 3) goto 42
       points(:, :n_points_new) = points_new(:, :n_points_new)
       n_points = n_points_new
     end do
 
-    if(present(areaB)) then
-      if(present(areaA)) then
-        tol = 10.0 * min(spacing(areaA), spacing(areaB))
+    if(present(area_b)) then
+      if(present(area_a)) then
+        tol = 10.0 * min(spacing(area_a), spacing(area_b))
       else
-        tol = 10.0 * spacing(areaB)
+        tol = 10.0 * spacing(area_b)
       end if
-    else if(present(areaA)) then
-      tol = 10.0 * spacing(areaA)
+    else if(present(area_a)) then
+      tol = 10.0 * spacing(area_a)
     else
       tol = 10.0 * epsilon(0.0)
     end if
     do i = 1, n_points_new - 2
-      n_trisC = n_trisC + 1
-      trisC(n_trisC)%v(:, 1) = points_new(:, 1)
-      trisC(n_trisC)%v(:, 2) = points_new(:, i + 1)
-      trisC(n_trisC)%v(:, 3) = points_new(:, i + 2)
-      if(triangle_area(trisC(n_trisC)) < tol) then
-        n_trisC = n_trisC - 1
+      n_tris_c = n_tris_c + 1
+      tris_c(n_tris_c)%v(:, 1) = points_new(:, 1)
+      tris_c(n_tris_c)%v(:, 2) = points_new(:, i + 1)
+      tris_c(n_tris_c)%v(:, 3) = points_new(:, i + 2)
+      if(triangle_area(tris_c(n_tris_c)) < tol) then
+        n_tris_c = n_tris_c - 1
       end if
     end do
 

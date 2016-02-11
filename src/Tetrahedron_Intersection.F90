@@ -8,7 +8,7 @@ module libsupermesh_tet_intersection
 
   private
 
-  public :: tet_type, plane_type, max_n_tetsC, intersect_tets, get_planes, &
+  public :: tet_type, plane_type, max_n_tets_c, intersect_tets, get_planes, &
     & tetrahedron_volume
 
   type tet_type
@@ -41,73 +41,73 @@ module libsupermesh_tet_intersection
 
 contains
 
-  subroutine intersect_tets_real(tetA, tetB, tetsC, n_tetsC)
-    real, dimension(3, 4), intent(in) :: tetA
-    real, dimension(3, 4), intent(in) :: tetB
-    real, dimension(3, 4, BUF_SIZE), intent(inout) :: tetsC
-    integer, intent(out) :: n_tetsC
+  subroutine intersect_tets_real(tet_a, tet_b, tets_c, n_tets_c)
+    real, dimension(3, 4), intent(in) :: tet_a
+    real, dimension(3, 4), intent(in) :: tet_b
+    real, dimension(3, 4, BUF_SIZE), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
 
     integer :: i
-    type(tet_type) :: tetA_t, tetB_t
-    type(tet_type), dimension(BUF_SIZE), save :: tetsC_t
+    type(tet_type) :: tet_a_t, tet_b_t
+    type(tet_type), dimension(BUF_SIZE), save :: tets_c_t
 
-    tetA_t%v = tetA
-    tetB_t%v = tetB
-    call intersect_tets(tetA_t, tetB_t, tetsC_t, n_tetsC)
+    tet_a_t%v = tet_a
+    tet_b_t%v = tet_b
+    call intersect_tets(tet_a_t, tet_b_t, tets_c_t, n_tets_c)
 
-    do i = 1, n_tetsC
-      tetsC(:, :, i) = tetsC_t(i)%v
+    do i = 1, n_tets_c
+      tets_c(:, :, i) = tets_c_t(i)%v
     end do
 
   end subroutine intersect_tets_real
 
-  subroutine intersect_tets_tet(tetA, tetB, tetsC, n_tetsC)
-    type(tet_type), intent(in) :: tetA
-    type(tet_type), intent(in) :: tetB
-    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
-    integer, intent(out) :: n_tetsC
+  subroutine intersect_tets_tet(tet_a, tet_b, tets_c, n_tets_c)
+    type(tet_type), intent(in) :: tet_a
+    type(tet_type), intent(in) :: tet_b
+    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
 
-    call intersect_tets_planes_buf(tetA, get_planes(tetB), tetsC, n_tetsC, volB = tetrahedron_volume(tetB))
+    call intersect_tets_planes_buf(tet_a, get_planes(tet_b), tets_c, n_tets_c, vol_b = tetrahedron_volume(tet_b))
 
   end subroutine intersect_tets_tet
 
-  subroutine intersect_tets_planes_buf(tetA, planesB, tetsC, n_tetsC, volB)
-    type(tet_type), intent(in) :: tetA
-    type(plane_type), dimension(4), intent(in)  :: planesB
-    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tetsC
-    integer, intent(out) :: n_tetsC
-    real, optional, intent(in) :: volB
+  subroutine intersect_tets_planes_buf(tet_a, planes_b, tets_c, n_tets_c, vol_b)
+    type(tet_type), intent(in) :: tet_a
+    type(plane_type), dimension(4), intent(in)  :: planes_b
+    type(tet_type), dimension(BUF_SIZE), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+    real, optional, intent(in) :: vol_b
 
     integer :: i, j
     real :: tol, vol
 
-    n_tetsC = 1
-    tetsC(1) = tetA
+    n_tets_c = 1
+    tets_c(1) = tet_a
 
-    if(present(volB)) then
-      tol = 10.0 * min(spacing(tetrahedron_volume(tetA)), spacing(volB))
+    if(present(vol_b)) then
+      tol = 10.0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
     else
-      tol = 10.0 * spacing(tetrahedron_volume(tetA))
+      tol = 10.0 * spacing(tetrahedron_volume(tet_a))
     end if
-    do i = 1, size(planesB)
+    do i = 1, size(planes_b)
       ! Clip the tet_array against the i'th plane
       n_tets_tmp = 0
 
-      do j = 1, n_tetsC
-        call clip_buf(planesB(i), tetsC(j))
+      do j = 1, n_tets_c
+        call clip_buf(planes_b(i), tets_c(j))
       end do
 
-      if(i /= size(planesB)) then
-        n_tetsC = n_tets_tmp
-        tetsC(:n_tetsC) = tets_tmp_buf(:n_tetsC)
+      if(i /= size(planes_b)) then
+        n_tets_c = n_tets_tmp
+        tets_c(:n_tets_c) = tets_tmp_buf(:n_tets_c)
       else
         ! Copy the result if the volume is >= tol
-        n_tetsC = 0
+        n_tets_c = 0
         do j = 1, n_tets_tmp
           vol = tetrahedron_volume(tets_tmp_buf(j))
           if(vol >= tol) then
-            n_tetsC = n_tetsC + 1
-            tetsC(n_tetsC) = tets_tmp_buf(j)
+            n_tets_c = n_tets_c + 1
+            tets_c(n_tets_c) = tets_tmp_buf(j)
           end if
         end do
       end if
@@ -115,21 +115,21 @@ contains
 
   end subroutine intersect_tets_planes_buf
   
-  pure function max_n_tetsC(n_planesB)
-    integer, intent(in) :: n_planesB
+  pure function max_n_tets_c(n_planes_b)
+    integer, intent(in) :: n_planes_b
     
-    integer :: max_n_tetsC
+    integer :: max_n_tets_c
     
-    max_n_tetsC = 3 ** n_planesB
+    max_n_tets_c = 3 ** n_planes_b
     
-  end function max_n_tetsC
+  end function max_n_tets_c
   
-  subroutine intersect_tets_planes(tetA, planesB, tetsC, n_tetsC, volB, work)
-    type(tet_type), intent(in) :: tetA
-    type(plane_type), dimension(:), intent(in)  :: planesB
-    type(tet_type), dimension(:), intent(inout) :: tetsC
-    integer, intent(out) :: n_tetsC
-    real, optional, intent(in) :: volB
+  subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
+    type(tet_type), intent(in) :: tet_a
+    type(plane_type), dimension(:), intent(in)  :: planes_b
+    type(tet_type), dimension(:), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+    real, optional, intent(in) :: vol_b
     type(tet_type), dimension(:), target, optional, intent(inout) :: work
 
     integer :: i, j, ntets_new
@@ -139,36 +139,36 @@ contains
     if(present(work)) then
       tets_new => work
     else
-      allocate(tets_new(max_n_tetsC(size(planesB))))
+      allocate(tets_new(max_n_tets_c(size(planes_b))))
     end if
 
-    n_tetsC = 1
-    tetsC(1) = tetA
+    n_tets_c = 1
+    tets_c(1) = tet_a
 
-    if(present(volB)) then
-      tol = 10.0 * min(spacing(tetrahedron_volume(tetA)), spacing(volB))
+    if(present(vol_b)) then
+      tol = 10.0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
     else
-      tol = 10.0 * spacing(tetrahedron_volume(tetA))
+      tol = 10.0 * spacing(tetrahedron_volume(tet_a))
     end if
-    do i = 1, size(planesB)
+    do i = 1, size(planes_b)
       ! Clip the tet_array against the i'th plane
       ntets_new = 0
 
-      do j = 1, n_tetsC
-        call clip(planesB(i), tetsC(j), tets_new, ntets_new)
+      do j = 1, n_tets_c
+        call clip(planes_b(i), tets_c(j), tets_new, ntets_new)
       end do
 
-      if(i /= size(planesB)) then
-        n_tetsC = ntets_new
-        tetsC(:n_tetsC) = tets_new(:n_tetsC)
+      if(i /= size(planes_b)) then
+        n_tets_c = ntets_new
+        tets_c(:n_tets_c) = tets_new(:n_tets_c)
       else
         ! Copy the result if the volume is >= tol
-        n_tetsC = 0
+        n_tets_c = 0
         do j = 1, ntets_new
           vol = tetrahedron_volume(tets_new(j))
           if(vol >= tol) then
-            n_tetsC = n_tetsC + 1
-            tetsC(n_tetsC) = tets_new(j)
+            n_tets_c = n_tets_c + 1
+            tets_c(n_tets_c) = tets_new(j)
           end if
         end do
       end if
@@ -602,12 +602,12 @@ contains
 
   end function get_planes_tet
 
-  pure function unit_cross(vecA, vecB) result(cross)
-    real, dimension(3), intent(in) :: vecA, vecB
+  pure function unit_cross(vec_a, vec_b) result(cross)
+    real, dimension(3), intent(in) :: vec_a, vec_b
     real, dimension(3) :: cross
-    cross(1) = vecA(2) * vecB(3) - vecA(3) * vecB(2)
-    cross(2) = vecA(3) * vecB(1) - vecA(1) * vecB(3)
-    cross(3) = vecA(1) * vecB(2) - vecA(2) * vecB(1)
+    cross(1) = vec_a(2) * vec_b(3) - vec_a(3) * vec_b(2)
+    cross(2) = vec_a(3) * vec_b(1) - vec_a(1) * vec_b(3)
+    cross(3) = vec_a(1) * vec_b(2) - vec_a(2) * vec_b(1)
 
     cross = cross / norm2(cross)
   end function unit_cross
@@ -642,18 +642,20 @@ contains
 
   pure function tetrahedron_volume_tet(tet) result(vol)
     type(tet_type), intent(in) :: tet
+
     real :: vol
-    real, dimension(3) :: cross, vecA, vecB, vecC
 
-    vecA = tet%v(:, 1) - tet%v(:, 4)
-    vecB = tet%v(:, 2) - tet%v(:, 4)
-    vecC = tet%v(:, 3) - tet%v(:, 4)
+    real, dimension(3) :: cross, vec_a, vec_b, vec_c
 
-    cross(1) = vecB(2) * vecC(3) - vecB(3) * vecC(2)
-    cross(2) = vecB(3) * vecC(1) - vecB(1) * vecC(3)
-    cross(3) = vecB(1) * vecC(2) - vecB(2) * vecC(1)
+    vec_a = tet%v(:, 1) - tet%v(:, 4)
+    vec_b = tet%v(:, 2) - tet%v(:, 4)
+    vec_c = tet%v(:, 3) - tet%v(:, 4)
 
-    vol = abs(dot_product(vecA, cross)) / 6.0
+    cross(1) = vec_b(2) * vec_c(3) - vec_b(3) * vec_c(2)
+    cross(2) = vec_b(3) * vec_c(1) - vec_b(1) * vec_c(3)
+    cross(3) = vec_b(1) * vec_c(2) - vec_b(2) * vec_c(1)
+
+    vol = abs(dot_product(vec_a, cross)) / 6.0
     
   end function tetrahedron_volume_tet
 
