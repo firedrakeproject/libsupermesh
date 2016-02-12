@@ -41,13 +41,11 @@ module libsupermesh_parallel_supermesh
   type(pointer_integer), dimension(:), allocatable, save :: send_element_uns
 
   type(pointer_byte), dimension(:), allocatable, save :: recv_buffer, send_buffer
-  integer, dimension(:,:), allocatable, save :: number_of_elements_and_nodes_to_receive, number_of_elements_and_nodes_to_send
   type(pointer_integer), dimension(:), allocatable, save :: send_nodes_connectivity, recv_nodes_connectivity
   type(pointer_real), dimension(:), allocatable, save :: send_nodes_values, recv_nodes_values
   integer, dimension(:), allocatable, save  :: request_send, request_recv
   integer, dimension(:,:), allocatable, save :: status_send, status_recv
   logical, dimension(:), allocatable, save :: partition_intersection_recv, partition_intersection_send
-  integer, dimension(:), allocatable, save :: number_of_elements_to_receive, number_of_elements_to_send
 
   integer(kind = c_int8_t), dimension(:), pointer, save :: buffer_mpi
 
@@ -321,14 +319,11 @@ contains
           end do
         end do        
         nnodes_send = key_count(nodes_send)
-
-        number_of_elements_and_nodes_to_send(1, i) = nelements_send
-        number_of_elements_and_nodes_to_send(2, i) = nnodes_send
-
+        
         allocate(send_element_uns(i)%p(nelements_send))
         send_element_uns(i)%p = elements_send(1:nelements_send)
 
-        allocate(send_nodes_connectivity(i)%p(number_of_elements_and_nodes_to_send(1, i) * size(enlist_b, 1)))
+        allocate(send_nodes_connectivity(i)%p(nelements_send * size(enlist_b, 1)))
 
         ! Build an element-node graph for sending with contiguous indices
         call allocate(node_map)
@@ -358,7 +353,7 @@ contains
         call deallocate(nodes_send)
 
       ! ### Mesh send buffer allocation ###
-        if ( number_of_elements_and_nodes_to_send(1,i) > 0 ) then
+        if(nelements_send > 0) then
           call donor_ele_data(send_nodes_array, send_element_uns(i)%p, data)
 
           buffer_size = int_extent + int_extent +                          &
@@ -369,13 +364,13 @@ contains
           allocate(buffer_mpi(buffer_size))
           position = 0
 
-          call MPI_Pack(number_of_elements_and_nodes_to_send(1, i), &
+          call MPI_Pack(nelements_send, &
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack number of elements error")
           end if
-          call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
+          call MPI_Pack(nnodes_send, &
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
@@ -415,13 +410,13 @@ contains
 
           allocate(buffer_mpi(buffer_size))
           position = 0
-          call MPI_Pack(number_of_elements_and_nodes_to_send(1, i), &
+          call MPI_Pack(nelements_send, &
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack number of elements error")
           end if
-          call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
+          call MPI_Pack(nnodes_send, &
                & 1,                                                 &
                & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
@@ -614,10 +609,8 @@ contains
         end if
 
         allocate(recv_nodes_values(i)%p(nnodes * (size(positions_b,1))))
-        number_of_elements_and_nodes_to_receive(1, i) = nelements
-        number_of_elements_and_nodes_to_receive(2, i) = nnodes
 
-        if(number_of_elements_and_nodes_to_receive(1, i) <= 0) cycle
+        if(nelements <= 0) cycle
 
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, recv_nodes_connectivity(i)%p,     &
@@ -704,22 +697,15 @@ contains
     integer  :: i
 
     parallel_supermesh_allocated = .true.
-    allocate(number_of_elements_to_receive(0:nprocs - 1), &
-           & number_of_elements_to_send(0:nprocs -1),     &
-           & request_send(0: nprocs - 1), request_recv(0: nprocs - 1), &
+    allocate(request_send(0: nprocs - 1), request_recv(0: nprocs - 1), &
            & status_send(MPI_STATUS_SIZE, 0: nprocs - 1), status_recv(MPI_STATUS_SIZE, 0: nprocs - 1))
-    number_of_elements_to_receive = -11
-    number_of_elements_to_send    = -11
     forall(i = 0:nprocs - 1)
       status_send(:, i) = MPI_STATUS_IGNORE
       status_recv(:, i) = MPI_STATUS_IGNORE
     end forall
     request_send = MPI_REQUEST_NULL
     request_recv = MPI_REQUEST_NULL
-
-    allocate(number_of_elements_and_nodes_to_receive(2,0:nprocs - 1), number_of_elements_and_nodes_to_send(2,0:nprocs - 1))
-    number_of_elements_and_nodes_to_receive = 0
-    number_of_elements_and_nodes_to_send = 0
+    
   end subroutine initialise_parallel_supermesh
 
   subroutine finalise_parallel_supermesh()
@@ -770,8 +756,6 @@ contains
 
       deallocate(parallel_bbox_a, parallel_bbox_b, bbox_a, bbox_b)
       deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_send, partition_intersection_recv)
-      deallocate(number_of_elements_to_receive, number_of_elements_to_send)
-      deallocate(number_of_elements_and_nodes_to_receive, number_of_elements_and_nodes_to_send)
 
       parallel_supermesh_allocated = .false.
     end if
