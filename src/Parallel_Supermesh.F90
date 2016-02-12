@@ -43,8 +43,10 @@ module libsupermesh_parallel_supermesh
 
   integer, save :: mpi_comm, nprocs, rank
 #ifdef PROFILE
-  real :: t_0, all_to_all_time, point_to_point_time, local_compute_time, &
-    & remote_compute_time
+  real :: t_0, all_to_all_time, local_compute_time, remote_compute_time
+#ifndef OVERLAP_COMPUTE_COMMS
+  real :: point_to_point_time
+#endif
 #endif
 
 contains
@@ -206,6 +208,7 @@ contains
       libsupermesh_abort("MPI_TYPE_EXTENT integer error")
     end if
 
+    allocate(elements_send(size(enlist_b, 2)))
     nsends = 0
     do i = 0, nprocs - 1
       if(i == rank) then
@@ -218,7 +221,6 @@ contains
       if(partition_bboxes_intersect(bbox_b, parallel_bbox_a(:, :, i + 1))) then
         ! Sending data to process i
 
-        allocate(elements_send(size(enlist_b, 2)))
         nelements_send = 0
         do ele_B = 1, size(enlist_b, 2)
           ! Don't send non-owned elements
@@ -344,8 +346,8 @@ contains
         call MPI_Isend(send_buffer(i + 1)%v, buffer_size, MPI_PACKED, &
           & i, 0, mpi_comm, send_requests(nsends), ierr);  assert(ierr == MPI_SUCCESS)
     end if
-    deallocate(elements_send)
   end do
+  deallocate(elements_send)
 
   end subroutine step_2
 
@@ -433,10 +435,6 @@ contains
     else
       point_to_point_time = 0.0D0
     end if
-#endif
-#else
-#ifdef PROFILE
-    point_to_point_time = 0.0D0
 #endif
 #endif
 
@@ -618,7 +616,9 @@ contains
 #ifdef PROFILE
     t_0 = -1.0D0
     all_to_all_time = 0.0D0
+#ifndef OVERLAP_COMPUTE_COMMS
     point_to_point_time = 0.0D0
+#endif
     local_compute_time = 0.0D0
     remote_compute_time = 0.0D0
 #endif
@@ -652,8 +652,10 @@ contains
     integer :: lcomm, lunit
   
     integer :: ierr, nprocs
-    real :: point_to_point_max, point_to_point_min, point_to_point_sum
     real :: all_to_all_max, all_to_all_min, all_to_all_sum
+#ifndef OVERLAP_COMPUTE_COMMS
+    real :: point_to_point_max, point_to_point_min, point_to_point_sum
+#endif
     real :: local_compute_max, local_compute_min, local_compute_sum
     real :: remote_compute_max, remote_compute_min, remote_compute_sum
     
@@ -673,9 +675,11 @@ contains
     call MPI_Allreduce(all_to_all_time,     all_to_all_min,     1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(all_to_all_time,     all_to_all_max,     1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(all_to_all_time,     all_to_all_sum,     1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+#ifndef OVERLAP_COMPUTE_COMMS
     call MPI_Allreduce(point_to_point_time, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(point_to_point_time, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(point_to_point_time, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+#endif
     call MPI_Allreduce(local_compute_time,  local_compute_min,  1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(local_compute_time,  local_compute_max,  1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(local_compute_time,  local_compute_sum,  1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
@@ -685,7 +689,9 @@ contains
 
     if(rank == 0) then
       write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "All to all time, min, max, average     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
+#ifndef OVERLAP_COMPUTE_COMMS
       write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Point to point time, min, max, average = ", point_to_point_min, ", ", point_to_point_max, ", ", point_to_point_sum / nprocs
+#endif
       write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Local compute time, min, max, average  = ", local_compute_min,  ", ", local_compute_max,  ", ", local_compute_sum  / nprocs
       write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Remote compute time, min, max, average = ", remote_compute_min, ", ", remote_compute_max, ", ", remote_compute_sum / nprocs
     end if
