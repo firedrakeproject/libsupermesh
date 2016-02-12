@@ -42,7 +42,10 @@ module libsupermesh_parallel_supermesh
   type(buffer), dimension(:), allocatable, save :: send_buffer
 
   integer, save :: mpi_comm, nprocs, rank
-  real :: t0, all_to_all, point_to_point, local_compute, remote_compute, t1
+#ifdef PROFILE
+  real :: t_0, all_to_all_time, point_to_point_time, local_compute_time, &
+    & remote_compute_time
+#endif
 
 contains
 
@@ -128,6 +131,9 @@ contains
     integer, dimension(:), intent(in) :: ele_owner_b
 
     integer :: dim, ierr
+#ifdef PROFILE
+    real :: t_1
+#endif
 
     dim = size(positions_a, 1)
     
@@ -141,14 +147,7 @@ contains
     allocate(parallel_bbox_b(2, dim, nprocs))
 
 #ifdef PROFILE
-    t0 = mpi_wtime()
-#else
-    point_to_point = 0.0D0
-    all_to_all = 0.0D0
-    t0 = 0.0D0
-    local_compute = 0.0D0
-    remote_compute = 0.0D0
-    t1 = 0.0D0
+    t_1 = mpi_wtime()
 #endif
     call MPI_Allgather(bbox_a, 2 * dim, MPI_DOUBLE_PRECISION, &
       & parallel_bbox_a, 2 * dim, MPI_DOUBLE_PRECISION, &
@@ -158,11 +157,10 @@ contains
       & parallel_bbox_b, 2 * dim, MPI_DOUBLE_PRECISION, &
       & mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
 #ifdef PROFILE
-    all_to_all = mpi_wtime() - t0
+    all_to_all_time = mpi_wtime() - t_1
 #endif
 
   end subroutine step_1
-
 
   subroutine step_2(positions_b, enlist_b, ele_owner_b, donor_ele_data)
     ! dim x nnodes_b
@@ -196,7 +194,7 @@ contains
     real, dimension(:), allocatable :: send_positions
 
 #ifdef PROFILE
-    t0 = -1
+    t_0 = -1.0D0
 #endif
 
     call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr)
@@ -339,7 +337,7 @@ contains
         deallocate(send_nodes_array, send_enlist, send_positions)
 
 #ifdef PROFILE
-        if ( t0 .eq. -1 ) t0 = mpi_wtime()
+        if(t_0 < 0.0D0) t_0 = mpi_wtime()
 #endif
 
         nsends = nsends + 1
@@ -407,6 +405,9 @@ contains
     integer(kind = c_int8_t), dimension(:), pointer :: recv_buffer
     type(buffer), dimension(:), allocatable :: recv_buffers
 #endif
+#ifdef PROFILE
+    real :: t_1
+#endif
 
 #ifndef OVERLAP_COMPUTE_COMMS
     allocate(recv_buffers(nprocs))
@@ -427,11 +428,15 @@ contains
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
 #ifdef PROFILE
-    if ( t0 .gt. 0 ) then
-      point_to_point = mpi_wtime() - t0
+    if(t_0 >= 0.0D0) then
+      point_to_point_time = mpi_wtime() - t_0
     else
-      point_to_point = 0.0D0
+      point_to_point_time = 0.0D0
     end if
+#endif
+#else
+#ifdef PROFILE
+    point_to_point_time = 0.0D0
 #endif
 #endif
 
@@ -439,14 +444,12 @@ contains
            & nodes_B(size(positions_a, 1), size(enlist_b, 1)), &
            & positions_c(size(positions_a, 1), size(positions_a, 1) + 1, &
                        & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
-    nodes_A = 0.0
-    nodes_B = 0.0
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Parallel self-self runtime test !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #ifdef PROFILE
-    t1 = mpi_wtime()
+    t_1 = mpi_wtime()
 #endif
     call rtree_intersection_finder_set_input(positions_a, enlist_a)
     do ele_B = 1, size(enlist_b, 2)
@@ -465,7 +468,7 @@ contains
       end do
     end do
 #ifdef PROFILE
-    local_compute = mpi_wtime() - t1
+    local_compute_time = mpi_wtime() - t_1
 #endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -547,7 +550,7 @@ contains
         call unpack_data_b(data)
 
 #ifdef PROFILE
-    t1 = mpi_wtime()
+        t_1 = mpi_wtime()
 #endif
         do ele_B = 1, nelements
           do k = 1, size(enlist_b, 1)
@@ -569,8 +572,9 @@ contains
           end do
         end do
 #ifdef PROFILE
-    remote_compute = mpi_wtime() - t1
+        remote_compute_time = mpi_wtime() - t_1
 #endif
+
         deallocate(recv_enlist, recv_positions, data)
       end if
     end do
@@ -610,6 +614,14 @@ contains
            & send_requests(nprocs), &
            & recv(nprocs))
     send_requests = MPI_REQUEST_NULL
+    
+#ifdef PROFILE
+    t_0 = -1.0D0
+    all_to_all_time = 0.0D0
+    point_to_point_time = 0.0D0
+    local_compute_time = 0.0D0
+    remote_compute_time = 0.0D0
+#endif
     
     parallel_supermesh_allocated = .true.
     
@@ -658,18 +670,18 @@ contains
     
     call MPI_Comm_size(lcomm, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
-    call MPI_Allreduce(point_to_point, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(point_to_point, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(point_to_point, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(all_to_all,     all_to_all_min,     1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(all_to_all,     all_to_all_max,     1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(all_to_all,     all_to_all_sum,     1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(local_compute,  local_compute_min,  1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(local_compute,  local_compute_max,  1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(local_compute,  local_compute_sum,  1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(remote_compute, remote_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)      
-    call MPI_Allreduce(remote_compute, remote_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Allreduce(remote_compute, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(all_to_all_time,     all_to_all_min,     1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(all_to_all_time,     all_to_all_max,     1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(all_to_all_time,     all_to_all_sum,     1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(point_to_point_time, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(point_to_point_time, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(point_to_point_time, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(local_compute_time,  local_compute_min,  1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(local_compute_time,  local_compute_max,  1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(local_compute_time,  local_compute_sum,  1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(remote_compute_time, remote_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)      
+    call MPI_Allreduce(remote_compute_time, remote_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(remote_compute_time, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
 
     if(rank == 0) then
       write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "All to all time, min, max, average     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
