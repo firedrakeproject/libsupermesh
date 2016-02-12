@@ -16,8 +16,8 @@ subroutine benchmark_parallel_p1_inner_product_3d() bind(c)
 #include <mpif.h>
 
   ! Input Triangle mesh base names
-  character(len = *), parameter :: basename_a = "data/pyramid_0_01", &
-                                 & basename_b = "data/cube_0_01"
+  character(len = *), parameter :: basename_a = "data/pyramid_0_5", &
+                                 & basename_b = "data/cube_0_5"
 
   character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, size_chr
   integer :: ierr, integer_extent, rank, real_extent
