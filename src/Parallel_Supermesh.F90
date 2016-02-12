@@ -19,7 +19,7 @@ module libsupermesh_parallel_supermesh
 
   private
 
-  public :: parallel_supermesh, print_profile_times, printOverlapMode
+  public :: parallel_supermesh, print_times
   public :: bbox, partition_bbox, partition_bboxes_intersect
 
   type pointer_real
@@ -779,107 +779,54 @@ contains
 
   end subroutine finalise_parallel_supermesh
 
-  subroutine print_profile_times()
-    real  :: all_to_all_max, all_to_all_min, all_to_all_sum
-    real  :: point_to_point_max, point_to_point_min, point_to_point_sum
-    real  :: local_compute_max, local_compute_min, local_compute_sum
-    real  :: remote_compute_max, remote_compute_min, remote_compute_sum
-
-    integer :: ierr
-
+  subroutine print_times(comm, unit)
+    integer, optional, intent(in) :: comm
+    integer, optional, intent(in) :: unit
+    
 #ifdef PROFILE
-    call MPI_Allreduce(point_to_point, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(point_to_point_min).")
+    integer :: lcomm, lunit
+  
+    integer :: ierr, nprocs
+    real :: point_to_point_max, point_to_point_min, point_to_point_sum
+    real :: all_to_all_max, all_to_all_min, all_to_all_sum
+    real :: local_compute_max, local_compute_min, local_compute_sum
+    real :: remote_compute_max, remote_compute_min, remote_compute_sum
+    
+    if(present(comm)) then
+      lcomm = comm
+    else
+      lcomm = MPI_COMM_WORLD
     end if
+    if(present(unit)) then
+      lunit = unit
+    else
+      lunit = debug_log_unit
+    end if
+    
+    call MPI_Comm_size(lcomm, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
-    call MPI_Allreduce(point_to_point, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(point_to_point_max).")
-    end if
+    call MPI_Allreduce(point_to_point, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(point_to_point, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(point_to_point, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(all_to_all,     all_to_all_min,     1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(all_to_all,     all_to_all_max,     1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(all_to_all,     all_to_all_sum,     1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(local_compute,  local_compute_min,  1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(local_compute,  local_compute_max,  1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(local_compute,  local_compute_sum,  1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(remote_compute, remote_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)      
+    call MPI_Allreduce(remote_compute, remote_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Allreduce(remote_compute, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
 
-    call MPI_Allreduce(point_to_point, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(point_to_point_sum).")
-    end if
-
-    call MPI_Allreduce(all_to_all, all_to_all_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr) 
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(all_to_all_min).")
-    end if
-
-    call MPI_Allreduce(all_to_all, all_to_all_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(all_to_all_max).")
-    end if
-
-    call MPI_Allreduce(all_to_all, all_to_all_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(all_to_all_sum).")
-    end if
-
-    call MPI_Allreduce(local_compute, local_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(local_compute_min).")
-    end if
-
-    call MPI_Allreduce(local_compute, local_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(local_compute_max).")
-    end if
-
-    call MPI_Allreduce(local_compute, local_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(local_compute_sum).")
-    end if
-
-    call MPI_Allreduce(remote_compute, remote_compute_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(remote_compute_min).")
-    end if
-      
-    call MPI_Allreduce(remote_compute, remote_compute_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(remote_compute_max).")
-    end if
-
-    call MPI_Allreduce(remote_compute, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Allreduce(remote_compute_sum).")
-    end if
-
-    if (rank == 0) then
-      print *, "All to all     (MIN, MAX, AVG) :", all_to_all_min, all_to_all_max, all_to_all_sum/nprocs
-      print *, "Point to point (MIN, MAX, AVG) :", point_to_point_min, point_to_point_max, point_to_point_sum/nprocs
-      print *, "Local compute  (MIN, MAX, AVG) :", local_compute_min, local_compute_max, local_compute_sum/nprocs
-      print *, "Remote compute (MIN, MAX, AVG) :", remote_compute_min, remote_compute_max, remote_compute_sum/nprocs
-    end if
-#else
-    if ( rank == 0 ) then
-      print *, "Not using profile"
+    if(rank == 0) then
+      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "All to all time, min, max, average     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
+      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Point to point time, min, max, average = ", point_to_point_min, ", ", point_to_point_max, ", ", point_to_point_sum / nprocs
+      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Local compute time, min, max, average  = ", local_compute_min,  ", ", local_compute_max,  ", ", local_compute_sum  / nprocs
+      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Remote compute time, min, max, average = ", remote_compute_min, ", ", remote_compute_max, ", ", remote_compute_sum / nprocs
     end if
 #endif
 
-  end subroutine print_profile_times
-
-  subroutine printOverlapMode()
-
-#ifdef OVERLAP_COMPUTE_COMMS
-    print *, "Using Overlap Compute/Comms"
-#else
-    print *, "NOT using Overlap Compute/Comms"
-#endif
-  end subroutine printOverlapMode
-
-  function returnOverlapMode() result(mode)
-    integer :: mode 
-
-#ifdef OVERLAP_COMPUTE_COMMS
-    mode = 1
-#else
-    mode = 0
-#endif
-  end function returnOverlapMode
+  end subroutine print_times
 
   pure function bbox(coords)
     ! dim x loc

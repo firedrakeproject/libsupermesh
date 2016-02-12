@@ -15,7 +15,7 @@ subroutine benchmark_parallel_complete() bind(c)
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
   use libsupermesh_halo_ownership
-  use libsupermesh_parallel_supermesh, only : parallel_supermesh, print_profile_times, printOverlapMode
+  use libsupermesh_parallel_supermesh, only : parallel_supermesh, print_times
 
   implicit none
 
@@ -76,7 +76,6 @@ subroutine benchmark_parallel_complete() bind(c)
   parallel_read_time = mpi_wtime() - t0
 
   if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
-  if (rank == 0) call printOverlapMode()
 
   t0 = mpi_wtime()
   allocate(valsB(test_parallel_ele_B))
@@ -110,7 +109,7 @@ subroutine benchmark_parallel_complete() bind(c)
   area_serial = 45.0
   integral_serial = 225.0
 
-  call print_profile_times()
+  call print_times()
 
   if(rank == root) then
     write(output_unit, "(a)") ""

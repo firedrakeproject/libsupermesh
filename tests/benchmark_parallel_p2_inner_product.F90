@@ -10,7 +10,7 @@ subroutine benchmark_parallel_p2_inner_product() bind(c)
     & deallocate, has_key, fetch, insert
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
     & insert, key_count, fetch
-  use libsupermesh_parallel_supermesh, only : parallel_supermesh, print_profile_times, printOverlapMode
+  use libsupermesh_parallel_supermesh, only : parallel_supermesh, print_times
   use libsupermesh_read_halos, only : halo_type, deallocate, read_halo
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_supermesh, only : triangle_area
@@ -120,7 +120,6 @@ subroutine benchmark_parallel_p2_inner_product() bind(c)
   parallel_interpolation_time = parallel_interpolation_time + mpi_wtime() - t0
 
   if (rank == 0) print"(a,i15,a,i15)", " A:", nelements_a, ", B:", nelements_b
-  if (rank == 0) call printOverlapMode()
 
   t0 = mpi_wtime()
   ! Perform multi-mesh integration
@@ -151,7 +150,7 @@ subroutine benchmark_parallel_p2_inner_product() bind(c)
   call MPI_Allreduce(parallel_interpolation_time, parallel_time_interpolation_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Allreduce(parallel_interpolation_time, parallel_time_interpolation_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
-  call print_profile_times()
+  call print_times()
 
   if(rank == 0) then
     print "(a)" , ""
