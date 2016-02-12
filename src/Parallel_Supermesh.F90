@@ -38,8 +38,6 @@ module libsupermesh_parallel_supermesh
   real, dimension(:,:), allocatable, save :: bbox_a, bbox_b
   real, dimension(:,:,:), allocatable, save :: parallel_bbox_a, parallel_bbox_b
 
-  type(pointer_integer), dimension(:), allocatable, save :: send_element_uns
-
   type(pointer_byte), dimension(:), allocatable, save :: recv_buffer, send_buffer
   type(pointer_integer), dimension(:), allocatable, save :: send_nodes_connectivity, recv_nodes_connectivity
   type(pointer_real), dimension(:), allocatable, save :: send_nodes_values, recv_nodes_values
@@ -217,11 +215,6 @@ contains
     t0 = -1
 #endif
 
-    allocate(send_element_uns(0:nprocs-1))
-    do i=0,size(send_element_uns(:))-1
-      nullify(send_element_uns(i)%p)
-    end do
-
     allocate(send_buffer(0:nprocs - 1))
     do i = 0, size(send_buffer(:)) - 1
       nullify(send_buffer(i)%p)
@@ -298,9 +291,6 @@ contains
           end do
         end do        
         nnodes_send = key_count(nodes_send)
-        
-        allocate(send_element_uns(i)%p(nelements_send))
-        send_element_uns(i)%p = elements_send(1:nelements_send)
 
         allocate(send_nodes_connectivity(i)%p(nelements_send * size(enlist_b, 1)))
 
@@ -318,7 +308,6 @@ contains
           end do
         end do
         call deallocate(node_map)
-        deallocate(elements_send)
 
         allocate(send_nodes_array(nnodes_send), send_nodes_values(i)%p(nnodes_send * size(positions_b, 1)))
 #ifndef NDEBUG
@@ -333,7 +322,7 @@ contains
 
       ! ### Mesh send buffer allocation ###
         if(nelements_send > 0) then
-          call donor_ele_data(send_nodes_array, send_element_uns(i)%p, data)
+          call donor_ele_data(send_nodes_array, elements_send(:nelements_send), data)
 
           buffer_size = int_extent + int_extent +                          &
                     &   (size(send_nodes_connectivity(i)%p) * int_extent) + &
@@ -421,6 +410,7 @@ contains
         end if
         deallocate(buffer_mpi)
     end if
+    deallocate(elements_send)
   end do
 
   end subroutine step_2
@@ -680,12 +670,6 @@ contains
     integer :: i
 
     if(parallel_supermesh_allocated) then
-      do i=0,size(send_element_uns(:))-1
-        if ( .NOT. ASSOCIATED(send_element_uns(i)%p) ) cycle
-        deallocate(send_element_uns(i)%p)
-      end do
-      deallocate(send_element_uns)
-
       do i=0,size(send_buffer(:))-1
         if ( .NOT. ASSOCIATED(send_buffer(i)%p) ) cycle
         deallocate(send_buffer(i)%p)
