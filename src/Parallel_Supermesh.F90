@@ -66,7 +66,6 @@ module libsupermesh_parallel_supermesh
 
 contains
 
-                                                       ! TODO: Remove this unused argument
   subroutine parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
                              &  positions_b, enlist_b, ele_owner_b, &
                              &  donor_ele_data, unpack_data_b, intersection_calculation, &
@@ -372,37 +371,37 @@ contains
 
           call MPI_Pack(number_of_elements_and_nodes_to_send(1, i), &
                & 1,                                                 &
-               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack number of elements error")
           end if
           call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
                & 1,                                                 &
-               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack number of nodes error")
           end if
           call MPI_Pack(send_nodes_connectivity(i)%p,                &
                & size(send_nodes_connectivity(i)%p),                 &
-               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack connectivity error")
           end if
           call MPI_Pack(send_nodes_values(i)%p,                     &
                & size(send_nodes_values(i)%p),                      &
-               & MPI_DOUBLE_PRECISION, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_DOUBLE_PRECISION, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack values error")
           end if
           call MPI_Pack(size(data),                                 &
                & 1,                                                 &
-               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack size of data error")
           end if
           call MPI_Pack(data,                                       &
                & size(data),                                        &
-               & MPI_BYTE, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_BYTE, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack data error")
           end if
@@ -418,13 +417,13 @@ contains
           position = 0
           call MPI_Pack(number_of_elements_and_nodes_to_send(1, i), &
                & 1,                                                 &
-               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack number of elements error")
           end if
           call MPI_Pack(number_of_elements_and_nodes_to_send(2, i), &
                & 1,                                                 &
-               & MPI_INTEGER, buffer_mpi, buffer_size, position, MPI_COMM_WORLD, ierr)
+               & MPI_INTEGER, buffer_mpi, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack number of nodes error")
           end if
@@ -442,7 +441,7 @@ contains
         call MPI_Isend(send_buffer(i)%p, &
                & size(send_buffer(i)%p), &
                & MPI_PACKED,             &
-               & i, 0, MPI_COMM_WORLD, request_send(sends), ierr)
+               & i, 0, mpi_comm, request_send(sends), ierr)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_Isend error")
         end if
@@ -505,7 +504,7 @@ contains
       if(i == rank) cycle
 
       if(partition_intersection_recv(i)) then
-        call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
+        call MPI_Probe(i, MPI_ANY_TAG, mpi_comm, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_Probe error")
         end if
@@ -516,7 +515,7 @@ contains
 
         allocate(recv_buffer(i)%p(icount))
         call MPI_Recv (recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
-                  &  i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
+                  &  i, MPI_ANY_TAG, mpi_comm, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_Recv error")
         end if
@@ -579,7 +578,7 @@ contains
 
       if(partition_intersection_recv(i)) then
 #ifdef OVERLAP_COMPUTE_COMMS
-        call MPI_Probe(i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
+        call MPI_Probe(i, MPI_ANY_TAG, mpi_comm, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_Probe error")
         end if
@@ -590,7 +589,7 @@ contains
 
         allocate(recv_buffer(i)%p(icount))
         call MPI_Recv (recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
-                  &  i, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
+                  &  i, MPI_ANY_TAG, mpi_comm, status, ierr)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_Recv error")
         end if
@@ -600,7 +599,7 @@ contains
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, nelements,                        &
              & 1,                              &
-             & MPI_INTEGER, MPI_COMM_WORLD, IERR)
+             & MPI_INTEGER, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack number of elements error")
         end if
@@ -609,7 +608,7 @@ contains
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, nnodes,                    &
              & 1,                              &
-             & MPI_INTEGER, MPI_COMM_WORLD, IERR)
+             & MPI_INTEGER, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack number of nodes error")
         end if
@@ -623,7 +622,7 @@ contains
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, recv_nodes_connectivity(i)%p,     &
              & size(recv_nodes_connectivity(i)%p),         &
-             & MPI_INTEGER, MPI_COMM_WORLD, IERR)
+             & MPI_INTEGER, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack connectivity error")
         end if
@@ -631,7 +630,7 @@ contains
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, recv_nodes_values(i)%p,          &
              & size(recv_nodes_values(i)%p),              &
-             & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, IERR)
+             & MPI_DOUBLE_PRECISION, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack values error")
         end if
@@ -639,7 +638,7 @@ contains
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, k,                               &
              & 1,                                         &
-             & MPI_INTEGER, MPI_COMM_WORLD, IERR)
+             & MPI_INTEGER, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack size of data error")
         end if
@@ -648,7 +647,7 @@ contains
         call MPI_UnPack ( recv_buffer(i)%p, buffer_size,  &
              & position, ldata,                           &
              & k,                                         &
-             & MPI_BYTE, MPI_COMM_WORLD, IERR)
+             & MPI_BYTE, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack data error")
         end if
