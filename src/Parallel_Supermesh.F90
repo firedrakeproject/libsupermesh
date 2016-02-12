@@ -2,9 +2,10 @@
 
 module libsupermesh_parallel_supermesh
 
-  use iso_fortran_env, only : output_unit
   use iso_c_binding, only : c_int8_t
+  
   use libsupermesh_debug
+  use libsupermesh_debug_parameters, only : debug_log_unit
   use libsupermesh_integer_hash_table
   use libsupermesh_read_halos
   use libsupermesh_intersection_finder
@@ -33,30 +34,26 @@ module libsupermesh_parallel_supermesh
   type pointer_integer
     integer, dimension(:), pointer :: p
   end type pointer_integer
+  
+  interface partition_bbox
+    module procedure partition_bbox_real, partition_bbox_vector_field
+  end interface partition_bbox
 
   logical, save :: parallel_supermesh_allocated = .false.
   real, dimension(:,:), allocatable, save :: bbox_a, bbox_b
   real, dimension(:,:,:), allocatable, save :: parallel_bbox_a, parallel_bbox_b
 
-  type(pointer_byte), dimension(:), allocatable, save :: send_buffer
-  type(pointer_integer), dimension(:), allocatable, save :: send_nodes_connectivity, recv_nodes_connectivity
-  type(pointer_real), dimension(:), allocatable, save :: send_nodes_values, recv_nodes_values
   integer :: nsends
   integer, dimension(:), allocatable, save :: send_requests
   logical, dimension(:), allocatable, save :: partition_intersection_recv, partition_intersection_send
+  type(pointer_byte), dimension(:), allocatable, save :: send_buffer
 
   ! Data
   integer(kind = c_int8_t), dimension(:), allocatable, save :: data
-  integer, dimension(2), save                               :: data_b_header
-  real, dimension(:), allocatable, save                     :: data_b_data
   integer(kind = c_int8_t), dimension(:), allocatable, save :: ldata
 
   integer, save :: mpi_comm, nprocs, rank
   real :: t0, all_to_all, point_to_point, local_compute, remote_compute, t1
-  
-  interface partition_bbox
-    module procedure partition_bbox_real, partition_bbox_vector_field
-  end interface partition_bbox
 
 contains
 
@@ -209,29 +206,12 @@ contains
       end subroutine donor_ele_data
     end interface
 
+    integer, dimension(:), allocatable :: send_enlist
+    real, dimension(:), allocatable :: send_positions
+
 #ifdef PROFILE
     t0 = -1
 #endif
-
-    allocate(send_nodes_connectivity(0:nprocs-1))
-    do i=0,size(send_nodes_connectivity(:))-1
-      nullify(send_nodes_connectivity(i)%p)
-    end do
-
-    allocate(recv_nodes_connectivity(0:nprocs-1))
-    do i=0,size(recv_nodes_connectivity(:))-1
-      nullify(recv_nodes_connectivity(i)%p)
-    end do
-
-    allocate(send_nodes_values(0:nprocs-1))
-    do i=0,size(send_nodes_values(:))-1
-      nullify(send_nodes_values(i)%p)
-    end do
-
-    allocate(recv_nodes_values(0:nprocs-1))
-    do i=0,size(recv_nodes_values(:))-1
-      nullify(recv_nodes_values(i)%p)
-    end do
 
     call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr)
     if(ierr /= MPI_SUCCESS) then
@@ -280,7 +260,7 @@ contains
         end do        
         nnodes_send = key_count(nodes_send)
 
-        allocate(send_nodes_connectivity(i)%p(nelements_send * size(enlist_b, 1)))
+        allocate(send_enlist(nelements_send * size(enlist_b, 1)))
 
         ! Build an element-node graph for sending with contiguous indices
         call allocate(node_map)
@@ -292,19 +272,16 @@ contains
         end do        
         do j = 1, nelements_send
           do k = 1, size(enlist_b, 1)
-            send_nodes_connectivity(i)%p((j - 1) * size(enlist_b, 1) + k) = fetch(node_map, enlist_b(k, elements_send(j)))
+            send_enlist((j - 1) * size(enlist_b, 1) + k) = fetch(node_map, enlist_b(k, elements_send(j)))
           end do
         end do
         call deallocate(node_map)
 
-        allocate(send_nodes_array(nnodes_send), send_nodes_values(i)%p(nnodes_send * size(positions_b, 1)))
-#ifndef NDEBUG
-        send_nodes_values(i)%p = -22.0D0
-#endif
+        allocate(send_nodes_array(nnodes_send), send_positions(nnodes_send * size(positions_b, 1)))
         do j = 1, nnodes_send
           node = fetch(nodes_send, j)
           send_nodes_array(j) = node
-          send_nodes_values(i)%p((j - 1) * size(positions_b, 1) + 1:j * size(positions_b, 1)) = positions_b(:, node)
+          send_positions((j - 1) * size(positions_b, 1) + 1:j * size(positions_b, 1)) = positions_b(:, node)
         end do
         call deallocate(nodes_send)
 
@@ -313,8 +290,8 @@ contains
           call donor_ele_data(send_nodes_array, elements_send(:nelements_send), data)
 
           buffer_size = int_extent + int_extent +                          &
-                    &   (size(send_nodes_connectivity(i)%p) * int_extent) + &
-                    &   (size(send_nodes_values(i)%p)      * dp_extent ) + &
+                    &   (size(send_enlist) * int_extent) + &
+                    &   (size(send_positions)      * dp_extent ) + &
                     &   int_extent + (size(data))
 
           allocate(send_buffer(i + 1)%p(buffer_size))
@@ -332,14 +309,14 @@ contains
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack number of nodes error")
           end if
-          call MPI_Pack(send_nodes_connectivity(i)%p,                &
-               & size(send_nodes_connectivity(i)%p),                 &
+          call MPI_Pack(send_enlist,                &
+               & size(send_enlist),                 &
                & MPI_INTEGER, send_buffer(i + 1)%p, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack connectivity error")
           end if
-          call MPI_Pack(send_nodes_values(i)%p,                     &
-               & size(send_nodes_values(i)%p),                      &
+          call MPI_Pack(send_positions,                     &
+               & size(send_positions),                      &
                & MPI_DOUBLE_PRECISION, send_buffer(i + 1)%p, buffer_size, position, mpi_comm, ierr)
           if(ierr /= MPI_SUCCESS) then
             libsupermesh_abort("MPI_Pack values error")
@@ -377,7 +354,7 @@ contains
           end if
 
         end if
-        deallocate(send_nodes_array)
+        deallocate(send_nodes_array, send_enlist, send_positions)
 
 #ifdef PROFILE
         if ( t0 .eq. -1 ) t0 = mpi_wtime()
@@ -439,7 +416,8 @@ contains
 
     integer :: buffer_size
     integer, dimension(MPI_STATUS_SIZE) :: status
-    integer, dimension(:), allocatable :: statuses
+    integer, dimension(:), allocatable :: recv_enlist, statuses
+    real, dimension(:), allocatable :: recv_positions
 #ifdef OVERLAP_COMPUTE_COMMS
     integer(kind = c_int8_t), dimension(:), allocatable :: recv_buffer
 #else
@@ -533,7 +511,7 @@ contains
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack number of elements error")
         end if
-        allocate(recv_nodes_connectivity(i)%p(nelements * size(enlist_b, 1)))
+        allocate(recv_enlist(nelements * size(enlist_b, 1)))
 
         call MPI_UnPack ( recv_buffer, buffer_size,  &
              & position, nnodes,                    &
@@ -543,21 +521,21 @@ contains
           libsupermesh_abort("MPI_UnPack number of nodes error")
         end if
 
-        allocate(recv_nodes_values(i)%p(nnodes * (size(positions_b,1))))
+        allocate(recv_positions(nnodes * (size(positions_b,1))))
 
         if(nelements <= 0) cycle
 
         call MPI_UnPack ( recv_buffer, buffer_size,  &
-             & position, recv_nodes_connectivity(i)%p,     &
-             & size(recv_nodes_connectivity(i)%p),         &
+             & position, recv_enlist,     &
+             & size(recv_enlist),         &
              & MPI_INTEGER, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack connectivity error")
         end if
 
         call MPI_UnPack ( recv_buffer, buffer_size,  &
-             & position, recv_nodes_values(i)%p,          &
-             & size(recv_nodes_values(i)%p),              &
+             & position, recv_positions,          &
+             & size(recv_positions),              &
              & MPI_DOUBLE_PRECISION, mpi_comm, IERR)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack values error")
@@ -591,8 +569,8 @@ contains
         do ele_B = 1, nelements
           do k = 1, size(enlist_b, 1)
             do j = 1, size(positions_b, 1)
-              l = recv_nodes_connectivity(i)%p((ele_B - 1) * size(enlist_b, 1) + k)            
-              nodes_B(j, k) = recv_nodes_values(i)%p((l - 1) * size(positions_b, 1) + j)
+              l = recv_enlist((ele_B - 1) * size(enlist_b, 1) + k)            
+              nodes_B(j, k) = recv_positions((l - 1) * size(positions_b, 1) + j)
             end do
           end do
 
@@ -604,15 +582,13 @@ contains
             nodes_A = positions_a(:, enlist_a(:, ele_A))
 
             call intersect_elements(nodes_A, nodes_B, positions_c, n_C)
-            call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), recv_nodes_connectivity(i)%p((ele_B - 1) * size(enlist_b, 1) + 1:ele_B * size(enlist_B, 1)), ele_A, ele_B, .false.)
+            call intersection_calculation(nodes_A, nodes_B, positions_c(:, :, :n_C), recv_enlist((ele_B - 1) * size(enlist_b, 1) + 1:ele_B * size(enlist_B, 1)), ele_A, ele_B, .false.)
           end do
         end do
 #ifdef PROFILE
     remote_compute = mpi_wtime() - t1
 #endif
-        ! Deallocate arrays now, to conserve memory
-        deallocate(recv_nodes_values(i)%p)
-        deallocate(recv_nodes_connectivity(i)%p)
+        deallocate(recv_enlist, recv_positions)
         deallocate(ldata)
       end if
     end do
@@ -664,30 +640,6 @@ contains
         if(associated(send_buffer(i)%p)) deallocate(send_buffer(i)%p)
       end do
       deallocate(send_buffer)
-
-      do i=0,size(send_nodes_connectivity(:))-1
-        if ( .NOT. ASSOCIATED(send_nodes_connectivity(i)%p) ) cycle
-        deallocate(send_nodes_connectivity(i)%p)
-      end do
-      deallocate(send_nodes_connectivity)
-
-      do i=0,size(recv_nodes_connectivity(:))-1
-        if ( .NOT. ASSOCIATED(recv_nodes_connectivity(i)%p) ) cycle
-        deallocate(recv_nodes_connectivity(i)%p)
-      end do
-      deallocate(recv_nodes_connectivity)
-
-      do i=0,size(send_nodes_values(:))-1
-        if ( .NOT. ASSOCIATED(send_nodes_values(i)%p) ) cycle
-        deallocate(send_nodes_values(i)%p)
-      end do
-      deallocate(send_nodes_values)
-
-      do i=0,size(recv_nodes_values(:))-1
-        if ( .NOT. ASSOCIATED(recv_nodes_values(i)%p) ) cycle
-        deallocate(recv_nodes_values(i)%p)
-      end do
-      deallocate(recv_nodes_values)
 
       deallocate(parallel_bbox_a, parallel_bbox_b, bbox_a, bbox_b)
       deallocate(send_requests, partition_intersection_send, partition_intersection_recv)
