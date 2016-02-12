@@ -16,8 +16,8 @@ subroutine benchmark_parallel_p1_inner_product() bind(c)
 #include <mpif.h>
   
   ! Input Triangle mesh base names
-  character(len = *), parameter :: basename_a = "triangle_0_01", &
-                                 & basename_b = "square_0_01"
+  character(len = *), parameter :: basename_a = "data/triangle_0_01", &
+                                 & basename_b = "data/square_0_01"
 
   character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, size_chr
   integer :: ierr, integer_extent, rank, real_extent
@@ -99,7 +99,7 @@ subroutine benchmark_parallel_p1_inner_product() bind(c)
   integral_parallel = 0.0D0
   call parallel_supermesh(positions_b, enlist_b, ele_owner_b, &
                         & positions_a, enlist_a, ele_owner_a, &
-                        & donor_ele_data, unpack_data_a, intersection_calculation, &
+                        & pack_data_a, unpack_data_a, intersection_calculation, &
                         & comm = MPI_COMM_WORLD)
   ! Deallocate any remaining unpacked communicated data
   call cleanup_unpack_data_a()
@@ -146,7 +146,7 @@ subroutine benchmark_parallel_p1_inner_product() bind(c)
 contains
 
   ! Given the provided mesh vertices and elements, pack data for communication
-  subroutine donor_ele_data(nodes_a, eles_a, data_a)
+  subroutine pack_data_a(nodes_a, eles_a, data_a)
     ! Mesh vertices to be communicated
     integer, dimension(:), intent(in) :: nodes_a
     ! Mesh elements to be communicated
@@ -162,20 +162,22 @@ contains
     data_field_a = field_a(nodes_a)
     
     ! Pack data for communication:
-    !   1 integer                  -- number of P1 nodes
     !   (number of P1 nodes) reals -- communicated P1 field values
-    ndata_a = integer_extent + size(data_field_a) * real_extent
+    ndata_a = size(data_field_a) * real_extent
     allocate(data_a(ndata_a))
     position = 0
-    call MPI_Pack(size(data_field_a), 1, MPI_INTEGER, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Pack(data_field_a, size(data_field_a), MPI_DOUBLE_PRECISION, data_a, ndata_a, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     
     deallocate(data_field_a)
     
-  end subroutine donor_ele_data
+  end subroutine pack_data_a
   
   ! Unpack communicated data
-  subroutine unpack_data_a(data_a)
+  subroutine unpack_data_a(nnodes_a, nelements_a, data_a)
+    ! Number of communicated mesh vertices
+    integer, intent(in) :: nnodes_a
+    ! Number of communicated elements
+    integer, intent(in) :: nelements_a
     integer(kind = c_int8_t), dimension(:), intent(in) :: data_a
     
     integer :: position
@@ -184,8 +186,8 @@ contains
     call cleanup_unpack_data_a()
     
     position = 0
-    ! Unpack the number of P1 nodes
-    call MPI_Unpack(data_a, size(data_a), position, data_nnodes_a, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    ! Store the number of P1 nodes
+    data_nnodes_a = nnodes_a
     ! Unpack the P1 field values
     allocate(data_field_a(data_nnodes_a))
     call MPI_Unpack(data_a, size(data_a), position, data_field_a, data_nnodes_a, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)

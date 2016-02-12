@@ -53,7 +53,7 @@ contains
 
   subroutine parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
                              &  positions_b, enlist_b, ele_owner_b, &
-                             &  donor_ele_data, unpack_data_b, intersection_calculation, &
+                             &  pack_data_b, unpack_data_b, intersection_calculation, &
                              &  comm)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)    :: positions_a
@@ -69,17 +69,19 @@ contains
     integer, dimension(:), intent(in)    :: ele_owner_b
     integer, optional, intent(in) :: comm
     interface
-      subroutine donor_ele_data(nodes, eles, data)
+      subroutine pack_data_b(nodes_b, eles_b, data_b)
         use iso_c_binding, only : c_int8_t
         implicit none
-        integer, dimension(:), intent(in)                                :: nodes
-        integer, dimension(:), intent(in)                                :: eles
-        integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data
-      end subroutine donor_ele_data
+        integer, dimension(:), intent(in) :: nodes_b
+        integer, dimension(:), intent(in) :: eles_b
+        integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
+      end subroutine pack_data_b
 
-      subroutine unpack_data_b(data_b)
+      subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
         use iso_c_binding, only : c_int8_t
         implicit none
+        integer, intent(in) :: nnodes_b
+        integer, intent(in) :: nelements_b
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
       end subroutine unpack_data_b
       
@@ -107,7 +109,7 @@ contains
     call step_1(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b)
 
     ! 2. Use bounding box data to cull donor mesh
-    call step_2(positions_b, enlist_b, ele_owner_b, donor_ele_data)
+    call step_2(positions_b, enlist_b, ele_owner_b, pack_data_b)
 
     ! 5. Supermesh and call user specified element unpack and calculation functions
     call step_3(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, &
@@ -164,13 +166,23 @@ contains
 
   end subroutine step_1
 
-  subroutine step_2(positions_b, enlist_b, ele_owner_b, donor_ele_data)
+  subroutine step_2(positions_b, enlist_b, ele_owner_b, pack_data_b)
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in)    :: positions_b
+    real, dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! elements_b
-    integer, dimension(:), intent(in)    :: ele_owner_b
+    integer, dimension(:), intent(in) :: ele_owner_b
+
+    interface
+      subroutine pack_data_b(nodes_b, eles_b, data_b)
+        use iso_c_binding, only : c_int8_t
+        implicit none
+        integer, dimension(:), intent(in) :: nodes_b
+        integer, dimension(:), intent(in) :: eles_b
+        integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
+      end subroutine pack_data_b
+    end interface
 
     integer    :: ele_B, i, j, k, ierr, buffer_size, dp_extent, int_extent, position
     
@@ -180,16 +192,6 @@ contains
     type(integer_hash_table) :: node_map
     integer :: nnodes_send
     integer :: node
-
-    interface
-      subroutine donor_ele_data(nodes, eles, data)
-        use iso_c_binding, only : c_int8_t
-        implicit none
-        integer, dimension(:), intent(in)                                :: nodes
-        integer, dimension(:), intent(in)                                :: eles
-        integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data
-      end subroutine donor_ele_data
-    end interface
 
     integer, dimension(:), allocatable :: send_enlist
     integer(kind = c_int8_t), dimension(:), allocatable :: data
@@ -269,7 +271,7 @@ contains
 
       ! ### Mesh send buffer allocation ###
         if(nelements_send > 0) then
-          call donor_ele_data(send_nodes_array, elements_send(:nelements_send), data)
+          call pack_data_b(send_nodes_array, elements_send(:nelements_send), data)
 
           buffer_size = int_extent + int_extent +                          &
                     &   (size(send_enlist) * int_extent) + &
@@ -373,9 +375,11 @@ contains
     real, dimension(:, :, :), allocatable   :: positions_c
 
     interface
-      subroutine unpack_data_b(data_b)
+      subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
         use iso_c_binding, only : c_int8_t
         implicit none
+        integer, intent(in) :: nnodes_b
+        integer, intent(in) :: nelements_b
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
       end subroutine unpack_data_b
 
@@ -545,7 +549,7 @@ contains
         deallocate(recv_buffer)
 #endif
 
-        call unpack_data_b(data)
+        call unpack_data_b(nnodes, nelements, data)
 
 #ifdef PROFILE
         t_1 = mpi_wtime()
@@ -651,7 +655,7 @@ contains
 #ifdef PROFILE
     integer :: lcomm, lunit
   
-    integer :: ierr, nprocs
+    integer :: ierr, nprocs, rank
     real :: all_to_all_max, all_to_all_min, all_to_all_sum
 #ifndef OVERLAP_COMPUTE_COMMS
     real :: point_to_point_max, point_to_point_min, point_to_point_sum
@@ -670,6 +674,7 @@ contains
       lunit = debug_log_unit
     end if
     
+    call MPI_Comm_rank(lcomm, rank, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Comm_size(lcomm, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
     call MPI_Allreduce(all_to_all_time,     all_to_all_min,     1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
@@ -688,12 +693,12 @@ contains
     call MPI_Allreduce(remote_compute_time, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
 
     if(rank == 0) then
-      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "All to all time, min, max, average     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
+      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "All to all time, min, max, average     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
 #ifndef OVERLAP_COMPUTE_COMMS
-      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Point to point time, min, max, average = ", point_to_point_min, ", ", point_to_point_max, ", ", point_to_point_sum / nprocs
+      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Point to point time, min, max, average = ", point_to_point_min, ", ", point_to_point_max, ", ", point_to_point_sum / nprocs
 #endif
-      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Local compute time, min, max, average  = ", local_compute_min,  ", ", local_compute_max,  ", ", local_compute_sum  / nprocs
-      write(unit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Remote compute time, min, max, average = ", remote_compute_min, ", ", remote_compute_max, ", ", remote_compute_sum / nprocs
+      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Local compute time, min, max, average  = ", local_compute_min,  ", ", local_compute_max,  ", ", local_compute_sum  / nprocs
+      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Remote compute time, min, max, average = ", remote_compute_min, ", ", remote_compute_max, ", ", remote_compute_sum / nprocs
     end if
 #endif
 

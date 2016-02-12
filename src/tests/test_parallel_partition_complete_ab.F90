@@ -203,7 +203,9 @@ contains
 
   end subroutine local_donor_ele_data
 
-  subroutine local_unpack_data_b(data_b)
+  subroutine local_unpack_data_b(nnodes_b, nelements_b, data_b)
+    integer, intent(in) :: nnodes_b
+    integer, intent(in) :: nelements_b
     integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
 
     integer :: ierr, position
