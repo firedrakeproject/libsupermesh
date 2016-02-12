@@ -43,8 +43,8 @@ module libsupermesh_parallel_supermesh
   type(pointer_byte), dimension(:), allocatable, save :: recv_buffer, send_buffer
   type(pointer_integer), dimension(:), allocatable, save :: send_nodes_connectivity, recv_nodes_connectivity
   type(pointer_real), dimension(:), allocatable, save :: send_nodes_values, recv_nodes_values
-  integer, dimension(:), allocatable, save  :: request_send, request_recv
-  integer, dimension(:,:), allocatable, save :: status_send, status_recv
+  integer :: nsends
+  integer, dimension(:), allocatable, save :: send_requests
   logical, dimension(:), allocatable, save :: partition_intersection_recv, partition_intersection_send
 
   integer(kind = c_int8_t), dimension(:), pointer, save :: buffer_mpi
@@ -113,41 +113,23 @@ contains
       end subroutine intersection_calculation
     end interface
 
-    integer                     :: ierr, sends, recvs
-
-    if(present(comm)) then
-      mpi_comm = comm
-    else
-      mpi_comm = MPI_COMM_WORLD
-    end if
-
-    CALL MPI_Comm_rank(mpi_comm, rank, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("MPI_Comm_rank error")
-    end if
-    CALL MPI_Comm_size(mpi_comm, nprocs, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("MPI_Comm_size error")
-    end if
-
     ! 0. Allocate and initialise arrays
-    call initialise_parallel_supermesh(nprocs)
+    call initialise_parallel_supermesh(comm)
 
     ! 1. Calculate and communicate bounding box data for donor and target
     call step_1(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b)
 
     ! 2. Use bounding box data to cull donor mesh
-    call step_2(positions_b, enlist_b, ele_owner_b, sends, recvs, donor_ele_data)
+    call step_2(positions_b, enlist_b, ele_owner_b, donor_ele_data)
 
     ! 5. Supermesh and call user specified element unpack and calculation functions
     call step_3(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b, &
-             &  sends, recvs, unpack_data_b, intersection_calculation)
+             &  unpack_data_b, intersection_calculation)
 
     ! 6. Deallocate
     call finalise_parallel_supermesh()
 
   end subroutine parallel_supermesh
-
 
   subroutine step_1(positions_a, enlist_a, ele_owner_a, positions_b, enlist_b, ele_owner_b)
     ! dim x nnodes_a
@@ -204,15 +186,13 @@ contains
   end subroutine step_1
 
 
-  subroutine step_2(positions_b, enlist_b, ele_owner_b, sends, recvs, donor_ele_data)
+  subroutine step_2(positions_b, enlist_b, ele_owner_b, donor_ele_data)
     ! dim x nnodes_b
     real, dimension(:, :), intent(in)    :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! elements_b
     integer, dimension(:), intent(in)    :: ele_owner_b
-    integer, intent(out)                 :: sends
-    integer, intent(out)                 :: recvs
 
     integer    :: ele_B, i, j, k, ierr, buffer_size, dp_extent, int_extent, position
     
@@ -284,8 +264,7 @@ contains
     allocate(partition_intersection_recv(0:nprocs - 1), partition_intersection_send(0:nprocs - 1))
     partition_intersection_recv = .false.
     partition_intersection_send = .false.
-    sends = -1
-    recvs = -1
+    nsends = 0
     do i = 0, nprocs - 1
       if(i == rank) cycle
 
@@ -432,11 +411,11 @@ contains
         if ( t0 .eq. -1 ) t0 = mpi_wtime()
 #endif
 
-        sends = sends + 1
+        nsends = nsends + 1
         call MPI_Isend(send_buffer(i)%p, &
                & size(send_buffer(i)%p), &
                & MPI_PACKED,             &
-               & i, 0, mpi_comm, request_send(sends), ierr)
+               & i, 0, mpi_comm, send_requests(nsends), ierr)
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_Isend error")
         end if
@@ -448,7 +427,6 @@ contains
 
   subroutine step_3(positions_a, enlist_a, ele_owner_a, &
                 &   positions_b, enlist_b,       ele_owner_b, &
-                &   sends, recvs, &
                 &   unpack_data_b, intersection_calculation)
     ! dim x nnodes_a
     real, dimension(:, :), intent(in)       :: positions_a
@@ -462,11 +440,9 @@ contains
     integer, dimension(:, :), intent(in)    :: enlist_b
     ! elements_b
     integer, dimension(:), intent(in)       :: ele_owner_b
-    integer, intent(inout)                  :: sends
-    integer, intent(inout)                  :: recvs
 
-    integer                                 :: i, j, k, l, m, n_C, ele_A, ele_B, nintersections, ierr, buffer_size, icount, position
-    integer                                 :: status(MPI_STATUS_SIZE), nelements, nnodes
+    integer                                 :: i, j, k, l, n_C, ele_A, ele_B, nintersections, ierr, buffer_size, icount, position
+    integer                                 :: nelements, nnodes
     real, dimension(:, :), allocatable      :: nodes_A, nodes_B
     real, dimension(:, :, :), allocatable   :: positions_c
 
@@ -494,35 +470,26 @@ contains
       end subroutine intersection_calculation
     end interface
 
+    integer, dimension(MPI_STATUS_SIZE) :: status
+    integer, dimension(:), allocatable :: statuses
+
 #ifndef OVERLAP_COMPUTE_COMMS
     do i = 0, nprocs - 1
       if(i == rank) cycle
 
       if(partition_intersection_recv(i)) then
-        call MPI_Probe(i, MPI_ANY_TAG, mpi_comm, status, ierr)
-        if(ierr /= MPI_SUCCESS) then
-          libsupermesh_abort("MPI_Probe error")
-        end if
-        call MPI_Get_Count(status, MPI_PACKED, icount, ierr)
-        if(ierr /= MPI_SUCCESS) then
-          libsupermesh_abort("MPI_Get_Count error")
-        end if
+        call MPI_Probe(i, MPI_ANY_TAG, mpi_comm, status, ierr);  assert(ierr == MPI_SUCCESS)
+        call MPI_Get_Count(status, MPI_PACKED, icount, ierr);  assert(ierr == MPI_SUCCESS)
 
         allocate(recv_buffer(i)%p(icount))
-        call MPI_Recv (recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
-                  &  i, MPI_ANY_TAG, mpi_comm, status, ierr)
-        if(ierr /= MPI_SUCCESS) then
-          libsupermesh_abort("MPI_Recv error")
-        end if
+        call MPI_Recv(recv_buffer(i)%p, size(recv_buffer(i)%p), MPI_PACKED, & 
+          & i, MPI_ANY_TAG, mpi_comm, status, ierr);  assert(ierr == MPI_SUCCESS)
       end if
     end do
 
-    sends = sends + 1
-    call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Waitall(send).")
-    end if
-
+    allocate(statuses(nsends * MPI_STATUS_SIZE))
+    call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
+    deallocate(statuses)
 #ifdef PROFILE
     if ( t0 .gt. 0 ) then
       point_to_point = mpi_wtime() - t0
@@ -682,29 +649,30 @@ contains
     deallocate(positions_c, nodes_A, nodes_B)
 
 #ifdef OVERLAP_COMPUTE_COMMS
-    sends = sends + 1
-    call MPI_Waitall(sends, request_send(0:sends), status_send(:,0:sends), ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to setup MPI_Waitall(send).")
-    end if
+    allocate(statuses(nsends * MPI_STATUS_SIZE))
+    call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
+    deallocate(statuses)
 #endif
 
   end subroutine step_3
 
-  subroutine initialise_parallel_supermesh(nprocs)
-    integer, intent(in)       :: nprocs
+  subroutine initialise_parallel_supermesh(comm)
+    integer, optional, intent(in) :: comm
 
-    integer  :: i
+    integer  :: ierr
+    
+    if(present(comm)) then
+      mpi_comm = comm
+    else
+      mpi_comm = MPI_COMM_WORLD
+    end if
+
+    call MPI_Comm_rank(mpi_comm, rank, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Comm_size(mpi_comm, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
 
     parallel_supermesh_allocated = .true.
-    allocate(request_send(0: nprocs - 1), request_recv(0: nprocs - 1), &
-           & status_send(MPI_STATUS_SIZE, 0: nprocs - 1), status_recv(MPI_STATUS_SIZE, 0: nprocs - 1))
-    forall(i = 0:nprocs - 1)
-      status_send(:, i) = MPI_STATUS_IGNORE
-      status_recv(:, i) = MPI_STATUS_IGNORE
-    end forall
-    request_send = MPI_REQUEST_NULL
-    request_recv = MPI_REQUEST_NULL
+    allocate(send_requests(nprocs))
+    send_requests = MPI_REQUEST_NULL
     
   end subroutine initialise_parallel_supermesh
 
@@ -755,7 +723,7 @@ contains
       deallocate(recv_nodes_values)
 
       deallocate(parallel_bbox_a, parallel_bbox_b, bbox_a, bbox_b)
-      deallocate(request_send, request_recv, status_send, status_recv, partition_intersection_send, partition_intersection_recv)
+      deallocate(send_requests, partition_intersection_send, partition_intersection_recv)
 
       parallel_supermesh_allocated = .false.
     end if
