@@ -4,15 +4,18 @@ module libsupermesh_parallel_supermesh
 
   use iso_c_binding, only : c_int8_t
   
-  use libsupermesh_debug
+  use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_debug_parameters, only : debug_log_unit
-  use libsupermesh_integer_hash_table
-  use libsupermesh_read_halos
-  use libsupermesh_intersection_finder
-  use libsupermesh_tri_intersection
-  use libsupermesh_tet_intersection
-  use libsupermesh_supermesh
-  use libsupermesh_integer_set
+  use libsupermesh_integer_hash_table, only : integer_hash_table, allocate, &
+    & insert, fetch, deallocate
+  use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
+    & insert, key_count, fetch
+  use libsupermesh_intersection_finder, only : &
+    & rtree_intersection_finder_set_input, rtree_intersection_finder_find, &
+    & rtree_intersection_finder_query_output, &
+    & rtree_intersection_finder_get_output
+  use libsupermesh_supermesh, only : intersection_buffer_size, &
+    & intersect_elements
 
   implicit none
 
@@ -499,6 +502,9 @@ contains
         if(ierr /= MPI_SUCCESS) then
           libsupermesh_abort("MPI_UnPack number of elements error")
         end if
+
+        if(nelements <= 0) cycle
+
         allocate(recv_enlist(nelements * size(enlist_b, 1)))
 
         call MPI_UnPack ( recv_buffer, buffer_size,  &
@@ -510,8 +516,6 @@ contains
         end if
 
         allocate(recv_positions(nnodes * (size(positions_b,1))))
-
-        if(nelements <= 0) cycle
 
         call MPI_UnPack ( recv_buffer, buffer_size,  &
              & position, recv_enlist,     &
