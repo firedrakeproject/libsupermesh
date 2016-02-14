@@ -15,7 +15,6 @@ subroutine benchmark_serial() bind(c)
   use libsupermesh_intersection_finder
   use libsupermesh_read_halos
   use libsupermesh_halo_ownership
-  use libsupermesh_parallel_supermesh, only : parallel_supermesh
 
   implicit none
 

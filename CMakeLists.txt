@@ -436,18 +436,9 @@ FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/te
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_1d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_2d.F90)
 FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_3d.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_A_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_a.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_B_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_b.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer_data.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer_data_rtree_once.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE_PAR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_ab_optimal_transfer_data_rtree_once_par.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_SAME_ALGO_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab_same_algo.F90)
 FILE(GLOB FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_universal_node_numbering.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_partition_ab.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_SERIAL_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_partition_ab_serial.F90)
 FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_COMPLETE_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_complete.F90)
 FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_COMPLETE_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_complete_3d.F90)
 FILE(GLOB FORTRAN_BENCHMARK_SERIAL_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial.F90)
@@ -480,21 +471,12 @@ set (UNITTESTS
   test_intersection_finder_completeness_1d
   test_intersection_finder_completeness_2d
   test_intersection_finder_completeness_3d
-  test_parallel_partition_a
-  test_parallel_partition_b
-  test_parallel_partition_ab
-  test_parallel_partition_ab_optimal_transfer
-  test_parallel_partition_ab_optimal_transfer_data
-  test_parallel_partition_ab_optimal_transfer_data_rtree_once
-  test_parallel_partition_ab_optimal_transfer_data_rtree_once_par
   test_parallel_partition_complete_ab
   test_parallel_partition_complete_ab_same_algo
   test_parallel_universal_node_numbering
 )
 
 set (BENCHMARKTESTS
-  benchmark_parallel_partition_ab
-  benchmark_parallel_partition_ab_serial
   benchmark_parallel_complete
   benchmark_parallel_complete_3d
   benchmark_serial
@@ -516,18 +498,9 @@ add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_T
 add_executable (test_intersection_finder_completeness_1d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES})
 add_executable (test_intersection_finder_completeness_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_2D_FILES})
 add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES})
-add_executable (test_parallel_partition_a ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_A_FILES})
-add_executable (test_parallel_partition_b ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_B_FILES})
-add_executable (test_parallel_partition_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_FILES})
-add_executable (test_parallel_partition_ab_optimal_transfer ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_FILES})
-add_executable (test_parallel_partition_ab_optimal_transfer_data ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_FILES})
-add_executable (test_parallel_partition_ab_optimal_transfer_data_rtree_once ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE_FILES})
-add_executable (test_parallel_partition_ab_optimal_transfer_data_rtree_once_par ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_AB_OPTIMAL_TRANSFER_DATA_RTREE_ONCE_PAR_FILES})
 add_executable (test_parallel_partition_complete_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES})
 add_executable (test_parallel_partition_complete_ab_same_algo ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_SAME_ALGO_FILES})
 add_executable (test_parallel_universal_node_numbering ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES})
-add_executable (benchmark_parallel_partition_ab EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_parallel_partition_ab_serial EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_PARTITION_AB_SERIAL_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_complete EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_COMPLETE_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_complete_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_COMPLETE_3D_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_serial EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_FILES} ${CPP_TEST_SOURCE_FILES})
@@ -553,7 +526,7 @@ foreach (benchmark ${BENCHMARKTESTS})
  SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}")
 endforeach()
 
-add_custom_target(benchmark DEPENDS benchmark_parallel_partition_ab benchmark_parallel_partition_ab_serial benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d benchmark_parallel_p1_inner_product benchmark_parallel_p1_inner_product_3d benchmark_parallel_p2_inner_product)
+add_custom_target(benchmark DEPENDS benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d benchmark_parallel_p1_inner_product benchmark_parallel_p1_inner_product_3d benchmark_parallel_p2_inner_product)
 
 add_custom_command(TARGET test_tri_intersector
   POST_BUILD
