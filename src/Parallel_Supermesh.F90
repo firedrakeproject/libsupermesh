@@ -24,15 +24,11 @@ module libsupermesh_parallel_supermesh
   private
 
   public :: parallel_supermesh, print_times
-  public :: bbox, partition_bbox, partition_bboxes_intersect
+  public :: partition_bbox, partition_bboxes_intersect
 
   type buffer
     integer(kind = c_int8_t), dimension(:), pointer :: v => null()
   end type buffer
-  
-  interface partition_bbox
-    module procedure partition_bbox_real, partition_bbox_vector_field
-  end interface partition_bbox
 
   logical, save :: parallel_supermesh_allocated = .false.
   
@@ -654,7 +650,7 @@ contains
 
   end function bbox
 
-  pure function partition_bbox_real(positions, enlist, ele_owner, rank) result(bbox)
+  pure function partition_bbox(positions, enlist, ele_owner, rank) result(bbox)
     ! dim x nnodes
     real, dimension(:, :), intent(in) :: positions
     ! loc x nelements
@@ -671,7 +667,7 @@ contains
     dim = size(positions, 1)
     nelements = size(enlist, 2)    
     if(nelements == 0) then
-      bbox = huge(0.0)
+      bbox = huge(0.0D0)
       return
     end if
     
@@ -679,7 +675,7 @@ contains
     do while(ele_owner(ele_0) /= rank)
       ele_0 = ele_0 + 1
       if(ele_0 > nelements) then
-        bbox = huge(0.0)
+        bbox = huge(0.0D0)
         return
       end if
     end do    
@@ -698,20 +694,7 @@ contains
       end do
     end do
 
-  end function partition_bbox_real
-  
-  pure function partition_bbox_vector_field(positions, ele_owner, rank) result(bbox)
-    use libsupermesh_fields, only : vector_field
-    type(vector_field), intent(in) :: positions
-    ! nelements
-    integer, dimension(:), intent(in) :: ele_owner
-    integer, intent(in) :: rank
-    
-    real, dimension(2, size(positions%val, 1)) :: bbox
-    
-    bbox = partition_bbox(positions%val, reshape(positions%mesh%ndglno, (/positions%mesh%loc, positions%mesh%nelements/)), ele_owner, rank)
-  
-  end function partition_bbox_vector_field
+  end function partition_bbox
 
   pure function partition_bboxes_intersect(bbox_1, bbox_2) result(intersect)
     ! 2 x dim

@@ -1,6 +1,6 @@
 #include "libsupermesh_debug.h"
 
-module libsupermesh_fields
+module libsupermesh_graphs
 
   use libsupermesh_debug, only : abort_pinpoint
 
@@ -8,125 +8,18 @@ module libsupermesh_fields
 
   private
 
-  public :: mesh_type, vector_field, eelist_type, allocate, deallocate, &
-    & mesh_nelist, mesh_eelist, sloc, ele_count, node_count, ele_val, ele_loc, &
-    & node_val, ele_nodes
-
-  type mesh_type
-    integer :: dim
-    integer :: nnodes
-    integer :: nelements
-    integer :: loc
-    integer :: sloc
-    integer, dimension(:), pointer :: ndglno
-
-    integer, pointer :: refcount
-  end type mesh_type
-
-  type vector_field
-    type(mesh_type) :: mesh
-    integer :: dim
-    real, dimension(:, :), pointer :: val
-
-    integer, pointer :: refcount
-  end type vector_field
+  public :: eelist_type, deallocate, mesh_nelist, mesh_eelist, sloc
 
   type eelist_type
     integer, dimension(:, :), pointer :: v
     integer, dimension(:), pointer :: n
   end type eelist_type
 
-  interface allocate
-    module procedure allocate_mesh, allocate_vector_field
-  end interface allocate
-
   interface deallocate
-    module procedure deallocate_mesh, deallocate_vector_field, deallocate_eelist
+    module procedure deallocate_eelist
   end interface deallocate
-
-  interface ele_count
-    module procedure ele_count_vector_field
-  end interface ele_count
-
-  interface node_count
-    module procedure node_count_vector_field
-  end interface node_count
-
-  interface ele_val
-    module procedure ele_val_vector_field
-  end interface ele_val
-
-  interface ele_loc
-    module procedure ele_loc_vector_field
-  end interface ele_loc
-
-  interface node_val
-    module procedure node_val_vector_field
-  end interface node_val
-
-  interface ele_nodes
-    module procedure ele_nodes_vector_field
-  end interface ele_nodes
-
+  
 contains
-
-  pure subroutine allocate_mesh(mesh, dim, nnodes, nelements, loc)
-    type(mesh_type), intent(out) :: mesh
-    integer, intent(in) :: dim
-    integer, intent(in) :: nnodes
-    integer, intent(in) :: nelements
-    integer, intent(in) :: loc
-
-    mesh%dim = dim
-    mesh%nnodes = nnodes
-    mesh%nelements = nelements
-    mesh%loc = loc
-    mesh%sloc = sloc(dim, loc)
-    allocate(mesh%ndglno(nelements * loc))
-
-    allocate(mesh%refcount)
-    mesh%refcount = 1
-
-  end subroutine allocate_mesh
-
-  pure subroutine deallocate_mesh(mesh)
-    type(mesh_type), intent(inout) :: mesh
-
-    mesh%refcount = mesh%refcount - 1
-    if(mesh%refcount == 0) then
-      deallocate(mesh%ndglno, mesh%refcount)
-    end if
-
-  end subroutine deallocate_mesh
-
-  subroutine allocate_vector_field(field, dim, mesh)
-    type(vector_field), intent(out) :: field
-    integer, intent(in) :: dim
-    type(mesh_type), intent(in) :: mesh
-
-    field%dim = dim
-    allocate(field%val(dim, mesh%nnodes))
-    field%mesh = mesh
-
-    mesh%refcount = mesh%refcount + 1
-    allocate(field%refcount)
-    field%refcount = 1
-
-  end subroutine allocate_vector_field
-
-  pure subroutine deallocate_vector_field(field)
-    type(vector_field), intent(inout) :: field
-
-    field%refcount = field%refcount - 1
-    if(field%refcount == 0) then
-
-      call deallocate(field%mesh)
-      deallocate(field%val)
-
-      deallocate(field%refcount)
-    end if
-
-  end subroutine deallocate_vector_field
 
   subroutine mesh_nelist(nnodes, enlist, nelist_indices, nelist_indptr)
     integer, intent(in) :: nnodes
@@ -262,67 +155,4 @@ contains
 
   end subroutine deallocate_eelist
 
-  pure function ele_count_vector_field(field) result(ele_count)
-    type(vector_field), intent(in) :: field
-
-    integer :: ele_count
-
-    ele_count = field%mesh%nelements
-
-  end function ele_count_vector_field
-
-  pure function node_count_vector_field(field) result(node_count)
-    type(vector_field), intent(in) :: field
-
-    integer :: node_count
-
-    node_count = field%mesh%nnodes
-
-  end function node_count_vector_field
-
-  pure function ele_val_vector_field(field, ele) result(ele_val)
-    type(vector_field), intent(in) :: field
-    integer, intent(in) :: ele
-
-    real, dimension(field%dim, field%mesh%loc) :: ele_val
-
-    integer :: i, i_0
-
-    i_0 = (ele - 1) * field%mesh%loc
-    do i = 1, field%mesh%loc
-      ele_val(:, i) = field%val(:, field%mesh%ndglno(i_0 + i))
-    end do
-
-  end function ele_val_vector_field
-
-  pure function ele_loc_vector_field(field, ele) result(ele_loc)
-    type(vector_field), intent(in) :: field
-    integer, intent(in) :: ele
-
-    integer :: ele_loc
-
-    ele_loc = field%mesh%loc
-
-  end function ele_loc_vector_field
-
-  pure function node_val_vector_field(field, node) result(node_val)
-    type(vector_field), intent(in) :: field
-    integer, intent(in) :: node
-
-    real, dimension(field%dim) :: node_val
-
-    node_val = field%val(:, node)
-
-  end function node_val_vector_field
-
-  function ele_nodes_vector_field(field, ele) result(nodes)
-    type(vector_field), intent(in) :: field
-    integer, intent(in) :: ele
-
-    integer, dimension(:), pointer :: nodes
-
-    nodes => field%mesh%ndglno((ele - 1) * field%mesh%loc + 1:ele * field%mesh%loc)
-
-  end function ele_nodes_vector_field
-
-end module libsupermesh_fields
+end module libsupermesh_graphs

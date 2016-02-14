@@ -86,8 +86,8 @@ subroutine benchmark_parallel_complete_3D() bind(c)
   end do
   call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr);  assert(ierr == MPI_SUCCESS)
-  vols_parallel = 0.0
-  integral_parallel = 0.0
+  vols_parallel = 0.0D0
+  integral_parallel = 0.0D0
 
   call parallel_supermesh(positions_a, & 
            &  enlist_a, &

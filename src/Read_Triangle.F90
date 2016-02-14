@@ -3,13 +3,12 @@
 module libsupermesh_read_triangle
 
   use libsupermesh_debug, only : abort_pinpoint
-  use libsupermesh_fields, only : mesh_type, vector_field, allocate, deallocate
 
   implicit none
 
   private
 
-  public :: read_node, read_ele, read_triangle_files
+  public :: read_node, read_ele
 
 contains
 
@@ -140,33 +139,5 @@ contains
     close(unit)
 
   end subroutine read_ele
-
-  function read_triangle_files(filename, dim) result(positions)
-    character(len = *), intent(in) :: filename
-    integer, intent(in) :: dim
-    
-    type(vector_field) :: positions
-
-    integer :: loc, nelements, nnodes
-    integer, dimension(:, :), allocatable :: enlist
-    real, dimension(:, :), allocatable :: coords
-    type(mesh_type) :: mesh
-
-    call read_node(trim(filename) // ".node", dim, coords)
-    nnodes = size(coords, 2)
-    call read_ele(trim(filename) // ".ele", dim, enlist, nnodes = nnodes)
-    loc = size(enlist, 1)
-    nelements = size(enlist, 2)
-
-    call allocate(mesh, dim, nnodes, nelements, loc)
-    mesh%ndglno = reshape(enlist, (/loc * nelements/))
-    deallocate(enlist)
-    
-    call allocate(positions, dim, mesh)
-    positions%val = coords
-    deallocate(coords)
-    call deallocate(mesh)
-
-  end function read_triangle_files
 
 end module libsupermesh_read_triangle

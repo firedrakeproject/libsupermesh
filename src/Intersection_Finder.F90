@@ -6,7 +6,7 @@ module libsupermesh_intersection_finder
   
   use libsupermesh_debug, only : abort_pinpoint, current_debug_level, &
     & debug_unit
-  use libsupermesh_fields, only : eelist_type, mesh_eelist, sloc, deallocate
+  use libsupermesh_graphs, only : eelist_type, deallocate, mesh_eelist, sloc
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
   use libsupermesh_octtree_intersection_finder, only : octtree_node, &
@@ -74,7 +74,7 @@ module libsupermesh_intersection_finder
 
   interface intersection_finder
     module procedure intersection_finder_intersections, &
-      & intersection_finder_csr_sparsity, intersection_finder_lists
+      & intersection_finder_csr_sparsity
   end interface intersection_finder
 
   interface advancing_front_intersection_finder
@@ -240,42 +240,6 @@ contains
     end select
   
   end subroutine intersection_finder_csr_sparsity
-
-  subroutine intersection_finder_lists(positions_a, enlist_a, positions_b, enlist_b, map_ab)
-    use libsupermesh_linked_lists, only : ilist, insert
-    ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
-    ! loc_a x nelements_a
-    integer, dimension(:, :), intent(in) :: enlist_a
-    ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
-    ! loc_b x nelements_b
-    integer, dimension(:, :), intent(in) :: enlist_b
-    ! nelements_a
-    type(ilist), dimension(:), intent(out) :: map_ab
-    
-    integer :: ele_a, i, nelements_a
-    type(intersections), dimension(:), allocatable :: lmap_ab
-    
-    nelements_a = size(enlist_a, 2)
-    allocate(lmap_ab(nelements_a))    
-    select case(size(positions_a, 1))
-      case(1)
-        call sort_intersection_finder(positions_a(1, :), enlist_a, positions_b(1, :), enlist_b, lmap_ab)
-      case(2:3)
-        call rtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, lmap_ab)
-      case default
-        libsupermesh_abort("Invalid dimension")
-    end select
-    do ele_a = 1, nelements_a
-      do i = 1, lmap_ab(ele_a)%n
-        call insert(map_ab(ele_a), lmap_ab(ele_a)%v(i))
-      end do
-    end do
-    call deallocate(lmap_ab)
-    deallocate(lmap_ab)
-  
-  end subroutine intersection_finder_lists
 
   ! Advancing front intersection finder, as described in P. E. Farrell and
   ! J. R. Maddison, "Conservative interpolation between volume meshes by local

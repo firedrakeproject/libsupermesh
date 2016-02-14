@@ -68,8 +68,8 @@ subroutine benchmark_serial_same_algo_3D() bind(c)
     do ele_B = 1, serial_ele_B
       valsB(ele_B) = sum(positions_b(1, enlist_b(:, ele_B))) / 4.0D0
     end do
-    vols_serial = 0.0
-    integral_serial = 0.0
+    vols_serial = 0.0D0
+    integral_serial = 0.0D0
 
     do ele_B = 1, size(enlist_b, 2)
       tet_B%v = positions_b(:, enlist_b(:, ele_B))
@@ -97,8 +97,8 @@ subroutine benchmark_serial_same_algo_3D() bind(c)
 
   call MPI_Allreduce(MPI_IN_PLACE, vols_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
-  vols_parallel = 1125.0
-  integral_parallel = 5625.0
+  vols_parallel = 1125.0D0
+  integral_parallel = 5625.0D0
 
   if(rank == root) then
     write(output_unit, "(a,f19.10)") "Time, serial         =", serial_time

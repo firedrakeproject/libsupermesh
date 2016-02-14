@@ -91,7 +91,7 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   meshA_nodes_parallel = 0
   meshB_nodes_parallel = 0
 
-  area_parallel = 0.0
+  area_parallel = 0.0D0
 
   call MPI_Buffer_Attach(mpi_buffer, buffsize, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
@@ -115,7 +115,7 @@ subroutine test_parallel_universal_node_numbering() bind(c)
           & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(meshA_node_val_parallel(maxval(meshA_nodes_parallel) * 2, 0:nprocs - 1))
-    meshA_node_val_parallel = 0.0
+    meshA_node_val_parallel = 0.0D0
     do i=0, nprocs - 1
       call MPI_Recv(meshA_node_val_parallel(:,i), meshA_nodes_parallel(i) * 2, MPI_DOUBLE_PRECISION, &
           & i, i, MPI_COMM_WORLD, status, ierr);  assert(ierr == MPI_SUCCESS)
@@ -153,7 +153,7 @@ subroutine test_parallel_universal_node_numbering() bind(c)
           & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(meshB_node_val_parallel(maxval(meshB_nodes_parallel) * 2, 0:nprocs - 1))
-    meshB_node_val_parallel = 0.0
+    meshB_node_val_parallel = 0.0D0
     do i=0, nprocs - 1
       call MPI_Recv(meshB_node_val_parallel(:,i), meshB_nodes_parallel(i) * 2, MPI_DOUBLE_PRECISION, &
           & i, i, MPI_COMM_WORLD, status, ierr);  assert(ierr == MPI_SUCCESS)

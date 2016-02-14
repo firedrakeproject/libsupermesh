@@ -34,7 +34,7 @@ subroutine test_tri_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
 
-  area_c = 0.0
+  area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     triA%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -46,9 +46,9 @@ subroutine test_tri_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_tris]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  call report_test("[intersect_tris]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
 
-  area_c = 0.0
+  area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     triA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -59,9 +59,9 @@ subroutine test_tri_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_tris]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  call report_test("[intersect_tris]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
 
-  area_c = 0.0
+  area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     triA%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -73,9 +73,9 @@ subroutine test_tri_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_polys]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  call report_test("[intersect_polys]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
 
-  area_c = 0.0
+  area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     triA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -86,9 +86,9 @@ subroutine test_tri_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_polys]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  call report_test("[intersect_polys]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
 
-  area_c = 0.0
+  area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     triA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -99,9 +99,9 @@ subroutine test_tri_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_polys]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  call report_test("[intersect_polys]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
   
-  area_c = 0.0
+  area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     triA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -112,9 +112,9 @@ subroutine test_tri_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_simplices]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  call report_test("[intersect_simplices]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
   
-  area_c = 0.0
+  area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     triA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -125,7 +125,7 @@ subroutine test_tri_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", area_c .fne. 0.5, .false., "Incorrect intersection area")
+  call report_test("[intersect_elements]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b)

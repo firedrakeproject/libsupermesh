@@ -85,9 +85,9 @@ contains
     tets_c(1) = tet_a
 
     if(present(vol_b)) then
-      tol = 10.0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
+      tol = 10.0D0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
     else
-      tol = 10.0 * spacing(tetrahedron_volume(tet_a))
+      tol = 10.0D0 * spacing(tetrahedron_volume(tet_a))
     end if
     do i = 1, size(planes_b)
       ! Clip the tet_array against the i'th plane
@@ -146,9 +146,9 @@ contains
     tets_c(1) = tet_a
 
     if(present(vol_b)) then
-      tol = 10.0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
+      tol = 10.0D0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
     else
-      tol = 10.0 * spacing(tetrahedron_volume(tet_a))
+      tol = 10.0D0 * spacing(tetrahedron_volume(tet_a))
     end if
     do i = 1, size(planes_b)
       ! Clip the tet_array against the i'th plane
@@ -200,13 +200,13 @@ contains
 
     dists = distances_to_plane(plane, tet)
     do i=1,4
-      if (abs(dists(i)) < epsilon(0.0)) then
+      if (abs(dists(i)) < epsilon(0.0D0)) then
         zer_cnt = zer_cnt + 1
         zer_idx(zer_cnt) = i
-      else if (dists(i) < 0.0) then
+      else if (dists(i) < 0.0D0) then
         neg_cnt = neg_cnt + 1
         neg_idx(neg_cnt) = i
-      else if (dists(i) > 0.0) then
+      else if (dists(i) > 0.0D0) then
         pos_cnt = pos_cnt + 1
         pos_idx(pos_cnt) = i
       end if
@@ -232,7 +232,7 @@ contains
       n_tets_tmp = n_tets_tmp + 1
       tets_tmp_buf(n_tets_tmp) = tet
       do i=1,pos_cnt
-        invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+        invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(i)) * invdiff
         tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) = &
@@ -247,13 +247,13 @@ contains
       case(2)
         ! ++--
         do i=1,pos_cnt
-          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(1))
         end do
         do i=1,neg_cnt
-          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
           w0 = -dists(neg_idx(2)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i+2) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(2))
@@ -290,7 +290,7 @@ contains
         n_tets_tmp = n_tets_tmp + 1
         tets_tmp_buf(n_tets_tmp) = tet
         do i=1,pos_cnt
-          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) = &
@@ -304,7 +304,7 @@ contains
       case(3)
         ! +---
         do i=1,neg_cnt
-          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -337,7 +337,7 @@ contains
       case(2)
         ! +--0
         do i=1,neg_cnt
-          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -359,7 +359,7 @@ contains
         tets_tmp_buf(n_tets_tmp)%colours(4) = tet%colours(neg_idx(1))
       case(1)
         ! +-00
-        invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
+        invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(1)) * invdiff
 
@@ -396,13 +396,13 @@ contains
 
     dists = distances_to_plane(plane, tet)
     do i=1,4
-      if (abs(dists(i)) < epsilon(0.0)) then
+      if (abs(dists(i)) < epsilon(0.0D0)) then
         zer_cnt = zer_cnt + 1
         zer_idx(zer_cnt) = i
-      else if (dists(i) < 0.0) then
+      else if (dists(i) < 0.0D0) then
         neg_cnt = neg_cnt + 1
         neg_idx(neg_cnt) = i
-      else if (dists(i) > 0.0) then
+      else if (dists(i) > 0.0D0) then
         pos_cnt = pos_cnt + 1
         pos_idx(pos_cnt) = i
       end if
@@ -428,7 +428,7 @@ contains
       ntets_new = ntets_new + 1
       tets_new(ntets_new) = tet
       do i=1,pos_cnt
-        invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+        invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(i)) * invdiff
         tets_new(ntets_new)%v(:, pos_idx(i)) = &
@@ -443,13 +443,13 @@ contains
       case(2)
         ! ++--
         do i=1,pos_cnt
-          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(1))
         end do
         do i=1,neg_cnt
-          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
           w0 = -dists(neg_idx(2)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i+2) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(2))
@@ -486,7 +486,7 @@ contains
         ntets_new = ntets_new + 1
         tets_new(ntets_new) = tet
         do i=1,pos_cnt
-          invdiff = 1.0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tets_new(ntets_new)%v(:, pos_idx(i)) = &
@@ -500,7 +500,7 @@ contains
       case(3)
         ! +---
         do i=1,neg_cnt
-          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -533,7 +533,7 @@ contains
       case(2)
         ! +--0
         do i=1,neg_cnt
-          invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -555,7 +555,7 @@ contains
         tets_new(ntets_new)%colours(4) = tet%colours(neg_idx(1))
       case(1)
         ! +-00
-        invdiff = 1.0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
+        invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(1)) * invdiff
 
@@ -634,9 +634,9 @@ contains
     e2 = tet(:, 3) - tet(:, 1)
     e3 = tet(:, 4) - tet(:, 1)
 
-    volume = (1.0 / 6.0) * abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
-                           & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
-                           & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
+    volume = (1.0D0 / 6.0D0) * abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
+                               & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
+                               & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
 
   end function tetrahedron_volume_real
 
@@ -655,7 +655,7 @@ contains
     cross(2) = vec_b(3) * vec_c(1) - vec_b(1) * vec_c(3)
     cross(3) = vec_b(1) * vec_c(2) - vec_b(2) * vec_c(1)
 
-    vol = abs(dot_product(vec_a, cross)) / 6.0
+    vol = abs(dot_product(vec_a, cross)) / 6.0D0
     
   end function tetrahedron_volume_tet
 

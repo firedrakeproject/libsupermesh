@@ -64,7 +64,7 @@ contains
     do ele_b = 1, size(enlist_b, 2)
       area_b = triangle_area(positions_b(:, enlist_b(:, ele_b)))
 
-      area_c = 0.0
+      area_c = 0.0D0
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
         call intersect_tris(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), trisC, n_trisC)

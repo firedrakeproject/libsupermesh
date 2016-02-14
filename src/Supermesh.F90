@@ -4,7 +4,7 @@ module libsupermesh_supermesh
 
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_interval_intersection, only : intersect_intervals, &
-    & interval_buf_size
+    & interval_buf_size, interval_size
   use libsupermesh_tri_intersection, only : tri_type, line_type, max_n_tris_c, &
     & intersect_tris, tri_buf_size, intersect_polys, get_lines, triangle_area
   use libsupermesh_tet_intersection, only : tet_type, plane_type, max_n_tets_c, &
@@ -274,13 +274,13 @@ contains
 
     select case(size(simplex, 1))
       case(1)
-        volume = abs(simplex(1, 2) - simplex(1, 1))
+        volume = interval_size(simplex)
       case(2)
         volume = triangle_area(simplex)
       case(3)
         volume = tetrahedron_volume(simplex)
       case default
-        volume = -huge(0.0)
+        volume = -huge(0.0D0)
     end select
   
   end function simplex_volume

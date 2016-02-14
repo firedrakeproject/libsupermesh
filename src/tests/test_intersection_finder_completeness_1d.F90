@@ -64,7 +64,7 @@ contains
     do ele_b = 1, size(enlist_b, 2)
       size_b = interval_size(positions_b(:, enlist_b(:, ele_b)))
 
-      size_c = 0.0
+      size_c = 0.0D0
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
         call intersect_intervals(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), intervalsC, n_intervalsC)

@@ -75,8 +75,8 @@ subroutine test_parallel_partition_complete_ab_same_algo() bind(c)
     do ele_B = 1, serial_ele_B
       valsB(ele_B) = sum(positions_b(1, enlist_b(:, ele_B))) / 3.0D0
     end do
-    area_serial = 0.0
-    integral_serial = 0.0
+    area_serial = 0.0D0
+    integral_serial = 0.0D0
 
     do ele_B = 1, size(enlist_b, 2)
       tri_B%v = positions_b(:, enlist_b(:, ele_B))
@@ -126,8 +126,8 @@ subroutine test_parallel_partition_complete_ab_same_algo() bind(c)
   do ele_B = 1, test_parallel_ele_B
     valsB(ele_B) = sum(positions_b(1, enlist_b(:, ele_B))) / 3.0D0
   end do
-  area_parallel = 0.0
-  integral_parallel = 0.0
+  area_parallel = 0.0D0
+  integral_parallel = 0.0D0
   call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr);  assert(ierr == MPI_SUCCESS)
 

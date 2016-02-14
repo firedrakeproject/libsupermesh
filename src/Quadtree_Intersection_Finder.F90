@@ -244,7 +244,7 @@ contains
     
       ! Create new child leaf nodes
       allocate(node%children(TREE_NCHILDREN))
-      mid_point = 0.5 * (node%bbox(1, :) + node%bbox(2, :))
+      mid_point = 0.5D0 * (node%bbox(1, :) + node%bbox(2, :))
       node%children(1)%bbox(1, :) = (/node%bbox(1, 1), node%bbox(1, 2)/)
       node%children(1)%bbox(2, :) = (/mid_point(1),    mid_point(2)/)      
       node%children(2)%bbox(1, :) = (/node%bbox(1, 1), mid_point(2)/)

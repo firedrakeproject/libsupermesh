@@ -64,7 +64,7 @@ contains
     do ele_b = 1, size(enlist_b, 2)
       volume_b = tetrahedron_volume(positions_b(:, enlist_b(:, ele_b)))
 
-      volume_c = 0.0
+      volume_c = 0.0D0
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
         call intersect_tets(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), tetsC, n_tetsC)

@@ -116,7 +116,7 @@ contains
     call clip_buf(lines_b(3), points, n_points)
     if(n_points_tmp < 3) return
 
-    tol = 10.0 * min(spacing(triangle_area(tri_a)), spacing(triangle_area(tri_b)))
+    tol = 10.0D0 * min(spacing(triangle_area(tri_a)), spacing(triangle_area(tri_b)))
     do i = 1, n_points_tmp - 2
       n_tris_c = n_tris_c + 1
       tris_c(n_tris_c)%v(:, 1) = points_tmp(:, 1)
@@ -194,14 +194,14 @@ contains
 
     if(present(area_b)) then
       if(present(area_a)) then
-        tol = 10.0 * min(spacing(area_a), spacing(area_b))
+        tol = 10.0D0 * min(spacing(area_a), spacing(area_b))
       else
-        tol = 10.0 * spacing(area_b)
+        tol = 10.0D0 * spacing(area_b)
       end if
     else if(present(area_a)) then
-      tol = 10.0 * spacing(area_a)
+      tol = 10.0D0 * spacing(area_a)
     else
-      tol = 10.0 * epsilon(0.0)
+      tol = 10.0D0 * epsilon(0.0D0)
     end if
     do i = 1, n_points_new - 2
       n_tris_c = n_tris_c + 1
@@ -246,8 +246,8 @@ contains
         d2 = d(i + 1)
       end if
 
-      if(d1 <= 0.0) then
-        if(d2 <= 0.0) then
+      if(d1 <= 0.0D0) then
+        if(d2 <= 0.0D0) then
           ! No clip
           n_points_tmp = n_points_tmp + 1
           points_tmp(:, n_points_tmp) = p1
@@ -256,13 +256,13 @@ contains
           n_points_tmp = n_points_tmp + 1
           points_tmp(:, n_points_tmp) = p1
           n_points_tmp = n_points_tmp + 1
-          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0), 0.0)
+          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
           points_tmp(:, n_points_tmp) = p1 + f * (p2 - p1)
         end if
-      else if(d2 <= 0.0) then
+      else if(d2 <= 0.0D0) then
         ! Move point
         n_points_tmp = n_points_tmp + 1
-        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0), 0.0)
+        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
         points_tmp(:, n_points_tmp) = p1 + f * (p2 - p1)
       !else
         ! Full clip
@@ -299,8 +299,8 @@ contains
         d2 = dot_product(line%normal, points(:, i + 1) - line%point)
       end if
 
-      if(d1 <= 0.0) then
-        if(d2 <= 0.0) then
+      if(d1 <= 0.0D0) then
+        if(d2 <= 0.0D0) then
           ! No clip
           n_points_new = n_points_new + 1
           points_new(:, n_points_new) = p1
@@ -309,13 +309,13 @@ contains
           n_points_new = n_points_new + 1
           points_new(:, n_points_new) = p1
           n_points_new = n_points_new + 1
-          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0), 0.0)
+          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
           points_new(:, n_points_new) = p1 + f * (p2 - p1)
         end if
-      else if(d2 <= 0.0) then
+      else if(d2 <= 0.0D0) then
         ! Move point
         n_points_new = n_points_new + 1
-        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0), 0.0)
+        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
         points_new(:, n_points_new) = p1 + f * (p2 - p1)
       !else
         ! Full clip
@@ -343,7 +343,7 @@ contains
     lines(3)%normal(2) =  (tri%v(1, 1) - tri%v(1, 3))
     lines(3)%point = tri%v(:, 3)
 
-    if(dot_product(tri%v(:, 2) - tri%v(:, 1), lines(3)%normal) > 0.0) then
+    if(dot_product(tri%v(:, 2) - tri%v(:, 1), lines(3)%normal) > 0.0D0) then
       lines(1)%normal = -lines(1)%normal
       lines(2)%normal = -lines(2)%normal
       lines(3)%normal = -lines(3)%normal
@@ -373,7 +373,7 @@ contains
     lines(loc)%normal(2) = -(poly(1, 1) - poly(1, loc))
     lines(loc)%point = poly(:, loc)
     
-    if(dot_product(poly(:, 1) - lines(2)%point, lines(2)%normal) > 0.0) then
+    if(dot_product(poly(:, 1) - lines(2)%point, lines(2)%normal) > 0.0D0) then
       do i = 1, loc
         lines(i)%normal = -lines(i)%normal
       end do
@@ -390,7 +390,7 @@ contains
     u = tri(:, 3) - tri(:, 1)
     v = tri(:, 2) - tri(:, 1)
 
-    area = 0.5 * abs(u(2) * v(1) - u(1) * v(2))
+    area = 0.5D0 * abs(u(2) * v(1) - u(1) * v(2))
 
   end function triangle_area_real
 
@@ -403,7 +403,7 @@ contains
     u = tri%v(:, 3) - tri%v(:, 1)
     v = tri%v(:, 2) - tri%v(:, 1)
 
-    area = 0.5 * abs(u(2) * v(1) - u(1) * v(2))
+    area = 0.5D0 * abs(u(2) * v(1) - u(1) * v(2))
 
   end function triangle_area_tri
   

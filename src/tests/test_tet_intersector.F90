@@ -33,7 +33,7 @@ subroutine test_tet_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
 
-  volume_c = 0.0
+  volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     tetA%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -45,9 +45,9 @@ subroutine test_tet_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_tets]", volume_c .fne. 1000.0 / 3.0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_tets]", volume_c .fne. 1000.0D0 / 3.0D0, .false., "Incorrect intersection volume")
 
-  volume_c = 0.0
+  volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     tetA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -58,9 +58,9 @@ subroutine test_tet_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_tets]", volume_c .fne. 1000.0 / 3.0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_tets]", volume_c .fne. 1000.0D0 / 3.0D0, .false., "Incorrect intersection volume")
 
-  volume_c = 0.0
+  volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     tetA%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -72,9 +72,9 @@ subroutine test_tet_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_tets]", volume_c .fne. 1000.0 / 3.0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_tets]", volume_c .fne. 1000.0D0 / 3.0D0, .false., "Incorrect intersection volume")
   
-  volume_c = 0.0
+  volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     tetA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -85,9 +85,9 @@ subroutine test_tet_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_simplices]", volume_c .fne. 1000.0 / 3.0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_simplices]", volume_c .fne. 1000.0D0 / 3.0D0, .false., "Incorrect intersection volume")
   
-  volume_c = 0.0
+  volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
     tetA_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -98,7 +98,7 @@ subroutine test_tet_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 1000.0 / 3.0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 1000.0D0 / 3.0D0, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b)
