@@ -39,7 +39,7 @@ contains
     else
       intervals_c(1) = max(min_a, min_b)
       intervals_c(2) = min(max_a, max_b)
-      if(interval_size(intervals_c) < 10.0D0 * max(spacing(interval_size(interval_a)), spacing(interval_size(interval_b)))) then
+      if(interval_size(intervals_c) < 10.0D0 * min(spacing(interval_size(interval_a)), spacing(interval_size(interval_b)))) then
         n_intervals_c = 0
       else
         n_intervals_c = 1
