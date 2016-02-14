@@ -294,7 +294,7 @@ contains
           call MPI_Pack(nnodes_send, 1, MPI_INTEGER, &
             & send_buffer(i + 1)%v, buffer_size, position, mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
         end if
-        deallocate(send_nodes_array, send_enlist, send_positions)
+        deallocate(send_enlist, send_nodes_array, send_positions)
 
 #ifdef PROFILE
         if(t_0 < 0.0D0) t_0 = mpi_wtime()
@@ -386,7 +386,10 @@ contains
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
     do i = 1, nprocs
-      if(associated(send_buffer(i)%v)) deallocate(send_buffer(i)%v)
+      if(associated(send_buffer(i)%v)) then
+        deallocate(send_buffer(i)%v)
+        nullify(send_buffer(i)%v)
+      end if
     end do
 #ifdef PROFILE
     if(t_0 >= 0.0D0) then
@@ -455,7 +458,15 @@ contains
       call MPI_Unpack(recv_buffer, buffer_size, position, nelements, &
         & 1, MPI_INTEGER, mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
 
-      if(nelements <= 0) cycle
+      if(nelements <= 0) then
+#ifdef OVERLAP_COMPUTE_COMMS
+        deallocate(recv_buffer)
+#else
+        deallocate(recv_buffers(i + 1)%v)
+        nullify(recv_buffers(i + 1)%v)
+#endif
+        cycle
+      end if
 
       call MPI_Unpack(recv_buffer, buffer_size, position, nnodes, &
         & 1, MPI_INTEGER, mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
@@ -473,6 +484,9 @@ contains
         
 #ifdef OVERLAP_COMPUTE_COMMS
       deallocate(recv_buffer)
+#else
+      deallocate(recv_buffers(i + 1)%v)
+      nullify(recv_buffers(i + 1)%v)
 #endif
 
       call unpack_data_b(nnodes, nelements, data)
@@ -516,7 +530,10 @@ contains
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
     do i = 1, nprocs
-      if(associated(send_buffer(i)%v)) deallocate(send_buffer(i)%v)
+      if(associated(send_buffer(i)%v)) then
+        deallocate(send_buffer(i)%v)
+        nullify(send_buffer(i)%v)
+      end if
     end do
 #else
     do i = 1, nprocs
