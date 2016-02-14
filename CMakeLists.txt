@@ -30,9 +30,6 @@ if(DEFINED ENV{ARCHER})
 else()
   find_package(LAPACK REQUIRED)
 endif()
-#set(Python_ADDITIONAL_VERSIONS 2.7)
-#find_package(PythonInterp 2.7 REQUIRED)
-#find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT REQUIRED)
 
 #if ("${PETSC_VERSION}" VERSION_LESS 3.4)
 #  message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
@@ -86,9 +83,12 @@ endif (CMAKE_Fortran_FLAGS)
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
   if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
-    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8 -fdefault-double-8 -ffree-line-length-0 -fno-f2c -march=native -O3 -ftree-vectorize -pipe -g ")
-    set (CMAKE_Fortran_FLAGS_RELEASE "-fno-f2c -march=native -O3 -ftree-vectorize -pipe -g ")
-    set (CMAKE_Fortran_FLAGS_DEBUG   "-fcheck=all -ffpe-trap=zero,overflow,underflow -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fno-f2c -Og -g -ffree-line-length-0 -fimplicit-none -fbacktrace -Wextra -Wall -Wimplicit-interface -Wno-surprising -pipe")
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8 -fdefault-double-8 -ffree-line-length-none -fno-f2c -pipe ")
+    set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize ")
+    set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -Wall -fcheck=all -ffpe-trap=zero,overflow,underflow -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fimplicit-none -fbacktrace ")
+    if (BUILD_SHARED_LIBS)
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fPIC ")
+    endif ()
   endif ()
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   # ifort (untested)
@@ -97,13 +97,6 @@ elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O2 -xhost -r8")
     set (CMAKE_Fortran_FLAGS_DEBUG   "-f77rtl -O0 -g  -check noarg_temp_created -fpe0 -warn alignments -warn declarations -warn general -warn interfaces -warn truncated_source -warn uncalled -warn uninitialized -warn usage -common_args -warn unused -fp-stack-check -check bounds -check uninit -check format -r8")
   endif ()
-elseif (Fortran_COMPILER_NAME MATCHES "g77")
-  # g77
-  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
-    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ")
-    set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O2 -m32 ")
-    set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -m32")
-  endif ()
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Cray")
   # cray
   if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
@@ -111,23 +104,17 @@ elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Cray")
     set (CMAKE_Fortran_FLAGS_RELEASE "-O2 -s real64 -fpic ")
     set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -s real64 -fpic ")
   endif ()
-else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
-  message ("CMAKE_Fortran_COMPILER full path: " ${CMAKE_Fortran_COMPILER})
-  message ("Fortran compiler: " ${Fortran_COMPILER_NAME})
-  message ("No optimized Fortran compiler flags are known, we just try -O2...")
-  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
-    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ")
-    set (CMAKE_Fortran_FLAGS_RELEASE "-O2 ")
-    set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
-  endif ()
-endif (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+endif ()
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU")
   # gcc
   if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -ftree-vectorize ")
-    set (CMAKE_C_FLAGS_RELEASE "-march=native -O2 -pipe -g -ftree-vectorize ") 
-    set (CMAKE_C_FLAGS_DEBUG   "-Og -g -Wextra -Wall -pipe")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe ")
+    set (CMAKE_C_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize ")
+    set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -Wall ")
+    if (BUILD_SHARED_LIBS)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC ")
+    endif ()
   endif ()
 elseif (CMAKE_C_COMPILER_ID MATCHES "Intel")
   # icc (untested)
@@ -143,14 +130,17 @@ elseif (CMAKE_C_COMPILER_ID MATCHES "Cray")
     set (CMAKE_C_FLAGS_RELEASE "-O2 -fpic ")
     set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fpic ")
   endif ()
-endif (CMAKE_C_COMPILER_ID MATCHES "GNU")
+endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   # g++
   if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -g -ftree-vectorize")
-    set (CMAKE_CXX_FLAGS_RELEASE "-march=native -O2 -pipe -g -ftree-vectorize") 
-    set (CMAKE_CXX_FLAGS_DEBUG   "-Og -g -Wextra -Wall -pipe")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe ")
+    set (CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize ")
+    set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -Wall ")
+    if (BUILD_SHARED_LIBS)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC ")
+    endif ()
   endif ()
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   # icpc (untested)
@@ -166,7 +156,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Cray")
     set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fpic ")
     set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -fpic ")
   endif ()
-endif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+endif ()
 
 SET( SUBPROJECTS_C_FLAGS ${CMAKE_C_FLAGS})
 SET( SUBPROJECTS_CXX_FLAGS ${CMAKE_CXX_FLAGS})
@@ -206,8 +196,6 @@ if (SUBPROJECTS_debugging MATCHES YES)
   set(local_debugging "--enable-debug")
 endif (SUBPROJECTS_debugging MATCHES YES)
 
-set( SUBPROJECTS_profilling      "")
-
 option (USE_PROFILE "Use profile flags" OFF)
 if (USE_PROFILE)
   SET( CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} -pg -g")
@@ -216,7 +204,6 @@ if (USE_PROFILE)
   SET( CMAKE_EXE_LINKER_FLAGS      "${CMAKE_EXE_LINKER_FLAGS} -pg -g" )
   SET( CMAKE_SHARED_LINKER_FLAGS   "${CMAKE_SHARED_LINKER_FLAGS} -pg -g" )
   SET( CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS} -pg -g" )
-  set( SUBPROJECTS_profilling      "-pg -g" )
 endif (USE_PROFILE)
 
 option (USE_PROFPROFILE "Use perftools profile flags" OFF)
@@ -227,7 +214,6 @@ if (USE_PROFPROFILE)
   SET( CMAKE_EXE_LINKER_FLAGS      "${CMAKE_EXE_LINKER_FLAGS} -lprofiler -g" )
   SET( CMAKE_SHARED_LINKER_FLAGS   "${CMAKE_SHARED_LINKER_FLAGS} -lprofiler -g" )
   SET( CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS} -lprofiler -g" )
-  set( SUBPROJECTS_profilling      "-lprofiler -g" )
 endif (USE_PROFPROFILE)
 
 message ("MAIN CMAKE_C_FLAGS:${CMAKE_C_FLAGS}")
@@ -252,7 +238,7 @@ ExternalProject_Add(libjudy
   BINARY_DIR ${PROJECT_BINARY_DIR}/libjudy
 #  CONFIGURE_COMMAND CXX=mpicxx CC=mpicc FC=mpif90 ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debug
 # errors  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure "CFLAGS=-O3 -march=native" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static
-  CONFIGURE_COMMAND ./configure "CFLAGS=${SUBPROJECTS_C_FLAGS}" "CXXFLAGS=${SUBPROJECTS_CXX_FLAGS}" "FFLAGS=${SUBPROJECTS_Fortran_FLAGS}" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static ${SUBPROJECTS_profilling} ${local_debugging}
+  CONFIGURE_COMMAND ./configure "CFLAGS=${SUBPROJECTS_C_FLAGS}" "CXXFLAGS=${SUBPROJECTS_CXX_FLAGS}" "FFLAGS=${SUBPROJECTS_Fortran_FLAGS}" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static ${local_debugging}
 #  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
   BUILD_COMMAND make
 #  BUILD_DIR ${PROJECT_BINARY_DIR}
@@ -261,7 +247,7 @@ ExternalProject_Add(libjudy
 )
 # copy SRC directory from source to build
 ExternalProject_Add_Step(libjudy copy_libjudy
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/libjudy ${CMAKE_BINARY_DIR}/libjudy
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/libjudy ${PROJECT_BINARY_DIR}/libjudy
   COMMENT copying libjudy from source to build
   DEPENDEES download
 )
@@ -269,19 +255,13 @@ ExternalProject_Add_Step(libjudy copy_libjudy
 include_directories(${MPI_Fortran_INCLUDE_PATH} ${PETSC_INCLUDES})
 ADD_DEFINITIONS(${PETSC_DEFINITIONS})
 
-# Set installation prefix automatically to custom path if not explicitly specified on the command line
-#if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-#    set (CMAKE_INSTALL_PREFIX "/home/ipanourg/fluidity_git/fluidity" CACHE PATH "default install path" FORCE )
-#endif()
-
 # The version number.
 set (libsupermesh_VERSION_MAJOR 0)
-set (libsupermesh_VERSION_MINOR 0)
-set (libsupermesh_VERSION_MINOR_CHANGE 1)
+set (libsupermesh_VERSION_MINOR 9)
+set (libsupermesh_VERSION_MINOR_CHANGE 0)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
-
 configure_file (
   "${PROJECT_SOURCE_DIR}/config/libsupermesh.pc.in"
   "${PROJECT_BINARY_DIR}/include/libsupermesh.pc"
@@ -325,14 +305,6 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 # should we use our own LIBRARY?
 option (USE_MYLIB 
         "Use library implementation" OFF) 
-
-# add the library?
-#
-if (USE_MYLIB)
-#  include_directories ("${PROJECT_SOURCE_DIR}/MathFunctions")
-#  add_subdirectory (MathFunctions)
-#  set (EXTRA_LIBS ${EXTRA_LIBS} MathFunctions)
-endif (USE_MYLIB)
 
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
@@ -451,13 +423,7 @@ FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES ${PROJECT_SOURCE_DIR
 
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
-foreach (file ${FORTRAN_SRCFILES})
-  if (${file} MATCHES "Tetrahedron_intersection")
-    SET_SOURCE_FILES_PROPERTIES(${file} PROPERTIES COMPILE_FLAGS -O2)
-  endif()
-endforeach()
-
-add_library (supermesh STATIC ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
+add_library (supermesh ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
 
 add_dependencies(supermesh libjudy spatialindex)
 
@@ -488,7 +454,6 @@ set (BENCHMARKTESTS
   benchmark_parallel_p2_inner_product
 )
 
-#add_executable (test_tri_intersector EXCLUDE_FROM_ALL ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_interval_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERVAL_INTERSECTOR_FILES})
 add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
 add_executable (test_tet_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TET_INTERSECTOR_FILES})
@@ -510,8 +475,6 @@ add_executable (benchmark_serial_same_algo_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMA
 add_executable (benchmark_parallel_p1_inner_product EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_p1_inner_product_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_3D_FILES} ${CPP_TEST_SOURCE_FILES})
 add_executable (benchmark_parallel_p2_inner_product EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES} ${CPP_TEST_SOURCE_FILES})
-
-#add_executable (benchmark_parallel EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_INTERSECTOR_FILES} ${CPP_TEST_SOURCE_FILES})
 
 foreach (test ${UNITTESTS})
  SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}")
@@ -602,13 +565,12 @@ if(MPI_Fortran_LINK_FLAGS)
   endforeach()
 endif()
 
-
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh.a"                       DESTINATION lib)
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_construction.mod"        DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fldebug.mod"             DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_fldebug_parameters.mod"  DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_linked_lists.mod"        DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder.mod" DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection_module.mod"  DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection_module.mod"  DESTINATION include)
-install (FILES "${PROJECT_BINARY_DIR}/include/libsupermesh.pc"                 DESTINATION lib/pkgconfig)
+install(TARGETS supermesh DESTINATION lib)
+install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder.mod" DESTINATION include)
+install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_interval_intersection.mod" DESTINATION include)
+install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_parallel_supermesh.mod" DESTINATION include)
+install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_read_triangle.mod" DESTINATION include)
+install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_supermesh.mod" DESTINATION include)
+install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection.mod" DESTINATION include)
+install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection.mod" DESTINATION include)
+install(FILES "${PROJECT_BINARY_DIR}/include/libsupermesh.pc" DESTINATION lib/pkgconfig)
