@@ -71,7 +71,7 @@ contains
     call MPI_Initialized(mpi_init, ierr)
     ewrite(-1, "(a)")      "*** libsupermesh error ***"
     ewrite(-1, "(a,i0,a)") "Source location: (" // trim(file) // ",", line_number, ")"
-    ewrite(-1, "(a)")      "Error message: ", trim(error)
+    ewrite(-1, "(a)")      "Error message: " // trim(error)
     call print_backtrace()
     if(mpi_init /= 0) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
     stop 1
