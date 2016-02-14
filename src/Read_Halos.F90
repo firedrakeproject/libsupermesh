@@ -45,7 +45,7 @@ module libsupermesh_read_halos
   end interface
 
   type int_array
-    integer, dimension(:), pointer :: val
+    integer, dimension(:), pointer :: v
   end type
 
   type halo_type
@@ -94,19 +94,19 @@ contains
     call halo_reader_query_output(halo%level, halo%nprocs, nsends, nreceives)
     allocate(halo%send(halo%nprocs), halo%recv(halo%nprocs))
     do i = 1, halo%nprocs
-      allocate(halo%send(i)%val(nsends(i)), halo%recv(i)%val(nreceives(i)))
+      allocate(halo%send(i)%v(nsends(i)), halo%recv(i)%v(nreceives(i)))
     end do
 
     allocate(send(sum(nsends)), recv(sum(nreceives)))
     call halo_reader_get_output(halo%level, halo%nprocs, nsends, nreceives, halo%npnodes, send, recv)
     index = 1
     do i = 1, halo%nprocs
-      halo%send(i)%val = send(index:index + nsends(i) - 1)
+      halo%send(i)%v = send(index:index + nsends(i) - 1)
       index = index + nsends(i)
     end do
     index = 1
     do i = 1, halo%nprocs
-      halo%recv(i)%val = recv(index:index + nreceives(i) - 1)
+      halo%recv(i)%v = recv(index:index + nreceives(i) - 1)
       index = index + nreceives(i)
     end do
     deallocate(nsends, nreceives, send, recv)
@@ -120,7 +120,7 @@ contains
     integer :: i
 
     do i = 1, halo%nprocs
-      deallocate(halo%send(i)%val, halo%recv(i)%val)
+      deallocate(halo%send(i)%v, halo%recv(i)%v)
     end do
     deallocate(halo%send, halo%recv)
 

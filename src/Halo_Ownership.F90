@@ -53,10 +53,10 @@ contains
     node_owner(halo%npnodes + 1:) = huge(0)
 
     do i = 1, halo%nprocs
-      if(size(halo%recv(i)%val) > 0) then
-        assert(all(halo%recv(i)%val > halo%npnodes))
-        assert(all(halo%recv(i)%val <= nnodes))
-        node_owner(halo%recv(i)%val) = i - 1
+      if(size(halo%recv(i)%v) > 0) then
+        assert(all(halo%recv(i)%v > halo%npnodes))
+        assert(all(halo%recv(i)%v <= nnodes))
+        node_owner(halo%recv(i)%v) = i - 1
       end if
     end do
 
@@ -84,8 +84,8 @@ contains
     recv_types = MPI_DATATYPE_NULL
     requests = MPI_REQUEST_NULL
     do i = 1, halo%nprocs      
-      if(size(halo%send(i)%val) > 0) then
-        call MPI_Type_create_indexed_block(size(halo%send(i)%val), 1, halo%send(i)%val - 1, MPI_INTEGER, send_types(i), ierr)
+      if(size(halo%send(i)%v) > 0) then
+        call MPI_Type_create_indexed_block(size(halo%send(i)%v), 1, halo%send(i)%v - 1, MPI_INTEGER, send_types(i), ierr)
         assert(ierr == MPI_SUCCESS)
         call MPI_Type_commit(send_types(i), ierr)
         assert(ierr == MPI_SUCCESS)
@@ -94,8 +94,8 @@ contains
         assert(ierr == MPI_SUCCESS)
       end if
 
-      if(size(halo%recv(i)%val) > 0) then
-        call MPI_Type_create_indexed_block(size(halo%recv(i)%val), 1, halo%recv(i)%val - 1, MPI_INTEGER, recv_types(i), ierr)
+      if(size(halo%recv(i)%v) > 0) then
+        call MPI_Type_create_indexed_block(size(halo%recv(i)%v), 1, halo%recv(i)%v - 1, MPI_INTEGER, recv_types(i), ierr)
         assert(ierr == MPI_SUCCESS)
         call MPI_Type_commit(recv_types(i), ierr)
         assert(ierr == MPI_SUCCESS)
