@@ -8,7 +8,6 @@ subroutine benchmark_serial_3D() bind(c)
   use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
-  use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tet_intersection
   use libsupermesh_unittest_tools
@@ -27,7 +26,8 @@ subroutine benchmark_serial_3D() bind(c)
   type(intersections), dimension(:), allocatable :: map_AB
   type(tet_type) :: tet_A, tet_B
   type(tet_type), dimension(tet_buf_size) :: tetsC
-  type(vector_field) :: positionsA, positionsB
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
   real :: t0, serial_time, serial_read_time
   logical :: fail
 
@@ -52,34 +52,36 @@ subroutine benchmark_serial_3D() bind(c)
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/pyramid_0_5"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/pyramid_0_9"//"_"//trim(nprocs_character), dim)
-    serial_ele_A = ele_count(positionsA)
-    serial_ele_B = ele_count(positionsB)
+    call read_node("data/pyramid_0_5_" // trim(nprocs_character) // ".node", dim, positions_a)
+    call read_ele("data/pyramid_0_5_" // trim(nprocs_character) // ".ele", dim, enlist_a)
+    call read_node("data/pyramid_0_9_" // trim(nprocs_character) // ".node", dim, positions_b)
+    call read_ele("data/pyramid_0_9_" // trim(nprocs_character) // ".ele", dim, enlist_b)
+    serial_ele_A = size(enlist_a, 2)
+    serial_ele_B = size(enlist_b, 2)
     serial_read_time = mpi_wtime() - t0
 
-    if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
+    if (rank == 0) write(output_unit, *) " A:", size(enlist_a, 2), ", B:", size(enlist_b, 2)
 
     t0 = mpi_wtime()
     allocate(map_AB(serial_ele_A))
-    call intersection_finder(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), serial_ele_A/)), &
-                         & positionsB%val, reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), serial_ele_B/)), &
+    call intersection_finder(positions_a, enlist_a, &
+                         & positions_b, enlist_b, &
                          & map_AB)
 
     allocate(valsB(serial_ele_B))
 
     do ele_B = 1, serial_ele_B
-      valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 4.0
+      valsB(ele_B) = sum(positions_b(1, enlist_b(:, ele_B))) / 4.0D0
     end do
 
     vols_serial = 0.0
     integral_serial = 0.0
     do ele_A = 1, serial_ele_A
-      tet_A%v = ele_val(positionsA, ele_A)
+      tet_A%v = positions_a(:, enlist_a(:, ele_A))
 
       do i = 1, map_AB(ele_A)%n
         ele_B = map_AB(ele_A)%v(i)
-        tet_B%v = ele_val(positionsB, ele_B)
+        tet_B%v = positions_b(:, enlist_b(:, ele_B))
 
         call intersect_tets(tet_A, tet_B, tetsC, n_tetsC)
 
@@ -95,8 +97,8 @@ subroutine benchmark_serial_3D() bind(c)
     call deallocate(map_AB)
     deallocate(map_AB)
 
-    call deallocate(positionsA)
-    call deallocate(positionsB)
+    deallocate(positions_a, enlist_a)
+    deallocate(positions_b, enlist_b)
     serial_time = mpi_wtime() - t0
   end if
 
@@ -113,7 +115,7 @@ subroutine benchmark_serial_3D() bind(c)
     write(output_unit, "(a,f19.14)") "Volume, serial       =", vols_serial
     write(output_unit, "(a,f19.14)") "Integral, serial     =", integral_serial
 
-    fail = fnequals(vols_parallel, vols_serial)
+    fail = fnequals(vols_parallel, vols_serial, tol = 1.0D3 * spacing(vols_parallel))
     call report_test("[test_parallel_partition_complete_ab areas]", fail, .FALSE., "Should give the same areas of intersection")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Area, serial   =", vols_serial, &

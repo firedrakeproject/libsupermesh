@@ -8,7 +8,6 @@ subroutine benchmark_serial_same_algo() bind(c)
   use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
-  use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
@@ -26,7 +25,8 @@ subroutine benchmark_serial_same_algo() bind(c)
   integer, parameter :: dim = 2, root = 0
   type(tri_type) :: tri_A, tri_B
   type(tri_type), dimension(tri_buf_size) :: trisC
-  type(vector_field) :: positionsA, positionsB
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
   real :: t0, serial_time, serial_read_time
   logical :: fail
 
@@ -51,31 +51,33 @@ subroutine benchmark_serial_same_algo() bind(c)
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/triangle_0_05"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/triangle_0_09"//"_"//trim(nprocs_character), dim)
-    serial_ele_A = ele_count(positionsA)
-    serial_ele_B = ele_count(positionsB)
+    call read_node("data/triangle_0_05_" // trim(nprocs_character) // ".node", dim, positions_a)
+    call read_ele("data/triangle_0_05_" // trim(nprocs_character) // ".ele", dim, enlist_a)
+    call read_node("data/triangle_0_09_" // trim(nprocs_character) // ".node", dim, positions_b)
+    call read_ele("data/triangle_0_09_" // trim(nprocs_character) // ".ele", dim, enlist_b)
+    serial_ele_A = size(enlist_a, 2)
+    serial_ele_B = size(enlist_b, 2)
     serial_read_time = mpi_wtime() - t0
 
-    if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
+    if (rank == 0) write(output_unit, *) " A:", size(enlist_a, 2), ", B:", size(enlist_b, 2)
 
     t0 = mpi_wtime()
-    call rtree_intersection_finder_set_input(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)))
+    call rtree_intersection_finder_set_input(positions_a, enlist_a)
 
     allocate(valsB(serial_ele_B))
     do ele_B = 1, serial_ele_B
-      valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 3.0
+      valsB(ele_B) = sum(positions_b(1, enlist_b(:, ele_B))) / 3.0D0
     end do
     area_serial = 0.0
     integral_serial = 0.0
 
-    do ele_B = 1, ele_count(positionsB)
-      tri_B%v = ele_val(positionsB, ele_B)
+    do ele_B = 1, size(enlist_b, 2)
+      tri_B%v = positions_b(:, enlist_b(:, ele_B))
       call rtree_intersection_finder_find(tri_B%v)
       call rtree_intersection_finder_query_output(nintersections)
       do i = 1, nintersections
         call rtree_intersection_finder_get_output(ele_A, i)
-        tri_A%v = ele_val(positionsA, ele_A)
+        tri_A%v = positions_a(:, enlist_a(:, ele_A))
 
         call intersect_tris(tri_A, tri_B, trisC, n_trisC)
 
@@ -87,8 +89,8 @@ subroutine benchmark_serial_same_algo() bind(c)
     end do
 
     deallocate(valsB)
-    call deallocate(positionsA)
-    call deallocate(positionsB)
+    deallocate(positions_a, enlist_a)
+    deallocate(positions_b, enlist_b)
 
     serial_time = mpi_wtime() - t0
   end if
@@ -113,7 +115,7 @@ subroutine benchmark_serial_same_algo() bind(c)
                                        & ": Area, parallel =", area_parallel
     end if
 
-    fail = fnequals(integral_parallel, integral_serial)
+    fail = fnequals(integral_parallel, integral_serial, tol = 1.0D3 * spacing(integral_parallel))
     call report_test("[test_parallel_partition_complete_ab integrals]", fail, .FALSE., "Should give the same values of integration")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Integral, serial   =", integral_serial, &

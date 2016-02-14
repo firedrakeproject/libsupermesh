@@ -8,7 +8,6 @@ subroutine benchmark_parallel_complete_3D() bind(c)
   use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
-  use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
@@ -27,7 +26,9 @@ subroutine benchmark_parallel_complete_3D() bind(c)
   integer, parameter :: dim = 3, root = 0
   integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB
   type(halo_type) :: halo
-  type(vector_field) :: positionsA, positionsB
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
+
   real :: t0, serial_time, parallel_time, serial_read_time, parallel_read_time
   real :: parallel_time_tot_min, parallel_time_tot_max, parallel_time_tot_sum 
   logical :: fail
@@ -60,37 +61,39 @@ subroutine benchmark_parallel_complete_3D() bind(c)
   if ((rank == 0) .or. (mod(rank,20) == 0)) print *, trim(buffer)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/pyramid_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/pyramid_0_5"//"_"//trim(nprocs_character), halo, level = 2)
-  allocate(ele_ownerA(ele_count(positionsA)))
-  call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
+  call read_node("data/pyramid_0_5_" // trim(nprocs_character) // "_" // trim(rank_character) // ".node", dim, positions_a)
+  call read_ele("data/pyramid_0_5_" // trim(nprocs_character) // "_" // trim(rank_character) // ".ele", dim, enlist_a)
+  call read_halo("data/pyramid_0_5_"//trim(nprocs_character), halo, level = 2)
+  allocate(ele_ownerA(size(enlist_a, 2)))
+  call element_ownership(size(positions_a, 2), enlist_a, halo, ele_ownerA)
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/cube_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
-  call read_halo("data/cube_0_5"//"_"//trim(nprocs_character), halo, level = 2)
-  allocate(ele_ownerB(ele_count(positionsB)))
-  call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
+  call read_node("data/cube_0_5_" // trim(nprocs_character) // "_" // trim(rank_character) // ".node", dim, positions_b)
+  call read_ele("data/cube_0_5_" // trim(nprocs_character) // "_" // trim(rank_character) // ".ele", dim, enlist_b)
+  call read_halo("data/cube_0_5_"//trim(nprocs_character), halo, level = 2)
+  allocate(ele_ownerB(size(enlist_b, 2)))
+  call element_ownership(size(positions_b, 2), enlist_b, halo, ele_ownerB)
   test_parallel_ele_B = count(ele_ownerB == rank)
   call deallocate(halo)
   parallel_read_time = mpi_wtime() - t0
-  
-  if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
+
+  if (rank == 0) write(output_unit, *) " A:", size(enlist_a, 2), ", B:", size(enlist_b, 2)
 
   t0 = mpi_wtime()
   allocate(valsB(test_parallel_ele_B))
   do ele_B = 1, test_parallel_ele_B
-    valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 4.0
+    valsB(ele_B) = sum(positions_b(1, enlist_b(:, ele_B))) / 4.0D0
   end do
   call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dp_extent, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_TYPE_EXTENT(MPI_INTEGER, int_extent, ierr);  assert(ierr == MPI_SUCCESS)
   vols_parallel = 0.0
   integral_parallel = 0.0
 
-  call parallel_supermesh(positionsA%val, & 
-           &  reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), &
+  call parallel_supermesh(positions_a, & 
+           &  enlist_a, &
            &  ele_ownerA,          &
-           &  positionsB%val,            &
-           &  reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), &
+           &  positions_b,            &
+           &  enlist_b, &
            &  ele_ownerB,          &
            &  local_donor_ele_data, local_unpack_data_b, local_intersection_calculation)
   parallel_time = mpi_wtime() - t0
@@ -103,11 +106,11 @@ subroutine benchmark_parallel_complete_3D() bind(c)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Allreduce(MPI_IN_PLACE, parallel_read_time, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
-  call deallocate(positionsA)
-  call deallocate(positionsB)
+  deallocate(positions_a, enlist_a)
+  deallocate(positions_b, enlist_b)
 
-  vols_serial = 1125.0
-  integral_serial = 5625.0
+  vols_serial = 1000.0D0 / 3.0D0
+  integral_serial = 0.166666074270734271D+004
 
   call print_times()
 
@@ -134,7 +137,7 @@ subroutine benchmark_parallel_complete_3D() bind(c)
                                        & ": Volume, parallel =", vols_parallel
     end if
 
-    fail = fnequals(integral_parallel, integral_serial)
+    fail = fnequals(integral_parallel, integral_serial, tol = 1.0D3 * spacing(integral_serial))
     call report_test("[test_parallel_partition_complete_ab integrals]", fail, .FALSE., "Should give the same values of integration")
     if (fail) then
       print "(a,e25.17e3,a,e25.17e3,a)", ": Integral, serial   =", integral_serial, &

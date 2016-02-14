@@ -8,7 +8,6 @@ subroutine benchmark_serial_same_algo_3D() bind(c)
   use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
-  use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tet_intersection
   use libsupermesh_unittest_tools
@@ -26,7 +25,8 @@ subroutine benchmark_serial_same_algo_3D() bind(c)
   integer, parameter :: dim = 3, root = 0
   type(tet_type) :: tet_A, tet_B
   type(tet_type), dimension(tet_buf_size) :: tetsC
-  type(vector_field) :: positionsA, positionsB
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
   real :: t0, serial_time, serial_read_time
   logical :: fail
 
@@ -51,31 +51,33 @@ subroutine benchmark_serial_same_algo_3D() bind(c)
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/pyramid_0_5"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/pyramid_0_9"//"_"//trim(nprocs_character), dim)
-    serial_ele_A = ele_count(positionsA)
-    serial_ele_B = ele_count(positionsB)
+    call read_node("data/pyramid_0_5_" // trim(nprocs_character) // ".node", dim, positions_a)
+    call read_ele("data/pyramid_0_5_" // trim(nprocs_character) // ".ele", dim, enlist_a)
+    call read_node("data/pyramid_0_9_" // trim(nprocs_character) // ".node", dim, positions_b)
+    call read_ele("data/pyramid_0_9_" // trim(nprocs_character) // ".ele", dim, enlist_b)
+    serial_ele_A = size(enlist_a, 2)
+    serial_ele_B = size(enlist_b, 2)
     serial_read_time = mpi_wtime() - t0
 
-    if (rank == 0) write(output_unit, *) " A:", ele_count(positionsA), ", B:", ele_count(positionsB)
+    if (rank == 0) write(output_unit, *) " A:", size(enlist_a, 2), ", B:", size(enlist_b, 2)
 
     t0 = mpi_wtime()
-    call rtree_intersection_finder_set_input(positionsA%val, reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)))
+    call rtree_intersection_finder_set_input(positions_a, enlist_a)
 
     allocate(valsB(serial_ele_B))
     do ele_B = 1, serial_ele_B
-      valsB(ele_B) = sum(positionsB%val(1, ele_nodes(positionsB, ele_B))) / 4.0
+      valsB(ele_B) = sum(positions_b(1, enlist_b(:, ele_B))) / 4.0D0
     end do
     vols_serial = 0.0
     integral_serial = 0.0
 
-    do ele_B = 1, ele_count(positionsB)
-      tet_B%v = ele_val(positionsB, ele_B)
+    do ele_B = 1, size(enlist_b, 2)
+      tet_B%v = positions_b(:, enlist_b(:, ele_B))
       call rtree_intersection_finder_find(tet_B%v)
       call rtree_intersection_finder_query_output(nintersections)
       do i = 1, nintersections
         call rtree_intersection_finder_get_output(ele_A, i)
-        tet_A%v = ele_val(positionsA, ele_A)
+        tet_A%v = positions_a(:, enlist_a(:, ele_A))
 
         call intersect_tets(tet_A, tet_B, tetsC, n_tetsC)
 
@@ -87,8 +89,8 @@ subroutine benchmark_serial_same_algo_3D() bind(c)
     end do
 
     deallocate(valsB)
-    call deallocate(positionsA)
-    call deallocate(positionsB)
+    deallocate(positions_a, enlist_a)
+    deallocate(positions_b, enlist_b)
 
     serial_time = mpi_wtime() - t0
   end if
