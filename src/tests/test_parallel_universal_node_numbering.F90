@@ -7,7 +7,6 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   use libsupermesh_debug
   use libsupermesh_unittest_tools
   use libsupermesh_supermesh
-  use libsupermesh_fields
   use libsupermesh_read_triangle
   use libsupermesh_tri_intersection
   use libsupermesh_unittest_tools
@@ -37,7 +36,8 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   integer, dimension(:,:), allocatable :: unsA_parallel, unsB_parallel
   integer                              :: status(MPI_STATUS_SIZE)
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
-  type(vector_field) :: positionsA, positionsB
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  real, dimension(:, :), allocatable :: positions_a, positions_b
   integer, parameter :: dim = 2
   integer, parameter :: root = 0
   logical :: fail
@@ -71,12 +71,12 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   ! Serial test
   if (rank == 0) then
     t0 = mpi_wtime()
-    positionsA = read_triangle_files("data/square_0_5"//"_"//trim(nprocs_character), dim)
-    positionsB = read_triangle_files("data/square_0_09"//"_"//trim(nprocs_character), dim)
-    serial_ele_A = ele_count(positionsA)
-    serial_ele_B = ele_count(positionsB)
-    call deallocate(positionsA)
-    call deallocate(positionsB)
+    call read_ele("data/square_0_5_" // trim(nprocs_character) // ".ele", dim, enlist_a)
+    call read_ele("data/square_0_09_" // trim(nprocs_character) // ".ele", dim, enlist_b)
+    serial_ele_A = size(enlist_a, 2)
+    serial_ele_B = size(enlist_b, 2)
+    deallocate(enlist_a)
+    deallocate(enlist_b)
     serial_read_time = mpi_wtime() - t0
   end if
 
@@ -97,20 +97,21 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   t0 = mpi_wtime()
-  positionsA = read_triangle_files(trim("data/square_0_5_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_node("data/square_0_5_" // trim(nprocs_character) // "_" // trim(rank_character) // ".node", dim, positions_a)
+  call read_ele("data/square_0_5_" // trim(nprocs_character) // "_" // trim(rank_character) // ".ele", dim, enlist_a)
   call read_halo("data/square_0_5"//"_"//trim(nprocs_character), halo, level = 2)
-  allocate(ele_ownerA(ele_count(positionsA)))
-  call element_ownership(node_count(positionsA), reshape(positionsA%mesh%ndglno, (/ele_loc(positionsA, 1), ele_count(positionsA)/)), halo, ele_ownerA)
+  allocate(ele_ownerA(size(enlist_a, 2)))
+  call element_ownership(size(positions_a, 2), enlist_a, halo, ele_ownerA)
   parallel_ele_A = count(ele_ownerA == rank)
-  meshA_nodes = node_count(positionsA)
-  allocate(unsA(node_count(positionsA)))
+  meshA_nodes = size(positions_a, 2)
+  allocate(unsA(size(positions_a, 2)))
   call universal_node_numbering(halo, unsA)
   ! Gather remote results:
   call MPI_Gather(meshA_nodes, 1, MPI_INTEGER, &
     & meshA_nodes_parallel, 1, MPI_INTEGER, &
     & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
-  call MPI_Bsend(positionsA%val, meshA_nodes * 2, MPI_DOUBLE_PRECISION, 0, rank, &
+  call MPI_Bsend(positions_a, meshA_nodes * 2, MPI_DOUBLE_PRECISION, 0, rank, &
           & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(meshA_node_val_parallel(maxval(meshA_nodes_parallel) * 2, 0:nprocs - 1))
@@ -133,13 +134,14 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   end if
   call deallocate(halo)
 
-  positionsB = read_triangle_files(trim("data/square_0_09_")//trim(nprocs_character)//"_"//trim(rank_character), dim)
+  call read_node("data/square_0_09_" // trim(nprocs_character) // "_" // trim(rank_character) // ".node", dim, positions_b)
+  call read_ele("data/square_0_09_" // trim(nprocs_character) // "_" // trim(rank_character) // ".ele", dim, enlist_b)
   call read_halo("data/square_0_09"//"_"//trim(nprocs_character), halo, level = 2)
-  allocate(ele_ownerB(ele_count(positionsB)))
-  call element_ownership(node_count(positionsB), reshape(positionsB%mesh%ndglno, (/ele_loc(positionsB, 1), ele_count(positionsB)/)), halo, ele_ownerB)
+  allocate(ele_ownerB(size(enlist_b, 2)))
+  call element_ownership(size(positions_b, 2), enlist_b, halo, ele_ownerB)
   parallel_ele_B = count(ele_ownerB == rank)
-  meshB_nodes = node_count(positionsB)
-  allocate(unsB(node_count(positionsB)))
+  meshB_nodes = size(positions_b, 2)
+  allocate(unsB(size(positions_b, 2)))
   call universal_node_numbering(halo, unsB)
 
   ! Gather remote results:
@@ -147,7 +149,7 @@ subroutine test_parallel_universal_node_numbering() bind(c)
     & meshB_nodes_parallel, 1, MPI_INTEGER, &
     & root, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
-  call MPI_Bsend(positionsB%val, meshB_nodes * 2, MPI_DOUBLE_PRECISION, 0, rank, &
+  call MPI_Bsend(positions_b, meshB_nodes * 2, MPI_DOUBLE_PRECISION, 0, rank, &
           & MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if (rank == 0) then
     allocate(meshB_node_val_parallel(maxval(meshB_nodes_parallel) * 2, 0:nprocs - 1))
@@ -229,8 +231,8 @@ subroutine test_parallel_universal_node_numbering() bind(c)
 
   deallocate(unsA, unsB)
   call deallocate(halo)
-  call deallocate(positionsA)
-  call deallocate(positionsB)
+  deallocate(positions_a, enlist_a)
+  deallocate(positions_b, enlist_b)
 
 contains
 
