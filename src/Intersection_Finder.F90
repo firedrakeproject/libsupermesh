@@ -65,6 +65,8 @@ module libsupermesh_intersection_finder
     & quadtree_intersection_finder, octtree_intersection_finder, &
     & tree_intersection_finder, sort_intersection_finder, &
     & brute_force_intersection_finder
+  public :: octtree_node, build_octtree, query_octtree
+  public :: quadtree_node, build_quadtree, query_quadtree
   public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
