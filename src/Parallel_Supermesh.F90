@@ -389,6 +389,9 @@ contains
     allocate(statuses(nsends * MPI_STATUS_SIZE))
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
+    do i = 1, nprocs
+      if(associated(send_buffer(i)%v)) deallocate(send_buffer(i)%v)
+    end do
 #ifdef PROFILE
     if(t_0 >= 0.0D0) then
       point_to_point_time = mpi_wtime() - t_0
@@ -516,6 +519,9 @@ contains
     allocate(statuses(nsends * MPI_STATUS_SIZE))
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
+    do i = 1, nprocs
+      if(associated(send_buffer(i)%v)) deallocate(send_buffer(i)%v)
+    end do
 #else
     do i = 1, nprocs
       if(associated(recv_buffers(i)%v)) deallocate(recv_buffers(i)%v)
