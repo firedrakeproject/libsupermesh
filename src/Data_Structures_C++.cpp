@@ -48,7 +48,10 @@ class integer_set {
     inline void fetch(const int& idx, int& val) {
       if(!this->v_array) {
         this->v_array = (int*)malloc(this->v_set.size() * sizeof(int));
-        assert(this->v_array);
+        if(!this->v_array) {
+          cerr << "malloc failure" << endl;
+          exit(1);
+        }
         size_t i = 0;
         for(set<int>::iterator iter = this->v_set.begin();iter != this->v_set.end();iter++) {
           this->v_array[i] = *iter;
@@ -140,7 +143,10 @@ class integer_hash_table {
     inline void fetch_pair(const int& idx, int& k, int& v) {
       if(!this->k_array) {
         this->k_array = (int*)malloc(this->v_map.size() * sizeof(int));
-        assert(this->k_array);
+        if(!this->k_array) {
+          cerr << "malloc failure" << endl;
+          exit(1);
+        }
         size_t i = 0;
         for(map<int, int>::iterator iter = this->v_map.begin();iter != this->v_map.end();iter++) {
           this->k_array[i] = iter->first;
@@ -163,7 +169,10 @@ class integer_hash_table {
 extern "C" {
   void libsupermesh_integer_set_create_c(void **i) {
     (*i) = (void*)(new libsupermesh::integer_set());
-    assert((*i));
+    if(!(*i)) {
+      cerr << "new failure" << endl;
+      exit(1);
+    }
     
     return;
   }
@@ -206,7 +215,10 @@ extern "C" {
   
   void libsupermesh_integer_hash_table_create_c(void **i) {
     (*i) = (void*)(new libsupermesh::integer_hash_table);
-    assert((*i));
+    if(!(*i)) {
+      cerr << "new failure" << endl;
+      exit(1);
+    }
     
     return;
   }

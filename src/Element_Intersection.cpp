@@ -100,6 +100,11 @@ IData* MeshDataStream::getNext()
       
   Region region = Region(low, high, dim);
   IData* data = new RTree::Data(0, 0, region, ++index);
+  if(!data)
+  {
+    std::cerr << "new failure" << std::endl;
+    exit(1);
+  }
 
   return data;
 }
@@ -196,6 +201,11 @@ void ElementIntersectionFinder::SetTestElement(const double*& positions, const i
   }
   
   Region* region = new Region(low, high, dim);
+  if(!region)
+  {
+    std::cerr << "new failure" << std::endl;
+    exit(1);
+  }
   rTree->intersectsWithQuery(*region, visitor);
   
   delete region;

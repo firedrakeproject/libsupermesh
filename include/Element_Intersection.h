@@ -35,6 +35,7 @@
 #include <spatialindex/SpatialIndex.h>
 
 #include <cassert>
+#include <iostream>
 #include <vector>
 
 namespace libsupermesh

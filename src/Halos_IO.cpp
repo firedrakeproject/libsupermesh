@@ -193,6 +193,10 @@ extern "C"{
       readHaloData = NULL;
     }
     readHaloData = new HaloData();    
+    if(!readHaloData){
+      cerr << "new failure" << endl;
+      exit(1);
+    }
   
     ostringstream buffer;
     buffer << string(filename, *filename_len) << "_" << *process << ".halo";
@@ -274,9 +278,15 @@ extern "C"{
     assert(readHaloData);
     assert(*nprocs >= readHaloData->nprocs);
     int* lnsends = (int*)malloc(*nprocs * sizeof(int));
-    assert(lnsends);
+    if(!lnsends){
+      cerr << "malloc failure" << endl;
+      exit(1);
+    }
     int* lnreceives = (int*)malloc(*nprocs * sizeof(int));
-    assert(lnreceives);
+    if(!lnreceives){
+      cerr << "malloc failure" << endl;
+      exit(1);
+    }
     libsupermesh_halo_reader_query_output(level, nprocs, lnsends, lnreceives);
     for(int i = 0;i < *nprocs;i++){
       assert(nsends[i] == lnsends[i]);
