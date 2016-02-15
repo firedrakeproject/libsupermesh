@@ -19,6 +19,11 @@
 #undef HAVE_PETSC
 #endif
 
+#define ENABLE_JUDY @libsupermesh_ENABLE_JUDY@
+#if ENABLE_JUDY == 0
+#undef ENABLE_JUDY
+#endif
+
 #define DDEBUG @libsupermesh_DEBUG@
 #if DDEBUG == 0
 #undef DDEBUG

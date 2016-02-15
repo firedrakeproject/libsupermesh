@@ -30,6 +30,12 @@ if(DEFINED ENV{ARCHER})
 else()
   find_package(LAPACK REQUIRED)
 endif()
+option (ENABLE_JUDY "Enable the Judy library" OFF)
+if (ENABLE_JUDY)
+  set (libsupermesh_ENABLE_JUDY 1)
+else()
+  set (libsupermesh_ENABLE_JUDY 0)
+endif ()
 
 #if ("${PETSC_VERSION}" VERSION_LESS 3.4)
 #  message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
@@ -229,28 +235,29 @@ message ("MAIN PROJECT_BINARY_DIR:${PROJECT_BINARY_DIR}")
 
 
 add_subdirectory(spatialindex-1.8.0 EXCLUDE_FROM_ALL)
-#add_subdirectory(libjudy)
 
-include(ExternalProject)
-ExternalProject_Add(libjudy
-  SOURCE_DIR ${PROJECT_SOURCE_DIR}/libjudy
-  PREFIX     ${PROJECT_BINARY_DIR}/libjudy
-  BINARY_DIR ${PROJECT_BINARY_DIR}/libjudy
-#  CONFIGURE_COMMAND CXX=mpicxx CC=mpicc FC=mpif90 ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debug
-# errors  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure "CFLAGS=-O3 -march=native" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static
-  CONFIGURE_COMMAND ./configure "CFLAGS=${SUBPROJECTS_C_FLAGS}" "CXXFLAGS=${SUBPROJECTS_CXX_FLAGS}" "FFLAGS=${SUBPROJECTS_Fortran_FLAGS}" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static ${local_debugging}
-#  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
-  BUILD_COMMAND make
-#  BUILD_DIR ${PROJECT_BINARY_DIR}
-#  BUILD_IN_SOURCE 1
-  INSTALL_COMMAND echo "installing"
-)
-# copy SRC directory from source to build
-ExternalProject_Add_Step(libjudy copy_libjudy
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/libjudy ${PROJECT_BINARY_DIR}/libjudy
-  COMMENT copying libjudy from source to build
-  DEPENDEES download
-)
+if (ENABLE_JUDY)
+  include(ExternalProject)
+  ExternalProject_Add(libjudy
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/libjudy
+    PREFIX     ${PROJECT_BINARY_DIR}/libjudy
+    BINARY_DIR ${PROJECT_BINARY_DIR}/libjudy
+  #  CONFIGURE_COMMAND CXX=mpicxx CC=mpicc FC=mpif90 ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debug
+  # errors  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure "CFLAGS=-O3 -march=native" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static
+    CONFIGURE_COMMAND ./configure "CFLAGS=${SUBPROJECTS_C_FLAGS}" "CXXFLAGS=${SUBPROJECTS_CXX_FLAGS}" "FFLAGS=${SUBPROJECTS_Fortran_FLAGS}" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static ${local_debugging}
+  #  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
+    BUILD_COMMAND make
+  #  BUILD_DIR ${PROJECT_BINARY_DIR}
+  #  BUILD_IN_SOURCE 1
+    INSTALL_COMMAND echo "installing"
+  )
+  # copy SRC directory from source to build
+  ExternalProject_Add_Step(libjudy copy_libjudy
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/libjudy ${PROJECT_BINARY_DIR}/libjudy
+    COMMENT copying libjudy from source to build
+    DEPENDEES download
+  )
+endif ()
 
 include_directories(${MPI_Fortran_INCLUDE_PATH} ${PETSC_INCLUDES})
 ADD_DEFINITIONS(${PETSC_DEFINITIONS})
@@ -308,7 +315,9 @@ option (USE_MYLIB
 
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
-include_directories ("${PROJECT_BINARY_DIR}/libjudy/src/")
+if (ENABLE_JUDY)
+  include_directories ("${PROJECT_BINARY_DIR}/libjudy/src/")
+endif ()
 
 set (CPP_SPATIALINDEX_O_FILES "")
 set (CPP_SPATIALINDEX_O_FILES
@@ -347,47 +356,49 @@ foreach (test ${CPP_SPATIALINDEX_O_FILES})
 endforeach()
 
 set (CPP_LIBJUDY_O_FILES "")
-set (CPP_LIBJUDY_O_FILES
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1FreeArray.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Set.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Count.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libcount_la-Judy1ByCount.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Unset.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Test.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1MallocIF.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Tables.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Decascade.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Cascade.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1CreateBranch.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1InsertBranch.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1First.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1Next.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1Prev.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1NextEmpty.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1PrevEmpty.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFreeArray.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLIns.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCount.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLGet.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDel.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libcount_la-JudyLByCount.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLTables.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLMallocIF.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDecascade.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCascade.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLInsertBranch.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCreateBranch.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFirst.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNext.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrev.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNextEmpty.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrevEmpty.o
-  ${PROJECT_BINARY_DIR}/libjudy/src/JudyCommon/JudyMalloc.o
-)
-foreach (test ${CPP_LIBJUDY_O_FILES})
- SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
-endforeach()
-
+if (ENABLE_JUDY)
+  set (CPP_LIBJUDY_O_FILES
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1FreeArray.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Set.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Count.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libcount_la-Judy1ByCount.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Unset.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Test.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1MallocIF.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Tables.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Decascade.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Cascade.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1CreateBranch.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1InsertBranch.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1First.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1Next.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1Prev.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1NextEmpty.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1PrevEmpty.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFreeArray.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLIns.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCount.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLGet.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDel.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libcount_la-JudyLByCount.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLTables.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLMallocIF.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDecascade.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCascade.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLInsertBranch.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCreateBranch.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFirst.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNext.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrev.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNextEmpty.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrevEmpty.o
+    ${PROJECT_BINARY_DIR}/libjudy/src/JudyCommon/JudyMalloc.o
+  )
+  foreach (test ${CPP_LIBJUDY_O_FILES})
+  SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
+  endforeach()
+endif ()
+  
 set (CPP_TEST_SOURCE_FILES "")
 set (CPP_TEST_SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/src/tests/test_main.cpp
@@ -425,8 +436,12 @@ FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
 add_library (supermesh ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
 
-add_dependencies(supermesh libjudy spatialindex)
-
+if (ENABLE_JUDY)
+  add_dependencies(supermesh libjudy spatialindex)
+else ()
+  add_dependencies(supermesh spatialindex)
+endif ()
+  
 set (UNITTESTS
   test_interval_intersector
   test_tri_intersector
@@ -514,11 +529,12 @@ add_custom_command(TARGET test_tri_intersector
 
 add_custom_target(distclean 
   COMMAND make clean
-  COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ 
+  if (ENABLE_JUDY)
+    COMMAND cd "${PROJECT_SOURCE_DIR}/libjudy" && rm -rf tmp/ && rm -rf src/libjudy-stamp/libjudy-done && rm -rf src/libjudy-stamp/ 
+  endif ()
   COMMAND rm -rf unittests/
   COMMAND rm -rf data/
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#  COMMAND cd "${PROJECT_SOURCE_DIR}/libjud" && make distcleanlibjudy
 )
 
 if(UNIX AND NOT APPLE)

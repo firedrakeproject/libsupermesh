@@ -1,5 +1,7 @@
 #include "libsupermesh_configuration.h"
 
+#ifdef ENABLE_JUDY
+
 #include "Judy.h"
 #include "stdio.h"
 #include "assert.h"
@@ -150,3 +152,5 @@ void libsupermesh_integer_hash_table_fetch_pair_c(Pvoid_t* i, int* idx, int* key
   *val = *pvalue;
   *i = ptr;
 }
+
+#endif
