@@ -2,8 +2,9 @@
 
 module libsupermesh_integer_set
 
-  use iso_c_binding
-  use libsupermesh_debug
+  use iso_c_binding, only : c_ptr
+  
+  use libsupermesh_debug, only : abort_pinpoint
 
   implicit none
   
@@ -18,55 +19,55 @@ module libsupermesh_integer_set
   end type integer_set_vector
 
   interface
-    subroutine integer_set_create_c(i) bind(c, name = "libsupermesh_integer_set_create_c")
-      use iso_c_binding
+    subroutine integer_set_create_c(i) bind(c, name = "libsupermesh_integer_set_create")
+      use iso_c_binding, only : c_ptr
       implicit none
-      type(c_ptr), intent(out) :: i
+      type(c_ptr) :: i
     end subroutine integer_set_create_c
 
-    subroutine integer_set_delete_c(i) bind(c, name = "libsupermesh_integer_set_delete_c")
-      use iso_c_binding
+    subroutine integer_set_delete_c(i) bind(c, name = "libsupermesh_integer_set_delete")
+      use iso_c_binding, only : c_ptr
       implicit none
-      type(c_ptr), intent(inout) :: i
+      type(c_ptr) :: i
     end subroutine integer_set_delete_c
 
-    subroutine integer_set_insert_c(i, v, c) bind(c, name = "libsupermesh_integer_set_insert_c")
-      use iso_c_binding
+    subroutine integer_set_insert_c(i, v, c) bind(c, name = "libsupermesh_integer_set_insert")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(inout) :: i
-      integer(kind = c_int), intent(in) :: v
-      integer(kind = c_int), intent(out) :: c
+      type(c_ptr) :: i
+      integer(kind = c_int) :: v
+      integer(kind = c_int) :: c
     end subroutine integer_set_insert_c
 
-    pure subroutine integer_set_length_c(i, l) bind(c, name = "libsupermesh_integer_set_length_c")
-      use iso_c_binding
+    subroutine integer_set_length_c(i, l) bind(c, name = "libsupermesh_integer_set_length")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(out) :: l
+      type(c_ptr) :: i
+      integer(kind = c_int) :: l
     end subroutine integer_set_length_c
 
-    subroutine integer_set_fetch_c(i, idx, val) bind(c, name = "libsupermesh_integer_set_fetch_c")
-      use iso_c_binding
+    subroutine integer_set_fetch_c(i, idx, v) bind(c, name = "libsupermesh_integer_set_fetch")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(in) :: idx
-      integer(kind = c_int), intent(out) :: val
+      type(c_ptr) :: i
+      integer(kind = c_int) :: idx
+      integer(kind = c_int) :: v
     end subroutine integer_set_fetch_c
 
-    subroutine integer_set_remove_c(i, idx, stat) bind(c, name = "libsupermesh_integer_set_remove_c")
-      use iso_c_binding
+    subroutine integer_set_remove_c(i, v, status) bind(c, name = "libsupermesh_integer_set_remove")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(in) :: idx
-      integer(kind = c_int), intent(out) :: stat
+      type(c_ptr) :: i
+      integer(kind = c_int) :: v
+      integer(kind = c_int) :: status
     end subroutine integer_set_remove_c
 
-    subroutine integer_set_has_value_c(i, val, bool) bind(c, name = "libsupermesh_integer_set_has_value_c")
-      use iso_c_binding
+    subroutine integer_set_has_value_c(i, v, present) bind(c, name = "libsupermesh_integer_set_has_value")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(in) :: val
-      integer(kind = c_int), intent(out) :: bool
+      type(c_ptr) :: i
+      integer(kind = c_int) :: v
+      integer(kind = c_int) :: present
     end subroutine integer_set_has_value_c
   end interface
 
@@ -108,8 +109,8 @@ module libsupermesh_integer_set
   end interface set_intersection
   
   public :: integer_set, allocate, deallocate, has_value, key_count, fetch, &
-    & insert, set_complement, set2vector, set_intersection, set_minus, remove, &
-    & copy, integer_set_vector
+    & insert, set_complement, set_intersection, set_minus, remove, copy, &
+    & integer_set_vector
 
 contains 
   
@@ -183,14 +184,14 @@ contains
     end do
   end subroutine integer_set_insert_set
   
-  pure function integer_set_length_single(iset) result(len)
+  function integer_set_length_single(iset) result(len)
     type(integer_set), intent(in) :: iset
     integer :: len
 
     call integer_set_length_c(iset%address, len)
   end function integer_set_length_single
   
-  pure function integer_set_length_vector(iset) result(len)
+  function integer_set_length_vector(iset) result(len)
     type(integer_set), dimension(:), intent(in) :: iset
 
     integer, dimension(size(iset)) :: len
@@ -211,12 +212,12 @@ contains
     call integer_set_fetch_c(iset%address, idx, val)
   end function integer_set_fetch
 
-  subroutine integer_set_remove(iset, idx)
+  subroutine integer_set_remove(iset, val)
     type(integer_set), intent(in) :: iset
-    integer, intent(in) :: idx
+    integer, intent(in) :: val
     integer :: stat
 
-    call integer_set_remove_c(iset%address, idx, stat)
+    call integer_set_remove_c(iset%address, val, stat)
     assert(stat == 1)
   end subroutine integer_set_remove
 
@@ -331,15 +332,5 @@ contains
       end if
     end do
   end subroutine set_minus
-
-  function set2vector(iset) result(vec)
-    type(integer_set), intent(in) :: iset
-    integer, dimension(key_count(iset)) :: vec
-    integer :: i
-
-    do i=1,key_count(iset)
-      vec(i) = fetch(iset, i)
-    end do
-  end function set2vector
 
 end module libsupermesh_integer_set

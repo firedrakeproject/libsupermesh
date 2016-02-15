@@ -45,7 +45,7 @@ class integer_set {
       return;
     };
     
-    inline void fetch(const int& idx, int& val) {
+    inline void fetch(const int& idx, int& v) {
       if(!this->v_array) {
         this->v_array = (int*)malloc(this->v_set.size() * sizeof(int));
         if(!this->v_array) {
@@ -58,24 +58,24 @@ class integer_set {
           i++;
         }
       }
-      val = this->v_array[idx - 1];
+      v = this->v_array[idx - 1];
       
       return;
     };
     
-    inline void remove(const int& idx, int& status) {
+    inline void remove(const int& v, int& status) {
       if(this->v_array) {
         free(this->v_array);
         this->v_array = NULL;
       }
-      set<int>::size_type count = this->v_set.erase(idx);
+      set<int>::size_type count = this->v_set.erase(v);
       status = (count > 0) ? 1 : 0;
       
       return;
     }
     
-    inline void has_value(const int& val, int& present) {
-      set<int>::iterator iter = this->v_set.find(val);
+    inline void has_value(const int& v, int& present) {
+      set<int>::iterator iter = this->v_set.find(v);
       present = (iter == this->v_set.end()) ? 0 : 1;
       
       return;
@@ -167,7 +167,7 @@ class integer_hash_table {
 }
 
 extern "C" {
-  void libsupermesh_integer_set_create_c(void **i) {
+  void libsupermesh_integer_set_create(void **i) {
     (*i) = (void*)(new libsupermesh::integer_set());
     if(!(*i)) {
       cerr << "new failure" << endl;
@@ -177,44 +177,44 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_integer_set_delete_c(void **i) {
+  void libsupermesh_integer_set_delete(void **i) {
     delete ((libsupermesh::integer_set*)(*i));
     
     return;
   }
   
-  void libsupermesh_integer_set_insert_c(void **i, int *v, int *c) {
+  void libsupermesh_integer_set_insert(void **i, int *v, int *c) {
     ((libsupermesh::integer_set*)(*i))->insert(*v, *c);
     
     return;
   }
   
-  void libsupermesh_integer_set_length_c(void **i, int *l) {
+  void libsupermesh_integer_set_length(void **i, int *l) {
     ((libsupermesh::integer_set*)(*i))->length(*l);
     
     return;
   }
   
-  void libsupermesh_integer_set_fetch_c(void **i, int *idx, int *val) {
-    ((libsupermesh::integer_set*)(*i))->fetch(*idx, *val);
+  void libsupermesh_integer_set_fetch(void **i, int *idx, int *v) {
+    ((libsupermesh::integer_set*)(*i))->fetch(*idx, *v);
     
     return;
   }
   
-  void libsupermesh_integer_set_remove_c(void **i, int *idx, int *status) {
-    ((libsupermesh::integer_set*)(*i))->remove(*idx, *status);
+  void libsupermesh_integer_set_remove(void **i, int *v, int *status) {
+    ((libsupermesh::integer_set*)(*i))->remove(*v, *status);
     
     return;
   }
 
-  void libsupermesh_integer_set_has_value_c(void **i, int *val, int *present) {
-    ((libsupermesh::integer_set*)(*i))->has_value(*val, *present);
+  void libsupermesh_integer_set_has_value(void **i, int *v, int *present) {
+    ((libsupermesh::integer_set*)(*i))->has_value(*v, *present);
     
     return;
   }
   
-  void libsupermesh_integer_hash_table_create_c(void **i) {
-    (*i) = (void*)(new libsupermesh::integer_hash_table);
+  void libsupermesh_integer_hash_table_create(void **i) {
+    (*i) = (void*)(new libsupermesh::integer_hash_table());
     if(!(*i)) {
       cerr << "new failure" << endl;
       exit(1);
@@ -223,44 +223,44 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_integer_hash_table_delete_c(void **i) {
+  void libsupermesh_integer_hash_table_delete(void **i) {
     delete ((libsupermesh::integer_hash_table*)(*i));
     
     return;
   }
   
-  void libsupermesh_integer_hash_table_insert_c(void **i, int *k, int *v) {
+  void libsupermesh_integer_hash_table_insert(void **i, int *k, int *v) {
     ((libsupermesh::integer_hash_table*)(*i))->insert(*k, *v);
     
     return;
   }
   
-  void libsupermesh_integer_hash_table_length_c(void **i, int *l) {    
+  void libsupermesh_integer_hash_table_length(void **i, int *l) {    
     ((libsupermesh::integer_hash_table*)(*i))->length(*l);
     
     return;
   }
   
-  void libsupermesh_integer_hash_table_fetch_c(void **i, int *k, int *v) {
+  void libsupermesh_integer_hash_table_fetch(void **i, int *k, int *v) {
     ((libsupermesh::integer_hash_table*)(*i))->fetch(*k, *v);
     
     return;
   }
   
-  void libsupermesh_integer_hash_table_remove_c(void **i, int *k, int *status) {
+  void libsupermesh_integer_hash_table_remove(void **i, int *k, int *status) {
     ((libsupermesh::integer_hash_table*)(*i))->remove(*k, *status);
     
     return;
   }
   
-  void libsupermesh_integer_hash_table_has_key_c(void **i, int *k, int *present) {
+  void libsupermesh_integer_hash_table_has_key(void **i, int *k, int *present) {
     ((libsupermesh::integer_hash_table*)(*i))->has_key(*k, *present);
 
     return;
   }
 
-  void libsupermesh_integer_hash_table_fetch_pair_c(void **i, int *idx, int *key, int *val) {
-    ((libsupermesh::integer_hash_table*)(*i))->fetch_pair(*idx, *key, *val);
+  void libsupermesh_integer_hash_table_fetch_pair(void **i, int *idx, int *k, int *v) {
+    ((libsupermesh::integer_hash_table*)(*i))->fetch_pair(*idx, *k, *v);
 
     return;
   }

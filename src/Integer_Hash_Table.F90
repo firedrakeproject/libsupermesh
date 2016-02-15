@@ -2,8 +2,9 @@
 
 module libsupermesh_integer_hash_table
 
-  use iso_c_binding
-  use libsupermesh_debug
+  use iso_c_binding, only : c_ptr
+  
+  use libsupermesh_debug, only : abort_pinpoint, current_debug_level, debug_unit
 
   implicit none
 
@@ -14,62 +15,64 @@ module libsupermesh_integer_hash_table
   end type integer_hash_table
 
   interface
-    subroutine integer_hash_table_create_c(i) bind(c, name = "libsupermesh_integer_hash_table_create_c")
-      use iso_c_binding
+    subroutine integer_hash_table_create_c(i) bind(c, name = "libsupermesh_integer_hash_table_create")
+      use iso_c_binding, only : c_ptr
       implicit none
-      type(c_ptr), intent(out) :: i
+      type(c_ptr) :: i
     end subroutine integer_hash_table_create_c
 
-    subroutine integer_hash_table_delete_c(i) bind(c, name = "libsupermesh_integer_hash_table_delete_c")
-      use iso_c_binding
+    subroutine integer_hash_table_delete_c(i) bind(c, name = "libsupermesh_integer_hash_table_delete")
+      use iso_c_binding, only : c_ptr
       implicit none
-      type(c_ptr), intent(inout) :: i
+      type(c_ptr) :: i
     end subroutine integer_hash_table_delete_c
 
-    subroutine integer_hash_table_insert_c(i, k, v) bind(c, name = "libsupermesh_integer_hash_table_insert_c")
-      use iso_c_binding
+    subroutine integer_hash_table_insert_c(i, k, v) bind(c, name = "libsupermesh_integer_hash_table_insert")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(inout) :: i
-      integer(kind = c_int), intent(in) :: k, v
+      type(c_ptr) :: i
+      integer(kind = c_int) :: k
+      integer(kind = c_int) :: v
     end subroutine integer_hash_table_insert_c
 
-    pure subroutine integer_hash_table_length_c(i, l) bind(c, name = "libsupermesh_integer_hash_table_length_c")
-      use iso_c_binding
+    subroutine integer_hash_table_length_c(i, l) bind(c, name = "libsupermesh_integer_hash_table_length")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(out) :: l
+      type(c_ptr) :: i
+      integer(kind = c_int) :: l
     end subroutine integer_hash_table_length_c
 
-    subroutine integer_hash_table_fetch_c(i, key, val) bind(c, name = "libsupermesh_integer_hash_table_fetch_c")
-      use iso_c_binding
+    subroutine integer_hash_table_fetch_c(i, k, v) bind(c, name = "libsupermesh_integer_hash_table_fetch")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(in) :: key
-      integer(kind = c_int), intent(out) :: val
+      type(c_ptr) :: i
+      integer(kind = c_int) :: k
+      integer(kind = c_int) :: v
     end subroutine integer_hash_table_fetch_c
 
-    subroutine integer_hash_table_remove_c(i, key, stat) bind(c, name = "libsupermesh_integer_hash_table_remove_c")
-      use iso_c_binding
+    subroutine integer_hash_table_remove_c(i, k, status) bind(c, name = "libsupermesh_integer_hash_table_remove")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(inout) :: i
-      integer(kind = c_int), intent(in) :: key
-      integer(kind = c_int), intent(out) :: stat
+      type(c_ptr) :: i
+      integer(kind = c_int) :: k
+      integer(kind = c_int) :: status
     end subroutine integer_hash_table_remove_c
 
-    subroutine integer_hash_table_has_key_c(i, val, bool) bind(c, name = "libsupermesh_integer_hash_table_has_key_c")
-      use iso_c_binding
+    subroutine integer_hash_table_has_key_c(i, k, present) bind(c, name = "libsupermesh_integer_hash_table_has_key")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(in) :: val
-      integer(kind = c_int), intent(out) :: bool
+      type(c_ptr) :: i
+      integer(kind = c_int) :: k
+      integer(kind = c_int) :: present
     end subroutine integer_hash_table_has_key_c
 
-    subroutine integer_hash_table_fetch_pair_c(i, idx, key, val) bind(c, name = "libsupermesh_integer_hash_table_fetch_pair_c")
-      use iso_c_binding
+    subroutine integer_hash_table_fetch_pair_c(i, idx, k, v) bind(c, name = "libsupermesh_integer_hash_table_fetch_pair")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      type(c_ptr), intent(in) :: i
-      integer(kind = c_int), intent(in) :: idx
-      integer(kind = c_int), intent(out) :: key, val
+      type(c_ptr) :: i
+      integer(kind = c_int) :: idx
+      integer(kind = c_int) :: k
+      integer(kind = c_int) :: v
     end subroutine integer_hash_table_fetch_pair_c
   end interface
 
@@ -154,7 +157,7 @@ contains
     call integer_hash_table_insert_c(ihash%address, key, val)
   end subroutine integer_hash_table_insert
 
-  pure function integer_hash_table_length(ihash) result(len)
+  function integer_hash_table_length(ihash) result(len)
     type(integer_hash_table), intent(in) :: ihash
     integer :: len
 
