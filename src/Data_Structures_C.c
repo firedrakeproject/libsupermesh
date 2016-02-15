@@ -23,13 +23,11 @@ void libsupermesh_integer_set_delete(Pvoid_t* i)
   *i = ptr;
 }
 
-void libsupermesh_integer_set_insert(Pvoid_t* i, int* v, int* c)
+void libsupermesh_integer_set_insert(Pvoid_t* i, int* v, int* changed)
 {
-  int changed;
   Word_t index = *v;
   Pvoid_t ptr = (Pvoid_t) *i;
-  J1S(changed, ptr, index);
-  *c = changed;
+  J1S(*changed, ptr, index);
   *i = ptr;
 }
 

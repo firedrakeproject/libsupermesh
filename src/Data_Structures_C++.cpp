@@ -28,13 +28,13 @@ class integer_set {
       return;
     }
     
-    inline void insert(const int& v, int& c) {
+    inline void insert(const int& v, int& changed) {
       if(this->v_array) {
         free(this->v_array);
         this->v_array = NULL;
       }
       pair<set<int>::iterator, bool> position = this->v_set.insert(v);
-      c = position.second ? 1 : 0;
+      changed = position.second ? 1 : 0;
       
       return;
     }
@@ -52,7 +52,7 @@ class integer_set {
           cerr << "malloc failure" << endl;
           exit(1);
         }
-        size_t i = 0;
+        set<int>::size_type i = 0;
         for(set<int>::iterator iter = this->v_set.begin();iter != this->v_set.end();iter++) {
           this->v_array[i] = *iter;
           i++;
@@ -147,7 +147,7 @@ class integer_hash_table {
           cerr << "malloc failure" << endl;
           exit(1);
         }
-        size_t i = 0;
+        map<int, int>::size_type i = 0;
         for(map<int, int>::iterator iter = this->v_map.begin();iter != this->v_map.end();iter++) {
           this->k_array[i] = iter->first;
           i++;
@@ -183,8 +183,8 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_integer_set_insert(void **i, int *v, int *c) {
-    ((libsupermesh::integer_set*)(*i))->insert(*v, *c);
+  void libsupermesh_integer_set_insert(void **i, int *v, int *changed) {
+    ((libsupermesh::integer_set*)(*i))->insert(*v, *changed);
     
     return;
   }

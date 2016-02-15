@@ -31,12 +31,12 @@ module libsupermesh_integer_set
       type(c_ptr) :: i
     end subroutine integer_set_delete_c
 
-    subroutine integer_set_insert_c(i, v, c) bind(c, name = "libsupermesh_integer_set_insert")
+    subroutine integer_set_insert_c(i, v, changed) bind(c, name = "libsupermesh_integer_set_insert")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
       integer(kind = c_int) :: v
-      integer(kind = c_int) :: c
+      integer(kind = c_int) :: changed
     end subroutine integer_set_insert_c
 
     subroutine integer_set_length_c(i, l) bind(c, name = "libsupermesh_integer_set_length")
