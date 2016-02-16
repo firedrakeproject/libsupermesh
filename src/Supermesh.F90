@@ -14,8 +14,9 @@ module libsupermesh_supermesh
 
   private
 
-  public :: max_n_simplices_c, intersect_simplices, intersect_elements, &
-    & simplex_volume, triangle_area, tetrahedron_volume
+  public :: interval_buf_size, tri_buf_size, tet_buf_size, max_n_simplices_c, &
+    & intersect_simplices, intersect_elements, simplex_volume, triangle_area, &
+    & tetrahedron_volume
   
   interface max_n_simplices_c
     module procedure max_n_simplices_c_simplices, max_n_simplices_c_elements
