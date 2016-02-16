@@ -14,12 +14,16 @@ module libsupermesh_supermesh
 
   private
 
-  public :: max_n_simplices_c, intersection_buffer_size, intersect_simplices, &
-    & intersect_elements, simplex_volume, triangle_area, tetrahedron_volume
+  public :: max_n_simplices_c, intersect_simplices, intersect_elements, &
+    & simplex_volume, triangle_area, tetrahedron_volume
+  
+  interface max_n_simplices_c
+    module procedure max_n_simplices_c_simplices, max_n_simplices_c_elements
+  end interface max_n_simplices_c
 
 contains
 
-  pure function max_n_simplices_c(dim) result(size)
+  pure function max_n_simplices_c_simplices(dim) result(size)
     integer, intent(in) :: dim
 
     integer :: size
@@ -35,9 +39,9 @@ contains
         size = 0
     end select
 
-  end function max_n_simplices_c
+  end function max_n_simplices_c_simplices
 
-  pure function intersection_buffer_size(dim, loc_a, loc_b) result(size)
+  pure function max_n_simplices_c_elements(dim, loc_a, loc_b) result(size)
     integer, intent(in) :: dim
     integer, intent(in) :: loc_a
     integer, intent(in) :: loc_b
@@ -69,7 +73,7 @@ contains
       size = 0
     end if
 
-  end function intersection_buffer_size
+  end function max_n_simplices_c_elements
 
   subroutine intersect_simplices(simplex_a, simplex_b, simplices_c, n_simplices_c)
     ! dim x loc_a

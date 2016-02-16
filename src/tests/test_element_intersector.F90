@@ -4,8 +4,8 @@ subroutine test_element_intersector() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder
-  use libsupermesh_supermesh, only : intersection_buffer_size, &
-    & intersect_elements, simplex_volume
+  use libsupermesh_supermesh, only : max_n_simplices_c, intersect_elements, &
+    & simplex_volume
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
   
@@ -26,7 +26,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/line.2.ele", 1, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -55,7 +55,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/square.2.ele", 2, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -84,7 +84,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/square.4.ele", 2, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -113,7 +113,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/square.2.ele", 2, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -142,7 +142,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/square.4.ele", 2, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -171,7 +171,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/cube.2.ele", 3, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -200,7 +200,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/cube.3.ele", 3, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -229,7 +229,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/cube.2.ele", 3, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
@@ -258,7 +258,7 @@ subroutine test_element_intersector() bind(c)
   call read_ele("data/cube.4.ele", 3, enlist_b)
   allocate(elementA(size(positions_a, 1), size(enlist_a, 1)), &
     & elementsC(size(positions_a, 1), size(positions_a, 1) + 1, &
-              & intersection_buffer_size(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
+              & max_n_simplices_c(size(positions_a, 1), size(enlist_a, 1), size(enlist_b, 1))))
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)

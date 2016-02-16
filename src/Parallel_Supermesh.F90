@@ -14,8 +14,7 @@ module libsupermesh_parallel_supermesh
     & rtree_intersection_finder_set_input, rtree_intersection_finder_find, &
     & rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output
-  use libsupermesh_supermesh, only : intersection_buffer_size, &
-    & intersect_elements
+  use libsupermesh_supermesh, only : max_n_simplices_c, intersect_elements
 
   implicit none
 
@@ -406,7 +405,7 @@ contains
     nelements_b = size(enlist_b, 2)
 
     allocate(nodes_a(dim, loc_a), nodes_b(dim, loc_b), &
-           & positions_c(dim, dim + 1, intersection_buffer_size(dim, loc_a, loc_b)))
+           & positions_c(dim, dim + 1, max_n_simplices_c(dim, loc_a, loc_b)))
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Self-self integration !!!
