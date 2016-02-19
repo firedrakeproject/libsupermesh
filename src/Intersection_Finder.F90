@@ -54,10 +54,24 @@ module libsupermesh_intersection_finder
     end subroutine libsupermesh_rtree_intersection_finder_get_output
   end interface rtree_intersection_finder_get_output
 
+  interface rtree_intersection_finder_set_dimension
+    subroutine libsupermesh_rtree_intersection_finder_set_dimension(ndim) bind(c)
+      use iso_c_binding, only : c_int
+      implicit none
+      integer(kind = c_int), intent(in) :: ndim
+    end subroutine libsupermesh_rtree_intersection_finder_set_dimension
+  end interface rtree_intersection_finder_set_dimension
+
+
   interface rtree_intersection_finder_reset
     subroutine libsupermesh_rtree_intersection_finder_reset() bind(c)
       implicit none
     end subroutine libsupermesh_rtree_intersection_finder_reset
+    subroutine libsupermesh_rtree_intersection_finder_reset1(ntests) bind(c)
+      use iso_c_binding, only : c_int
+      implicit none
+      integer(kind = c_int), intent(out) :: ntests
+    end subroutine libsupermesh_rtree_intersection_finder_reset1
   end interface rtree_intersection_finder_reset
 
   public :: intersections, deallocate, connected, intersection_finder, &
@@ -69,7 +83,8 @@ module libsupermesh_intersection_finder
   public :: quadtree_node, build_quadtree, query_quadtree
   public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
-    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
+    & rtree_intersection_finder_get_output, rtree_intersection_finder_reset,  &
+    & rtree_intersection_finder_set_dimension
   public :: tree_intersection_finder_set_input, &
     & tree_intersection_finder_find, tree_intersection_finder_query_output, &
     & tree_intersection_finder_get_output, tree_intersection_finder_reset

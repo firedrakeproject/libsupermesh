@@ -16,7 +16,7 @@ module libsupermesh_supermesh
 
   public :: interval_buf_size, tri_buf_size, tet_buf_size, max_n_simplices_c, &
     & intersect_simplices, intersect_elements, simplex_volume, triangle_area, &
-    & tetrahedron_volume
+    & tetrahedron_volume, intersect_quads
   
   interface max_n_simplices_c
     module procedure max_n_simplices_c_simplices, max_n_simplices_c_elements
@@ -178,7 +178,7 @@ contains
     integer :: i
     real, dimension(2, 4 * (2 ** 4), 2), save :: work
     type(tri_type), dimension(4 * (2 ** 4) - 2), save :: ltris_c
-    
+
     call intersect_polys(quad_a, quad_b, ltris_c, n_tris_c, work = work)
     do i = 1, n_tris_c
       tris_c(:, :, i) = ltris_c(i)%v
