@@ -14,9 +14,15 @@ module libsupermesh_supermesh
 
   private
 
-  public :: interval_buf_size, tri_buf_size, tet_buf_size, max_n_simplices_c, &
-    & intersect_simplices, intersect_elements, simplex_volume, triangle_area, &
-    & tetrahedron_volume, intersect_quads
+  public :: intersect_intervals, interval_buf_size, interval_size
+  public :: tri_type, line_type, max_n_tris_c, intersect_tris, tri_buf_size, &
+    & intersect_polys, get_lines, triangle_area
+  public :: tet_type, plane_type, max_n_tets_c, intersect_tets, tet_buf_size, &
+    & tetrahedron_volume
+  public :: intersect_tri_quad, intersect_quads, intersect_tet_hex, &
+    & intersect_hexes
+  public :: max_n_simplices_c, intersect_simplices, intersect_elements, &
+    & simplex_volume
   
   interface max_n_simplices_c
     module procedure max_n_simplices_c_simplices, max_n_simplices_c_elements
@@ -97,13 +103,13 @@ contains
     
   end subroutine intersect_simplices
 
-  subroutine intersect_elements(element_a, element_b, elements_c, n_elements_c)
+  subroutine intersect_elements(element_a, element_b, elements_c, nelements_c)
     ! dim x loc_a
     real, dimension(:, :), intent(in) :: element_a
     ! dim x loc_b
     real, dimension(:, :), intent(in) :: element_b
     real, dimension(:, :, :), intent(inout) :: elements_c
-    integer, intent(out) :: n_elements_c
+    integer, intent(out) :: nelements_c
 
     integer :: dim, loc_a, loc_b
   
@@ -112,31 +118,31 @@ contains
     loc_b = size(element_b, 2)
     
     if(loc_a == dim + 1 .and. loc_b == dim + 1) then
-      call intersect_simplices(element_a, element_b, elements_c, n_elements_c)
+      call intersect_simplices(element_a, element_b, elements_c, nelements_c)
     else if(loc_a == dim + 1 .and. loc_b == 2 ** dim) then
       select case(dim)
         case(2)
-          call intersect_tri_quad(element_a, element_b, elements_c, n_elements_c)
+          call intersect_tri_quad(element_a, element_b, elements_c, nelements_c)
         case(3)
-          call intersect_tet_hex(element_a, element_b, elements_c, n_elements_c)
+          call intersect_tet_hex(element_a, element_b, elements_c, nelements_c)
         case default
           libsupermesh_abort("Unsupported element type")
       end select
     else if(loc_a == 2 ** dim .and. loc_b == dim + 1) then
       select case(dim)
         case(2)
-          call intersect_tri_quad(element_b, element_a, elements_c, n_elements_c)
+          call intersect_tri_quad(element_b, element_a, elements_c, nelements_c)
         case(3)
-          call intersect_tet_hex(element_b, element_a, elements_c, n_elements_c)
+          call intersect_tet_hex(element_b, element_a, elements_c, nelements_c)
         case default
           libsupermesh_abort("Unsupported element type")
       end select
     else if(loc_a == 2 ** dim .and. loc_b == 2 ** dim) then
       select case(dim)
         case(2)
-          call intersect_quads(element_a, element_b, elements_c, n_elements_c)
+          call intersect_quads(element_a, element_b, elements_c, nelements_c)
         case(3)
-          call intersect_hexes(element_a, element_b, elements_c, n_elements_c)
+          call intersect_hexes(element_a, element_b, elements_c, nelements_c)
         case default
           libsupermesh_abort("Unsupported element type")
       end select
