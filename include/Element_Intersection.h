@@ -97,10 +97,8 @@ extern libsupermesh::ElementIntersectionFinder libsupermesh_elementIntersectionF
 extern "C"
 {
   void libsupermesh_rtree_intersection_finder_reset();
-  int libsupermesh_rtree_intersection_finder_reset1();
   void libsupermesh_rtree_intersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements);  
   void libsupermesh_rtree_intersection_finder_find(const double* positions, const int* dim, const int* loc);  
   void libsupermesh_rtree_intersection_finder_query_output(int* nelms);
   void libsupermesh_rtree_intersection_finder_get_output(int* id, const int* index);
-  void libsupermesh_rtree_intersection_finder_set_dimension(int ndim);
 }

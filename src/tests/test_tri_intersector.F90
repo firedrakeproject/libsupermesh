@@ -3,7 +3,7 @@
 subroutine test_tri_intersector() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
-    & intersection_finder, rtree_intersection_finder_reset, rtree_intersection_finder_set_dimension
+    & intersection_finder
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_supermesh, only : intersect_elements, &
     & intersect_simplices, triangle_area
@@ -33,7 +33,6 @@ subroutine test_tri_intersector() bind(c)
   
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
-  call rtree_intersection_finder_set_dimension(dim)
 
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
@@ -127,7 +126,6 @@ subroutine test_tri_intersector() bind(c)
     end do    
   end do
   call report_test("[intersect_elements]", area_c .fne. 0.5D0, .false., "Incorrect intersection area")
-  call rtree_intersection_finder_reset(i)
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b)

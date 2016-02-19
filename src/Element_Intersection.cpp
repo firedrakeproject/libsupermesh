@@ -265,12 +265,6 @@ extern "C"
     
     return;
   }
-  int libsupermesh_rtree_intersection_finder_reset1()
-  {
-    libsupermesh_elementIntersectionFinder.Reset();
-
-    return 0;
-  }
 
   void libsupermesh_rtree_intersection_finder_set_input(const double* positions, const int* enlist, const int* dim, const int* loc, const int* nnodes, const int* nelements)
   {
@@ -305,11 +299,6 @@ extern "C"
   {
     libsupermesh_elementIntersectionFinder.GetOutput(*id, *index);
     
-    return;
-  }
-
-  void libsupermesh_rtree_intersection_finder_set_dimension(int ndim)
-  {
     return;
   }
 }
