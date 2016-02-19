@@ -530,7 +530,9 @@ add_custom_command(TARGET test_tri_intersector
 add_custom_target(distclean 
   COMMAND cd "${PROJECT_BINARY_DIR}"
   COMMAND make clean
-  COMMAND rm -rf "${PROJECT_BINARY_DIR}/libjudy"
+  if (ENABLE_JUDY)
+    COMMAND rm -rf "${PROJECT_BINARY_DIR}/libjudy"
+  endif ()
   COMMAND rm -rf unittests/
   COMMAND rm -rf data/
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
