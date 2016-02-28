@@ -93,7 +93,7 @@
 namespace libsupermesh {
   // Modified version of code from rtree/gispyspatialindex.h (GISPySpatialIndex)
   // and rtree/gispyspatialindex.cc (GISPySpatialIndex) in Rtree 0.4.3. Added
-  // 2016-02-24. Replaces the original Fluidity code.
+  // 2016-02-24.
   uint32_t capacity = 10;
   bool bWriteThrough = false;
 
@@ -204,7 +204,7 @@ namespace libsupermesh {
         delete this->buffer;
         delete this->memory;
       }      
-      inline const int query(const int &loc_a, const double *&element_a) {
+      inline const uint32_t query(const int &loc_a, const double *&element_a) {
         // See MeshDataStream::getNext above
         double low[this->dim], high[this->dim];
         for(uint32_t i = 0;i < this->dim;i++) {
