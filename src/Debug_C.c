@@ -26,32 +26,34 @@
     USA
 */
 
-#include "C++_Debug.h"
-
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 #ifdef _GNU_SOURCE
 #include <execinfo.h>
-#endif
+#include <stdio.h>
+#include <stdlib.h>
 
-using namespace std;
-
-extern "C"{
-  void libsupermesh_print_backtrace(){
-#ifdef _GNU_SOURCE
-    void *bt[40];
-    size_t btsize = backtrace(bt, 40);
-    
-    char **symbls = backtrace_symbols (bt, btsize);
-    if(symbls!=NULL){
-      for(size_t i=0;i<btsize;i++){
-  cerr<<symbls[i]<<endl;
-      }
-      free(symbls);
-    }
-    return;
-#endif
+void libsupermesh_print_backtrace(const int *max_size) {
+  char **symbols = NULL;
+  int i, size;
+  void **buffer = NULL;
+  
+  buffer = (void**)malloc((*max_size) * sizeof(void*));
+  if(!buffer) goto cleanup;
+  
+  size = backtrace(buffer, *max_size);
+  symbols = backtrace_symbols(buffer, size);
+  if(!symbols) goto cleanup;
+  
+  for(i = 0;i < size;i++){
+    fprintf(stderr, symbols[i]);
+    fprintf(stderr, "\n");
   }
+  
+cleanup:
+  if(buffer) free(buffer);
+  if(symbols) free(symbols);
+    
+  return;
 }
-
+#else
+void libsupermesh_print_backtrace(const int *max_size) {}
+#endif

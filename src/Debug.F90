@@ -41,8 +41,10 @@ module libsupermesh_debug
   public :: current_debug_level, debug_unit, abort_pinpoint
 
   interface print_backtrace
-    subroutine libsupermesh_print_backtrace() bind(c)
+    subroutine libsupermesh_print_backtrace(max_size) bind(c)
+      use iso_c_binding, only : c_int
       implicit none
+      integer(kind = c_int) :: max_size
     end subroutine libsupermesh_print_backtrace
   end interface print_backtrace
   
@@ -72,7 +74,7 @@ contains
     ewrite(-1, "(a)")      "*** libsupermesh error ***"
     ewrite(-1, "(a,i0,a)") "Source location: (" // trim(file) // ",", line_number, ")"
     ewrite(-1, "(a)")      "Error message: " // trim(error)
-    call print_backtrace()
+    call print_backtrace(max_size = 64)
     if(mpi_init /= 0) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
     stop 1
     
