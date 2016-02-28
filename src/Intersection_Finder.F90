@@ -1,8 +1,27 @@
+! The following code is derived from femtools/Intersection_finder.F90 in
+! Fluidity git revision 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated
+! 2015-02-25)
+ 
+! Fluidity copyright information (note that AUTHORS mentioned in the following
+! has been renamed to fluidity_AUTHORS):
+
+!   Copyright (C) 2006 Imperial College London and others.
+!   
+!   Please see the AUTHORS file in the main source directory for a full list
+!   of copyright holders.
+!
+!   Prof. C Pain
+!   Applied Modelling and Computation Group
+!   Department of Earth Science and Engineering
+!   Imperial College London
+!
+!   amcgsoftware@imperial.ac.uk
+
 #include "libsupermesh_debug.h"
 
 module libsupermesh_intersection_finder
 
-  use iso_c_binding, only : c_double, c_int
+  use iso_c_binding, only : c_double, c_int, c_ptr
   
   use libsupermesh_debug, only : abort_pinpoint, current_debug_level, &
     & debug_unit
@@ -17,48 +36,48 @@ module libsupermesh_intersection_finder
   implicit none
 
   private
-
-  interface crtree_intersection_finder_set_input
-    subroutine libsupermesh_rtree_intersection_finder_set_input(positions, enlist, dim, loc, nnodes, nelements) bind(c)
-      use iso_c_binding, only : c_double, c_int
+  
+  interface cbuild_rtree
+    subroutine libsupermesh_build_rtree(rtree, dim, nnodes, positions, loc, nelements, enlist) bind(c)
+      use iso_c_binding, only : c_double, c_int, c_ptr
       implicit none
-      integer(kind = c_int), intent(in) :: dim, loc, nnodes, nelements
-      real(kind = c_double), intent(in), dimension(dim, nnodes) :: positions
-      integer(kind = c_int), intent(in), dimension(loc, nelements) :: enlist
-    end subroutine libsupermesh_rtree_intersection_finder_set_input
-  end interface crtree_intersection_finder_set_input
-
-  interface crtree_intersection_finder_find
-    subroutine libsupermesh_rtree_intersection_finder_find(positions, dim, loc) bind(c)
-      use iso_c_binding, only : c_double, c_int
+      type(c_ptr) :: rtree
+      integer(kind = c_int) :: dim
+      integer(kind = c_int) :: nnodes
+      real(kind = c_double), dimension(dim, nnodes) :: positions
+      integer(kind = c_int) :: loc
+      integer(kind = c_int) :: nelements
+      integer(kind = c_int), dimension(loc, nelements) :: enlist
+    end subroutine libsupermesh_build_rtree
+  end interface cbuild_rtree
+    
+  interface cquery_rtree
+    subroutine libsupermesh_query_rtree(rtree, dim, loc_a, element_a, neles_b) bind(c)
+      use iso_c_binding, only : c_double, c_int, c_ptr
       implicit none
-      integer(kind = c_int), intent(in) :: dim, loc
-      real(kind = c_double), dimension(dim, loc) :: positions
-    end subroutine libsupermesh_rtree_intersection_finder_find
-  end interface crtree_intersection_finder_find
-
-  interface rtree_intersection_finder_query_output
-    subroutine libsupermesh_rtree_intersection_finder_query_output(nelements) bind(c)
-      use iso_c_binding, only : c_int
-      implicit none
-      integer(kind = c_int), intent(out) :: nelements
-    end subroutine libsupermesh_rtree_intersection_finder_query_output
-  end interface rtree_intersection_finder_query_output
-
-  interface rtree_intersection_finder_get_output
-    subroutine libsupermesh_rtree_intersection_finder_get_output(ele, i) bind(c)
-      use iso_c_binding, only : c_int
-      implicit none
-      integer(kind = c_int), intent(out) :: ele
-      integer(kind = c_int), intent(in) :: i
-    end subroutine libsupermesh_rtree_intersection_finder_get_output
-  end interface rtree_intersection_finder_get_output
-
-  interface rtree_intersection_finder_reset
-    subroutine libsupermesh_rtree_intersection_finder_reset() bind(c)
-      implicit none
-    end subroutine libsupermesh_rtree_intersection_finder_reset
-  end interface rtree_intersection_finder_reset
+      type(c_ptr) :: rtree
+      integer(kind = c_int) :: dim
+      integer(kind = c_int) :: loc_a
+      real(kind = c_double), dimension(dim, loc_a) :: element_a
+      integer(kind = c_int) :: neles_b
+    end subroutine libsupermesh_query_rtree
+  end interface cquery_rtree
+  
+  interface cquery_rtree_intersections
+    subroutine libsupermesh_query_rtree_intersections(rtree, neles_b, eles_b) bind(c)
+      use iso_c_binding, only : c_int, c_ptr
+      type(c_ptr) :: rtree
+      integer(kind = c_int) :: neles_b
+      integer(kind = c_int), dimension(neles_b) :: eles_b
+    end subroutine libsupermesh_query_rtree_intersections
+  end interface cquery_rtree_intersections
+  
+  interface cdeallocate_rtree
+    subroutine libsupermesh_deallocate_rtree(rtree) bind(c)
+      use iso_c_binding, only : c_ptr
+      type(c_ptr) :: rtree
+    end subroutine libsupermesh_deallocate_rtree
+  end interface cdeallocate_rtree
 
   public :: intersections, deallocate, connected, intersection_finder, &
     & advancing_front_intersection_finder, rtree_intersection_finder, &
@@ -68,6 +87,7 @@ module libsupermesh_intersection_finder
   public :: octtree_node, octtree_type, allocate, query
   public :: quadtree_node, quadtree_type
   public :: tree_type
+  public :: rtree_type
   public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
@@ -107,6 +127,10 @@ module libsupermesh_intersection_finder
       & brute_force_intersection_finder_csr_sparsity
   end interface brute_force_intersection_finder
   
+  type rtree_type
+    type(c_ptr) :: rtree
+  end type rtree_type
+  
   type tree_type
     integer :: dim
     type(quadtree_type), pointer :: quadtree
@@ -114,16 +138,21 @@ module libsupermesh_intersection_finder
   end type tree_type
   
   interface allocate
-    module procedure allocate_tree
+    module procedure allocate_tree, allocate_rtree
   end interface allocate   
   
   interface query
-    module procedure query_tree_allocatable, query_tree_pointer
+    module procedure query_tree_allocatable, query_tree_pointer, &
+      & query_rtree_allocatable, query_rtree_pointer
   end interface query
   
   interface deallocate
-    module procedure deallocate_tree
+    module procedure deallocate_tree, deallocate_rtree
   end interface deallocate    
+    
+  logical, save :: rtree_allocated = .false.
+  integer(kind = c_int), dimension(:), allocatable, save :: rtree_eles
+  type(rtree_type), save :: rtree
   
   logical, save :: tree_allocated = .false.
   integer, dimension(:), allocatable, save :: tree_eles
@@ -475,68 +504,143 @@ contains
     deallocate(map_ab)
 
   end subroutine advancing_front_intersection_finder_csr_sparsity
-
-  subroutine rtree_intersection_finder_set_input(positions, enlist)
-    ! dim x nnodes_b
+  
+  subroutine allocate_rtree(rtree, positions, enlist)
+    type(rtree_type), intent(out) :: rtree
+    ! dim x nnodes
     real(kind = c_double), dimension(:, :), intent(in) :: positions
-    ! loc x nelements_b
+    ! loc x nelements
     integer(kind = c_int), dimension(:, :), intent(in) :: enlist
-
-    integer(kind = c_int) :: loc, dim, nelements, nnodes
-
+    
+    integer(kind = c_int) :: dim, loc, nelements, nnodes
+    
     dim = size(positions, 1)
     if(.not. any(dim == (/2, 3/))) then
       libsupermesh_abort("Invalid dimension")
-    end if
+    end if    
     nnodes = size(positions, 2)
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
+    
+    call cbuild_rtree(rtree%rtree, dim, nnodes, positions, loc, nelements, enlist)
+  
+  end subroutine allocate_rtree
+  
+  subroutine query_rtree_allocatable(rtree, element_a, eles_b)
+    type(rtree_type), intent(inout) :: rtree
+    ! dim x loc_a
+    real(kind = c_double), dimension(:, :), intent(in) :: element_a
+    integer(kind = c_int), dimension(:), allocatable, intent(out) :: eles_b
+    
+    integer(kind = c_int) :: dim, loc_a, neles_b
+    
+    dim = size(element_a, 1)
+    loc_a = size(element_a, 2)    
+    
+    call cquery_rtree(rtree%rtree, dim, loc_a, element_a, neles_b)
+    allocate(eles_b(neles_b))
+    call cquery_rtree_intersections(rtree%rtree, neles_b, eles_b)
+  
+  end subroutine query_rtree_allocatable
+    
+  subroutine query_rtree_pointer(rtree, element_a, eles_b)
+    type(rtree_type), intent(inout) :: rtree
+    ! dim x loc_a
+    real(kind = c_double), dimension(:, :), intent(in) :: element_a
+    integer(kind = c_int), dimension(:), pointer, intent(out) :: eles_b
+    
+    integer(kind = c_int) :: dim, loc_a, neles_b
+    
+    dim = size(element_a, 1)
+    loc_a = size(element_a, 2)    
+    
+    call cquery_rtree(rtree%rtree, dim, loc_a, element_a, neles_b)
+    allocate(eles_b(neles_b))
+    call cquery_rtree_intersections(rtree%rtree, neles_b, eles_b)
+  
+  end subroutine query_rtree_pointer
+  
+  subroutine deallocate_rtree(rtree)
+    type(rtree_type), intent(inout) :: rtree
+    
+    call cdeallocate_rtree(rtree%rtree)
+    
+  end subroutine deallocate_rtree
 
-    call crtree_intersection_finder_set_input(positions, enlist, dim, loc, nnodes, nelements)
+  subroutine rtree_intersection_finder_set_input(positions, enlist)
+    ! dim x nnodes
+    real, dimension(:, :), intent(in) :: positions
+    ! loc x nelements
+    integer, dimension(:, :), intent(in) :: enlist
+
+    call rtree_intersection_finder_reset()
+    call allocate(rtree, positions, enlist)
+    rtree_allocated = .true.
 
   end subroutine rtree_intersection_finder_set_input
 
-  subroutine rtree_intersection_finder_find(positions)
+  subroutine rtree_intersection_finder_find(element_a)
     ! dim x loc
-    real(kind = c_double), dimension(:, :), intent(in) :: positions
+    real, dimension(:, :), intent(in) :: element_a
 
-    integer(kind = c_int) :: loc, dim
-
-    dim = size(positions, 1)
-    loc = size(positions, 2)
-
-    call crtree_intersection_finder_find(positions, dim, loc)
+    assert(rtree_allocated)
+    if(allocated(rtree_eles)) deallocate(rtree_eles)
+    call query(rtree, element_a, rtree_eles)
 
   end subroutine rtree_intersection_finder_find
+  
+  subroutine rtree_intersection_finder_query_output(neles_b)
+    integer, intent(out) :: neles_b
+    
+    assert(allocated(rtree_eles))
+    neles_b = size(rtree_eles)
+    
+  end subroutine rtree_intersection_finder_query_output
+  
+  subroutine rtree_intersection_finder_get_output(ele_b, i)
+    integer, intent(out) :: ele_b
+    integer, intent(in) :: i
+    
+    assert(allocated(rtree_eles))
+    ele_b = rtree_eles(i)
+    
+  end subroutine rtree_intersection_finder_get_output
+  
+  subroutine rtree_intersection_finder_reset()  
+    if(.not. rtree_allocated) return
+  
+    if(allocated(rtree_eles)) deallocate(rtree_eles)
+    call deallocate(rtree)
+    rtree_allocated = .false.
+    
+  end subroutine rtree_intersection_finder_reset
 
   subroutine rtree_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = c_double), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
-    integer, dimension(:, :), intent(in) :: enlist_a
+    integer(kind = c_int), dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = c_double), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
-    integer, dimension(:, :), intent(in) :: enlist_b
+    integer(kind = c_int), dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
     type(intersections), dimension(:), intent(out) :: map_ab
 
-    integer :: ele_a, ele_b, i, nelements_a, nints
-
+    integer(kind = c_int) :: dim, ele_a, loc_a, nelements_a
+    type(rtree_type) :: rtree
+    
+    dim = size(positions_a, 1)
+    loc_a = size(enlist_a, 1)
     nelements_a = size(enlist_a, 2)
-
-    call rtree_intersection_finder_set_input(positions_b, enlist_b)
+    
+    call allocate(rtree, positions_b, enlist_b)
     do ele_a = 1, nelements_a
-      call rtree_intersection_finder_find(positions_a(:, enlist_a(:, ele_a)))
-      call rtree_intersection_finder_query_output(nints)
-      map_ab(ele_a)%n = nints
-      allocate(map_ab(ele_a)%v(nints))
-      do i = 1, nints
-        call rtree_intersection_finder_get_output(ele_b, i)
-        map_ab(ele_a)%v(i) = ele_b
-      end do
+      call cquery_rtree(rtree%rtree, dim, loc_a, positions_a(:, enlist_a(:, ele_a)), map_ab(ele_a)%n)
+      allocate(map_ab(ele_a)%v(map_ab(ele_a)%n))
+      call cquery_rtree_intersections(rtree%rtree, map_ab(ele_a)%n, map_ab(ele_a)%v)   
     end do
-    call rtree_intersection_finder_reset()
+    call deallocate(rtree)
 
   end subroutine rtree_intersection_finder_intersections
 
@@ -588,7 +692,7 @@ contains
   
   subroutine query_tree_allocatable(tree, element_a, eles_b)
     type(tree_type), intent(inout) :: tree
-    ! dim x loc
+    ! dim x loc_a
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
         
@@ -605,7 +709,7 @@ contains
   
   subroutine query_tree_pointer(tree, element_a, eles_b)
     type(tree_type), intent(inout) :: tree
-    ! dim x loc
+    ! dim x loc_a
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
         

@@ -332,29 +332,29 @@ contains
     
   end subroutine query_node_internal
   
-  subroutine query_quadtree_allocatable(quadtree, element_b, eles_b)
+  subroutine query_quadtree_allocatable(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
-    ! TREE_DIM x loc_b
-    real, dimension(:, :), intent(in) :: element_b
+    ! TREE_DIM x loc_a
+    real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
     
     quadtree%seen_ele_b(quadtree%eles_b(:quadtree%neles_b)) = .false.
     quadtree%neles_b = 0
-    call query(quadtree%quadtree, bbox(element_b), quadtree%eles_b, quadtree%neles_b, quadtree%seen_ele_b)
+    call query(quadtree%quadtree, bbox(element_a), quadtree%eles_b, quadtree%neles_b, quadtree%seen_ele_b)
     allocate(eles_b(quadtree%neles_b))
     eles_b = quadtree%eles_b(:quadtree%neles_b)
   
   end subroutine query_quadtree_allocatable
   
-  subroutine query_quadtree_pointer(quadtree, element_b, eles_b)
+  subroutine query_quadtree_pointer(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
-    ! TREE_DIM x loc_b
-    real, dimension(:, :), intent(in) :: element_b
+    ! TREE_DIM x loc_a
+    real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
     
     quadtree%seen_ele_b(quadtree%eles_b(:quadtree%neles_b)) = .false.
     quadtree%neles_b = 0
-    call query(quadtree%quadtree, bbox(element_b), quadtree%eles_b, quadtree%neles_b, quadtree%seen_ele_b)
+    call query(quadtree%quadtree, bbox(element_a), quadtree%eles_b, quadtree%neles_b, quadtree%seen_ele_b)
     allocate(eles_b(quadtree%neles_b))
     eles_b = quadtree%eles_b(:quadtree%neles_b)
   

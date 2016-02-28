@@ -321,29 +321,29 @@ contains
     
   end subroutine query_node_internal
   
-  subroutine query_octtree_allocatable(octtree, element_b, eles_b)
+  subroutine query_octtree_allocatable(octtree, element_a, eles_b)
     type(octtree_type), intent(inout) :: octtree
-    ! TREE_DIM x loc_b
-    real, dimension(:, :), intent(in) :: element_b
+    ! TREE_DIM x loc_a
+    real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
     
     octtree%seen_ele_b(octtree%eles_b(:octtree%neles_b)) = .false.
     octtree%neles_b = 0
-    call query(octtree%octtree, bbox(element_b), octtree%eles_b, octtree%neles_b, octtree%seen_ele_b)
+    call query(octtree%octtree, bbox(element_a), octtree%eles_b, octtree%neles_b, octtree%seen_ele_b)
     allocate(eles_b(octtree%neles_b))
     eles_b = octtree%eles_b(:octtree%neles_b)
   
   end subroutine query_octtree_allocatable
   
-  subroutine query_octtree_pointer(octtree, element_b, eles_b)
+  subroutine query_octtree_pointer(octtree, element_a, eles_b)
     type(octtree_type), intent(inout) :: octtree
-    ! TREE_DIM x loc_b
-    real, dimension(:, :), intent(in) :: element_b
+    ! TREE_DIM x loc_a
+    real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
     
     octtree%seen_ele_b(octtree%eles_b(:octtree%neles_b)) = .false.
     octtree%neles_b = 0
-    call query(octtree%octtree, bbox(element_b), octtree%eles_b, octtree%neles_b, octtree%seen_ele_b)
+    call query(octtree%octtree, bbox(element_a), octtree%eles_b, octtree%neles_b, octtree%seen_ele_b)
     allocate(eles_b(octtree%neles_b))
     eles_b = octtree%eles_b(:octtree%neles_b)
   

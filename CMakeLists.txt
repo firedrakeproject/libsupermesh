@@ -315,6 +315,7 @@ option (USE_MYLIB
 
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
+include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/src/")
 if (ENABLE_JUDY)
   include_directories ("${PROJECT_BINARY_DIR}/libjudy/src/")
 endif ()
