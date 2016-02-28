@@ -6,7 +6,6 @@
 module libsupermesh_octtree_intersection_finder
 
   use libsupermesh_debug, only : abort_pinpoint
-  use libsupermesh_integer_set, only : integer_set, insert
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
   use libsupermesh_quadtree_intersection_finder, only : max_nelist_degree
@@ -15,8 +14,8 @@ module libsupermesh_octtree_intersection_finder
 
   private
   
-  public :: octtree_node, octtree_element, max_nelist_degree, &
-    & octtree_intersection_finder, build_octtree, query_octtree, deallocate
+  public :: octtree_type, octtree_node, octtree_element, max_nelist_degree, &
+    & octtree_intersection_finder, allocate, query, deallocate
   
   ! Octtree node
   type octtree_node
@@ -40,17 +39,29 @@ module libsupermesh_octtree_intersection_finder
     integer :: ele
   end type octtree_element
   
+  type octtree_type
+    type(octtree_node), pointer :: octtree
+    integer, dimension(:), pointer :: eles_b
+    integer, pointer :: neles_b
+    logical, dimension(:), pointer :: seen_ele_b
+  end type octtree_type
+  
   interface octtree_intersection_finder
     module procedure octtree_intersection_finder_intersections, &
       & octtree_intersection_finder_csr_sparsity
   end interface octtree_intersection_finder
   
-  interface query_octtree
-    module procedure query_octtree_internal, query_octtree_integer_set
-  end interface query_octtree
+  interface allocate
+    module procedure allocate_octtree, allocate_node
+  end interface allocate
+  
+  interface query
+    module procedure query_node_internal, query_octtree_allocatable, &
+      & query_octtree_pointer
+  end interface query
   
   interface deallocate
-    module procedure deallocate_node
+    module procedure deallocate_octtree, deallocate_node
   end interface deallocate
     
 contains
@@ -68,42 +79,19 @@ contains
     type(intersections), dimension(:), intent(out) :: map_ab
     integer, optional, intent(in) :: max_size
     
-    integer :: ele_a, nelements_a, nelements_b
-    type(octtree_node) :: root_node
-    
-    integer :: neles_b
-    integer, dimension(:), allocatable :: eles_b
-    logical, dimension(:), allocatable :: seen_ele_b
+    integer :: ele_a, nelements_a
+    type(octtree_type) :: octtree
     
     if(size(positions_a, 1) /= TREE_DIM) then
       libsupermesh_abort("Invalid dimension")
     end if
     nelements_a = size(enlist_a, 2)
-    nelements_b = size(enlist_b, 2)
-    if(nelements_a == 0 .or. nelements_b == 0) then
-      do ele_a = 1, nelements_a
-        allocate(map_ab(ele_a)%v(0))
-        map_ab(ele_a)%n = 0
-      end do
-      return
-    end if
+    call allocate(octtree, positions_b, enlist_b, max_size = max_size)
     
-    root_node = build_octtree(positions_b, enlist_b, max_size = max_size)
-    
-    allocate(eles_b(nelements_b), seen_ele_b(nelements_b))   
-    neles_b = 0
-    seen_ele_b = .false. 
     do ele_a = 1, nelements_a
-      seen_ele_b(eles_b(:neles_b)) = .false.
-      neles_b = 0
-      call query_octtree(root_node, bbox(positions_a(:, enlist_a(:, ele_a))), eles_b, neles_b, seen_ele_b)
-      map_ab(ele_a)%n = neles_b
-      allocate(map_ab(ele_a)%v(neles_b))
-      map_ab(ele_a)%v = eles_b(:neles_b)
+      call query(octtree, positions_a(:, enlist_a(:, ele_a)), map_ab(ele_a)%v)
+      map_ab(ele_a)%n = size(map_ab(ele_a)%v)
     end do
-    deallocate(eles_b, seen_ele_b)
-    
-    call deallocate(root_node)
     
   end subroutine octtree_intersection_finder_intersections
   
@@ -133,14 +121,13 @@ contains
     
   end subroutine octtree_intersection_finder_csr_sparsity
 
-  function build_octtree(positions, enlist, max_size) result(root_node)
+  subroutine allocate_node(root_node, positions, enlist, max_size)
+    type(octtree_node), intent(out) :: root_node
     ! TREE_DIM x nnodes
     real, dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
-    integer, optional, intent(in) :: max_size
-    
-    type(octtree_node) :: root_node
+    integer, optional, intent(in) :: max_size    
     
     integer, parameter :: default_max_size = 256 
     
@@ -184,7 +171,36 @@ contains
       call add_element(root_node, ele, bbox(positions(:, enlist(:, ele))))
     end do
     
-  end function build_octtree
+  end subroutine allocate_node
+  
+  subroutine allocate_octtree(octtree, positions, enlist, max_size)
+    type(octtree_type), intent(out) :: octtree
+    ! TREE_DIM x nnodes
+    real, dimension(:, :), intent(in) :: positions
+    ! loc x nelements
+    integer, dimension(:, :), intent(in) :: enlist
+    integer, optional, intent(in) :: max_size  
+    
+    integer :: nelements
+    
+    nelements = size(enlist, 2)
+    
+    allocate(octtree%octtree)
+    call allocate(octtree%octtree, positions, enlist, max_size = max_size)
+    allocate(octtree%eles_b(nelements), octtree%neles_b, octtree%seen_ele_b(nelements))
+    octtree%neles_b = 0
+    octtree%seen_ele_b = .false.
+  
+  end subroutine allocate_octtree
+  
+  subroutine deallocate_octtree(octtree)
+    type(octtree_type), intent(inout) :: octtree
+    
+    deallocate(octtree%eles_b, octtree%neles_b, octtree%seen_ele_b)
+    call deallocate(octtree%octtree)
+    deallocate(octtree%octtree)
+  
+  end subroutine deallocate_octtree
   
   pure recursive subroutine deallocate_node(node)
     type(octtree_node), intent(inout) :: node
@@ -271,7 +287,7 @@ contains
   
   end subroutine add_element
   
-  pure recursive subroutine query_octtree_internal(node, bbox_a, eles_b, neles_b, seen_ele_b)
+  pure recursive subroutine query_node_internal(node, bbox_a, eles_b, neles_b, seen_ele_b)
     type(octtree_node), intent(in) :: node
     real, dimension(2, TREE_DIM), intent(in) :: bbox_a
     integer, dimension(:), intent(inout) :: eles_b
@@ -299,39 +315,39 @@ contains
     else
       ! Not a leaf node. Query child nodes.
       do i = 1, TREE_NCHILDREN
-        call query_octtree(node%children(i), bbox_a, eles_b, neles_b, seen_ele_b)
+        call query(node%children(i), bbox_a, eles_b, neles_b, seen_ele_b)
       end do
     end if
     
-  end subroutine query_octtree_internal
+  end subroutine query_node_internal
   
-  recursive subroutine query_octtree_integer_set(node, bbox_a, eles_b)
-    type(octtree_node), intent(in) :: node
-    real, dimension(2, TREE_DIM), intent(in) :: bbox_a
-    type(integer_set), intent(inout) :: eles_b
+  subroutine query_octtree_allocatable(octtree, element_b, eles_b)
+    type(octtree_type), intent(inout) :: octtree
+    ! TREE_DIM x loc_b
+    real, dimension(:, :), intent(in) :: element_b
+    integer, dimension(:), allocatable, intent(out) :: eles_b
     
-    integer :: ele_b, i
+    octtree%seen_ele_b(octtree%eles_b(:octtree%neles_b)) = .false.
+    octtree%neles_b = 0
+    call query(octtree%octtree, bbox(element_b), octtree%eles_b, octtree%neles_b, octtree%seen_ele_b)
+    allocate(eles_b(octtree%neles_b))
+    eles_b = octtree%eles_b(:octtree%neles_b)
+  
+  end subroutine query_octtree_allocatable
+  
+  subroutine query_octtree_pointer(octtree, element_b, eles_b)
+    type(octtree_type), intent(inout) :: octtree
+    ! TREE_DIM x loc_b
+    real, dimension(:, :), intent(in) :: element_b
+    integer, dimension(:), pointer, intent(out) :: eles_b
     
-    if(node%n == 0) return
-    if(.not. bboxes_intersect(node%bbox, bbox_a)) return
-    
-    if(node%n <= node%max_n) then
-      ! A leaf node. Return stored elements whose bounding boxes intersect with
-      ! the query bounding box.
-      do i = 1, node%n
-        ele_b = node%elements(i)%ele
-        if(bboxes_intersect(node%elements(i)%bbox, bbox_a)) then
-          call insert(eles_b, ele_b)
-        end if
-      end do
-    else
-      ! Not a leaf node. Query child nodes.
-      do i = 1, TREE_NCHILDREN
-        call query_octtree(node%children(i), bbox_a, eles_b)
-      end do
-    end if
-    
-  end subroutine query_octtree_integer_set
+    octtree%seen_ele_b(octtree%eles_b(:octtree%neles_b)) = .false.
+    octtree%neles_b = 0
+    call query(octtree%octtree, bbox(element_b), octtree%eles_b, octtree%neles_b, octtree%seen_ele_b)
+    allocate(eles_b(octtree%neles_b))
+    eles_b = octtree%eles_b(:octtree%neles_b)
+  
+  end subroutine query_octtree_pointer
 
   pure function bbox(coords)
     ! TREE_DIM x loc

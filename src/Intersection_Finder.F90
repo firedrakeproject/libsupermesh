@@ -10,9 +10,9 @@ module libsupermesh_intersection_finder
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
   use libsupermesh_octtree_intersection_finder, only : octtree_node, &
-    & deallocate, octtree_intersection_finder, build_octtree, query_octtree
+    & octtree_type, deallocate, octtree_intersection_finder, allocate, query
   use libsupermesh_quadtree_intersection_finder, only : quadtree_node, &
-    & deallocate, quadtree_intersection_finder, build_quadtree, query_quadtree
+    & quadtree_type, deallocate, quadtree_intersection_finder, allocate, query
 
   implicit none
 
@@ -65,8 +65,9 @@ module libsupermesh_intersection_finder
     & quadtree_intersection_finder, octtree_intersection_finder, &
     & tree_intersection_finder, sort_intersection_finder, &
     & brute_force_intersection_finder
-  public :: octtree_node, build_octtree, query_octtree
-  public :: quadtree_node, build_quadtree, query_quadtree
+  public :: octtree_node, octtree_type, allocate, query
+  public :: quadtree_node, quadtree_type
+  public :: tree_type
   public :: rtree_intersection_finder_set_input, &
     & rtree_intersection_finder_find, rtree_intersection_finder_query_output, &
     & rtree_intersection_finder_get_output, rtree_intersection_finder_reset
@@ -106,11 +107,27 @@ module libsupermesh_intersection_finder
       & brute_force_intersection_finder_csr_sparsity
   end interface brute_force_intersection_finder
   
-  integer, save :: tree_dim = 0, tree_nelements = 0, tree_neles = 0
+  type tree_type
+    integer :: dim
+    type(quadtree_type), pointer :: quadtree
+    type(octtree_type), pointer :: octtree
+  end type tree_type
+  
+  interface allocate
+    module procedure allocate_tree
+  end interface allocate   
+  
+  interface query
+    module procedure query_tree_allocatable, query_tree_pointer
+  end interface query
+  
+  interface deallocate
+    module procedure deallocate_tree
+  end interface deallocate    
+  
+  logical, save :: tree_allocated = .false.
   integer, dimension(:), allocatable, save :: tree_eles
-  logical, dimension(:), allocatable, save :: tree_seen_ele
-  type(octtree_node), save :: tree_octtree
-  type(quadtree_node), save :: tree_quadtree
+  type(tree_type), save :: tree
 
 contains
 
@@ -547,6 +564,75 @@ contains
     deallocate(map_ab)
 
   end subroutine rtree_intersection_finder_csr_sparsity
+  
+  subroutine allocate_tree(tree, positions, enlist)
+    type(tree_type), intent(out) :: tree
+    ! dim x nnodes
+    real, dimension(:, :), intent(in) :: positions
+    ! loc x nelements
+    integer, dimension(:, :), intent(in) :: enlist
+
+    tree%dim = size(positions, 1)
+    select case(tree%dim)
+      case(2)
+        allocate(tree%quadtree)
+        call allocate(tree%quadtree, positions, enlist)
+      case(3)
+        allocate(tree%octtree)
+        call allocate(tree%octtree, positions, enlist)
+      case default
+        libsupermesh_abort("Invalid dimension")
+    end select
+  
+  end subroutine allocate_tree
+  
+  subroutine query_tree_allocatable(tree, element_a, eles_b)
+    type(tree_type), intent(inout) :: tree
+    ! dim x loc
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), allocatable, intent(out) :: eles_b
+        
+    select case(tree%dim)
+      case(2)
+        call query(tree%quadtree, element_a, eles_b)
+      case(3)
+        call query(tree%octtree, element_a, eles_b)
+      case default
+        libsupermesh_abort("Invalid dimension")
+    end select
+  
+  end subroutine query_tree_allocatable
+  
+  subroutine query_tree_pointer(tree, element_a, eles_b)
+    type(tree_type), intent(inout) :: tree
+    ! dim x loc
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), pointer, intent(out) :: eles_b
+        
+    select case(tree%dim)
+      case(2)
+        call query(tree%quadtree, element_a, eles_b)
+      case(3)
+        call query(tree%octtree, element_a, eles_b)
+      case default
+        libsupermesh_abort("Invalid dimension")
+    end select
+  
+  end subroutine query_tree_pointer
+  
+  subroutine deallocate_tree(tree)
+    type(tree_type), intent(inout) :: tree
+    
+    select case(tree%dim)
+      case(2)
+        call deallocate(tree%quadtree)
+      case(3)
+        call deallocate(tree%octtree)
+      case default
+        libsupermesh_abort("Invalid dimension")
+    end select
+    
+  end subroutine deallocate_tree
 
   subroutine tree_intersection_finder_set_input(positions, enlist)
     ! dim x nnodes
@@ -555,79 +641,44 @@ contains
     integer, dimension(:, :), intent(in) :: enlist
     
     call tree_intersection_finder_reset()
-    
-    tree_dim = size(positions, 1)
-    tree_nelements = size(enlist, 2)       
-    select case(tree_dim)
-      case(2)
-        tree_quadtree = build_quadtree(positions, enlist)
-      case(3)
-        tree_octtree = build_octtree(positions, enlist)
-      case default
-        libsupermesh_abort("Invalid dimension")
-    end select
-    allocate(tree_eles(tree_nelements), tree_seen_ele(tree_nelements))
-    tree_neles = 0 
-    tree_seen_ele = .false.
+    call allocate(tree, positions, enlist)
+    tree_allocated = .true.
     
   end subroutine tree_intersection_finder_set_input
 
-  subroutine tree_intersection_finder_find(positions)
+  subroutine tree_intersection_finder_find(element_a)
     ! dim x loc
-    real, dimension(:, :), intent(in) :: positions
+    real, dimension(:, :), intent(in) :: element_a
     
-    integer :: i
-    real, dimension(2, tree_dim) :: bbox
-    
-    bbox(1, :) = positions(:, 1)
-    bbox(2, :) = positions(:, 1)
-    do i = 1, tree_dim
-      bbox(1, i) = min(bbox(1, i), minval(positions(i, :)))
-      bbox(2, i) = max(bbox(1, i), maxval(positions(i, :)))
-    end do
-    tree_seen_ele(tree_eles(:tree_neles)) = .false.
-    tree_neles = 0
-    select case(tree_dim)
-      case(2)
-        call query_quadtree(tree_quadtree, bbox, tree_eles, tree_neles, tree_seen_ele)
-      case(3)
-        call query_octtree(tree_octtree, bbox, tree_eles, tree_neles, tree_seen_ele)
-      case default
-        libsupermesh_abort("Invalid dimension")
-    end select
+    assert(tree_allocated)
+    if(allocated(tree_eles)) deallocate(tree_eles)
+    call query(tree, element_a, tree_eles)
     
   end subroutine tree_intersection_finder_find
   
-  subroutine tree_intersection_finder_query_output(nelements)
-    integer, intent(out) :: nelements
+  subroutine tree_intersection_finder_query_output(neles_b)
+    integer, intent(out) :: neles_b
     
-    nelements = tree_neles
+    assert(allocated(tree_eles))
+    neles_b = size(tree_eles)
   
   end subroutine tree_intersection_finder_query_output
   
-  subroutine tree_intersection_finder_get_output(ele, i)
-    integer, intent(out) :: ele
+  subroutine tree_intersection_finder_get_output(ele_b, i)
+    integer, intent(out) :: ele_b
     integer, intent(in) :: i
         
-    ele = tree_eles(i)
+    assert(allocated(tree_eles))
+    ele_b = tree_eles(i)
       
   end subroutine tree_intersection_finder_get_output
   
   subroutine tree_intersection_finder_reset()    
-    if(tree_dim == 0) return
+    if(.not. tree_allocated) return
   
-    select case(tree_dim)
-      case(2)
-        call deallocate(tree_quadtree)
-      case(3)
-        call deallocate(tree_octtree)
-      case default
-        libsupermesh_abort("Invalid dimension")
-    end select
-    tree_dim = 0
-    tree_nelements = 0  
-    deallocate(tree_eles, tree_seen_ele)
-    tree_neles = 0
+    if(allocated(tree_eles)) deallocate(tree_eles)
+    call deallocate(tree)
+    tree_allocated = .false.
   
   end subroutine tree_intersection_finder_reset
 
