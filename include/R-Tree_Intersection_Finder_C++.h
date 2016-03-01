@@ -169,7 +169,7 @@ namespace libsupermesh {
             std::cerr << "malloc failure" << std::endl;
             exit(1);
           }
-          this->neles = neles;
+          this->neles = 0;
         }
         inline virtual ~ElementListVisitor(void) {free(this->eles);}
         inline virtual void visitNode(const SpatialIndex::INode &n) {}
