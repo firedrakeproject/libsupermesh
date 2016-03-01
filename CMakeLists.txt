@@ -28,50 +28,20 @@ else()
 endif()
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
-if(DEFINED ENV{ARCHER})
-# https://github.com/pism/pism/issues/316
-  set (PETSC_EXECUTABLE_RUNS "YES")
-#Change this to libcraypetsc_cray_real.so for Cray compiler
-  set (MY_PETSC_LIBRARY "libcraypetsc_gnu_real.so")
-  set (MY_LIBRARY_SUBDIR "/lib/")
-  set (MY_PETSC_LIBRARY_DIR $ENV{CRAY_PETSC_PREFIX_DIR})
-  set (PETSC_LIBRARY_SINGLE "${MY_PETSC_LIBRARY_DIR}${MY_LIBRARY_SUBDIR}${MY_PETSC_LIBRARY}")
-endif()
-
-FIND_PACKAGE(PETSc)
 find_package(MPI REQUIRED)
-find_package(Threads)
-if(DEFINED ENV{ARCHER})
+set(link_libraries ${MPI_Fortran_LIBRARIES})
 
+option(ENABLE_JUDY "Enable use of the Judy library" OFF)
+if(ENABLE_JUDY)
+  find_library(JUDY_LIBRARY NAMES Judy)
+  find_path(JUDY_INCLUDE NAMES Judy.h)
+  find_package_handle_standard_args(Judy DEFAULT_MSG REQUIRED_VARS JUDY_LIBRARY JUDY_INCLUDE)
+  set(link_libraries ${link_libraries} ${JUDY_LIBRARY})
+  include_directories(${JUDY_INCLUDE})
 else()
-  find_package(LAPACK REQUIRED)
+  set(JUDY_LIBRARY "")
+  set(JUDY_INCLUDE "")
 endif()
-option (ENABLE_JUDY "Enable the Judy library" OFF)
-if (ENABLE_JUDY)
-  set (libsupermesh_ENABLE_JUDY 1)
-else()
-  set (libsupermesh_ENABLE_JUDY 0)
-endif ()
-
-#if ("${PETSC_VERSION}" VERSION_LESS 3.4)
-#  message(FATAL_ERROR "PETSc version 3.4 is required, but not found. (Found version:" ${PETSC_VERSION} ".")
-#elseif ("${PETSC_VERSION}" VERSION_GREATER 3.6)
-#  message(FATAL_ERROR "PETSc version 3.4 is required, but not found.. (Found version:" ${PETSC_VERSION} ".")
-#endif ()
-
-if (PETSC_FOUND)
-  set (PETSC_EXECUTABLE_RUNS YES                  CACHE BOOL "Disable checking if this setup works" FORCE)
-  set (PETSC_FOUND           YES                  CACHE BOOL "PETSc was found (manually)" FORCE)
-  set (PETSC_INCLUDES        ${PETSC_INCLUDES}    CACHE STRING "Semicolon-delimited list of PETSc include directories" FORCE)
-  set (PETSC_LIBRARIES       ${PETSC_LIBRARIES}   CACHE STRING "Semicolon-delimited list of PETSc libraries" FORCE)
-  set (PETSC_COMPILER        ${PETSC_COMPILER}    CACHE FILEPATH "PETSc compiler; helpful to find a compatible MPI" FORCE)
-  set (PETSC_DEFINITIONS     ${PETSC_DEFINITIONS} CACHE STRING "PETSc definitions" FORCE)
-  set (PETSC_MPIEXEC         ${PETSC_MPIEXEC}     CACHE FILEPATH "Executable for running PETSc MPI programs" FORCE)
-  set (PETSC_VERSION         ${PETSC_VERSION}     CACHE STRING "PETSc version: MAJOR.MINOR.SUBMINOR" FORCE)
-  mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES
-    PETSC_COMPILER PETSC_DEFINITIONS
-    PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS PETSC_VERSION)
-endif ()
 
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
@@ -242,31 +212,7 @@ message ("MAIN SUBPROJECTS_Fortran_FLAGS:${SUBPROJECTS_Fortran_FLAGS}")
 message ("MAIN PROJECT_SOURCE_DIR:${PROJECT_SOURCE_DIR}")
 message ("MAIN PROJECT_BINARY_DIR:${PROJECT_BINARY_DIR}")
 
-if (ENABLE_JUDY)
-  include(ExternalProject)
-  ExternalProject_Add(libjudy
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/libjudy
-    PREFIX     ${PROJECT_BINARY_DIR}/libjudy
-    BINARY_DIR ${PROJECT_BINARY_DIR}/libjudy
-  #  CONFIGURE_COMMAND CXX=mpicxx CC=mpicc FC=mpif90 ${CMAKE_CURRENT_SOURCE_DIR}/configure --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static --enable-debug
-  # errors  CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure "CFLAGS=-O3 -march=native" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static
-    CONFIGURE_COMMAND ./configure "CFLAGS=${SUBPROJECTS_C_FLAGS}" "CXXFLAGS=${SUBPROJECTS_CXX_FLAGS}" "FFLAGS=${SUBPROJECTS_Fortran_FLAGS}" --prefix=${PROJECT_BINARY_DIR} --enable-shared --enable-static ${local_debugging}
-  #  PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
-    BUILD_COMMAND make
-  #  BUILD_DIR ${PROJECT_BINARY_DIR}
-  #  BUILD_IN_SOURCE 1
-    INSTALL_COMMAND echo "installing"
-  )
-  # copy SRC directory from source to build
-  ExternalProject_Add_Step(libjudy copy_libjudy
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/libjudy ${PROJECT_BINARY_DIR}/libjudy
-    COMMENT copying libjudy from source to build
-    DEPENDEES download
-  )
-endif ()
-
-include_directories(${MPI_Fortran_INCLUDE_PATH} ${PETSC_INCLUDES})
-ADD_DEFINITIONS(${PETSC_DEFINITIONS})
+include_directories(${MPI_Fortran_INCLUDE_PATH})
 
 # The version number.
 set (libsupermesh_VERSION_MAJOR 0)
@@ -291,16 +237,10 @@ endif (USE_CODE_PROFILE)
 option (USE_OVERLAP_COMPUTE_COMMS
         "Use overlap compute/comms. Make sure that your MPI impementation supports overlapping" OFF)
 if (USE_OVERLAP_COMPUTE_COMMS)
-  set (libsupermesh_OVERLAP_COMPUTE_COMMS 1)
+  set (OVERLAP_COMPUTE_COMMS 1)
 else()
-  set (libsupermesh_OVERLAP_COMPUTE_COMMS 0)
+  set (OVERLAP_COMPUTE_COMMS 0)
 endif (USE_OVERLAP_COMPUTE_COMMS)
-
-if (PETSC_FOUND)
-  set (libsupermesh_HAVE_PETSC 1)
-else ()
-  set (libsupermesh_HAVE_PETSC 0)
-endif (PETSC_FOUND)
 
 configure_file (
   "${PROJECT_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
@@ -317,9 +257,6 @@ option (USE_MYLIB
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/include/)
 include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/src/)
-if (ENABLE_JUDY)
-  include_directories ("${PROJECT_BINARY_DIR}/libjudy/src/")
-endif ()
 
 add_subdirectory(spatialindex-1.8.5 EXCLUDE_FROM_ALL)
 set(spatialindex_object_files
@@ -361,50 +298,6 @@ endif()
 foreach(spatialindex_object_file ${spatialindex_object_files})
   set_source_files_properties(${spatialindex_object_file} PROPERTIES GENERATED 1)
 endforeach()
-
-set (CPP_LIBJUDY_O_FILES "")
-if (ENABLE_JUDY)
-  set (CPP_LIBJUDY_O_FILES
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1FreeArray.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Set.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Count.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libcount_la-Judy1ByCount.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Unset.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Test.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1MallocIF.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Tables.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Decascade.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1Cascade.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1CreateBranch.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1InsertBranch.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/Judy1First.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1Next.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1Prev.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libnext_la-Judy1NextEmpty.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/Judy1/libprev_la-Judy1PrevEmpty.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFreeArray.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLIns.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCount.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLGet.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDel.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libcount_la-JudyLByCount.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLTables.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLMallocIF.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLDecascade.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCascade.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLInsertBranch.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLCreateBranch.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/JudyLFirst.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNext.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrev.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libnext_la-JudyLNextEmpty.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyL/libprev_la-JudyLPrevEmpty.o
-    ${PROJECT_BINARY_DIR}/libjudy/src/JudyCommon/JudyMalloc.o
-  )
-  foreach (test ${CPP_LIBJUDY_O_FILES})
-  SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
-  endforeach()
-endif ()
   
 set (CPP_TEST_SOURCE_FILES "")
 set (CPP_TEST_SOURCE_FILES
@@ -441,13 +334,8 @@ FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES ${PROJECT_SOURCE_DIR
 
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
-add_library (supermesh ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${spatialindex_object_files} ${CPP_LIBJUDY_O_FILES})
-
-if (ENABLE_JUDY)
-  add_dependencies(supermesh libjudy spatialindex)
-else ()
-  add_dependencies(supermesh spatialindex)
-endif ()
+add_library (supermesh ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${spatialindex_object_files})
+add_dependencies(supermesh spatialindex)
   
 set (UNITTESTS
   test_interval_intersector
@@ -537,33 +425,19 @@ add_custom_command(TARGET test_tri_intersector
 add_custom_target(distclean 
   COMMAND cd "${PROJECT_BINARY_DIR}"
   COMMAND make clean
-  if (ENABLE_JUDY)
-    COMMAND rm -rf "${PROJECT_BINARY_DIR}/libjudy"
-  endif ()
   COMMAND rm -rf unittests/
   COMMAND rm -rf data/
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-if(UNIX AND NOT APPLE)
-  target_link_libraries(supermesh ${MPI_Fortran_LIBRARIES} rt)
-
-  foreach (test ${UNITTESTS})
-    target_link_libraries(${test} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-  endforeach()
-  foreach (benchmark ${BENCHMARKTESTS})
-    target_link_libraries(${benchmark} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES} rt)
-  endforeach()
-else ()
-  target_link_libraries(supermesh ${MPI_Fortran_LIBRARIES})
-
-  foreach (test ${UNITTESTS})
-    target_link_libraries(${test} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-  endforeach()
-  foreach (benchmark ${BENCHMARKTESTS})
-    target_link_libraries(${benchmark} supermesh ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES} ${PETSC_LIBRARIES} ${LAPACK_LIBRARIES})
-  endforeach()
-endif()
+set(test_link_libraries supermesh ${link_libraries} ${MPI_CXX_LIBRARIES})
+target_link_libraries(supermesh ${link_libraries})
+foreach(test ${UNITTESTS})
+  target_link_libraries(${test} ${test_link_libraries})
+endforeach()
+foreach(benchmark ${BENCHMARKTESTS})
+  target_link_libraries(${benchmark} ${test_link_libraries})
+endforeach()
 
 set_target_properties(supermesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
 set_target_properties(supermesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${LAPACK_LINKER_FLAGS}")
