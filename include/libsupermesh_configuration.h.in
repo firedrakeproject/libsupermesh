@@ -27,7 +27,9 @@
 #define DDEBUG @libsupermesh_DEBUG@
 #if DDEBUG == 0
 #undef DDEBUG
+#ifndef NDEBUG
 #define NDEBUG
+#endif
 #else
 #undef NDEBUG
 #endif

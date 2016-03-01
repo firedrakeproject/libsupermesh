@@ -12,6 +12,22 @@ endif("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
 
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
 
+string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_cmake_build_type)
+if(lower_cmake_build_type STREQUAL debug)
+  message(STATUS "Enabling debugging")
+  set(libsupermesh_DEBUG 1)
+elseif(lower_cmake_build_type STREQUAL release)
+  message(STATUS "Disabling debugging")
+  set(libsupermesh_DEBUG 0)
+elseif(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "Disabling debugging")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type. Valid values are \"Debug\" and \"Release\"." FORCE)
+  set(libsupermesh_DEBUG 0)
+else()
+   message(SEND_ERROR "Unrecognised build type")
+endif()
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
 if(DEFINED ENV{ARCHER})
 # https://github.com/pism/pism/issues/316
   set (PETSC_EXECUTABLE_RUNS "YES")
@@ -57,13 +73,6 @@ if (PETSC_FOUND)
     PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS PETSC_VERSION)
 endif ()
 
-# make sure that the default is a RELEASE
-if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
-      "Choose the type of build, options are: None Debug Release."
-      FORCE)
-endif (NOT CMAKE_BUILD_TYPE)
-
 # FFLAGS depend on the compiler
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
@@ -90,7 +99,7 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   # gfortran
   if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8 -fdefault-double-8 -ffree-line-length-none -fno-f2c -pipe ")
-    set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize ")
+    set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize -DNDEBUG ")
     set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -Wall -fcheck=all -ffpe-trap=zero,overflow,underflow -frecord-marker=4 -fno-realloc-lhs -finit-integer=-66666 -finit-real=nan -fimplicit-none -fbacktrace ")
     if (BUILD_SHARED_LIBS)
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fPIC ")
@@ -116,7 +125,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU")
   # gcc
   if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -D_GNU_SOURCE ")
-    set (CMAKE_C_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize ")
+    set (CMAKE_C_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -DNDEBUG ")
     set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -Wall ")
     if (BUILD_SHARED_LIBS)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC ")
@@ -142,7 +151,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   # g++
   if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe ")
-    set (CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize ")
+    set (CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize -DNDEBUG ")
     set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -Wall ")
     if (BUILD_SHARED_LIBS)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC ")
@@ -233,9 +242,6 @@ message ("MAIN SUBPROJECTS_Fortran_FLAGS:${SUBPROJECTS_Fortran_FLAGS}")
 message ("MAIN PROJECT_SOURCE_DIR:${PROJECT_SOURCE_DIR}")
 message ("MAIN PROJECT_BINARY_DIR:${PROJECT_BINARY_DIR}")
 
-
-add_subdirectory(spatialindex-1.8.0 EXCLUDE_FROM_ALL)
-
 if (ENABLE_JUDY)
   include(ExternalProject)
   ExternalProject_Add(libjudy
@@ -290,11 +296,6 @@ else()
   set (libsupermesh_OVERLAP_COMPUTE_COMMS 0)
 endif (USE_OVERLAP_COMPUTE_COMMS)
 
-if (lower_build_type MATCHES debug)
-  set (libsupermesh_DEBUG 1)
-else ()
-  set (libsupermesh_DEBUG 0)
-endif (lower_build_type MATCHES debug)
 if (PETSC_FOUND)
   set (libsupermesh_HAVE_PETSC 1)
 else ()
@@ -314,46 +315,51 @@ option (USE_MYLIB
         "Use library implementation" OFF) 
 
 include_directories ("${PROJECT_SOURCE_DIR}/include")
-include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/include/")
-include_directories ("${PROJECT_SOURCE_DIR}/spatialindex-1.8.0/src/")
+include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/include/)
+include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/src/)
 if (ENABLE_JUDY)
   include_directories ("${PROJECT_BINARY_DIR}/libjudy/src/")
 endif ()
 
-set (CPP_SPATIALINDEX_O_FILES "")
-set (CPP_SPATIALINDEX_O_FILES
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/tprtree/Index.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/tprtree/TPRTree.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/tprtree/Leaf.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/tprtree/Statistics.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/tprtree/Node.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/storagemanager/MemoryStorageManager.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/storagemanager/RandomEvictionsBuffer.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/storagemanager/Buffer.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/storagemanager/DiskStorageManager.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/mvrtree/Index.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/mvrtree/Leaf.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/mvrtree/MVRTree.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/mvrtree/Statistics.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/mvrtree/Node.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/SpatialIndexImpl.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/Point.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/MovingRegion.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/MovingPoint.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/TimeRegion.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/Region.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/LineSegment.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/spatialindex/TimePoint.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/tools/Tools.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/Index.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/Leaf.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/RTree.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/Statistics.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/BulkLoader.cc.o
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.0/src/CMakeFiles/spatialindex.dir/rtree/Node.cc.o
+add_subdirectory(spatialindex-1.8.5 EXCLUDE_FROM_ALL)
+set(spatialindex_object_files
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/TPRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/MemoryStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/RandomEvictionsBuffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/Buffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/DiskStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/MVRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/SpatialIndexImpl.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Point.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingPoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimeRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Region.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/LineSegment.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimePoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/Tools.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/RTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/BulkLoader.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
 )
-foreach (test ${CPP_SPATIALINDEX_O_FILES})
- SET_SOURCE_FILES_PROPERTIES(${test} PROPERTIES GENERATED 1)
+check_function_exists(srand48 HAVE_SRAND48)
+if(NOT HAVE_SRAND48)
+  set(spatialindex_object_files ${spatialindex_object_files}
+    ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/rand48.cc${CMAKE_CXX_OUTPUT_EXTENSION})
+endif()
+foreach(spatialindex_object_file ${spatialindex_object_files})
+  set_source_files_properties(${spatialindex_object_file} PROPERTIES GENERATED 1)
 endforeach()
 
 set (CPP_LIBJUDY_O_FILES "")
@@ -435,7 +441,7 @@ FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES ${PROJECT_SOURCE_DIR
 
 FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
 
-add_library (supermesh ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${CPP_SPATIALINDEX_O_FILES} ${CPP_LIBJUDY_O_FILES})
+add_library (supermesh ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${spatialindex_object_files} ${CPP_LIBJUDY_O_FILES})
 
 if (ENABLE_JUDY)
   add_dependencies(supermesh libjudy spatialindex)
