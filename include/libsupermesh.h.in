@@ -1,0 +1,7 @@
+#pragma once
+
+#define libsupermesh_VERSION_MAJOR @libsupermesh_VERSION_MAJOR@
+#define libsupermesh_VERSION_MINOR @libsupermesh_VERSION_MINOR@
+#define libsupermesh_VERSION_SUBMINOR @libsupermesh_VERSION_SUBMINOR@
+#define libsupermesh_VERSION_RELEASE @libsupermesh_VERSION_RELEASE@
+#define libsupermesh_VERSION_STRING "@libsupermesh_VERSION_MAJOR@.@libsupermesh_VERSION_MINOR@.@libsupermesh_VERSION_SUBMINOR@@libsupermesh_VERSION_DEV_SUFFIX@"

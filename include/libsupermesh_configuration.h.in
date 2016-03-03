@@ -1,5 +1,7 @@
 #pragma once
 
+#include "libsupermesh.h"
+
 #define PROFILE @libsupermesh_PROFILE@
 #if PROFILE == 0
 #undef PROFILE

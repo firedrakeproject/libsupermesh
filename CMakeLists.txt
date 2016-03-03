@@ -1,16 +1,21 @@
-# CMakeLists files in this project can
-# refer to the root source directory of the project as ${SUPERMESH_SOURCE_DIR} and
-# to the root binary directory of the project as ${SUPERMESH_BINARY_DIR}.
-cmake_minimum_required (VERSION 2.8)
-project (SUPERMESH C CXX Fortran)
-enable_language (Fortran)
-enable_testing ()
+cmake_minimum_required(VERSION 2.8)
+project(libsupermesh C CXX Fortran)
+enable_language(Fortran)
+enable_testing()
+set(libsupermesh_VERSION_MAJOR 0)
+set(libsupermesh_VERSION_MINOR 9)
+set(libsupermesh_VERSION_SUBMINOR 0)
+set(libsupermesh_VERSION_RELEASE 0)
+set(libsupermesh_VERSION_DEV_SUFFIX "+")
 
-if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-   message(SEND_ERROR "In-source builds are not allowed.")
-endif("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+if(${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR})
+  message(SEND_ERROR "In-source builds are not permitted")
+endif()
 
-SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake-modules)
+set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_cmake_build_type)
 if(lower_cmake_build_type STREQUAL debug)
@@ -30,6 +35,7 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 find_package(MPI REQUIRED)
 set(link_libraries ${MPI_Fortran_LIBRARIES})
+include_directories(${MPI_Fortran_INCLUDE_PATH})
 
 option(ENABLE_JUDY "Enable use of the Judy library" OFF)
 if(ENABLE_JUDY)
@@ -143,44 +149,6 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Cray")
   endif ()
 endif ()
 
-SET( SUBPROJECTS_C_FLAGS ${CMAKE_C_FLAGS})
-SET( SUBPROJECTS_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-SET( SUBPROJECTS_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
-
-set( SUBPROJECTS_debugging "NO")
-string( TOLOWER "${CMAKE_BUILD_TYPE}" lower_build_type)
-if (lower_build_type MATCHES release)
-  if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
-    set( SUBPROJECTS_C_FLAGS "${SUBPROJECTS_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
-  endif ()
-  
-  if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
-    set( SUBPROJECTS_CXX_FLAGS "${SUBPROJECTS_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
-  endif ()
-
-  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
-    set( SUBPROJECTS_Fortran_FLAGS "${SUBPROJECTS_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE}")
-  endif ()
-elseif (lower_build_type MATCHES debug)
-  if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
-    set( SUBPROJECTS_C_FLAGS "${SUBPROJECTS_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
-  endif ()
-
-  if (NOT local_IGNORE_ALL_CXX_FLAGS MATCHES "TRUE")
-    set( SUBPROJECTS_CXX_FLAGS "${SUBPROJECTS_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
-  endif ()
-
-  if (NOT local_IGNORE_ALL_Fortran_FLAGS MATCHES "TRUE")
-    set( SUBPROJECTS_Fortran_FLAGS "${SUBPROJECTS_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG}")
-  endif ()
-
-  set( SUBPROJECTS_debugging "YES")
-endif (lower_build_type MATCHES release)
-
-if (SUBPROJECTS_debugging MATCHES YES)
-  set(local_debugging "--enable-debug")
-endif (SUBPROJECTS_debugging MATCHES YES)
-
 option (USE_PROFILE "Use profile flags" OFF)
 if (USE_PROFILE)
   SET( CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} -pg -g")
@@ -201,30 +169,15 @@ if (USE_PROFPROFILE)
   SET( CMAKE_MODULE_LINKER_FLAGS   "${CMAKE_MODULE_LINKER_FLAGS} -lprofiler -g" )
 endif (USE_PROFPROFILE)
 
-message ("MAIN CMAKE_C_FLAGS:${CMAKE_C_FLAGS}")
-message ("MAIN CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}")
-message ("MAIN CMAKE_Fortran_FLAGS:${CMAKE_Fortran_FLAGS}")
-
-message ("MAIN SUBPROJECTS_C_FLAGS:${SUBPROJECTS_C_FLAGS}")
-message ("MAIN SUBPROJECTS_CXX_FLAGS:${SUBPROJECTS_CXX_FLAGS}")
-message ("MAIN SUBPROJECTS_Fortran_FLAGS:${SUBPROJECTS_Fortran_FLAGS}")
-
-message ("MAIN PROJECT_SOURCE_DIR:${PROJECT_SOURCE_DIR}")
-message ("MAIN PROJECT_BINARY_DIR:${PROJECT_BINARY_DIR}")
-
-include_directories(${MPI_Fortran_INCLUDE_PATH})
-
-# The version number.
-set (libsupermesh_VERSION_MAJOR 0)
-set (libsupermesh_VERSION_MINOR 9)
-set (libsupermesh_VERSION_MINOR_CHANGE 0)
-
-# configure a header file to pass some of the CMake settings
-# to the source code
-configure_file (
-  "${PROJECT_SOURCE_DIR}/config/libsupermesh.pc.in"
-  "${PROJECT_BINARY_DIR}/include/libsupermesh.pc"
-  )
+message(STATUS "CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS_DEBUG=${CMAKE_Fortran_FLAGS_DEBUG}")
+message(STATUS "CMAKE_Fortran_FLAGS_RELEASE=${CMAKE_Fortran_FLAGS_RELEASE}")
+message(STATUS "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}")
+message(STATUS "CMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}")
+message(STATUS "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
 
 option (USE_CODE_PROFILE
         "Add profile timers and print statements" OFF)
@@ -242,22 +195,8 @@ else()
   set (OVERLAP_COMPUTE_COMMS 0)
 endif (USE_OVERLAP_COMPUTE_COMMS)
 
-configure_file (
-  "${PROJECT_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
-  "${PROJECT_BINARY_DIR}/include/libsupermesh_configuration.h"
-  )
-# add the binary tree/include to the search path for include files
-# so that we will find the files
-include_directories("${PROJECT_BINARY_DIR}/include")
-
-# should we use our own LIBRARY?
-option (USE_MYLIB 
-        "Use library implementation" OFF) 
-
-include_directories ("${PROJECT_SOURCE_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/include/)
 include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/src/)
-
 add_subdirectory(spatialindex-1.8.5 EXCLUDE_FROM_ALL)
 set(spatialindex_object_files
   ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
@@ -463,15 +402,19 @@ if(MPI_Fortran_LINK_FLAGS)
   endforeach()
 endif()
 
+configure_file (
+  "${PROJECT_SOURCE_DIR}/config/libsupermesh.pc.in"
+  "${PROJECT_BINARY_DIR}/config/libsupermesh.pc"
+  )
+configure_file (
+  "${PROJECT_SOURCE_DIR}/include/libsupermesh.h.in"
+  "${PROJECT_BINARY_DIR}/include/libsupermesh.h"
+  )
+configure_file (
+  "${PROJECT_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
+  "${PROJECT_BINARY_DIR}/include/libsupermesh_configuration.h"
+  )
+
 install(TARGETS supermesh DESTINATION lib)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_graphs.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_integer_hash_table.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_integer_set.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_intersection_finder.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_interval_intersection.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_parallel_supermesh.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_read_triangle.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_supermesh.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_tet_intersection.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/libsupermesh_tri_intersection.mod" DESTINATION include)
-install(FILES "${PROJECT_BINARY_DIR}/include/libsupermesh.pc" DESTINATION lib/pkgconfig)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${PROJECT_BINARY_DIR}/config/libsupermesh.pc DESTINATION lib/pkgconfig)
