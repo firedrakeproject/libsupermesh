@@ -10,10 +10,8 @@ module libsupermesh_parallel_supermesh
     & insert, fetch, deallocate
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
     & insert, key_count, fetch
-  use libsupermesh_intersection_finder, only : &
-    & rtree_intersection_finder_set_input, rtree_intersection_finder_find, &
-    & rtree_intersection_finder_query_output, &
-    & rtree_intersection_finder_get_output
+  use libsupermesh_intersection_finder, only : rtree_type, allocate, query, &
+    & deallocate
   use libsupermesh_supermesh, only : max_n_simplices_c, intersect_elements
 
   implicit none
@@ -351,9 +349,9 @@ contains
     end interface
 
     integer :: buffer_size, dim, ele_a, ele_b, i, ierr, j, k, l, loc_a, loc_b, &
-      & n_c, ndata, nelements, nelements_b, nnodes, nintersections, position
+      & n_c, ndata, nelements, nelements_b, nnodes, position
     integer, dimension(MPI_STATUS_SIZE) :: status
-    integer, dimension(:), allocatable :: recv_enlist, statuses
+    integer, dimension(:), allocatable :: eles_a, recv_enlist, statuses
     integer(kind = c_int8_t), dimension(:), allocatable :: data
     real, dimension(:), allocatable :: recv_positions
     real, dimension(:, :), allocatable :: nodes_a, nodes_b
@@ -363,6 +361,7 @@ contains
 #else
     integer(kind = c_int8_t), dimension(:), pointer :: recv_buffer
     type(buffer), dimension(:), allocatable :: recv_buffers
+    type(rtree_type) :: rtree
 #endif
 #ifdef PROFILE
     real :: t_1
@@ -413,15 +412,14 @@ contains
 #ifdef PROFILE
     t_1 = mpi_wtime()
 #endif
-    call rtree_intersection_finder_set_input(positions_a, enlist_a)
+    call allocate(rtree, positions_a, enlist_a)
     do ele_b = 1, nelements_b
       if(ele_owner_b(ele_b) /= rank) cycle
       
       nodes_b = positions_b(:, enlist_b(:, ele_b))
-      call rtree_intersection_finder_find(nodes_b)
-      call rtree_intersection_finder_query_output(nintersections)
-      do i = 1, nintersections
-        call rtree_intersection_finder_get_output(ele_a, i)
+      call query(rtree, nodes_b, eles_a)
+      do i = 1, size(eles_a)
+        ele_a = eles_a(i)
         if(ele_owner_a(ele_a) /= rank) cycle
         
         nodes_a = positions_a(:, enlist_a(:, ele_a))
@@ -430,6 +428,7 @@ contains
           & positions_c(:, :, :n_c), enlist_b(:, ele_b), ele_a, ele_b, &
           & local = .true.)
       end do
+      deallocate(eles_a)
     end do
 #ifdef PROFILE
     local_compute_time = mpi_wtime() - t_1
@@ -501,10 +500,9 @@ contains
           end do
         end do
 
-        call rtree_intersection_finder_find(nodes_b)
-        call rtree_intersection_finder_query_output(nintersections)
-        do k = 1, nintersections
-          call rtree_intersection_finder_get_output(ele_a, k)
+        call query(rtree, nodes_b, eles_a)
+        do k = 1, size(eles_a)
+          ele_a = eles_a(k)
           if(ele_owner_a(ele_a) /= rank) cycle
           
           nodes_a = positions_a(:, enlist_a(:, ele_a))
@@ -514,6 +512,7 @@ contains
             & recv_enlist((ele_b - 1) * loc_b + 1:ele_b * loc_b), ele_a, &
             & ele_b, local = .false.)
         end do
+        deallocate(eles_a)
       end do
 #ifdef PROFILE
       remote_compute_time = mpi_wtime() - t_1
@@ -522,6 +521,7 @@ contains
       deallocate(recv_enlist, recv_positions, data)
     end do
 
+    call deallocate(rtree)
     deallocate(nodes_a, nodes_b, positions_c)
 
 #ifdef OVERLAP_COMPUTE_COMMS
