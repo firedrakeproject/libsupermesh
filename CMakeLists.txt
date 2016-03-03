@@ -106,7 +106,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU")
   # gcc
   if (NOT local_IGNORE_ALL_C_FLAGS MATCHES "TRUE")
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -D_GNU_SOURCE ")
-    set (CMAKE_C_FLAGS_RELEASE "-O2 -march=native -ftree-vectorize -DNDEBUG ")
+    set (CMAKE_C_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize -DNDEBUG ")
     set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -Wall ")
     if (BUILD_SHARED_LIBS)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC ")
