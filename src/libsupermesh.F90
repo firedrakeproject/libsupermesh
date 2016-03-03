@@ -13,7 +13,11 @@ module libsupermesh
   integer, parameter :: version_major = libsupermesh_VERSION_MAJOR
   integer, parameter :: version_minor = libsupermesh_VERSION_MINOR
   integer, parameter :: version_subminor = libsupermesh_VERSION_SUBMINOR
-  integer, parameter :: version_release = libsupermesh_VERSION_RELEASE
+#ifdef libsupermesh_VERSION_RELEASE
+  logical, parameter :: version_release = .true.
+#else
+  logical, parameter :: version_release = .false.
+#endif
   character(len = *), parameter :: version = libsupermesh_VERSION_STRING
 
 end module libsupermesh

@@ -4,4 +4,7 @@
 #define libsupermesh_VERSION_MINOR @libsupermesh_VERSION_MINOR@
 #define libsupermesh_VERSION_SUBMINOR @libsupermesh_VERSION_SUBMINOR@
 #define libsupermesh_VERSION_RELEASE @libsupermesh_VERSION_RELEASE@
+#if libsupermesh_VERSION_RELEASE == 0
+#undef libsupermesh_VERSION_RELEASE
+#endif
 #define libsupermesh_VERSION_STRING "@libsupermesh_VERSION_MAJOR@.@libsupermesh_VERSION_MINOR@.@libsupermesh_VERSION_SUBMINOR@@libsupermesh_VERSION_DEV_SUFFIX@"
