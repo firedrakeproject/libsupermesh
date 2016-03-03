@@ -20,6 +20,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake-modules)
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include_local)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_cmake_build_type)
 if(lower_cmake_build_type STREQUAL debug)
@@ -416,7 +417,7 @@ configure_file (
   )
 configure_file (
   "${PROJECT_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
-  "${PROJECT_BINARY_DIR}/include/libsupermesh_configuration.h"
+  "${PROJECT_BINARY_DIR}/include_local/libsupermesh_configuration.h"
   )
 
 install(TARGETS supermesh DESTINATION lib)
