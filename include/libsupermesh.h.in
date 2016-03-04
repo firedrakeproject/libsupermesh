@@ -8,6 +8,7 @@
 #undef libsupermesh_VERSION_RELEASE
 #endif
 #define libsupermesh_VERSION "@libsupermesh_VERSION@"
+#define libsupermesh_GIT_REVISION "@libsupermesh_GIT_REVISION@"
 
 #define libsupermesh_TIMERS @libsupermesh_TIMERS@
 #if libsupermesh_TIMERS == 0
