@@ -7,4 +7,9 @@
 #if libsupermesh_VERSION_RELEASE == 0
 #undef libsupermesh_VERSION_RELEASE
 #endif
-#define libsupermesh_VERSION_STRING "@libsupermesh_VERSION_MAJOR@.@libsupermesh_VERSION_MINOR@.@libsupermesh_VERSION_SUBMINOR@@libsupermesh_VERSION_DEV_SUFFIX@"
+#define libsupermesh_VERSION "@libsupermesh_VERSION@"
+
+#define libsupermesh_TIMERS @libsupermesh_TIMERS@
+#if libsupermesh_TIMERS == 0
+#undef libsupermesh_TIMERS
+#endif

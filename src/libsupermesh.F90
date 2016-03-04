@@ -18,6 +18,6 @@ module libsupermesh
 #else
   logical, parameter :: version_release = .false.
 #endif
-  character(len = *), parameter :: version = libsupermesh_VERSION_STRING
+  character(len = *), parameter :: version = libsupermesh_VERSION
 
 end module libsupermesh

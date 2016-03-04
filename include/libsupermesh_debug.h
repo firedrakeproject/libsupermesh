@@ -34,7 +34,7 @@
 #endif
 
 #ifndef __LINE__
-#define __LINE__ "unknown"
+#define __LINE__ -1
 #endif
 
 #define ewrite(priority, format) if(priority <= current_debug_level) write(debug_unit(priority), format) 

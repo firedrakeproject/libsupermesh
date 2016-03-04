@@ -5,7 +5,7 @@ libdir=@CMAKE_INSTALL_PREFIX@/lib
 
 Name: libsupermesh
 Description: Parallel supermeshing library
-Version: @libsupermesh_VERSION_MAJOR@.@libsupermesh_VERSION_MINOR@.@libsupermesh_VERSION_SUBMINOR@@libsupermesh_VERSION_DEV_SUFFIX@
+Version: @libsupermesh_VERSION@
 Cflags: -I@CMAKE_INSTALL_PREFIX@/include
 Libs: -L@CMAKE_INSTALL_PREFIX@/lib -lsupermesh
 

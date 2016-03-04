@@ -1,4 +1,4 @@
-#include "libsupermesh_configuration.h"
+#include "libsupermesh_debug.h"
 
 module libsupermesh_unittest_tools
   ! Utility functions for unit testing
