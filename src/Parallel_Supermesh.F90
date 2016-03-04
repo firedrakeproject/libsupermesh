@@ -356,12 +356,12 @@ contains
     real, dimension(:), allocatable :: recv_positions
     real, dimension(:, :), allocatable :: nodes_a, nodes_b
     real, dimension(:, :, :), allocatable :: positions_c
+    type(rtree_type) :: rtree
 #ifdef OVERLAP_COMPUTE_COMMS
     integer(kind = c_int8_t), dimension(:), allocatable :: recv_buffer
 #else
     integer(kind = c_int8_t), dimension(:), pointer :: recv_buffer
     type(buffer), dimension(:), allocatable :: recv_buffers
-    type(rtree_type) :: rtree
 #endif
 #ifdef PROFILE
     real :: t_1
