@@ -52,7 +52,7 @@ if(ENABLE_JUDY)
   find_library(JUDY_LIBRARY NAMES Judy)
   find_path(JUDY_INCLUDE NAMES Judy.h)
   find_package_handle_standard_args(Judy DEFAULT_MSG REQUIRED_VARS JUDY_LIBRARY JUDY_INCLUDE)
-  set(link_libraries ${link_libraries} ${JUDY_LIBRARY})
+  list(APPEND link_libraries ${JUDY_LIBRARY})
   include_directories(${JUDY_INCLUDE})
 else()
   set(JUDY_LIBRARY "")
@@ -239,176 +239,62 @@ set(spatialindex_object_files
 )
 check_function_exists(srand48 HAVE_SRAND48)
 if(NOT HAVE_SRAND48)
-  set(spatialindex_object_files ${spatialindex_object_files}
+  list(APPEND spatialindex_object_files
     ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/rand48.cc${CMAKE_CXX_OUTPUT_EXTENSION})
 endif()
 foreach(spatialindex_object_file ${spatialindex_object_files})
   set_source_files_properties(${spatialindex_object_file} PROPERTIES GENERATED 1)
 endforeach()
-  
-set (CPP_TEST_SOURCE_FILES "")
-set (CPP_TEST_SOURCE_FILES
-  ${PROJECT_SOURCE_DIR}/src/tests/test_main.cpp
-)
 
-
-# Create a library called "supermesh" which includes the source files.
-# The extension is already found. Any number of sources could be listed here.
-FILE(GLOB CPP_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-FILE(GLOB C_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.c)
-FILE(GLOB FORTRAN_SRCFILES ${PROJECT_SOURCE_DIR}/src/*.F90)
-FILE(GLOB FORTRAN_TEST_INTERVAL_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_interval_intersector.F90)
-FILE(GLOB FORTRAN_TEST_TRI_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tri_intersector.F90)
-FILE(GLOB FORTRAN_TEST_TET_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_tet_intersector.F90)
-FILE(GLOB FORTRAN_TEST_ELEMENT_INTERSECTOR_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_element_intersector.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_2d.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_3d.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_1d.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_2D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_2d.F90)
-FILE(GLOB FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_intersection_finder_completeness_3d.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_SAME_ALGO_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_partition_complete_ab_same_algo.F90)
-FILE(GLOB FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES ${PROJECT_SOURCE_DIR}/src/tests/test_parallel_universal_node_numbering.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_COMPLETE_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_complete.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_COMPLETE_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_complete_3d.F90)
-FILE(GLOB FORTRAN_BENCHMARK_SERIAL_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial.F90)
-FILE(GLOB FORTRAN_BENCHMARK_SERIAL_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial_3d.F90)
-FILE(GLOB FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial_same_algo.F90)
-FILE(GLOB FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_serial_same_algo_3d.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_p1_inner_product.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_3D_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_p1_inner_product_3d.F90)
-FILE(GLOB FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES ${PROJECT_SOURCE_DIR}/tests/benchmark_parallel_p2_inner_product.F90)
-
-FILE(GLOB TEST_DATA_FILES ${PROJECT_SOURCE_DIR}/src/tests/data/*)
-
-add_library (supermesh ${FORTRAN_SRCFILES} ${CPP_SRCFILES} ${C_SRCFILES} ${spatialindex_object_files})
+file(GLOB source_files ${PROJECT_SOURCE_DIR}/src/*.F90 ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/src/*.cpp)
+add_library(supermesh ${source_files} ${spatialindex_object_files})
 add_dependencies(supermesh spatialindex)
-  
-set (UNITTESTS
-  test_interval_intersector
-  test_tri_intersector
-  test_tet_intersector
-  test_element_intersector
-  test_intersection_finder_2d
-  test_intersection_finder_3d
-  test_intersection_finder_completeness_1d
-  test_intersection_finder_completeness_2d
-  test_intersection_finder_completeness_3d
-  test_parallel_partition_complete_ab
-  test_parallel_partition_complete_ab_same_algo
-  test_parallel_universal_node_numbering
-)
 
-set (BENCHMARKTESTS
-  benchmark_parallel_complete
-  benchmark_parallel_complete_3d
-  benchmark_serial
-  benchmark_serial_3d
-  benchmark_serial_same_algo
-  benchmark_serial_same_algo_3d
-  benchmark_parallel_p1_inner_product
-  benchmark_parallel_p1_inner_product_3d
-  benchmark_parallel_p2_inner_product
-)
-
-add_executable (test_interval_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERVAL_INTERSECTOR_FILES})
-add_executable (test_tri_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TRI_INTERSECTOR_FILES})
-add_executable (test_tet_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_TET_INTERSECTOR_FILES})
-add_executable (test_element_intersector ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_ELEMENT_INTERSECTOR_FILES})
-add_executable (test_intersection_finder_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_2D_FILES})
-add_executable (test_intersection_finder_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_3D_FILES})
-add_executable (test_intersection_finder_completeness_1d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_1D_FILES})
-add_executable (test_intersection_finder_completeness_2d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_2D_FILES})
-add_executable (test_intersection_finder_completeness_3d ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_INTERSECTION_FINDER_COMPLETENESS_3D_FILES})
-add_executable (test_parallel_partition_complete_ab ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_FILES})
-add_executable (test_parallel_partition_complete_ab_same_algo ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_PARTITION_COMPLETE_AB_SAME_ALGO_FILES})
-add_executable (test_parallel_universal_node_numbering ${CPP_TEST_SOURCE_FILES} ${FORTRAN_TEST_PARALLEL_UNIVERSAL_NODE_NUMBERING_FILES})
-add_executable (benchmark_parallel_complete EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_COMPLETE_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_parallel_complete_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_COMPLETE_3D_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_serial EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_serial_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_3D_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_serial_same_algo EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_serial_same_algo_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_SERIAL_SAME_ALGO_3D_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_parallel_p1_inner_product EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_parallel_p1_inner_product_3d EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P1_INNER_PRODUCT_3D_FILES} ${CPP_TEST_SOURCE_FILES})
-add_executable (benchmark_parallel_p2_inner_product EXCLUDE_FROM_ALL ${FORTRAN_BENCHMARK_PARALLEL_P2_INNER_PRODUCT_FILES} ${CPP_TEST_SOURCE_FILES})
-
-foreach (test ${UNITTESTS})
- SET_PROPERTY(TARGET "${test}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${test}")
- if (test MATCHES parallel)
-   ADD_TEST("${test}" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${test})
- else()
-   ADD_TEST("${test}" ${test})
- endif (test MATCHES parallel)
- SET_TESTS_PROPERTIES("${test}" PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
-endforeach()
-foreach (benchmark ${BENCHMARKTESTS})
- SET_PROPERTY(TARGET "${benchmark}" PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}")
+set(test_main ${PROJECT_SOURCE_DIR}/src/tests/test_main.cpp)
+file(GLOB unittest_files ${PROJECT_SOURCE_DIR}/src/tests/*.F90)
+set(unittests "")
+foreach(unittest_file ${unittest_files})
+  get_filename_component(unittest ${unittest_file} NAME_WE)
+  add_executable(${unittest} ${unittest_file} ${test_main})
+  list(APPEND unittests ${unittest})
+  set_property(TARGET ${unittest} PROPERTY COMPILE_DEFINITIONS "TESTNAME=${unittest}")
+  if(unittest MATCHES parallel)
+    add_test(${unittest} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${unittest})
+  else()
+    add_test(${unittest} ${unittest})
+  endif()
+  set_tests_properties(${unittest} PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
 endforeach()
 
-add_custom_target(benchmark DEPENDS benchmark_parallel_complete benchmark_parallel_complete_3d benchmark_serial benchmark_serial_3d benchmark_serial_same_algo benchmark_serial_same_algo_3d benchmark_parallel_p1_inner_product benchmark_parallel_p1_inner_product_3d benchmark_parallel_p2_inner_product)
-
-add_custom_command(TARGET test_tri_intersector
-  POST_BUILD
-  COMMAND mkdir -p unittests/data
-  COMMAND cp test_tri_intersector unittests/
-  COMMAND mkdir -p data
-  COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" ./
-  COMMAND cp -r "${PROJECT_SOURCE_DIR}/src/tests/data/" unittests/
-  COMMAND cp -r "${PROJECT_SOURCE_DIR}/tests/data/" ./
-  COMMAND unzip -o data/2D_09.zip -d data/
-  COMMAND unzip -o data/2D_05.zip -d data/
-  COMMAND unzip -o data/2D_9.zip -d data/
-  COMMAND unzip -o data/2D_5.zip -d data/
-  COMMAND unzip -o data/3D_9.zip -d data/
-  COMMAND unzip -o data/3D_5.zip -d data/
-  COMMAND unzip -o data/2D_0_01.zip -d data/
-#  COMMAND cd unittests && ./test_tri_intersector && cd ..
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  COMMENT "Copying test data files"
-  VERBATIM
-)
-
-add_custom_target(distclean 
-  COMMAND cd "${PROJECT_BINARY_DIR}"
-  COMMAND make clean
-  COMMAND rm -rf unittests/
-  COMMAND rm -rf data/
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
+file(GLOB benchmark_files ${PROJECT_SOURCE_DIR}/tests/*.F90)
+set(benchmarks "")
+foreach(benchmark_file ${benchmark_files})
+  get_filename_component(benchmark ${benchmark_file} NAME_WE)
+  add_executable(${benchmark} EXCLUDE_FROM_ALL ${benchmark_file} ${test_main})
+  list(APPEND benchmarks ${benchmark})
+  set_property(TARGET ${benchmark} PROPERTY COMPILE_DEFINITIONS "TESTNAME=${benchmark}")
+endforeach()
+add_custom_target(benchmark DEPENDS ${benchmarks})
 
 set(test_link_libraries supermesh ${link_libraries} ${MPI_CXX_LIBRARIES})
 target_link_libraries(supermesh ${link_libraries})
-foreach(test ${UNITTESTS})
+foreach(test ${unittests})
   target_link_libraries(${test} ${test_link_libraries})
 endforeach()
-foreach(benchmark ${BENCHMARKTESTS})
+foreach(benchmark ${benchmarks})
   target_link_libraries(${benchmark} ${test_link_libraries})
 endforeach()
 
-set_target_properties(supermesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
-set_target_properties(supermesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${LAPACK_LINKER_FLAGS}")
-target_link_libraries(supermesh ${MPI_Fortran_LIBRARIES} rt)
-
-if(MPI_Fortran_COMPILE_FLAGS)
-  set_target_properties(supermesh            PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-  foreach (test ${UNITTESTS})
-    set_target_properties(${test} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  endforeach()
-  foreach (benchmark ${BENCHMARKTESTS})
-    set_target_properties(${benchmark} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  endforeach()
-endif()
-
-if(MPI_Fortran_LINK_FLAGS)
-  set_target_properties(supermesh            PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
-  foreach (test ${UNITTESTS})
-    set_target_properties(${test} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  endforeach()
-  foreach (benchmark ${BENCHMARKTESTS})
-    set_target_properties(${benchmark} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-  endforeach()
-endif()
+set_target_properties(supermesh PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}")
+set_target_properties(supermesh PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
+foreach(unittest ${unittests})
+  set_target_properties(${unittest} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  set_target_properties(${unittest} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+endforeach()
+foreach(benchmark ${benchmarks})
+  set_target_properties(${benchmark} PROPERTIES COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+  set_target_properties(${benchmark} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+endforeach()
 
 configure_file (
   "${PROJECT_SOURCE_DIR}/config/libsupermesh.pc.in"
@@ -426,3 +312,11 @@ configure_file (
 install(TARGETS supermesh DESTINATION lib)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/config/libsupermesh.pc DESTINATION lib/pkgconfig)
+
+file(GLOB data_files ${PROJECT_SOURCE_DIR}/src/tests/data/*.ele
+                     ${PROJECT_SOURCE_DIR}/src/tests/data/*.node)
+file(COPY ${data_files} DESTINATION ${PROJECT_BINARY_DIR}/data)
+file(GLOB data_files ${PROJECT_SOURCE_DIR}/src/tests/data/*.tar.bz2)
+foreach(data_file ${data_files})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvjf ${data_file} WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/data)
+endforeach()
