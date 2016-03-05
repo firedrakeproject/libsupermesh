@@ -20,7 +20,7 @@ subroutine benchmark_parallel_complete_3D() bind(c)
 
 #include <mpif.h>
 
-  character(len = 1024) :: buffer, hostname
+  character(len = 1024) :: buffer
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
   integer :: ele_B, ierr, nprocs, rank, test_parallel_ele_B, dp_extent, int_extent
   integer, parameter :: dim = 3, root = 0
@@ -52,12 +52,7 @@ subroutine benchmark_parallel_complete_3D() bind(c)
   rank_character = adjustl(rank_character)
   write(nprocs_character, "(i0)") nprocs
   nprocs_character = adjustl(nprocs_character)
-#ifdef __GNUC__
-  call hostnm(hostname)
-#else
-  hostname = "unknown"
-#endif
-  write(buffer, "(a,a,a,i0,a)") "Running on '", trim(hostname), "' with ", nprocs, " processes"
+  write(buffer, "(a,i0,a)") "Running with ", nprocs, " processes"
   if ((rank == 0) .or. (mod(rank,20) == 0)) print *, trim(buffer)
 
   t0 = mpi_wtime()

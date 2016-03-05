@@ -29,7 +29,7 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   integer :: i, j, k, l, nprocs, rank, ierr, oldsize, &
        & serial_ele_A, serial_ele_B, parallel_ele_A, &
        & parallel_ele_B, meshA_nodes, meshB_nodes, no_of_same_nodes_A, no_of_same_nodes_B
-  real :: t0, t1, area_parallel, serial_read_time
+  real :: t0, area_parallel, serial_read_time
   real, dimension(:), allocatable :: times_parallel, other_times_parallel
   integer, dimension(:), allocatable :: meshA_nodes_parallel, meshB_nodes_parallel
 
@@ -46,7 +46,6 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   integer, dimension(:), allocatable :: ele_ownerA, ele_ownerB, unsA, unsB
   type(halo_type) :: halo
 
-  character(len = 255)  :: hostname
   character(len = 2047) :: buffer
 
   INTEGER, PARAMETER    :: buffsize = 10000000
@@ -60,12 +59,7 @@ subroutine test_parallel_universal_node_numbering() bind(c)
   rank_character = adjustl(rank_character)
   write(nprocs_character, "(i0)") nprocs
   nprocs_character = adjustl(nprocs_character)
-#ifdef __GNUC__
-  call hostnm(hostname)
-#else
-  hostname = "unknown"
-#endif
-  write(buffer, "(a,a,a,i0,a)") "Running on '", trim(hostname), "' with ", nprocs, " processes"
+  write(buffer, "(a,i0,a)") "Running with ", nprocs, " processes"
   if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   ! Serial test

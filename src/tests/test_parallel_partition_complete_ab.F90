@@ -20,7 +20,7 @@ subroutine test_parallel_partition_complete_ab() bind(c)
 
 #include <mpif.h>
 
-  character(len = 1024) :: buffer, hostname
+  character(len = 1024) :: buffer
   character(len = int(log10(real(huge(0)))) + 1) :: rank_character, nprocs_character
   integer :: ele_A, ele_B, ele_C, i, ierr, nprocs, n_trisC, rank, serial_ele_A, serial_ele_B, dp_extent, int_extent, test_parallel_ele_B
   integer, parameter :: dim = 2, root = 0
@@ -38,7 +38,6 @@ subroutine test_parallel_partition_complete_ab() bind(c)
   real, dimension(:), allocatable :: valsB
 
   ! Data
-  integer(kind = c_int8_t), dimension(:), allocatable :: data
   integer, dimension(2) :: data_b_header
   real, dimension(:), allocatable :: data_b_data
 
@@ -49,12 +48,7 @@ subroutine test_parallel_partition_complete_ab() bind(c)
   rank_character = adjustl(rank_character)
   write(nprocs_character, "(i0)") nprocs
   nprocs_character = adjustl(nprocs_character)
-#ifdef __GNUC__
-  call hostnm(hostname)
-#else
-  hostname = "unknown"
-#endif
-  write(buffer, "(a,a,a,i0,a)") "Running on '", trim(hostname), "' with ", nprocs, " processes"
+  write(buffer, "(a,i0,a)") "Running with ", nprocs, " processes"
   if ((rank == 0) .or. (mod(rank,10) == 0)) print *, trim(buffer)
 
   ! Serial test
