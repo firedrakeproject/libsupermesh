@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(libsupermesh C CXX Fortran)
+project(LIBSUPERMESH C CXX Fortran)
 enable_language(Fortran)
 enable_testing()
 set(LIBSUPERMESH_VERSION_MAJOR 0)
@@ -17,15 +17,14 @@ else()
   set(LIBSUPERMESH_VERSION ${LIBSUPERMESH_VERSION_MAJOR}.${LIBSUPERMESH_VERSION_MINOR}.${LIBSUPERMESH_VERSION_SUBMINOR})
 endif()
 
-if(${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR})
+if(${LIBSUPERMESH_SOURCE_DIR} STREQUAL ${LIBSUPERMESH_BINARY_DIR})
   message(SEND_ERROR "In-source builds are not permitted")
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake-modules)
-set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_BINARY_DIR}/include)
-include_directories(${PROJECT_BINARY_DIR}/include_local)
+set(CMAKE_Fortran_MODULE_DIRECTORY ${LIBSUPERMESH_BINARY_DIR}/include)
+include_directories(${LIBSUPERMESH_SOURCE_DIR}/include)
+include_directories(${LIBSUPERMESH_BINARY_DIR}/include)
+include_directories(${LIBSUPERMESH_BINARY_DIR}/include_local)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_cmake_build_type)
 if(lower_cmake_build_type STREQUAL debug)
@@ -141,55 +140,55 @@ message(STATUS "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
 
-include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/include/)
-include_directories(${PROJECT_SOURCE_DIR}/spatialindex-1.8.5/src/)
+include_directories(${LIBSUPERMESH_SOURCE_DIR}/spatialindex-1.8.5/include/)
+include_directories(${LIBSUPERMESH_SOURCE_DIR}/spatialindex-1.8.5/src/)
 add_subdirectory(spatialindex-1.8.5 EXCLUDE_FROM_ALL)
 set(spatialindex_object_files
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/TPRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/MemoryStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/RandomEvictionsBuffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/Buffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/DiskStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/MVRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/SpatialIndexImpl.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Point.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingPoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimeRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Region.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/LineSegment.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimePoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/Tools.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/RTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/BulkLoader.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/TPRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/MemoryStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/RandomEvictionsBuffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/Buffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/DiskStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/MVRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/SpatialIndexImpl.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Point.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingPoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimeRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Region.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/LineSegment.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimePoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/Tools.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/RTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/BulkLoader.cc${CMAKE_CXX_OUTPUT_EXTENSION}
+  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
 )
 check_function_exists(srand48 HAVE_SRAND48)
 if(NOT HAVE_SRAND48)
   list(APPEND spatialindex_object_files
-    ${PROJECT_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/rand48.cc${CMAKE_CXX_OUTPUT_EXTENSION})
+    ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/rand48.cc${CMAKE_CXX_OUTPUT_EXTENSION})
 endif()
 foreach(spatialindex_object_file ${spatialindex_object_files})
   set_source_files_properties(${spatialindex_object_file} PROPERTIES GENERATED 1)
 endforeach()
 
-file(GLOB source_files ${PROJECT_SOURCE_DIR}/src/*.F90 ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB source_files ${LIBSUPERMESH_SOURCE_DIR}/src/*.F90 ${LIBSUPERMESH_SOURCE_DIR}/src/*.c ${LIBSUPERMESH_SOURCE_DIR}/src/*.cpp)
 add_library(supermesh ${source_files} ${spatialindex_object_files})
 add_dependencies(supermesh spatialindex)
 
-set(test_main ${PROJECT_SOURCE_DIR}/src/tests/test_main.cpp)
-file(GLOB unittest_files ${PROJECT_SOURCE_DIR}/src/tests/*.F90)
+set(test_main ${LIBSUPERMESH_SOURCE_DIR}/src/tests/test_main.cpp)
+file(GLOB unittest_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/*.F90)
 set(unittests "")
 foreach(unittest_file ${unittest_files})
   get_filename_component(unittest ${unittest_file} NAME_WE)
@@ -204,7 +203,7 @@ foreach(unittest_file ${unittest_files})
   set_tests_properties(${unittest} PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
 endforeach()
 
-file(GLOB benchmark_files ${PROJECT_SOURCE_DIR}/tests/*.F90)
+file(GLOB benchmark_files ${LIBSUPERMESH_SOURCE_DIR}/tests/*.F90)
 set(benchmarks "")
 foreach(benchmark_file ${benchmark_files})
   get_filename_component(benchmark ${benchmark_file} NAME_WE)
@@ -235,26 +234,30 @@ foreach(benchmark ${benchmarks})
 endforeach()
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/config/libsupermesh.pc.in"
-  "${PROJECT_BINARY_DIR}/config/libsupermesh.pc"
+  "${LIBSUPERMESH_SOURCE_DIR}/config/libsupermesh.pc.in"
+  "${LIBSUPERMESH_BINARY_DIR}/config/libsupermesh.pc"
   )
 configure_file (
-  "${PROJECT_SOURCE_DIR}/include/libsupermesh.h.in"
-  "${PROJECT_BINARY_DIR}/include/libsupermesh.h"
+  "${LIBSUPERMESH_SOURCE_DIR}/include/libsupermesh.h.in"
+  "${LIBSUPERMESH_BINARY_DIR}/include/libsupermesh.h"
   )
 configure_file (
-  "${PROJECT_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
-  "${PROJECT_BINARY_DIR}/include_local/libsupermesh_configuration.h"
+  "${LIBSUPERMESH_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
+  "${LIBSUPERMESH_BINARY_DIR}/include_local/libsupermesh_configuration.h"
   )
+
+include(${LIBSUPERMESH_SOURCE_DIR}/cmake/UseLATEX.cmake)
+set(LATEX_OUTPUT_PATH ${LIBSUPERMESH_BINARY_DIR}/doc)
+add_latex_document(doc/manual.tex INPUTS doc/version.tex CONFIGURE doc/version.tex TARGET_NAME doc FORCE_PDF EXCLUDE_FROM_ALL)# BIBFILES doc/bibliography.bib)
 
 install(TARGETS supermesh DESTINATION lib)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(FILES ${PROJECT_BINARY_DIR}/config/libsupermesh.pc DESTINATION lib/pkgconfig)
+install(DIRECTORY ${LIBSUPERMESH_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${LIBSUPERMESH_BINARY_DIR}/config/libsupermesh.pc DESTINATION lib/pkgconfig)
 
-file(GLOB data_files ${PROJECT_SOURCE_DIR}/src/tests/data/*.ele
-                     ${PROJECT_SOURCE_DIR}/src/tests/data/*.node)
-file(COPY ${data_files} DESTINATION ${PROJECT_BINARY_DIR}/data)
-file(GLOB data_files ${PROJECT_SOURCE_DIR}/src/tests/data/*.tar.bz2)
+file(GLOB data_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/data/*.ele
+                     ${LIBSUPERMESH_SOURCE_DIR}/src/tests/data/*.node)
+file(COPY ${data_files} DESTINATION ${LIBSUPERMESH_BINARY_DIR}/data)
+file(GLOB data_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/data/*.tar.bz2)
 foreach(data_file ${data_files})
-  execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvjf ${data_file} WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/data)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvjf ${data_file} WORKING_DIRECTORY ${LIBSUPERMESH_BINARY_DIR}/data)
 endforeach()
