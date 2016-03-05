@@ -2,7 +2,7 @@
 
 #include "libsupermesh.h"
 
-#define DDEBUG @libsupermesh_DEBUG@
+#define DDEBUG @LIBSUPERMESH_DEBUG@
 #if DDEBUG == 0
 #undef DDEBUG
 #ifndef NDEBUG
@@ -13,17 +13,17 @@
 #endif
 
 #define ENABLE_JUDY @ENABLE_JUDY@
-#if ENABLE_JUDY == 0
+#if ENABLE_JUDY == OFF
 #undef ENABLE_JUDY
 #endif
 
-#ifdef libsupermesh_TIMERS
+#ifdef LIBSUPERMESH_TIMERS
 #define PROFILE 1
 #else
 #undef PROFILE
 #endif
 
-#define OVERLAP_COMPUTE_COMMS @OVERLAP_COMPUTE_COMMS@
-#if OVERLAP_COMPUTE_COMMS == 0
+#define OVERLAP_COMPUTE_COMMS @LIBSUPERMESH_OVERLAP_COMPUTE_COMMS@
+#if OVERLAP_COMPUTE_COMMS == OFF
 #undef OVERLAP_COMPUTE_COMMS
 #endif
