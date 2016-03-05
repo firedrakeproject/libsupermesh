@@ -79,7 +79,7 @@ module libsupermesh_intersection_finder
     end subroutine libsupermesh_deallocate_rtree
   end interface cdeallocate_rtree
 
-  public :: intersections, deallocate, connected, intersection_finder, &
+  public :: intersections, deallocate, intersection_finder, &
     & advancing_front_intersection_finder, rtree_intersection_finder, &
     & quadtree_intersection_finder, octtree_intersection_finder, &
     & tree_intersection_finder, sort_intersection_finder, &
@@ -178,67 +178,6 @@ contains
     end do
 
   end function bbox
-
-  function connected(positions, enlist, eelist)
-    ! dim x nnodes
-    real, dimension(:, :), intent(in) :: positions
-    ! loc x nelements
-    integer, dimension(:, :), intent(in) :: enlist
-    type(eelist_type), target, optional, intent(in) :: eelist
-
-    logical :: connected
-
-    integer :: dim, loc, nelements, nnodes
-
-    integer :: ele, i, neigh, nnext, nseen
-    integer, dimension(:), allocatable :: next
-    logical, dimension(:), allocatable :: seen
-    type(eelist_type), pointer :: leelist
-
-    dim = size(positions, 1)
-    nnodes = size(positions, 2)
-    loc = size(enlist, 1)
-    nelements = size(enlist, 2)
-    if(nelements == 0) then
-      connected = .true.
-      return
-    end if
-
-    if(present(eelist)) then
-      leelist => eelist
-    else
-      allocate(leelist)
-      call mesh_eelist(nnodes, enlist, sloc(dim, loc), leelist)
-    end if
-    allocate(next(nelements), seen(nelements))
-    next(1) = 1
-    nnext = 1
-    seen(1) = .true.
-    seen(2:) = .false.
-    nseen = 1
-    do while(nnext > 0)
-      ele = next(nnext)
-      nnext = nnext - 1
-      do i = 1, leelist%n(ele)
-        neigh = leelist%v(i, ele)
-        if(.not. seen(neigh)) then
-          nnext = nnext + 1
-          next(nnext) = neigh
-          seen(neigh) = .true.
-          nseen = nseen + 1
-        end if
-      end do
-    end do
-
-    if(.not. present(eelist)) then
-      call deallocate(leelist)
-      deallocate(leelist)
-    end if
-    deallocate(next, seen)
-
-    connected = (nseen == nelements)
-
-  end function connected
 
   subroutine intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a

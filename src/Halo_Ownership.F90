@@ -2,8 +2,8 @@
 
 module libsupermesh_halo_ownership
 
-  use libsupermesh_debug
-  use libsupermesh_read_halos
+  use libsupermesh_debug, only : abort_pinpoint
+  use libsupermesh_read_halos, only : halo_type
 
   implicit none
 
@@ -11,7 +11,7 @@ module libsupermesh_halo_ownership
 
   private
 
-  public :: element_ownership, node_ownership, universal_node_numbering
+  public :: element_ownership, node_ownership
 
 contains
 
@@ -61,67 +61,5 @@ contains
     end do
 
   end subroutine node_ownership
-
-  subroutine universal_node_numbering(halo, uns)
-    ! level 2 halo
-    type(halo_type), intent(in) :: halo
-    ! nnodes
-    integer, dimension(:), intent(out) :: uns
-
-    integer :: i, ierr, un_offset
-    integer, dimension(:), allocatable :: recv_types, send_types, requests, statuses
-
-    call MPI_Scan(halo%npnodes, un_offset, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
-    assert(ierr == MPI_SUCCESS)
-    un_offset = un_offset - halo%npnodes
-
-    do i = 1, halo%npnodes
-      uns(i) = i + un_offset
-    end do
-
-    allocate(send_types(halo%nprocs), recv_types(halo%nprocs), requests(2 * halo%nprocs))
-    send_types = MPI_DATATYPE_NULL
-    recv_types = MPI_DATATYPE_NULL
-    requests = MPI_REQUEST_NULL
-    do i = 1, halo%nprocs      
-      if(size(halo%send(i)%v) > 0) then
-        call MPI_Type_create_indexed_block(size(halo%send(i)%v), 1, halo%send(i)%v - 1, MPI_INTEGER, send_types(i), ierr)
-        assert(ierr == MPI_SUCCESS)
-        call MPI_Type_commit(send_types(i), ierr)
-        assert(ierr == MPI_SUCCESS)
-
-        call MPI_Isend(uns, 1, send_types(i), i - 1, halo%process, MPI_COMM_WORLD, requests(i), ierr)
-        assert(ierr == MPI_SUCCESS)
-      end if
-
-      if(size(halo%recv(i)%v) > 0) then
-        call MPI_Type_create_indexed_block(size(halo%recv(i)%v), 1, halo%recv(i)%v - 1, MPI_INTEGER, recv_types(i), ierr)
-        assert(ierr == MPI_SUCCESS)
-        call MPI_Type_commit(recv_types(i), ierr)
-        assert(ierr == MPI_SUCCESS)
-
-        call MPI_Irecv(uns, 1, recv_types(i), i - 1, i - 1, MPI_COMM_WORLD, requests(halo%nprocs + i), ierr)
-        assert(ierr == MPI_SUCCESS)
-      end if
-    end do
-
-    allocate(statuses(MPI_STATUS_SIZE * size(requests)))
-    call MPI_Waitall(size(requests), requests, statuses, ierr)
-    deallocate(requests, statuses)
-    assert(ierr == MPI_SUCCESS)
-
-    do i = 1, halo%nprocs
-      if(send_types(i) /= MPI_DATATYPE_NULL) then
-        call MPI_Type_free(send_types(i), ierr)
-        assert(ierr == MPI_SUCCESS)
-      end if
-      if(recv_types(i) /= MPI_DATATYPE_NULL) then
-        call MPI_Type_free(recv_types(i), ierr)
-        assert(ierr == MPI_SUCCESS)
-      end if
-    end do
-    deallocate(send_types, recv_types)
-
-  end subroutine universal_node_numbering
 
 end module libsupermesh_halo_ownership
