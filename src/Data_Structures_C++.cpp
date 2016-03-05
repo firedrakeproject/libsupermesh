@@ -28,7 +28,7 @@ class integer_set {
       return;
     }
     
-    inline void insert(const int& v, int& changed) {
+    inline void insert(const int &v, int &changed) {
       if(this->v_array) {
         free(this->v_array);
         this->v_array = NULL;
@@ -39,13 +39,13 @@ class integer_set {
       return;
     }
     
-    inline void length(int& l) const {
+    inline void length(int &l) const {
       l = this->v_set.size();
       
       return;
     };
     
-    inline void fetch(const int& idx, int& v) {
+    inline void fetch(const int &idx, int &v) {
       if(!this->v_array) {
         this->v_array = (int*)malloc(this->v_set.size() * sizeof(int));
         if(!this->v_array) {
@@ -63,7 +63,7 @@ class integer_set {
       return;
     };
     
-    inline void remove(const int& v, int& status) {
+    inline void remove(const int &v, int &status) {
       if(this->v_array) {
         free(this->v_array);
         this->v_array = NULL;
@@ -74,7 +74,7 @@ class integer_set {
       return;
     }
     
-    inline void has_value(const int& v, int& present) const {
+    inline void has_value(const int &v, int &present) const {
       set<int>::const_iterator iter = this->v_set.find(v);
       present = (iter == this->v_set.end()) ? 0 : 1;
       
@@ -100,7 +100,7 @@ class integer_hash_table {
       }
     }
     
-    inline void insert(const int& k, const int& v) {
+    inline void insert(const int &k, const int &v) {
       if(this->k_array) {
         free(this->k_array);
         this->k_array = NULL;
@@ -110,19 +110,19 @@ class integer_hash_table {
       return;
     }
     
-    inline void length(int& l) const {
+    inline void length(int &l) const {
       l = this->v_map.size();
       
       return;
     }
     
-    inline void fetch(const int& k, int& v) {
+    inline void fetch(const int &k, int &v) {
       v = this->v_map[k];
       
       return;
     }
     
-    inline void remove(const int& k, int& status) {
+    inline void remove(const int &k, int &status) {
       if(this->k_array) {
         free(this->k_array);
         this->k_array = NULL;
@@ -133,14 +133,14 @@ class integer_hash_table {
       return;
     }
     
-    inline void has_key(const int& k, int& present) const {
+    inline void has_key(const int &k, int &present) const {
       map<int, int>::const_iterator iter = this->v_map.find(k);
       present = (iter == this->v_map.end()) ? 0 : 1;
       
       return;
     }
     
-    inline void fetch_pair(const int& idx, int& k, int& v) {
+    inline void fetch_pair(const int &idx, int &k, int &v) {
       if(!this->k_array) {
         this->k_array = (int*)malloc(this->v_map.size() * sizeof(int));
         if(!this->k_array) {
