@@ -12,7 +12,7 @@
 #undef NDEBUG
 #endif
 
-#define ENABLE_JUDY @ENABLE_JUDY@
+#define ENABLE_JUDY @LIBSUPERMESH_ENABLE_JUDY@
 #if ENABLE_JUDY == OFF
 #undef ENABLE_JUDY
 #endif

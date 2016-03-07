@@ -12,7 +12,7 @@ module libsupermesh
   
   integer, parameter :: version_major = LIBSUPERMESH_VERSION_MAJOR
   integer, parameter :: version_minor = LIBSUPERMESH_VERSION_MINOR
-  integer, parameter :: version_subminor = LIBSUPERMESH_VERSION_SUBMINOR
+  integer, parameter :: version_patch = LIBSUPERMESH_VERSION_PATCH
 #ifdef LIBSUPERMESH_VERSION_RELEASE
   logical, parameter :: version_release = .true.
 #else

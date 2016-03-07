@@ -44,12 +44,8 @@ contains
   subroutine intersect_tets_real(tet_a, tet_b, tets_c, n_tets_c)
     real, dimension(3, 4), intent(in) :: tet_a
     real, dimension(3, 4), intent(in) :: tet_b
-#ifdef __GFORTRAN__
-#if __GNUC__ == 4 && __GNUC_MINOR__ == 9
+#if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
     real, dimension(:, :, :), intent(inout) :: tets_c
-#else
-    real, dimension(3, 4, TET_BUF_SIZE), intent(inout) :: tets_c
-#endif
 #else
     real, dimension(3, 4, TET_BUF_SIZE), intent(inout) :: tets_c
 #endif
