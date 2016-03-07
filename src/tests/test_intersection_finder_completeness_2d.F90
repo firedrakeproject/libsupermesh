@@ -13,11 +13,11 @@ subroutine test_intersection_finder_completeness_2d() bind(c)
 
   implicit none
 
-  integer :: ele_a, ele_b, ele_c, i, n_trisC
+  integer :: ele_a, ele_b, ele_c, i, n_tris_c
   real :: area_b, area_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   logical :: fail
-  real, dimension(2, 3, tri_buf_size) ::  trisC
+  real, dimension(2, 3, tri_buf_size) ::  tris_c
   real, dimension(:, :), allocatable :: positions_a, positions_b
   type(intersections), dimension(:), allocatable :: map_ba
 
@@ -67,9 +67,9 @@ contains
       area_c = 0.0D0
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
-        call intersect_tris(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), trisC, n_trisC)
-        do ele_c = 1, n_trisC
-          area_c = area_c + triangle_area(trisC(:, :, ele_c))
+        call intersect_tris(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), tris_c, n_tris_c)
+        do ele_c = 1, n_tris_c
+          area_c = area_c + triangle_area(tris_c(:, :, ele_c))
         end do
       end do
 

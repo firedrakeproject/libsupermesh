@@ -13,15 +13,15 @@ subroutine test_tet_intersector() bind(c)
   
   implicit none
 
-  integer :: ele_a, ele_b, ele_c, i, n_tetsC
+  integer :: ele_a, ele_b, ele_c, i, n_tets_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   real :: volume_c
-  real, dimension(3, 4) :: tetA_real
-  real, dimension(3, 4, tet_buf_size) :: tetsC_real
+  real, dimension(3, 4) :: tet_a_real
+  real, dimension(3, 4, tet_buf_size) :: tets_c_real
   real, dimension(:, :), allocatable :: positions_a, positions_b 
   type(intersections), dimension(:), allocatable :: map_ab
-  type(tet_type) :: tetA, tetB
-  type(tet_type), dimension(tet_buf_size) :: tetsC, work
+  type(tet_type) :: tet_a, tet_b
+  type(tet_type), dimension(tet_buf_size) :: tets_c, work
 
   integer, parameter :: dim = 3
   
@@ -35,13 +35,13 @@ subroutine test_tet_intersector() bind(c)
 
   volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    tetA%v = positions_a(:, enlist_a(:, ele_a))
+    tet_a%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      tetB%v = positions_b(:, enlist_b(:, ele_b))
-      call intersect_tets(tetA, tetB, tetsC, n_tetsC)
-      do ele_c = 1, n_tetsC
-        volume_c = volume_c + tetrahedron_volume(tetsC(ele_c)%v)
+      tet_b%v = positions_b(:, enlist_b(:, ele_b))
+      call intersect_tets(tet_a, tet_b, tets_c, n_tets_c)
+      do ele_c = 1, n_tets_c
+        volume_c = volume_c + tetrahedron_volume(tets_c(ele_c)%v)
       end do
     end do    
   end do
@@ -49,12 +49,12 @@ subroutine test_tet_intersector() bind(c)
 
   volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    tetA_real = positions_a(:, enlist_a(:, ele_a))
+    tet_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_tets(tetA_real, positions_b(:, enlist_b(:, ele_b)), tetsC_real, n_tetsC)
-      do ele_c = 1, n_tetsC
-        volume_c = volume_c + tetrahedron_volume(tetsC_real(:, :, ele_c))
+      call intersect_tets(tet_a_real, positions_b(:, enlist_b(:, ele_b)), tets_c_real, n_tets_c)
+      do ele_c = 1, n_tets_c
+        volume_c = volume_c + tetrahedron_volume(tets_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -62,13 +62,13 @@ subroutine test_tet_intersector() bind(c)
 
   volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    tetA%v = positions_a(:, enlist_a(:, ele_a))
+    tet_a%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      tetB%v = positions_b(:, enlist_b(:, ele_b))
-      call intersect_tets(tetA, get_planes(tetB), tetsC, n_tetsC, work = work)
-      do ele_c = 1, n_tetsC
-        volume_c = volume_c + tetrahedron_volume(tetsC(ele_c)%v)
+      tet_b%v = positions_b(:, enlist_b(:, ele_b))
+      call intersect_tets(tet_a, get_planes(tet_b), tets_c, n_tets_c, work = work)
+      do ele_c = 1, n_tets_c
+        volume_c = volume_c + tetrahedron_volume(tets_c(ele_c)%v)
       end do
     end do    
   end do
@@ -76,12 +76,12 @@ subroutine test_tet_intersector() bind(c)
   
   volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    tetA_real = positions_a(:, enlist_a(:, ele_a))
+    tet_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_simplices(tetA_real, positions_b(:, enlist_b(:, ele_b)), tetsC_real, n_tetsC)
-      do ele_c = 1, n_tetsC
-        volume_c = volume_c + tetrahedron_volume(tetsC_real(:, :, ele_c))
+      call intersect_simplices(tet_a_real, positions_b(:, enlist_b(:, ele_b)), tets_c_real, n_tets_c)
+      do ele_c = 1, n_tets_c
+        volume_c = volume_c + tetrahedron_volume(tets_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -89,12 +89,12 @@ subroutine test_tet_intersector() bind(c)
   
   volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    tetA_real = positions_a(:, enlist_a(:, ele_a))
+    tet_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_elements(tetA_real, positions_b(:, enlist_b(:, ele_b)), tetsC_real, n_tetsC)
-      do ele_c = 1, n_tetsC
-        volume_c = volume_c + tetrahedron_volume(tetsC_real(:, :, ele_c))
+      call intersect_elements(tet_a_real, positions_b(:, enlist_b(:, ele_b)), tets_c_real, n_tets_c)
+      do ele_c = 1, n_tets_c
+        volume_c = volume_c + tetrahedron_volume(tets_c_real(:, :, ele_c))
       end do
     end do    
   end do

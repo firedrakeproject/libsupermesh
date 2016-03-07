@@ -12,11 +12,11 @@ subroutine test_interval_intersector() bind(c)
   
   implicit none
 
-  integer :: ele_a, ele_b, ele_c, i, n_intervalsC
+  integer :: ele_a, ele_b, ele_c, i, n_intervals_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   real :: size_c
   real, dimension(1, 2) :: intervalA
-  real, dimension(1, 2, interval_buf_size) :: intervalsC_real
+  real, dimension(1, 2, interval_buf_size) :: intervals_c_real
   real, dimension(:, :), allocatable :: positions_a, positions_b  
   type(intersections), dimension(:), allocatable :: map_ab
 
@@ -35,9 +35,9 @@ subroutine test_interval_intersector() bind(c)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_intervals(intervalA(1, :), positions_b(1, enlist_b(:, ele_b)), intervalsC_real(1, :, 1), n_intervalsC)
-      do ele_c = 1, n_intervalsC
-        size_c = size_c + interval_size(intervalsC_real(:, :, ele_c))
+      call intersect_intervals(intervalA(1, :), positions_b(1, enlist_b(:, ele_b)), intervals_c_real(1, :, 1), n_intervals_c)
+      do ele_c = 1, n_intervals_c
+        size_c = size_c + interval_size(intervals_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -48,9 +48,9 @@ subroutine test_interval_intersector() bind(c)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_intervals(intervalA(1, :), positions_b(1, enlist_b(:, ele_b)), intervalsC_real(1, :, :), n_intervalsC)
-      do ele_c = 1, n_intervalsC
-        size_c = size_c + interval_size(intervalsC_real(:, :, ele_c))
+      call intersect_intervals(intervalA(1, :), positions_b(1, enlist_b(:, ele_b)), intervals_c_real(1, :, :), n_intervals_c)
+      do ele_c = 1, n_intervals_c
+        size_c = size_c + interval_size(intervals_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -61,9 +61,9 @@ subroutine test_interval_intersector() bind(c)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_intervals(intervalA, positions_b(:, enlist_b(:, ele_b)), intervalsC_real, n_intervalsC)
-      do ele_c = 1, n_intervalsC
-        size_c = size_c + interval_size(intervalsC_real(:, :, ele_c))
+      call intersect_intervals(intervalA, positions_b(:, enlist_b(:, ele_b)), intervals_c_real, n_intervals_c)
+      do ele_c = 1, n_intervals_c
+        size_c = size_c + interval_size(intervals_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -74,9 +74,9 @@ subroutine test_interval_intersector() bind(c)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_simplices(intervalA, positions_b(:, enlist_b(:, ele_b)), intervalsC_real, n_intervalsC)
-      do ele_c = 1, n_intervalsC
-        size_c = size_c + interval_size(intervalsC_real(:, :, ele_c))
+      call intersect_simplices(intervalA, positions_b(:, enlist_b(:, ele_b)), intervals_c_real, n_intervals_c)
+      do ele_c = 1, n_intervals_c
+        size_c = size_c + interval_size(intervals_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -87,9 +87,9 @@ subroutine test_interval_intersector() bind(c)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_elements(intervalA, positions_b(:, enlist_b(:, ele_b)), intervalsC_real, n_intervalsC)
-      do ele_c = 1, n_intervalsC
-        size_c = size_c + interval_size(intervalsC_real(:, :, ele_c))
+      call intersect_elements(intervalA, positions_b(:, enlist_b(:, ele_b)), intervals_c_real, n_intervals_c)
+      do ele_c = 1, n_intervals_c
+        size_c = size_c + interval_size(intervals_c_real(:, :, ele_c))
       end do
     end do    
   end do

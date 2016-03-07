@@ -13,16 +13,16 @@ subroutine test_tri_intersector() bind(c)
   
   implicit none
 
-  integer :: ele_a, ele_b, ele_c, i, n_trisC
+  integer :: ele_a, ele_b, ele_c, i, n_tris_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   real :: area_c
-  real, dimension(2, 3) :: triA_real
-  real, dimension(2, 3, tri_buf_size) :: trisC_real
+  real, dimension(2, 3) :: tri_a_real
+  real, dimension(2, 3, tri_buf_size) :: tris_c_real
   real, dimension(2, tri_buf_size + 2, 2) :: work
   real, dimension(:, :), allocatable :: positions_a, positions_b  
   type(intersections), dimension(:), allocatable :: map_ab
-  type(tri_type) :: triA, triB
-  type(tri_type), dimension(tri_buf_size) :: trisC
+  type(tri_type) :: tri_a, tri_b
+  type(tri_type), dimension(tri_buf_size) :: tris_c
 
   integer, parameter :: dim = 2
   
@@ -36,13 +36,13 @@ subroutine test_tri_intersector() bind(c)
 
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    triA%v = positions_a(:, enlist_a(:, ele_a))
+    tri_a%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      triB%v = positions_b(:, enlist_b(:, ele_b))
-      call intersect_tris(triA, triB, trisC, n_trisC)
-      do ele_c = 1, n_trisC
-        area_c = area_c + triangle_area(trisC(ele_c)%v)
+      tri_b%v = positions_b(:, enlist_b(:, ele_b))
+      call intersect_tris(tri_a, tri_b, tris_c, n_tris_c)
+      do ele_c = 1, n_tris_c
+        area_c = area_c + triangle_area(tris_c(ele_c)%v)
       end do
     end do    
   end do
@@ -50,12 +50,12 @@ subroutine test_tri_intersector() bind(c)
 
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    triA_real = positions_a(:, enlist_a(:, ele_a))
+    tri_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_tris(triA_real, positions_b(:, enlist_b(:, ele_b)), trisC_real, n_trisC)
-      do ele_c = 1, n_trisC
-        area_c = area_c + triangle_area(trisC_real(:, :, ele_c))
+      call intersect_tris(tri_a_real, positions_b(:, enlist_b(:, ele_b)), tris_c_real, n_tris_c)
+      do ele_c = 1, n_tris_c
+        area_c = area_c + triangle_area(tris_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -63,13 +63,13 @@ subroutine test_tri_intersector() bind(c)
 
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    triA%v = positions_a(:, enlist_a(:, ele_a))
+    tri_a%v = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      triB%v = positions_b(:, enlist_b(:, ele_b))
-      call intersect_polys(triA, get_lines(triB), trisC, n_trisC, work = work)
-      do ele_c = 1, n_trisC
-        area_c = area_c + triangle_area(trisC(ele_c)%v)
+      tri_b%v = positions_b(:, enlist_b(:, ele_b))
+      call intersect_polys(tri_a, get_lines(tri_b), tris_c, n_tris_c, work = work)
+      do ele_c = 1, n_tris_c
+        area_c = area_c + triangle_area(tris_c(ele_c)%v)
       end do
     end do    
   end do
@@ -77,12 +77,12 @@ subroutine test_tri_intersector() bind(c)
 
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    triA_real = positions_a(:, enlist_a(:, ele_a))
+    tri_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_polys(triA_real, get_lines(positions_b(:, enlist_b(:, ele_b))), trisC, n_trisC, work = work)
-      do ele_c = 1, n_trisC
-        area_c = area_c + triangle_area(trisC(ele_c)%v)
+      call intersect_polys(tri_a_real, get_lines(positions_b(:, enlist_b(:, ele_b))), tris_c, n_tris_c, work = work)
+      do ele_c = 1, n_tris_c
+        area_c = area_c + triangle_area(tris_c(ele_c)%v)
       end do
     end do    
   end do
@@ -90,12 +90,12 @@ subroutine test_tri_intersector() bind(c)
 
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    triA_real = positions_a(:, enlist_a(:, ele_a))
+    tri_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_polys(triA_real, positions_b(:, enlist_b(:, ele_b)), trisC, n_trisC, work = work)
-      do ele_c = 1, n_trisC
-        area_c = area_c + triangle_area(trisC(ele_c)%v)
+      call intersect_polys(tri_a_real, positions_b(:, enlist_b(:, ele_b)), tris_c, n_tris_c, work = work)
+      do ele_c = 1, n_tris_c
+        area_c = area_c + triangle_area(tris_c(ele_c)%v)
       end do
     end do    
   end do
@@ -103,12 +103,12 @@ subroutine test_tri_intersector() bind(c)
   
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    triA_real = positions_a(:, enlist_a(:, ele_a))
+    tri_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_simplices(triA_real, positions_b(:, enlist_b(:, ele_b)), trisC_real, n_trisC)
-      do ele_c = 1, n_trisC
-        area_c = area_c + triangle_area(trisC_real(:, :, ele_c))
+      call intersect_simplices(tri_a_real, positions_b(:, enlist_b(:, ele_b)), tris_c_real, n_tris_c)
+      do ele_c = 1, n_tris_c
+        area_c = area_c + triangle_area(tris_c_real(:, :, ele_c))
       end do
     end do    
   end do
@@ -116,12 +116,12 @@ subroutine test_tri_intersector() bind(c)
   
   area_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)
-    triA_real = positions_a(:, enlist_a(:, ele_a))
+    tri_a_real = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
-      call intersect_elements(triA_real, positions_b(:, enlist_b(:, ele_b)), trisC_real, n_trisC)
-      do ele_c = 1, n_trisC
-        area_c = area_c + triangle_area(trisC_real(:, :, ele_c))
+      call intersect_elements(tri_a_real, positions_b(:, enlist_b(:, ele_b)), tris_c_real, n_tris_c)
+      do ele_c = 1, n_tris_c
+        area_c = area_c + triangle_area(tris_c_real(:, :, ele_c))
       end do
     end do    
   end do

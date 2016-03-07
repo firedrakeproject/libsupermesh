@@ -13,11 +13,11 @@ subroutine test_intersection_finder_completeness_3d() bind(c)
 
   implicit none
 
-  integer :: ele_a, ele_b, ele_c, i, n_tetsC
+  integer :: ele_a, ele_b, ele_c, i, n_tets_c
   real :: volume_b, volume_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   logical :: fail
-  real, dimension(3, 4, tet_buf_size) ::  tetsC
+  real, dimension(3, 4, tet_buf_size) ::  tets_c
   real, dimension(:, :), allocatable :: positions_a, positions_b
   type(intersections), dimension(:), allocatable :: map_ba
 
@@ -67,9 +67,9 @@ contains
       volume_c = 0.0D0
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
-        call intersect_tets(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), tetsC, n_tetsC)
-        do ele_c = 1, n_tetsC
-          volume_c = volume_c + tetrahedron_volume(tetsC(:, :, ele_c))
+        call intersect_tets(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), tets_c, n_tets_c)
+        do ele_c = 1, n_tets_c
+          volume_c = volume_c + tetrahedron_volume(tets_c(:, :, ele_c))
         end do
       end do
 

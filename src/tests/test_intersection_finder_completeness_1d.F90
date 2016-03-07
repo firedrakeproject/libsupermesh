@@ -12,11 +12,11 @@ subroutine test_intersection_finder_completeness_1d() bind(c)
 
   implicit none
 
-  integer :: ele_a, ele_b, ele_c, i, n_intervalsC
+  integer :: ele_a, ele_b, ele_c, i, n_intervals_c
   real :: size_b, size_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   logical :: fail
-  real, dimension(1, 2, interval_buf_size) :: intervalsC
+  real, dimension(1, 2, interval_buf_size) :: intervals_c
   real, dimension(:, :), allocatable :: positions_a, positions_b
   type(intersections), dimension(:), allocatable :: map_ba
 
@@ -67,9 +67,9 @@ contains
       size_c = 0.0D0
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
-        call intersect_intervals(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), intervalsC, n_intervalsC)
-        do ele_c = 1, n_intervalsC
-          size_c = size_c + interval_size(intervalsC(:, :, ele_c))
+        call intersect_intervals(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), intervals_c, n_intervals_c)
+        do ele_c = 1, n_intervals_c
+          size_c = size_c + interval_size(intervals_c(:, :, ele_c))
         end do
       end do
 
