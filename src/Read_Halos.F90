@@ -1,10 +1,28 @@
+! The following code is derived from femtools/Halos_Registration.F90 in Fluidity
+! git revision 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25)
+ 
+! Fluidity copyright information (note that AUTHORS mentioned in the following
+! has been renamed to fluidity_AUTHORS):
+
+!   Copyright (C) 2006 Imperial College London and others.
+!   
+!   Please see the AUTHORS file in the main source directory for a full list
+!   of copyright holders.
+!
+!   Prof. C Pain
+!   Applied Modelling and Computation Group
+!   Department of Earth Science and Engineering
+!   Imperial College London
+!
+!   amcgsoftware@imperial.ac.uk
+
 #include "libsupermesh_debug.h"
 
 module libsupermesh_read_halos
 
-  use iso_c_binding
+  use iso_c_binding, only : c_int, c_ptr
 
-  use libsupermesh_debug
+  use libsupermesh_debug, only : abort_pinpoint
 
   implicit none
 
@@ -15,40 +33,52 @@ module libsupermesh_read_halos
   public :: int_array, halo_type, read_halo, deallocate
 
   interface
-    subroutine halo_reader_reset() bind(c, name = "libsupermesh_halo_reader_reset")
+    subroutine cread_halo(data, basename, basename_len, process, nprocs) bind(c, name = "libsupermesh_read_halo")
+      use iso_c_binding, only : c_char, c_int, c_ptr
       implicit none
-    end subroutine halo_reader_reset
+      integer(kind = c_int) :: basename_len
+      type(c_ptr) :: data
+      character(kind = c_char) :: basename(basename_len)
+      integer(kind = c_int) :: process
+      integer(kind = c_int) :: nprocs
+    end subroutine cread_halo
 
-    function halo_reader_set_input(filename, filename_len, process, nprocs) bind(c, name = "libsupermesh_halo_reader_set_input") result(errorCount)
-      use iso_c_binding, only : c_char, c_int
+    subroutine chalo_sizes(data, level, nprocs, nsends, nreceives) bind(c, name = "libsupermesh_halo_sizes")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      integer(kind = c_int) :: filename_len, process, nprocs
-      character(kind = c_char) :: filename(filename_len)
-      integer(kind = c_int) :: errorCount
-    end function halo_reader_set_input
+      type(c_ptr) :: data
+      integer(kind = c_int) :: level
+      integer(kind = c_int) :: nprocs
+      integer(kind = c_int), dimension(nprocs) :: nsends
+      integer(kind = c_int), dimension(nprocs) :: nreceives
+    end subroutine chalo_sizes
 
-    subroutine halo_reader_query_output(level, nprocs, nsends, nreceives) bind(c, name = "libsupermesh_halo_reader_query_output")
-      use iso_c_binding, only : c_int
+    subroutine chalo_data(data, level, nprocs, nsends, nreceives, npnodes, send, recv) bind(c, name = "libsupermesh_halo_data")
+      use iso_c_binding, only : c_int, c_ptr
       implicit none
-      integer(kind = c_int) :: level, nprocs
-      integer(kind = c_int), dimension(nprocs) :: nsends, nreceives
-    end subroutine halo_reader_query_output
-
-    subroutine halo_reader_get_output(level, nprocs, nsends, nreceives, npnodes, send, recv) bind(c, name = "libsupermesh_halo_reader_get_output")
-      use iso_c_binding, only : c_int
-      implicit none
-      integer(kind = c_int) :: level, nprocs, npnodes
-      integer(kind = c_int), dimension(nprocs) :: nsends, nreceives
+      type(c_ptr) :: data
+      integer(kind = c_int) :: level
+      integer(kind = c_int) :: nprocs
+      integer(kind = c_int), dimension(nprocs) :: nsends
+      integer(kind = c_int), dimension(nprocs) :: nreceives
+      integer(kind = c_int) :: npnodes
       integer(kind = c_int), dimension(sum(nsends)) :: send      
       integer(kind = c_int), dimension(sum(nreceives)) :: recv
-    end subroutine halo_reader_get_output
+    end subroutine chalo_data
+    
+    subroutine cdeallocate_halo(data) bind(c, name = "libsupermesh_deallocate_halo")
+      use iso_c_binding, only : c_ptr
+      implicit none
+      type(c_ptr) :: data
+    end subroutine cdeallocate_halo
   end interface
 
   type int_array
     integer, dimension(:), pointer :: v
-  end type
+  end type int_array
 
   type halo_type
+    integer :: comm
     integer :: level
     integer :: process
     integer :: nprocs
@@ -63,27 +93,26 @@ module libsupermesh_read_halos
 
 contains
 
-  subroutine read_halo(filename, halo, level)
-    character(len = *), intent(in) :: filename
+  subroutine read_halo(basename, halo, level, comm)
+    character(len = *), intent(in) :: basename
     type(halo_type), intent(out) :: halo
     integer, optional, intent(in) :: level
+    integer, optional, intent(in) :: comm
 
-    integer(kind = c_int) :: errorCount
-    integer(kind = c_int), dimension(:), allocatable :: nsends, nreceives, send, recv
+    integer(kind = c_int), dimension(:), allocatable :: nsends, nreceives, &
+      & send, recv
     integer :: i, ierr, index
+    type(c_ptr) :: data
+    
+    if(present(comm)) then
+      halo%comm = comm
+    else
+      halo%comm = MPI_COMM_WORLD
+    end if
 
-    call MPI_Comm_rank(MPI_COMM_WORLD, halo%process, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to determine process number")
-    end if
-    call MPI_Comm_size(MPI_COMM_WORLD, halo%nprocs, ierr)
-    if(ierr /= MPI_SUCCESS) then
-      libsupermesh_abort("Unable to determine number of processes")
-    end if
-    errorCount = halo_reader_set_input(trim(filename), len_trim(filename), halo%process, halo%nprocs)
-    if(errorCount /= 0) then
-      libsupermesh_abort("Unable to read halo file '" // trim(filename) // "'")
-    end if
+    call MPI_Comm_rank(halo%comm, halo%process, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Comm_size(halo%comm, halo%nprocs, ierr);  assert(ierr == MPI_SUCCESS)         
+    call cread_halo(data, basename, len_trim(basename), halo%process, halo%nprocs)
 
     if(present(level)) then
       halo%level = level
@@ -91,14 +120,14 @@ contains
       halo%level = 2
     end if
     allocate(nsends(halo%nprocs), nreceives(halo%nprocs))
-    call halo_reader_query_output(halo%level, halo%nprocs, nsends, nreceives)
+    call chalo_sizes(data, halo%level, halo%nprocs, nsends, nreceives)
+    
     allocate(halo%send(halo%nprocs), halo%recv(halo%nprocs))
     do i = 1, halo%nprocs
       allocate(halo%send(i)%v(nsends(i)), halo%recv(i)%v(nreceives(i)))
     end do
-
     allocate(send(sum(nsends)), recv(sum(nreceives)))
-    call halo_reader_get_output(halo%level, halo%nprocs, nsends, nreceives, halo%npnodes, send, recv)
+    call chalo_data(data, halo%level, halo%nprocs, nsends, nreceives, halo%npnodes, send, recv)
     index = 1
     do i = 1, halo%nprocs
       halo%send(i)%v = send(index:index + nsends(i) - 1)
@@ -108,9 +137,10 @@ contains
     do i = 1, halo%nprocs
       halo%recv(i)%v = recv(index:index + nreceives(i) - 1)
       index = index + nreceives(i)
-    end do
+    end do    
     deallocate(nsends, nreceives, send, recv)
-    call halo_reader_reset()
+    
+    call cdeallocate_halo(data)
 
   end subroutine read_halo
 

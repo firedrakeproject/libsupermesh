@@ -47,7 +47,7 @@ contains
 
     integer :: i, ierr, process
 
-    call MPI_Comm_rank(MPI_COMM_WORLD, process, ierr)
+    call MPI_Comm_rank(halo%comm, process, ierr)
     assert(ierr == MPI_SUCCESS)
     node_owner(:halo%npnodes) = process
     node_owner(halo%npnodes + 1:) = huge(0)
