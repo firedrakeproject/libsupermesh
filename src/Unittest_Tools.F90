@@ -3,7 +3,7 @@
 module libsupermesh_unittest_tools
   ! Utility functions for unit testing
 
-  use libsupermesh_debug_parameters, only : debug_log_unit
+  use iso_fortran_env, only : output_unit
 
   implicit none
 
@@ -33,7 +33,7 @@ module libsupermesh_unittest_tools
 
 contains
 
-  subroutine report_test(title, fail, warn, msg)
+  subroutine report_test(title, fail, warn, msg, unit)
     !!< This is the subroutine used by unit tests to report the output of
     !!< a test case.
 
@@ -43,13 +43,22 @@ contains
     character(len = *), intent(in) :: msg
     !! Has the test case failed, or triggered a warning? Set fail or warn to .true. if so.
     logical, intent(in) :: fail, warn
+    integer, optional, intent(in) :: unit
+    
+    integer :: lunit
+    
+    if(present(unit)) then
+      lunit = unit
+    else
+      lunit = output_unit
+    end if
 
     if(fail) then
-      write(debug_log_unit, "(a)") "(Fail: " // trim(title) // "; error: " // trim(msg) // ")"
+      write(lunit, "(a)") "(Fail: " // trim(title) // "; error: " // trim(msg) // ")"
     else if(warn) then
-      write(debug_log_unit, "(a)") "(Warn: " // trim(title) // "; error: " // trim(msg) // ")"
+      write(lunit, "(a)") "(Warn: " // trim(title) // "; error: " // trim(msg) // ")"
     else
-      write(debug_log_unit, "(a)") "(Pass: " // trim(title) // ")"
+      write(lunit, "(a)") "(Pass: " // trim(title) // ")"
     end if
 
   end subroutine report_test
