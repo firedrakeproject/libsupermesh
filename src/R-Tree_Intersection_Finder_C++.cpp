@@ -77,6 +77,7 @@
  * DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
+#include <spatialindex/SpatialIndex.h>
 #include <rtree/RTree.h>
 #include <rtree/BulkLoader.h>
 
