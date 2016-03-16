@@ -5,6 +5,7 @@
 \usepackage{enumitem}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{listings}
+\usepackage{natbib}
 
 \renewcommand{\ttdefault}{pcr}
 
@@ -20,6 +21,15 @@
 \end{titlepage}
 
 \tableofcontents
+
+\section{Introduction}
+
+libsupermesh is a library for serial and parallel mesh intersection, or
+supermeshing \citep{farrell2009,farrell2009a}. libsupermesh specifically
+includes components used in the local supermeshing approach described in
+\citet{farrell2011}. Here, given two input finite element meshes, elements in
+each mesh which intersect are identified, and a local mesh of their intersection
+is generated.
 
 \section{Building libsupermesh}
 
@@ -40,13 +50,13 @@ Note that libsupermesh cannot be built in the source directory.
 
 \begin{description}[font=\ttfamily\bfseries]
   \item[CMAKE\_BUILD\_TYPE] Build type. Valid options are ``Release'' and
-    ``Debug''. Default ``Release''
+    ``Debug''. Default ``Release''.
   \item[BUILD\_SHARED\_LIBS] Build a shared library. Default disabled. 
   \item[LIBSUPERMESH\_AUTO\_COMPILER\_FLAGS] Choose compiler flags
-    automatically, enabling aggressive optimisation for the Release build and
-    additional debugging options for the Debug build. Active only if the GNU or
-    Cray compilers are used. This overrides other CMake compiler flag variables.
-    Default enabled.
+    automatically, enabling aggressive optimisation options for the Release
+    build and additional debugging options for the Debug build. Active only if
+    the GNU or Cray compilers are used. This overrides other CMake compiler flag
+    variables. Default enabled.
   \item[LIBSUPERMESH\_ENABLE\_JUDY] Use the Judy library. Requires an available
     installation of Judy. Default disabled.
   \item[LIBSUPERMESH\_ENABLE\_TIMERS] Enable internal timers for parallel
@@ -58,12 +68,12 @@ Note that libsupermesh cannot be built in the source directory.
 \subsection*{Build targets}
 
 \begin{description}[font=\ttfamily\bfseries]
-  \item[make] Default build. Builds the library and tests.
+  \item[make] Default build. Builds the library and unit tests.
   \item[make test] Runs the unit tests.
   \item[make doc] Builds this manual.
 \end{description}
 
-%\bibliography{doc/bibliography}
-%\bibliographystyle{plainnat}
+\bibliography{doc/bibliography}
+\bibliographystyle{plainnat}
 
 \end{document}
