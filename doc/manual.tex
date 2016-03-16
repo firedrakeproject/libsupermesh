@@ -1,8 +1,12 @@
-\documentclass[a4paper]{book}
+\documentclass[a4paper]{article}
 
 \input{doc/version}
 
-\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[pdfborder={0 0 0}]{hyperref}
+\usepackage{listings}
+
+\renewcommand{\ttdefault}{pcr}
 
 \begin{document}
 
@@ -16,6 +20,48 @@
 \end{titlepage}
 
 \tableofcontents
+
+\section{Building libsupermesh}
+
+libsupermesh is built using CMake\footnote{\url{https://cmake.org/}}, for
+example via:
+\begin{lstlisting}[language = sh, frame = single]
+cd [LIBSUPERMESH_SOURCE_PATH]/build
+cmake [LIBSUPERMESH_SOURCE_PATH] \
+  -DCMAKE_INSTALL_PREFIX=[LIBSUPERMESH_INSTALL_PATH]
+make
+make install
+\end{lstlisting}
+where \verb+[LIBSUPERMESH_SOURCE_PATH]+ is the path to the source directory, and
+\verb+[LIBSUPERMESH_INSTALL_PATH]+ is the path to the installation directory.
+Note that libsupermesh cannot be built in the source directory.
+
+\subsection*{CMake variables}
+
+\begin{description}[font=\ttfamily\bfseries]
+  \item[CMAKE\_BUILD\_TYPE] Build type. Valid options are ``Release'' and
+    ``Debug''. Default ``Release''
+  \item[BUILD\_SHARED\_LIBS] Build a shared library. Default disabled. 
+  \item[LIBSUPERMESH\_AUTO\_COMPILER\_FLAGS] Choose compiler flags
+    automatically, enabling aggressive optimisation for the Release build and
+    additional debugging options for the Debug build. Active only if the GNU or
+    Cray compilers are used. This overrides other CMake compiler flag variables.
+    Default enabled.
+  \item[LIBSUPERMESH\_ENABLE\_JUDY] Use the Judy library. Requires an available
+    installation of Judy. Default disabled.
+  \item[LIBSUPERMESH\_ENABLE\_TIMERS] Enable internal timers for parallel
+    supermeshing. Default disabled.
+  \item[LIBSUPERMESH\_OVERLAP\_COMPUTE\_COMMS] Overlaps communication and some
+    calculation in parallel supermeshing. Default disabled.
+\end{description}
+
+\subsection*{Build targets}
+
+\begin{description}[font=\ttfamily\bfseries]
+  \item[make] Default build. Builds the library and tests.
+  \item[make test] Runs the unit tests.
+  \item[make doc] Builds this manual.
+\end{description}
 
 %\bibliography{doc/bibliography}
 %\bibliographystyle{plainnat}
