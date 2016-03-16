@@ -77,10 +77,10 @@
  * DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#include "R-Tree_Intersection_Finder_C++.h"
-
 #include <rtree/RTree.h>
 #include <rtree/BulkLoader.h>
+
+#include "R-Tree_Intersection_Finder_C++.h"
 
 using namespace libsupermesh;
 using namespace libsupermesh::SpatialIndex;

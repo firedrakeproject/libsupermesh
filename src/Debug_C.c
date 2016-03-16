@@ -44,8 +44,7 @@ void libsupermesh_print_backtrace(const int *max_size) {
   if(!symbols) goto cleanup;
   
   for(i = 0;i < size;i++){
-    fprintf(stderr, symbols[i]);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "%s\n", symbols[i]);
   }
   
 cleanup:
