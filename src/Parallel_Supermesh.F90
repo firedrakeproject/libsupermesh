@@ -235,7 +235,7 @@ contains
         end do        
         nnodes_send = key_count(nodes_send)
 
-        ! Build an element-node graph for sending with contiguous indices
+        ! Build an element-node hypergraph for sending with contiguous indices
         call allocate(node_map)
         j = 0
         do k = 1, nnodes_send
