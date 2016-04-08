@@ -1,8 +1,11 @@
-\documentclass[a4paper]{article}
+\documentclass{article}
 
 \input{doc/version}
 
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{enumitem}
+\usepackage[a4paper,left=20mm,right=20mm]{geometry}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{listings}
 \usepackage{natbib}
@@ -24,7 +27,7 @@
 
 \section{Introduction}
 
-libsupermesh is a library for serial and parallel mesh intersection, or
+libsupermesh is a Fortran library for serial and parallel mesh intersection, or
 supermeshing \citep{farrell2009,farrell2009a}. libsupermesh specifically
 includes components used in the local supermeshing approach described in
 \citet{farrell2011}. Here, given two input finite element meshes, elements in
@@ -35,7 +38,7 @@ is generated.
 
 libsupermesh is built using CMake\footnote{\url{https://cmake.org/}}, for
 example via:
-\begin{lstlisting}[language = sh, frame = single]
+\begin{lstlisting}[language=sh,frame=single]
 cd [LIBSUPERMESH_SOURCE_PATH]/build
 cmake [LIBSUPERMESH_SOURCE_PATH] \
   -DCMAKE_INSTALL_PREFIX=[LIBSUPERMESH_INSTALL_PATH]
@@ -43,8 +46,8 @@ make
 make install
 \end{lstlisting}
 where \verb+[LIBSUPERMESH_SOURCE_PATH]+ is the path to the source directory, and
-\verb+[LIBSUPERMESH_INSTALL_PATH]+ is the path to the installation directory.
-Note that libsupermesh cannot be built in the source directory.
+\linebreak \verb+[LIBSUPERMESH_INSTALL_PATH]+ is the path to the installation
+directory. Note that libsupermesh cannot be built in the source directory.
 
 \subsection*{CMake variables}
 
@@ -71,6 +74,170 @@ Note that libsupermesh cannot be built in the source directory.
   \item[make] Default build. Builds the library and unit tests.
   \item[make test] Runs the unit tests.
   \item[make doc] Builds this manual.
+\end{description}
+
+\section{Intersection identification}
+
+libsupermesh includes a number of different algorithms for identifying candidate
+pairs of elements, in two different meshes, which intersect. These algorithms
+are all based upon a ``minimal bounding box'' intersection predicate. Hence the
+different approaches are all guaranteed to return all pairs of elements which
+have a non-trivial intersection\footnote{Except for numerical precision related
+errors.}, but may additionally return pairs of elements which have zero
+intersection.
+
+\subsection{Global intersection finders}
+
+The following intersection finders return an element-element hypergraph which
+associates with all elements in a mesh ``A'' candidate intersecting elements in
+the mesh ``B''. The following definitions are used:
+\begin{description}[leftmargin=\parindent,labelindent=\parindent]
+  \item[$d$] Mesh A defines a subset $\Omega_A \subset \mathbb{R}^d$, and mesh B
+    a subset $\Omega_B \subset \mathbb{R}^d$.
+  \item[$l_A$] Number of nodes per element in mesh A.
+  \item[$l_B$] Number of nodes per element in mesh B.
+  \item[$V_A$] Number of nodes in mesh A.
+  \item[$V_B$] Number of nodes in mesh B.
+  \item[$E_A$] Number of elements in mesh A.
+  \item[$E_B$] Number of elements in mesh B.
+\end{description}
+
+Element-node hypergraphs are represented as $l_A \times E_A$ and
+$l_B \times E_B$ integer arrays respectively. For example, if \verb+enlist_a+
+stores the element-node hypergraph for mesh A, then in the following:
+\begin{lstlisting}[language=FORTRAN]
+  integer, dimension(l_A, E_A) :: enlist_a
+  integer, dimension(l_A) :: nodes_a
+  
+  ! ...
+
+  nodes_a = enlist_a(:, ele_a)
+\end{lstlisting}
+\verb+nodes_a+ contains the indices of nodes in mesh A for element \verb+ele_a+.
+
+Candidate intersection element-element hypergraphs are stored either as a ragged
+array or as a Compressed Sparse Row (CSR) sparsity pattern\footnote{See the
+\href{http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html}{SciPy documentation.}}.
+For the ragged array variant:
+\begin{lstlisting}[language=FORTRAN]
+  type(intersections), dimension(E_A) :: map_ab
+  integer :: n
+  integer, dimension(:), pointer :: v
+  
+  ! ...
+
+  n = map_ab(ele_a)%n
+  v => map_ab(ele_a)%v
+\end{lstlisting}
+or for the CSR sparsity pattern variant:
+\begin{lstlisting}[language=FORTRAN]
+  integer, dimension(:), allocatable, target :: map_ab_indices
+  integer, dimension(E_A + 1) :: map_ab_indptr
+  integer :: n
+  integer, dimension(:), pointer :: v
+  
+  ! ...
+
+  n = map_ab_indptr(ele_a + 1) - map_ab_indptr(ele_a)
+  v => map_ab_indices(map_ab_indptr(ele_a):map_ab_indptr(ele_a + 1) - 1)
+\end{lstlisting}
+\verb+n+ contains the number of candidate elements in mesh B which may intersect
+with element \verb+ele_a+ of mesh A. \verb+v+ points at a vector of length
+\verb+n+ containing the indices of elements in mesh B which may intersect with
+element \verb+ele_a+ of mesh A.
+
+\subsubsection{\texttt{sort\_intersection\_finder}}
+
+An intersection finder for 1D meshes, based upon a combination of a merge sort
+and a 1D advancing front.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface sort_intersection_finder
+    module procedure sort_intersection_finder_rank_1_intersections, &
+      & sort_intersection_finder_rank_2_intersections, &
+      & sort_intersection_finder_rank_1_csr_sparsity, &
+      & sort_intersection_finder_rank_2_csr_sparsity
+  end interface sort_intersection_finder
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure subroutine sort_intersection_finder_rank_1_intersections( &
+    & positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    real, dimension(:), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    type(intersections), dimension(:), intent(out) :: map_ab
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2\parindent,labelindent=2\parindent]
+  \item[positions\_a] Length $V_A$ vector. Mesh A node coordinates.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[positions\_b] Length $V_B$ vector. Mesh B node coordinates.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
+    hypergraph.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure subroutine sort_intersection_finder_rank_2_intersections( &
+    & positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    type(intersections), dimension(:), intent(out) :: map_ab
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2\parindent,labelindent=2\parindent]
+  \item[positions\_a] $1 \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[positions\_b] $1 \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
+    hypergraph.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure subroutine sort_intersection_finder_rank_1_csr_sparsity( &
+    & positions_a, enlist_a, positions_b, enlist_b, &
+    & map_ab_indices, map_ab_indptr)
+    real, dimension(:), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    integer, dimension(:), intent(out) :: map_ab_indptr
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2\parindent,labelindent=2\parindent]
+  \item[positions\_a] Length $V_A$ vector. Mesh A node coordinates.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[positions\_b] Length $V_B$ vector. Mesh B node coordinates.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
+    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure subroutine sort_intersection_finder_rank_2_csr_sparsity( &
+    & positions_a, enlist_a, positions_b, enlist_b, &
+    & map_ab_indices, map_ab_indptr)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    integer, dimension(:), intent(out) :: map_ab_indptr
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2\parindent,labelindent=2\parindent]
+  \item[positions\_a] $1 \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[positions\_b] $1 \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
+    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
 \end{description}
 
 \bibliography{doc/bibliography}
