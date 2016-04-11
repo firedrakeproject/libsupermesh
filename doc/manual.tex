@@ -142,7 +142,7 @@ with element \verb+ele_a+ of mesh A. \verb+v+ points at a vector of length
 \verb+n+ containing the indices of elements in mesh B which may intersect with
 element \verb+ele_a+ of mesh A.
 
-\subsection{Global intersection finding}
+\subsection{Identifying all candidate intersections}
 
 The following intersection finders return an element-element graph which
 associates with all elements in a mesh ``A'' candidate intersecting elements in
@@ -485,7 +485,7 @@ R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
 
 \subsubsection{\texttt{advancing\_front\_intersection\_finder}}
 
-An intersection finder for meshes with simplex or cubic elements, using
+An intersection finder for meshes with simplex or hypercubic elements, using
 the algorithm described in \citet{farrell2011}
 \citep[see also][]{gander2009,gander2013}. The intersection finder is primarily
 intended for the case where the meshes A and B cover the same domain. However
@@ -599,7 +599,7 @@ A basic brute force intersection finder with quadratic complexity.
     $E_A + 1$.
 \end{description}
 
-\subsection{Queryable tree intersection finding}
+\subsection{Identifying candidate intersections using queryable trees}
 
 The following intersection finders use a given mesh B to construct a tree based
 structure which can be queried, one mesh A element at a time, for intersecting
@@ -930,7 +930,7 @@ The following definitions are used:
                in any intersection mesh C.
 \end{description}
 
-\subsection{Interval-interval}
+\subsection{One dimension}
 
 Definition of $M_C$.
   
@@ -1030,7 +1030,7 @@ Interval intersection.
   \item[size] Length of the element.
 \end{description}
 
-\subsection{Polygon-polygon}
+\subsection{Two dimensions}
 
 Intersection of two-dimensional convex polygons using the \citet{sutherland1974}
 algorithm.
@@ -1059,9 +1059,9 @@ element facets.
 \end{lstlisting} 
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[normal] Length $d$ vector. Components of a vector normal to the line.
-    Need not have unit norm.
-  \item[point] Length $d$ vector. Coordinates of a point on the line.
+  \item[normal] Length $d$ vector. Components of an outward pointing facet
+    normal. Need not have unit norm.
+  \item[point] Length $d$ vector. Coordinates of a point on the facet.
 \end{description}
 
 \noindent Definition of $M_C$ for triangle-triangle intersection.
@@ -1110,7 +1110,7 @@ element facets.
   \item[max\_n\_tris\_c] $M_C = F_A \left( 2^{F_B} \right) - 2$.
 \end{description}
 
-\noindent \verb+line_type+ representation of facets.
+\noindent Obtain a \verb+line_type+ representation of facets.
 
 \begin{lstlisting}[language=FORTRAN]
   interface get_lines
@@ -1137,7 +1137,7 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[poly] $d \times l$ array. Coordinates of the polygon nodes, in either
-    clockwise or anti-clockwise order.
+    clockwise or anti-clockwise order. Must define a convex polygon.
   \item[lines] Length $l$ array. The facets of the polygon.
 \end{description}
 
@@ -1195,8 +1195,8 @@ element facets.
   \item[tri\_a] $d \times l_A$ array. Element A node coordinates. Element A
     must be a triangle.
   \item[quad\_b] $d \times l_B$ array. Element B node coordinates. Element B
-    must be a quadrilateral with the node coordinates in either clockwise or
-    anti-clockwise order.
+    must be a convex quadrilateral with the node coordinates in either clockwise
+    or anti-clockwise order.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
   \item[n\_tris\_c] $E_C$.
 \end{description}
@@ -1213,11 +1213,11 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[quad\_a] $d \times l_A$ array. Element A node coordinates. Element A
-    must be a quadrilateral with the node coordinates in either clockwise or
-    anti-clockwise order.
+    must be a convex quadrilateral with the node coordinates in either clockwise
+    or anti-clockwise order.
   \item[quad\_b] $d \times l_B$ array. Element B node coordinates. Element B
-    must be a quadrilateral with the node coordinates in either clockwise or
-    anti-clockwise order.
+    must be a convex quadrilateral with the node coordinates in either clockwise
+    or anti-clockwise order.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
   \item[n\_tris\_c] $E_C$.
 \end{description}
@@ -1242,12 +1242,12 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tri\_a] Element A.
-  \item[lines\_b] Element B facets.
+  \item[lines\_b] Element B facets. Must be facets for a convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
   \item[area\_b] Area of element B. Use to discard near degenerate elements in
     mesh C.
-  \item[work] $2 \times M_C$ array. Working memory.
+  \item[work] $2 \times M_C \times 2$ array. Working memory.
 \end{description}
 
 \noindent Polygon-polygon intersection.
@@ -1272,16 +1272,18 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[poly\_a] $d \times l_A$ array. Element A node coordinates. The node
-    coordinates must be in either clockwise or anti-clockwise order.
+    coordinates must be in either clockwise or anti-clockwise order, and must
+    define a convex polygon.
   \item[poly\_b] $d \times l_B$ array. Element B node coordinates. The node
-    coordinates must be in either clockwise or anti-clockwise order.
+    coordinates must be in either clockwise or anti-clockwise order, and must
+    define a convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
   \item[area\_a] Area of element A. Use to discard near degenerate elements in
     mesh C.
   \item[area\_b] Area of element B. Use to discard near degenerate elements in
     mesh C.
-  \item[work] $2 \times M_C$ array. Working memory.
+  \item[work] $2 \times M_C \times 2$ array. Working memory.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -1298,15 +1300,17 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[poly\_a] $d \times l_A$ array. Element A node coordinates. The node
-    coordinates must be in either clockwise or anti-clockwise order.
-  \item[lines\_b] $d \times l_B$ array. Element B facets.
+    coordinates must be in either clockwise or anti-clockwise order, and must
+    define a convex polygon.
+  \item[lines\_b] $d \times l_B$ array. Element B facets. Must be facets for a
+    convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
   \item[area\_a] Area of element A. Use to discard near degenerate elements in
     mesh C.
   \item[area\_b] Area of element B. Use to discard near degenerate elements in
     mesh C.
-  \item[work] $2 \times M_C$ array. Working memory.
+  \item[work] $2 \times M_C \times 2$ array. Working memory.
 \end{description}
 
 \noindent Triangle area.
@@ -1337,6 +1341,192 @@ element facets.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tri] A triangle.
   \item[area] Area of the triangle.
+\end{description}
+
+\subsection{Three dimensions}
+
+Intersection of three-dimensional convex polyhedra using the ``plane-at-a-time
+clipping'' algorithm described in \citet[][section 2.4.3]{eberly2007}.
+
+~\newline
+\verb+tet_type+ data type, used to define tetrahedra.
+
+\begin{lstlisting}[language=FORTRAN]
+  type tet_type
+    real, dimension(3, 4) :: v
+    integer, dimension(4) :: colours = -1
+  end type tet_type
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[v] $d \times l$ array. Tetrahedron node coordinates.
+  \item[colours] Facet colouring. Used to colour facets of an intersection mesh
+    C, using the colours defined in a tetrahedral element A. \verb+colours(i)+
+    indicates the colour of the facet opposite to the node with coordinate
+    \verb+v(:, i)+. A negative or zero value indicates no colour.
+\end{description}
+
+\noindent \verb+plane_type+ data type, used to define the planes which
+constitute element facets.
+
+\begin{lstlisting}[language=FORTRAN]
+  type plane_type
+    real, dimension(3) :: normal
+    real :: c
+  end type plane_type
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[normal] Length $d$. Components of an outward pointing facet normal, with
+    unit norm.
+  \item[c] Distance of the origin from the plane.
+\end{description}
+
+\noindent Definition of $M_C$ for tetrahedron-tetrahedron intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  integer, parameter :: tet_buf_size = 81
+\end{lstlisting}
+
+\noindent Definition of $M_C$ for tetrahderon-polyhedron intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function max_n_tets_c(n_planes_b)
+    integer, intent(in) :: n_planes_b    
+    integer :: max_n_tets_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[n\_planes\_b] $F_B$, assuming that element B is a tetrahedron.
+  \item[max\_n\_tets\_c] $M_C = 3^{F_B}$.
+\end{description}
+
+\noindent Obtain a \verb+plane_type+ representation of facets.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface get_planes
+    module procedure get_planes_tet
+  end interface get_planes
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  pure function get_planes_tet(tet) result(planes)
+    type(tet_type), intent(in) :: tet
+    type(plane_type), dimension(4) :: planes
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet] A tetrahedron.
+  \item[plane] The four facets of the tetrahedron.
+\end{description}
+
+\noindent Tetrahedron-tetrahderon intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface intersect_tets
+    module procedure intersect_tets_real, intersect_tets_tet
+  end interface intersect_tets
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tets_real(tet_a, tet_b, tets_c, n_tets_c)
+    real, dimension(3, 4), intent(in) :: tet_a
+    real, dimension(3, 4), intent(in) :: tet_b
+    real, dimension(3, 4, tet_buf_size), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet\_a] $d \times l_A$ array. Element A node coordinates. Element A must
+    be a tetrahedron.
+  \item[tet\_b] $d \times l_B$ array. Element B node coordinates. Element B must
+    be a tetrahedron.
+  \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_tets\_c] $E_C$.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tets_tet(tet_a, tet_b, tets_c, n_tets_c)
+    type(tet_type), intent(in) :: tet_a
+    type(tet_type), intent(in) :: tet_b
+    type(tet_type), dimension(tet_buf_size), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet\_a] Element A.
+  \item[tet\_b] Element B.
+  \item[tets\_c] Length $M_C$ vector. Tetrahedra in mesh C.
+  \item[n\_tets\_c] $E_C$.
+\end{description}
+
+\noindent Tetrahedron-hexahedron intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tet_hex(tet_a, hex_b, tets_c, n_tets_c)
+    real, dimension(:, :), intent(in) :: tet_a
+    real, dimension(:, :), intent(in) :: hex_b
+    real, dimension(:, :, :), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet\_a] $d \times l_A$ array. Element A node coordinates. Element A must
+    be a tetrahedron.
+  \item[hex\_b] $d \times l_B$ array. Element B node coordinates. Element B must
+    be a convex hexahedron with Gmsh 2.12 node
+    ordering\footnote{See \url{http://gmsh.info/doc/texinfo/gmsh.html\#Node-ordering}.}.
+  \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_tets\_c] $E_C$.
+\end{description}
+
+\noindent Hexahedron-hexahedron intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_hexes(hex_a, hex_b, tets_c, n_tets_c)
+    real, dimension(:, :), intent(in) :: hex_a
+    real, dimension(:, :), intent(in) :: hex_b
+    real, dimension(:, :, :), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[hex\_a] $d \times l_A$ array. Element A node coordinates. Element A must
+    be a convex hexahedron with Gmsh 2.12 node ordering.
+  \item[hex\_b] $d \times l_B$ array. Element B node coordinates. Element B must
+    be a convex hexahedron with Gmsh 2.12 node ordering.
+  \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_tets\_c] $E_C$.
+\end{description}
+
+\noindent Tetrahedron volume.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface tetrahedron_volume
+    module procedure tetrahedron_volume_real, tetrahedron_volume_tet
+  end interface tetrahedron_volume
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function tetrahedron_volume_real(tet) result(volume)
+    real, dimension(3, 4), intent(in) :: tet
+    real :: volume
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet] $d \times l$ array. Tetrahedron node coordinates.
+  \item[volume] Volume of the tetrahedron.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function tetrahedron_volume_tet(tet) result(volume)
+    type(tet_type), intent(in) :: tet
+    real :: volume
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet] A tetrahedron.
+  \item[volume] Volume of the tetrahedron.
 \end{description}
 
 \bibliography{doc/bibliography}

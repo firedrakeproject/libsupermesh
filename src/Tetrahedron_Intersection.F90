@@ -572,9 +572,9 @@ contains
 
   end subroutine clip
   
-  pure function get_planes_tet(tet) result(plane)
+  pure function get_planes_tet(tet) result(planes)
     type(tet_type), intent(in) :: tet
-    type(plane_type), dimension(4) :: plane
+    type(plane_type), dimension(4) :: planes
 
     real, dimension(3) :: edge10, edge20, edge30, edge21, edge31
     real :: det
@@ -586,22 +586,22 @@ contains
     edge21 = tet%v(:, 3) - tet%v(:, 2);
     edge31 = tet%v(:, 4) - tet%v(:, 2);
 
-    plane(1)%normal = unit_cross(edge20, edge10)
-    plane(2)%normal = unit_cross(edge10, edge30)
-    plane(3)%normal = unit_cross(edge30, edge20)
-    plane(4)%normal = unit_cross(edge21, edge31)
+    planes(1)%normal = unit_cross(edge20, edge10)
+    planes(2)%normal = unit_cross(edge10, edge30)
+    planes(3)%normal = unit_cross(edge30, edge20)
+    planes(4)%normal = unit_cross(edge21, edge31)
 
-    det = dot_product(edge10, plane(4)%normal)
+    det = dot_product(edge10, planes(4)%normal)
     if (det < 0) then
       do i=1,4
-        plane(i)%normal = -plane(i)%normal
+        planes(i)%normal = -planes(i)%normal
       end do
     end if
 
     ! And calibrate what is the zero of this plane by dotting with
     ! a point we know to be on it
     do i=1,4
-      plane(i)%c = dot_product(tet%v(:, i), plane(i)%normal)
+      planes(i)%c = dot_product(tet%v(:, i), planes(i)%normal)
     end do
 
   end function get_planes_tet
@@ -644,10 +644,10 @@ contains
 
   end function tetrahedron_volume_real
 
-  pure function tetrahedron_volume_tet(tet) result(vol)
+  pure function tetrahedron_volume_tet(tet) result(volume)
     type(tet_type), intent(in) :: tet
 
-    real :: vol
+    real :: volume
 
     real, dimension(3) :: cross, vec_a, vec_b, vec_c
 
@@ -659,7 +659,7 @@ contains
     cross(2) = vec_b(3) * vec_c(1) - vec_b(1) * vec_c(3)
     cross(3) = vec_b(1) * vec_c(2) - vec_b(2) * vec_c(1)
 
-    vol = abs(dot_product(vec_a, cross)) / 6.0D0
+    volume = abs(dot_product(vec_a, cross)) / 6.0D0
     
   end function tetrahedron_volume_tet
 
