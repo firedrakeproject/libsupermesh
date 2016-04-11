@@ -17,7 +17,7 @@
 \begin{titlepage}
 \begin{center}
 
-\Huge{libsupermesh Version \version~ Manual} \\[0.15\textheight]
+\Huge{libsupermesh version \version} \\[0.15\textheight]
 \Large{Dr. Patrick E. Farrell, Dr. J. R. Maddison, \\ Mr. I. Panourgias}
 
 \end{center}
@@ -1247,7 +1247,7 @@ element facets.
   \item[lines\_b] Element B facets. Must be facets for a convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
-  \item[area\_b] Area of element B. Use to discard near degenerate elements in
+  \item[area\_b] Area of element B. Used to discard near-degenerate elements in
     mesh C.
   \item[work] $2 \times M_C \times 2$ array. Working memory.
 \end{description}
@@ -1281,9 +1281,9 @@ element facets.
     define a convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
-  \item[area\_a] Area of element A. Use to discard near degenerate elements in
+  \item[area\_a] Area of element A. Used to discard near-degenerate elements in
     mesh C.
-  \item[area\_b] Area of element B. Use to discard near degenerate elements in
+  \item[area\_b] Area of element B. Used to discard near-degenerate elements in
     mesh C.
   \item[work] $2 \times M_C \times 2$ array. Working memory.
 \end{description}
@@ -1308,9 +1308,9 @@ element facets.
     convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
-  \item[area\_a] Area of element A. Use to discard near degenerate elements in
+  \item[area\_a] Area of element A. Used to discard near-degenerate elements in
     mesh C.
-  \item[area\_b] Area of element B. Use to discard near degenerate elements in
+  \item[area\_b] Area of element B. Used to discard near-degenerate elements in
     mesh C.
   \item[work] $2 \times M_C \times 2$ array. Working memory.
 \end{description}
@@ -1502,6 +1502,34 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
   \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
     $M_C = 3,645$.
   \item[n\_tets\_c] $E_C$.
+\end{description}
+
+\noindent Tetrahedron-polyhedron intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface intersect_tets
+    module procedure intersect_tets_planes
+  end interface intersect_tets
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
+    type(tet_type), intent(in) :: tet_a
+    type(plane_type), dimension(:), intent(in)  :: planes_b
+    type(tet_type), dimension(:), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+    real, optional, intent(in) :: vol_b
+    type(tet_type), dimension(:), target, optional, intent(inout) :: work
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet\_a] Element A.
+  \item[planes\_b] Element B facets. Must be facets for a convex polyhedron.
+  \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_tets\_c] $E_C$.
+  \item[vol\_b] Volume of element $B$. Used to discard near-degenerate elements
+    in mesh C.
+  \item[work] Length $M_C$ vector. Working memory.
 \end{description}
 
 \noindent Tetrahedron volume.
