@@ -47,7 +47,7 @@ contains
 #if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
     real, dimension(:, :, :), intent(inout) :: tets_c
 #else
-    real, dimension(3, 4, TET_BUF_SIZE), intent(inout) :: tets_c
+    real, dimension(3, 4, BUF_SIZE), intent(inout) :: tets_c
 #endif
     integer, intent(out) :: n_tets_c
 
