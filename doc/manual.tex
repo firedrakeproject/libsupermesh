@@ -1721,15 +1721,15 @@ The algorithm used is as follows:
           communicate these data via point-to-point communication
   \end{enumerate}
   \item Construct the intersection mesh for each pair of intersecting local
-        mesh A and local mesh B elements
-  \item Perform calculations on these intersection meshes
+        mesh A and local mesh B elements, and perform calculations on these
+        intersection meshes
   \item For each mesh B partition whose AABB intersects with the local mesh A
         AABB
   \begin{enumerate}
     \item Unpack data communicated in step \ref{alg:comm}
     \item Construct the intersection mesh for each pair of intersecting local
-          mesh A and received mesh B elements
-    \item Perform calculations on these intersection meshes
+          mesh A and received mesh B elements, and perform calculations on these 
+          intersection meshes
   \end{enumerate}
 \end{enumerate}  
 
@@ -1790,11 +1790,11 @@ accepts an MPI communicator.
     process which owns each element in the local mesh B.
   \item[pack\_data\_b, unpack\_data\_b, intersection\_calculation] Callbacks
     used to pack and unpack mesh B data, and to perform calculations on
-    intersection meshes.
+    intersection meshes. See section \ref{sect:parallel_callbacks}.
   \item[comm] MPI communicator.
 \end{description}
 
-\subsection{Callbacks}
+\subsection{Callbacks}\label{sect:parallel_callbacks}
 
 \noindent The first callback is used to pack mesh B data for communication.
 
@@ -1864,8 +1864,8 @@ accepts an MPI communicator.
 \subsection{libsupermesh}
 
 Except as noted below, libsupermesh is copyright (C) 2016 The University of
-Edinburgh. The GNU Lesser General Public License version 2.1 can be found in
-lgpl-2.1.txt.
+Edinburgh. libsupermesh is available under the GNU Lesser General Public License
+version 2.1, which can be found in lgpl-2.1.txt.
 
 \begin{lstlisting}[language=]
   This library is free software; you can redistribute it and/or
@@ -2063,13 +2063,13 @@ supermeshing for multimesh modelling''.
 
 libsupermesh is derived from Fluidity git revision
 4e6c1d2b022df3a519cdec120fad28e60d1b08d9, and additionally uses code from
-TinyXML 2.6.2, libspatialindex 1.8.5, Rtree 0.4.3, and UseLATEX (see section
-\ref{sect:copyright}).
+Fluidity 4.1.11, TinyXML 2.6.2, libspatialindex 1.8.5, Rtree 0.4.3, and UseLATEX
+(see section \ref{sect:copyright}).
 
 Gmsh \citep{geuzaine2009} was used to generate a number of the test meshes
 contained in src/tests/data/. The Fluidity fldecomp tool, which uses the METIS
 graph partitioner\footnote{\url{http://glaros.dtc.umn.edu/gkhome/views/metis}},
-was used to decompose a number of the test meshes contained in src/tests/data/.
+was used to partition a number of the test meshes contained in src/tests/data/.
 
 \bibliography{doc/bibliography}
 \bibliographystyle{plainnat}
