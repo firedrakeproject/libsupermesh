@@ -76,15 +76,24 @@ directory. Note that libsupermesh cannot be built in the source directory.
   \item[make doc] Builds this manual.
 \end{description}
 
+\section{Using libsupermesh}
+
+The \verb+libsupermesh+ Fortran module provides access to all functionality
+described in this manual. This can be accessed via:
+
+\begin{lstlisting}[language=FORTRAN]
+  use libsupermesh
+\end{lstlisting}
+
 \section{Intersection identification}
 
 libsupermesh includes a number of different algorithms for identifying candidate
 pairs of elements, in two different meshes, which intersect. These algorithms
-are all based upon an ``axis aligned bounding box'' intersection predicate. Hence
-the different approaches are all guaranteed to return all pairs of elements
-which have a non-trivial intersection\footnote{Except for numerical precision
-related errors.}, but may additionally return pairs of elements which have zero
-intersection.
+are all based upon an ``axis-aligned bounding box'' (AABB) intersection
+predicate. Hence the different approaches are all guaranteed to return all pairs
+of elements which have a non-trivial intersection\footnote{Except for numerical
+precision related errors.}, but may additionally return pairs of elements which
+have zero intersection.
 
 The following definitions are used:
 \begin{description}[leftmargin=\parindent,labelindent=\parindent]
@@ -661,8 +670,8 @@ elements.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[quadtree] Quadtree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
-  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
-    with the axis aligned bounding box of the given mesh A element.
+  \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
+    given mesh A element.
 \end{description}
 
 \noindent Deallocate a \verb+quadtree_type+.
@@ -738,8 +747,8 @@ elements.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[octtree] Octtree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
-  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
-    with the axis aligned bounding box of the given mesh A element.
+  \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
+    given mesh A element.
 \end{description}
 
 \noindent Deallocate an \verb+octtree_type+.
@@ -813,8 +822,8 @@ elements.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tree] Quadtree or octtree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
-  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
-    with the axis aligned bounding box of the given mesh A element.
+  \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
+    given mesh A element.
 \end{description}
 
 \noindent Deallocate a \verb+tree_type+.
@@ -834,7 +843,7 @@ elements.
   \item[tree] Quadtree or octtree data structure.
 \end{description}
 
-\subsubsection{\texttt{rtree\_type}}
+\subsubsection{\texttt{rtree\_type}}\label{sect:rtree_query}
 
 An intersection finder for 2D and 3D meshes, using a libspatialindex 1.8.5
 R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
@@ -887,8 +896,8 @@ elements.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[rtree] libspatialindex R${}^*$-tree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
-  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
-    with the axis aligned bounding box of the given mesh A element.
+  \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
+    given mesh A element.
 \end{description}
 
 \noindent Deallocate an \verb+rtree_type+.
@@ -1562,7 +1571,7 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
   \item[volume] Volume of the tetrahedron.
 \end{description}
 
-\subsection{General dimensions}
+\subsection{General dimensions}\label{sect:nD_intersection}
 
 Definition of $M_C$ for simplex-simplex intersection in one, two, and three
 dimensions.
@@ -1662,6 +1671,192 @@ intersection in one, two, and three dimensions.
   \item[simplex] $d \times l$ array. Simplex node coordinates. Must be
     coordinates for a one, two, or three dimensional simplex.
   \item[volume] Simplex volume.
+\end{description}
+
+\section{Parallelisation}
+
+libsupermesh provides a high-level interface for performing parallel supermesh
+calculations, for the case where the domain decomposition of the two meshes A
+and B do not match. 
+
+In the following the local mesh A refers to the local submesh (or partition) of
+mesh A stored on the current MPI process. Similarly the local mesh B refers to
+the local submesh (or partition) of mesh B stored on the current MPI process.
+The received mesh B refers to a submesh of mesh B received from a different MPI
+process.
+
+Candidate intersection identification is performed using the libspatialindex
+R${}^*$-tree described in section \ref{sect:rtree_query}, and element
+intersections are performed using the \verb+intersect_elements+ routine
+described in section \ref{sect:nD_intersection}. Parallel communication is
+performed using MPI.
+
+The following definitions are used:
+\begin{description}[leftmargin=\parindent,labelindent=\parindent]
+  \item[$d$] Mesh A defines a subset $\Omega_A \subset \mathbb{R}^d$, and mesh B
+    a subset $\Omega_B \subset \mathbb{R}^d$.
+  \item[$V_A$] Number of nodes in the local mesh A.
+  \item[$V_B$] Number of nodes in the local mesh B.
+  \item[$E_A$] Number of elements in the local mesh A.
+  \item[$E_B$] Number of elements in the local mesh B.
+  \item[$V_B^*$] Number of nodes in a received mesh B.
+  \item[$E_B^*$] Number of elements in a received mesh B.
+  \item[$l_C$] Number of nodes per element in the intersection mesh C, always
+               equal to $d + 1$.
+  \item[$E_C$] Number of elements in the intersection mesh C.
+\end{description}
+
+\subsection{Algorithm}
+
+The algorithm used is as follows:
+\begin{enumerate}
+  \item Communicate the AABBs of all mesh A partitions and all mesh B partitions
+        using all-to-all communication
+  \item For each mesh A partition whose AABB intersects with the local mesh B
+        AABB
+  \begin{enumerate}
+    \item Identify local mesh B elements whose AABBs intersect with the AABB of
+          the mesh A partition
+    \item \label{alg:comm} Obtain data associated with these elements, and
+          communicate these data via point-to-point communication
+  \end{enumerate}
+  \item Construct the intersection mesh for each pair of intersecting local
+        mesh A and local mesh B elements
+  \item Perform calculations on these intersection meshes
+  \item For each mesh B partition whose AABB intersects with the local mesh A
+        AABB
+  \begin{enumerate}
+    \item Unpack data communicated in step \ref{alg:comm}
+    \item Construct the intersection mesh for each pair of intersecting local
+          mesh A and received mesh B elements
+    \item Perform calculations on these intersection meshes
+  \end{enumerate}
+\end{enumerate}  
+
+\subsection{\texttt{parallel\_supermesh}}
+
+The parallel supermeshing interface accepts the local meshes, local mesh
+element ownership information, and three callbacks. The interface optionally
+accepts an MPI communicator.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
+    & positions_b, enlist_b, ele_owner_b, &
+    & pack_data_b, unpack_data_b, intersection_calculation, &
+    & comm)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    integer, dimension(:), intent(in) :: ele_owner_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    integer, dimension(:), intent(in) :: ele_owner_b
+    integer, optional, intent(in) :: comm
+    
+    interface
+      subroutine pack_data_b(nodes_b, eles_b, data_b)
+        integer, dimension(:), intent(in) :: nodes_b
+        integer, dimension(:), intent(in) :: eles_b
+        integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: &
+          & data_b
+      end subroutine pack_data_b
+
+      subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
+        integer, intent(in) :: nnodes_b
+        integer, intent(in) :: nelements_b
+        integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+      end subroutine unpack_data_b
+      
+      subroutine intersection_calculation(positions_a, positions_b, &
+        & positions_c, nodes_b, ele_a, ele_b, local)
+        real, dimension(:, :), intent(in) :: positions_a
+        real, dimension(:, :), intent(in) :: positions_b
+        real, dimension(:, :, :), intent(in) :: positions_c
+        integer, dimension(:), intent(in) :: nodes_b
+        integer, intent(in) :: ele_a
+        integer, intent(in) :: ele_b
+        logical, intent(in) :: local
+      end subroutine intersection_calculation
+    end interface
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Local mesh A node coordinates.
+  \item[enlist\_a] $l_A \times E_A$ array. Local mesh A element-node graph.
+  \item[ele\_owner\_a] Length $E_A$ vector. MPI rank (indexed from zero) of the
+    process which owns each element in the local mesh A.
+  \item[positions\_b] $d \times V_B$ array. Local mesh B node coordinates.
+  \item[enlist\_b] $l_B \times E_B$ array. Local mesh B element-node graph.
+  \item[ele\_owner\_b] Length $E_B$ vector. MPI rank (indexed from zero) of the
+    process which owns each element in the local mesh B.
+  \item[pack\_data\_b, unpack\_data\_b, intersection\_calculation] Callbacks
+    used to pack and unpack mesh B data, and to perform calculations on
+    intersection meshes.
+  \item[comm] MPI communicator.
+\end{description}
+
+\subsection{\texttt{callbacks}}
+
+\noindent The first callback is used to pack mesh B data for communication.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine pack_data_b(nodes_b, eles_b, data_b)
+    integer, dimension(:), intent(in) :: nodes_b
+    integer, dimension(:), intent(in) :: eles_b
+    integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[nodes\_b] Number of mesh B nodes to be communicated.
+  \item[eles\_b] The mesh B elements to be communicated.
+  \item[data\_b] Mesh B data to be communicated. This should consist of all
+    data which will later be required by the \verb+intersection_calculation+
+    callback, excluding the mesh coordinates themselves.
+\end{description}
+
+\noindent The second callpack unpacks these data.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
+    integer, intent(in) :: nnodes_b
+    integer, intent(in) :: nelements_b
+    integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[nodes\_b] $V_B^*$.
+  \item[eles\_b] $E_B^*$.
+  \item[data\_b] Received mesh B data, previously packed on a different process
+    using \verb+pack_data_b+.
+\end{description}
+
+\noindent The final callback performs calculations on each intersection mesh.
+      
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersection_calculation(positions_a, positions_b, positions_c, &
+    & nodes_b, ele_a, ele_b, local)
+    real, dimension(:, :), intent(in) :: positions_a
+    real, dimension(:, :), intent(in) :: positions_b
+    real, dimension(:, :, :), intent(in) :: positions_c
+    integer, dimension(:), intent(in) :: nodes_b
+    integer, intent(in) :: ele_a
+    integer, intent(in) :: ele_b
+    logical, intent(in) :: local
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Local mesh A node coordinates.
+  \item[positions\_b] If \verb+local+ is true, a $d \times V_B$ array containing
+    the local mesh B node coordinates. If \verb+local+ is false, a
+    $d \times V_B^*$ array containing the received mesh B coordinates.
+  \item[positions\_c] $d \times l_C \times E_C$. Intersection mesh C.
+  \item[nodes\_b] \verb+positions_b(:, ele_b)+ are the mesh nodes associated
+    with element B.
+  \item[ele\_a] Index of element A in the local mesh A.
+  \item[ele\_b] If \verb+local+ is true, index of element B in the local mesh B.
+    If \verb+local+ is false, index of element B in the received mesh B.
+  \item[local] If \verb+local+ is true then the calculation involves the local
+    mesh B. If \verb+local+ is false then the calculation involves the received
+    mesh B.
 \end{description}
 
 \bibliography{doc/bibliography}
