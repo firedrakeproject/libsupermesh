@@ -257,10 +257,11 @@ node-element graph degree, if not specified.
   pure function max_nelist_degree(nnodes, enlist) result(max_degree)
     integer, intent(in) :: nnodes
     integer, dimension(:, :), intent(in) :: enlist
+    integer :: max_degree
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[nnodes] Number of nodes in mesh B, $V_B$.
+  \item[nnodes] $V_B$.
   \item[enlist] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[max\_degree] Maximal mesh B node-element graph degree.
 \end{description}
@@ -905,6 +906,437 @@ elements.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[rtree] libspatialindex R${}^*$-tree data structure.
+\end{description}
+
+\section{Element intersection}
+
+Given two elements, element A from mesh A and element B from mesh B, the
+following routines are used to construct a simplicial mesh ``C'', which is a
+mesh of their intersection (the ``local supermesh'').
+
+The following definitions are used:
+\begin{description}[leftmargin=\parindent,labelindent=\parindent]
+  \item[$d$] Mesh A defines a subset $\Omega_A \subset \mathbb{R}^d$, and mesh B
+    a subset $\Omega_B \subset \mathbb{R}^d$.
+  \item[$l$] Number of nodes in an element.
+  \item[$l_A$] Number of nodes in element A.
+  \item[$l_B$] Number of nodes in element B.
+  \item[$F_A$] Number of element A facets.
+  \item[$F_B$] Number of element B facets.
+  \item[$l_C$] Number of nodes per element in the intersection mesh C, always
+               equal to $d + 1$.
+  \item[$E_C$] Number of elements in the intersection mesh C.
+  \item[$M_C$] An upper bound for the maximum number of elements which can be
+               in any intersection mesh C.
+\end{description}
+
+\subsection{Interval-interval}
+
+Definition of $M_C$.
+  
+\begin{lstlisting}[language=FORTRAN] 
+  integer, parameter :: interval_buf_size = 1
+\end{lstlisting}
+
+~\newline
+Interval intersection.
+  
+\begin{lstlisting}[language=FORTRAN]    
+  interface intersect_intervals
+    module procedure intersect_intervals_rank_1, intersect_intervals_rank_2, &
+      & intersect_intervals_rank_3
+  end interface intersect_intervals
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]   
+  pure subroutine intersect_intervals_rank_1(interval_a, interval_b, &
+    & intervals_c, n_intervals_c)
+    real, dimension(2), intent(in) :: interval_a
+    real, dimension(2), intent(in) :: interval_b
+    real, dimension(2), intent(out) :: intervals_c
+    integer, intent(out) :: n_intervals_c
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[interval\_a] Length $2$ vector. Element A node coordinates.
+  \item[interval\_b] Length $2$ vector. Element B node coordinates.
+  \item[interval\_c] Length $2$ vector. Intersection mesh C node coordinates.
+  \item[n\_intervals\_c] Number of elements in mesh C. Equal to $1$ if elements
+    A and B intersect, and $0$ otherwise.
+\end{description}
+  
+\begin{lstlisting}[language=FORTRAN]   
+  pure subroutine intersect_intervals_rank_2(interval_a, interval_b, &
+    & intervals_c, n_intervals_c)
+    real, dimension(2), intent(in) :: interval_a
+    real, dimension(2), intent(in) :: interval_b
+    real, dimension(2, interval_buf_size), intent(out) :: intervals_c
+    integer, intent(out) :: n_intervals_c
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[interval\_a] Length $2$ vector. Element A node coordinates.
+  \item[interval\_b] Length $2$ vector. Element B node coordinates.
+  \item[interval\_c] $2 \times M_C$ array. Intersection mesh C node coordinates.
+  \item[n\_intervals\_c] Number of elements in mesh C. Equal to $1$ if elements
+    A and B intersect, and $0$ otherwise.
+\end{description}
+  
+\begin{lstlisting}[language=FORTRAN]  
+  pure subroutine intersect_intervals_rank_3(interval_a, interval_b, &
+    & intervals_c, n_intervals_c)
+    real, dimension(1, 2), intent(in) :: interval_a
+    real, dimension(1, 2), intent(in) :: interval_b
+    real, dimension(1, 2, interval_buf_size), intent(out) :: intervals_c
+    integer, intent(out) :: n_intervals_c
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[interval\_a] $1 \times 2$ array. Element A node coordinates.
+  \item[interval\_b] $1 \times 2$ vector. Element B node coordinates.
+  \item[interval\_c] $1 \times 2 \times M_C$ array. Intersection mesh C node
+    coordinates.
+  \item[n\_intervals\_c] Number of elements in mesh C. Equal to $1$ if elements
+    A and B intersect, and $0$ otherwise.
+\end{description}
+
+\noindent Interval length.
+  
+\begin{lstlisting}[language=FORTRAN]  
+  interface interval_size
+    module procedure interval_size_rank_1, interval_size_rank_2
+  end interface interval_size
+\end{lstlisting} 
+  
+\begin{lstlisting}[language=FORTRAN]  
+  pure function interval_size_rank_1(interval) result(size)
+    real, dimension(2), intent(in) :: interval
+    real :: size
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[interval] Length $2$ vector. Element node coordinates.
+  \item[size] Length of the element.
+\end{description}
+  
+\begin{lstlisting}[language=FORTRAN]    
+  pure function interval_size_rank_2(interval) result(size)
+    real, dimension(1, 2), intent(in) :: interval
+    real :: size
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[interval] $1 \times 2$ array. Element node coordinates.
+  \item[size] Length of the element.
+\end{description}
+
+\subsection{Polygon-polygon}
+
+Intersection of two-dimensional convex polygons using the \citet{sutherland1974}
+algorithm.
+
+~\newline
+\verb+triangle_type+ data type, used to define triangles.
+
+\begin{lstlisting}[language=FORTRAN]    
+  type tri_type
+    real, dimension(2, 3) :: v
+  end type tri_type
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[v] $d \times l$ array. Triangle node coordinates.
+\end{description}
+
+\noindent \verb+line_type+ data type, used to define the lines which constitute
+element facets.
+
+\begin{lstlisting}[language=FORTRAN]   
+  type line_type
+    real, dimension(2) :: normal
+    real, dimension(2) :: point
+  end type line_type
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[normal] Length $d$ vector. Components of a vector normal to the line.
+    Need not have unit norm.
+  \item[point] Length $d$ vector. Coordinates of a point on the line.
+\end{description}
+
+\noindent Definition of $M_C$ for triangle-triangle intersection.
+  
+\begin{lstlisting}[language=FORTRAN] 
+  integer, parameter :: tri_buf_size = 22
+\end{lstlisting}
+
+\noindent Definition of $M_C$ for triangle-polygon intersection.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface max_n_tris_c
+    module procedure max_n_tris_c_tri
+  end interface max_n_tris_c
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function max_n_tris_c_tri(n_lines_b) result(max_n_tris_c)
+    integer, intent(in) :: n_lines_b
+    integer :: max_n_tris_c
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[n\_lines\_b] $F_B$, assuming that element A is a triangle.
+  \item[max\_n\_tris\_c] $M_C = 3 \left( 2^{F_B} \right) - 2$.
+\end{description}
+
+\noindent Definition of $M_C$ for polygon-polygon intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface max_n_tris_c
+    module procedure max_n_tris_c_poly
+  end interface max_n_tris_c
+\end{lstlisting} 
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function max_n_tris_c_poly(n_lines_a, n_lines_b) result(max_n_tris_c)
+    integer, intent(in) :: n_lines_a
+    integer, intent(in) :: n_lines_b
+    integer :: max_n_tris_c
+\end{lstlisting} 
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[n\_lines\_a] $F_A$.
+  \item[n\_lines\_b] $F_B$.
+  \item[max\_n\_tris\_c] $M_C = F_A \left( 2^{F_B} \right) - 2$.
+\end{description}
+
+\noindent \verb+line_type+ representation of facets.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface get_lines
+    module procedure get_lines_tri, get_lines_poly
+  end interface get_lines
+\end{lstlisting} 
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function get_lines_tri(tri) result(lines)
+    type(tri_type), intent(in) :: tri
+    type(line_type), dimension(3) :: lines
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tri] A triangle.
+  \item[lines] The three facets of the triangle.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function get_lines_poly(poly) result(lines)
+    real, dimension(:, :), intent(in) :: poly    
+    type(line_type), dimension(size(poly, 2)) :: lines
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[poly] $d \times l$ array. Coordinates of the polygon nodes, in either
+    clockwise or anti-clockwise order.
+  \item[lines] Length $l$ array. The facets of the polygon.
+\end{description}
+
+\noindent Triangle-triangle intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface intersect_tris
+    module procedure intersect_tris_real, intersect_tris_tri
+  end interface intersect_tris
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tris_real(tri_a, tri_b, tris_c, n_tris_c)
+    real, dimension(2, 3), intent(in) :: tri_a
+    real, dimension(2, 3), intent(in) :: tri_b
+    real, dimension(2, 3, tri_buf_size), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tri\_a] $d \times l_A$ array. Element A node coordinates. Element A
+    must be a triangle.
+  \item[tri\_b] $d \times l_B$ array. Element B node coordinates. Element B
+    must be a triangle.
+  \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_tris\_c] $E_C$.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tris_tri(tri_a, tri_b, tris_c, n_tris_c)
+    type(tri_type), intent(in) :: tri_a
+    type(tri_type), intent(in) :: tri_b
+    type(tri_type), dimension(tri_buf_size), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tri\_a] Element A.
+  \item[tri\_b] Element B.
+  \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
+  \item[n\_tris\_c] $E_C$.
+\end{description}
+
+\noindent Triangle-quadrilateral intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tri_quad(tri_a, quad_b, tris_c, n_tris_c)
+    real, dimension(:, :), intent(in) :: tri_a
+    real, dimension(:, :), intent(in) :: quad_b
+    real, dimension(:, :, :), intent(inout) :: tris_c
+    integer, intent(out) :: n_tris_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tri\_a] $d \times l_A$ array. Element A node coordinates. Element A
+    must be a triangle.
+  \item[quad\_b] $d \times l_B$ array. Element B node coordinates. Element B
+    must be a quadrilateral with the node coordinates in either clockwise or
+    anti-clockwise order.
+  \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_tris\_c] $E_C$.
+\end{description}
+
+\noindent Quadrilateral-quadrilateral intersection.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_quads(quad_a, quad_b, tris_c, n_tris_c)
+    real, dimension(:, :), intent(in) :: quad_a
+    real, dimension(:, :), intent(in) :: quad_b
+    real, dimension(:, :, :), intent(inout) :: tris_c
+    integer, intent(out) :: n_tris_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[quad\_a] $d \times l_A$ array. Element A node coordinates. Element A
+    must be a quadrilateral with the node coordinates in either clockwise or
+    anti-clockwise order.
+  \item[quad\_b] $d \times l_B$ array. Element B node coordinates. Element B
+    must be a quadrilateral with the node coordinates in either clockwise or
+    anti-clockwise order.
+  \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_tris\_c] $E_C$.
+\end{description}
+
+\noindent Triangle-polygon intersection.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface intersect_polys
+    module procedure intersect_tri_lines
+  end interface intersect_polys
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tri_lines(tri_a, lines_b, tris_c, n_tris_c, area_b, work)
+    type(tri_type), intent(in) :: tri_a
+    type(line_type), dimension(:), intent(in) :: lines_b
+    type(tri_type), dimension(:), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+    real, optional, intent(in) :: area_b
+    real, dimension(:, :, :), target, optional, intent(out) :: work
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tri\_a] Element A.
+  \item[lines\_b] Element B facets.
+  \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
+  \item[n\_tris\_c] $E_C$.
+  \item[area\_b] Area of element B. Use to discard near degenerate elements in
+    mesh C.
+  \item[work] $2 \times M_C$ array. Working memory.
+\end{description}
+
+\noindent Polygon-polygon intersection.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface intersect_polys
+    module procedure intersect_polys_real, intersect_polys_lines
+  end interface intersect_polys
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_polys_real(poly_a, poly_b, tris_c, n_tris_c, &
+    & area_a, area_b, work)
+    real, dimension(:, :), intent(in) :: poly_a
+    real, dimension(:, :), intent(in) :: poly_b
+    type(tri_type), dimension(:), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+    real, optional, intent(in) :: area_a
+    real, optional, intent(in) :: area_b
+    real, dimension(:, :, :), target, optional, intent(out) :: work
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[poly\_a] $d \times l_A$ array. Element A node coordinates. The node
+    coordinates must be in either clockwise or anti-clockwise order.
+  \item[poly\_b] $d \times l_B$ array. Element B node coordinates. The node
+    coordinates must be in either clockwise or anti-clockwise order.
+  \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
+  \item[n\_tris\_c] $E_C$.
+  \item[area\_a] Area of element A. Use to discard near degenerate elements in
+    mesh C.
+  \item[area\_b] Area of element B. Use to discard near degenerate elements in
+    mesh C.
+  \item[work] $2 \times M_C$ array. Working memory.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_polys_lines(poly_a, lines_b, tris_c, n_tris_c, &
+    & area_a, area_b, work)
+    real, dimension(:, :), intent(in) :: poly_a
+    type(line_type), dimension(:), intent(in) :: lines_b
+    type(tri_type), dimension(:), intent(out) :: tris_c
+    integer, intent(out) :: n_tris_c
+    real, optional, intent(in) :: area_a
+    real, optional, intent(in) :: area_b
+    real, dimension(:, :, :), target, optional, intent(out) :: work
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[poly\_a] $d \times l_A$ array. Element A node coordinates. The node
+    coordinates must be in either clockwise or anti-clockwise order.
+  \item[lines\_b] $d \times l_B$ array. Element B facets.
+  \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
+  \item[n\_tris\_c] $E_C$.
+  \item[area\_a] Area of element A. Use to discard near degenerate elements in
+    mesh C.
+  \item[area\_b] Area of element B. Use to discard near degenerate elements in
+    mesh C.
+  \item[work] $2 \times M_C$ array. Working memory.
+\end{description}
+
+\noindent Triangle area.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface triangle_area
+    module procedure triangle_area_real, triangle_area_tri
+  end interface triangle_area
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function triangle_area_real(tri) result(area)
+    real, dimension(2, 3), intent(in) :: tri
+    real :: area
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tri] $d \times l$ array. Triangle node coordinates.
+  \item[area] Area of the triangle.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function triangle_area_tri(tri) result(area)
+    type(tri_type), intent(in) :: tri
+    real :: area
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tri] A triangle.
+  \item[area] Area of the triangle.
 \end{description}
 
 \bibliography{doc/bibliography}
