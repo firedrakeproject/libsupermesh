@@ -930,7 +930,7 @@ The following definitions are used:
                in any intersection mesh C.
 \end{description}
 
-\subsection{One dimension}
+\subsection{One dimension}\label{sect:1D_intersection}
 
 Definition of $M_C$.
   
@@ -979,7 +979,7 @@ Interval intersection.
   \item[interval\_b] Length $2$ vector. Element B node coordinates.
   \item[interval\_c] $2 \times M_C$ array. Intersection mesh C node coordinates.
   \item[n\_intervals\_c] Number of elements in mesh C. Equal to $1$ if elements
-    A and B intersect, and $0$ otherwise.
+    A and B intersect, and $0$ otherwise. $M_C = 1$.
 \end{description}
   
 \begin{lstlisting}[language=FORTRAN]  
@@ -995,7 +995,7 @@ Interval intersection.
   \item[interval\_a] $1 \times 2$ array. Element A node coordinates.
   \item[interval\_b] $1 \times 2$ vector. Element B node coordinates.
   \item[interval\_c] $1 \times 2 \times M_C$ array. Intersection mesh C node
-    coordinates.
+    coordinates. $M_C = 1$.
   \item[n\_intervals\_c] Number of elements in mesh C. Equal to $1$ if elements
     A and B intersect, and $0$ otherwise.
 \end{description}
@@ -1030,7 +1030,7 @@ Interval intersection.
   \item[size] Length of the element.
 \end{description}
 
-\subsection{Two dimensions}
+\subsection{Two dimensions}\label{sect:2D_intersection}
 
 Intersection of two-dimensional convex polygons using the \citet{sutherland1974}
 algorithm.
@@ -1163,7 +1163,7 @@ element facets.
   \item[tri\_b] $d \times l_B$ array. Element B node coordinates. Element B
     must be a triangle.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
-  \item[n\_tris\_c] $E_C$.
+  \item[n\_tris\_c] $E_C$. $M_C = 22$.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -1177,7 +1177,7 @@ element facets.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tri\_a] Element A.
   \item[tri\_b] Element B.
-  \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
+  \item[tris\_c] Length $M_C$ vector. Triangles in mesh C. $M_C = 22$.
   \item[n\_tris\_c] $E_C$.
 \end{description}
 
@@ -1198,6 +1198,7 @@ element facets.
     must be a convex quadrilateral with the node coordinates in either clockwise
     or anti-clockwise order.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+    $M_C = 46$.
   \item[n\_tris\_c] $E_C$.
 \end{description}
 
@@ -1219,6 +1220,7 @@ element facets.
     must be a convex quadrilateral with the node coordinates in either clockwise
     or anti-clockwise order.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+    $M_C = 62$.
   \item[n\_tris\_c] $E_C$.
 \end{description}
 
@@ -1343,7 +1345,7 @@ element facets.
   \item[area] Area of the triangle.
 \end{description}
 
-\subsection{Three dimensions}
+\subsection{Three dimensions}\label{sect:3D_intersection}
 
 Intersection of three-dimensional convex polyhedra using the ``plane-at-a-time
 clipping'' algorithm described in \citet[][section 2.4.3]{eberly2007}.
@@ -1442,6 +1444,7 @@ constitute element facets.
   \item[tet\_b] $d \times l_B$ array. Element B node coordinates. Element B must
     be a tetrahedron.
   \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+    $M_C = 81$.
   \item[n\_tets\_c] $E_C$.
 \end{description}
 
@@ -1456,7 +1459,7 @@ constitute element facets.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tet\_a] Element A.
   \item[tet\_b] Element B.
-  \item[tets\_c] Length $M_C$ vector. Tetrahedra in mesh C.
+  \item[tets\_c] Length $M_C$ vector. Tetrahedra in mesh C. $M_C = 81$.
   \item[n\_tets\_c] $E_C$.
 \end{description}
 
@@ -1477,10 +1480,13 @@ constitute element facets.
     be a convex hexahedron with Gmsh 2.12 node
     ordering\footnote{See \url{http://gmsh.info/doc/texinfo/gmsh.html\#Node-ordering}.}.
   \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+    $M_C = 729$.
   \item[n\_tets\_c] $E_C$.
 \end{description}
 
-\noindent Hexahedron-hexahedron intersection.
+\noindent Hexahedron-hexahedron intersection. Divides the convex hexahedron A
+into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
+\verb+intersect_tet_hex+ to intersect these with the convex hexahedron B.
 
 \begin{lstlisting}[language=FORTRAN]
   subroutine intersect_hexes(hex_a, hex_b, tets_c, n_tets_c)
@@ -1491,11 +1497,10 @@ constitute element facets.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[hex\_a] $d \times l_A$ array. Element A node coordinates. Element A must
-    be a convex hexahedron with Gmsh 2.12 node ordering.
-  \item[hex\_b] $d \times l_B$ array. Element B node coordinates. Element B must
-    be a convex hexahedron with Gmsh 2.12 node ordering.
+  \item[hex\_a, hex\_b] $d \times l_A$ arrays. Element A and B node coordinates.
+    Each element must be a convex hexahedron with Gmsh 2.12 node ordering.
   \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+    $M_C = 3,645$.
   \item[n\_tets\_c] $E_C$.
 \end{description}
 
@@ -1527,6 +1532,108 @@ constitute element facets.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tet] A tetrahedron.
   \item[volume] Volume of the tetrahedron.
+\end{description}
+
+\subsection{General dimensions}
+
+Definition of $M_C$ for simplex-simplex intersection in one, two, and three
+dimensions.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface max_n_simplices_c
+    module procedure max_n_simplices_c_simplices
+  end interface max_n_simplices_c
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function max_n_simplices_c_simplices(dim) result(size)
+    integer, intent(in) :: dim
+    integer :: size
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[dim] Dimension $d$.
+  \item[size] $M_C$. Equal to $1$ for the interval-interval case, $22$ for the
+    triangle-triangle case, and $81$ for the tetrahedron-tetrahedron case.
+\end{description}
+
+\noindent Definition of $M_C$ for simplex-simplex, simplex-hypercube, and
+hypercube-hypercube intersection in one, two, and three dimensions.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface max_n_simplices_c
+    module procedure max_n_simplices_c_elements
+  end interface max_n_simplices_c
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function max_n_simplices_c_elements(dim, loc_a, loc_b) result(size)
+    integer, intent(in) :: dim
+    integer, intent(in) :: loc_a
+    integer, intent(in) :: loc_b
+    integer :: size
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[dim] Dimension $d$. Must be equal to $1$, $2$, or $3$.
+  \item[loc\_a] $l_A$.
+  \item[loc\_b] $l_B$.
+  \item[size] $M_C$. Equal to \verb+max_n_simplices_c(d)+ for the
+    simplex-simplex case, $46$ for the triangle-quadrilateral case, $62$ for the
+    quadrilateral-quadrilateral case, $729$ for the tetrahedron-hexahedron case,
+    and $3,645$ for the hexahedron-hexahedron case.
+\end{description}
+
+\noindent Simplex-simplex intersection in one, two, and three dimensions.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_simplices(simplex_a, simplex_b, &
+    & simplices_c, n_simplices_c)
+    real, dimension(:, :), intent(in) :: simplex_a
+    real, dimension(:, :), intent(in) :: simplex_b
+    real, dimension(:, :, :), intent(inout) :: simplices_c
+    integer, intent(out) :: n_simplices_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[simplex\_a, simplex\_b] $d \times l_A$ arrays. Element A and B node
+    coordinates. Each element must be a one, two, or three dimensional simplex.
+  \item[simplex\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_simplices\_c] $E_C$.
+\end{description}
+
+\noindent Simplex-simplex, simplex-hypercube, and hypercube-hypercube
+intersection in one, two, and three dimensions.
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_elements(element_a, element_b, elements_c, nelements_c)
+    real, dimension(:, :), intent(in) :: element_a
+    real, dimension(:, :), intent(in) :: element_b
+    real, dimension(:, :, :), intent(inout) :: elements_c
+    integer, intent(out) :: nelements_c
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[element\_a, element\_b] $d \times l_A$ arrays. Element A and B node
+    coordinates. Each element must be a one, two, or three dimensional simplex
+    or convex hypercube. Quadrilaterals must have nodes ordered in a clockwise
+    or anti-clockwise order, and hexahedra must use Gmsh 2.12 node ordering.
+  \item[elements\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[n\_simplices\_c] $E_C$.
+\end{description}
+
+\noindent Simplex volume in one, two, and three dimensions.
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function simplex_volume(simplex) result(volume)
+    real, dimension(:, :), intent(in) :: simplex
+    real :: volume
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[simplex] $d \times l$ array. Simplex node coordinates. Must be
+    coordinates for a one, two, or three dimensional simplex.
+  \item[volume] Simplex volume.
 \end{description}
 
 \bibliography{doc/bibliography}
