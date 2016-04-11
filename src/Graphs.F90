@@ -1,6 +1,6 @@
 #include "libsupermesh_debug.h"
 
-module libsupermesh_hypergraphs
+module libsupermesh_graphs
 
   use libsupermesh_debug, only : abort_pinpoint
 
@@ -155,4 +155,4 @@ contains
 
   end subroutine deallocate_eelist
 
-end module libsupermesh_hypergraphs
+end module libsupermesh_graphs

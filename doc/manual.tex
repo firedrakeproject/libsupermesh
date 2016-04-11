@@ -88,7 +88,7 @@ intersection.
 
 \subsection{Global intersection finders}
 
-The following intersection finders return an element-element hypergraph which
+The following intersection finders return an element-element graph which
 associates with all elements in a mesh ``A'' candidate intersecting elements in
 the mesh ``B''. The following definitions are used:
 \begin{description}[leftmargin=\parindent,labelindent=\parindent]
@@ -102,9 +102,9 @@ the mesh ``B''. The following definitions are used:
   \item[$E_B$] Number of elements in mesh B.
 \end{description}
 
-Element-node hypergraphs are represented as $l_A \times E_A$ and
+Element-node graphs are represented as $l_A \times E_A$ and
 $l_B \times E_B$ integer arrays respectively. For example, if \verb+enlist_a+
-stores the element-node hypergraph for mesh A, then in the following:
+stores the element-node graph for mesh A, then in the following:
 \begin{lstlisting}[language=FORTRAN]
   integer, dimension(l_A, E_A) :: enlist_a
   integer, dimension(l_A) :: nodes_a
@@ -115,7 +115,7 @@ stores the element-node hypergraph for mesh A, then in the following:
 \end{lstlisting}
 \verb+nodes_a+ contains the indices of nodes in mesh A for element \verb+ele_a+.
 
-Candidate intersection element-element hypergraphs are stored either as a ragged
+Candidate intersection element-element graphs are stored either as a ragged
 array or as a Compressed Sparse Row (CSR) sparsity pattern\footnote{See the
 \href{http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html}{SciPy documentation.}}.
 For the ragged array variant:
@@ -172,11 +172,11 @@ and a 1D advancing front.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] Length $V_A$ vector. Mesh A node coordinates.
-  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] Length $V_B$ vector. Mesh B node coordinates.
-  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
-    hypergraph.
+    graph.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -191,11 +191,11 @@ and a 1D advancing front.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $1 \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $1 \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
-    hypergraph.
+    graph.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -212,11 +212,12 @@ and a 1D advancing front.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] Length $V_A$ vector. Mesh A node coordinates.
-  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] Length $V_B$ vector. Mesh B node coordinates.
-  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indices+ has length
+    $E_A + 1$.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -233,11 +234,12 @@ and a 1D advancing front.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $1 \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $2 \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $1 \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indices+ has length 
+    $E_A + 1$.
 \end{description}
 
 \subsubsection{\texttt{quadtree\_intersection\_finder}}\label{sect:quadtree}
@@ -247,7 +249,7 @@ interface accepts an optional \verb+max_size+ argument, which specifies the
 maximum number of elements in a leaf node. This should be greater than the
 maximum number of elements which can be found in a neighbourhood of an arbitrary
 point. \verb+max_size+ defaults to the maximum of $256$, and the maximal
-node-element hypergraph degree, if not specified.
+node-element graph degree, if not specified.
 
 \begin{lstlisting}[language=FORTRAN]  
   interface quadtree_intersection_finder
@@ -269,11 +271,11 @@ node-element hypergraph degree, if not specified.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
-    hypergraph.
+    graph.
   \item[max\_size] Maximum number of elements in a quadtree leaf node.
 \end{description}
   
@@ -292,11 +294,12 @@ node-element hypergraph degree, if not specified.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indices+ has length
+    $E_A + 1$.
   \item[max\_size] Maximum number of elements in a quadtree leaf node.
 \end{description}
 
@@ -326,11 +329,11 @@ argument.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
-    hypergraph.
+    graph.
   \item[max\_size] Maximum number of elements in an octtree leaf node.
 \end{description}
   
@@ -349,11 +352,12 @@ argument.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indices+ has length
+    $E_A + 1$.
   \item[max\_size] Maximum number of elements in an octtree leaf node.
 \end{description}
 
@@ -382,11 +386,11 @@ An intersection finder for 2D and 3D meshes, which uses either the
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
-    hypergraph.
+    graph.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -403,11 +407,12 @@ An intersection finder for 2D and 3D meshes, which uses either the
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indices+ has length
+    $E_A + 1$.
 \end{description}
 
 \subsubsection{\texttt{rtree\_intersection\_finder}}
@@ -434,11 +439,11 @@ R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
-    hypergraph.
+    graph.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -455,11 +460,76 @@ R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
-  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node hypergraph.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node hypergraph.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element hypergraph. \verb+map_ab_indices+ has length $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indices+ has length
+    $E_A + 1$.
+\end{description}
+
+\subsubsection{\texttt{advancing\_front\_intersection\_finder}}
+
+An intersection finder for meshes with simplex or cubic elements, using
+the algorithm described in \citet{farrell2011}
+\citep[see also][]{gander2009,gander2013}. The intersection finder is primarily
+intended for the case where the meshes A and B cover the same domain. However
+correct output is guaranteed if:
+\begin{enumerate}
+  \item Element $1$ of mesh A intersects with at least one element of mesh B.
+  \item The elements of mesh B which intersect with any given element of mesh A
+        define an element-element sub-graph of the mesh B element-element
+        graph\footnote{Here element-element graphs are defined by elements
+        sharing a common facet.}. All of these sub-graphs should be connected. 
+\end{enumerate}
+
+\begin{lstlisting}[language=FORTRAN]
+  interface advancing_front_intersection_finder
+    module procedure advancing_front_intersection_finder_intersections, &
+      & advancing_front_intersection_finder_csr_sparsity
+  end interface advancing_front_intersection_finder
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine advancing_front_intersection_finder_intersections( &
+    & positions_a, enlist_a, positions_b, enlist_b, &
+    & map_ab)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    type(intersections), dimension(:), intent(out) :: map_ab
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
+  \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
+  \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
+    graph.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine advancing_front_intersection_finder_csr_sparsity( &
+    & positions_a, enlist_a, positions_b, enlist_b, &
+    & map_ab_indices, map_ab_indptr)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    integer, dimension(:), intent(out) :: map_ab_indptr
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
+  \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
+  \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
+    element-element graph. \linebreak \verb+map_ab_indices+ has length
+    $E_A + 1$.
 \end{description}
 
 \bibliography{doc/bibliography}

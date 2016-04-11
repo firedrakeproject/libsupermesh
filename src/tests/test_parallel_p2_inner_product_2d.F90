@@ -72,7 +72,7 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   ! ... and determine the donor mesh element ownership
   allocate(ele_owner_a(nelements_a))
   call element_ownership(nnodes_p1_a, enlist_p1_a, halo_a, ele_owner_a)
-  ! Generate the donor P2 element-node hypergraph
+  ! Generate the donor P2 element-node graph
   allocate(enlist_p2_a(6, nelements_a))
   call p2_connectivity(nnodes_p1_a, enlist_p1_a, nnodes_p2_a, enlist_p2_a)
   ! Construct a donor P2 field equal to: x y
@@ -93,7 +93,7 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   ! ... and determine the target mesh element ownership
   allocate(ele_owner_b(nelements_b))
   call element_ownership(nnodes_p1_b, enlist_p1_b, halo_b, ele_owner_b)
-  ! Generate the donor P2 element-node hypergraph
+  ! Generate the donor P2 element-node graph
   allocate(enlist_p2_b(6, nelements_b))
   call p2_connectivity(nnodes_p1_b, enlist_p1_b, nnodes_p2_b, enlist_p2_b)
   ! Construct a target P2 field equal to: x^2
@@ -138,16 +138,16 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
 
 contains
 
-  ! Generate a P2 element-node hypergraph
+  ! Generate a P2 element-node graph
   subroutine p2_connectivity(nnodes_p1, enlist_p1, nnodes_p2, enlist_p2)
     ! Number of P1 nodes
     integer, intent(in) :: nnodes_p1
-    ! P1 element-node hypergraph
+    ! P1 element-node graph
     ! Shape: 3 x nelements
     integer, dimension(:, :), intent(in) :: enlist_p1
     ! Number of P2 nodes
     integer, intent(out) :: nnodes_p2
-    ! P2 element-node hypergraph
+    ! P2 element-node graph
     ! Shape: 6 x nelements
     integer, dimension(:, :), intent(out) :: enlist_p2
     
@@ -232,13 +232,13 @@ contains
   
   ! Interpolate a P1 field onto a P2 function space
   subroutine interpolate_p1_p2(enlist_p1, field_p1, enlist_p2, field_p2)
-    ! P1 element-node hypergraph
+    ! P1 element-node graph
     ! Shape: 3 x nelements
     integer, dimension(:, :), intent(in) :: enlist_p1
     ! P1 field
     ! Shape: nnodes_p1
     real, dimension(:), intent(in) :: field_p1
-    ! P2 element-node hypergraph
+    ! P2 element-node graph
     ! Shape: 6 x nelements
     integer, dimension(:, :), intent(in) :: enlist_p2
     ! P2 field
@@ -309,7 +309,7 @@ contains
       node_b = fetch(nodes_p2_b, i)
       call insert(node_map, node_b, i)
     end do
-    ! ... and use this to construct the communicated P2 element-node hypergraph
+    ! ... and use this to construct the communicated P2 element-node graph
     allocate(data_enlist_p2_b(6, size(eles_b)))
     do i = 1, size(eles_b)
       ele = eles_b(i)
@@ -328,7 +328,7 @@ contains
     
     ! Pack data for communication:
     !   1 integer                         -- number of P2 nodes
-    !   (6 x number of elements) integers -- communicated P2 element-node hypergraph
+    !   (6 x number of elements) integers -- communicated P2 element-node graph
     !   (number of P2 nodes) reals        -- communicated P2 field values
     ndata_b = (1 + 6 * size(eles_b)) * integer_extent + nnodes_p2_b * real_extent
     allocate(data_b(ndata_b))
@@ -362,7 +362,7 @@ contains
     data_nelements_b = nelements_b
     ! Unpack the number of P2 nodes
     call MPI_Unpack(data_b, size(data_b), position, data_nnodes_p2_b, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
-    ! Unpack the P2 element-node hypergraph
+    ! Unpack the P2 element-node graph
     allocate(data_enlist_p2_b(6, data_nelements_b))
     call MPI_Unpack(data_b, size(data_b), position, data_enlist_p2_b, 6 * data_nelements_b, MPI_INTEGER, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     ! Unpack the P2 field values
@@ -461,12 +461,12 @@ contains
     real, dimension(:), pointer :: lfield_b
     
     if(local) then
-      ! If this is a local calculation, use the local P2 element-node hypergraph and
+      ! If this is a local calculation, use the local P2 element-node graph and
       ! field data
       lenlist_p2_b => enlist_p2_b
       lfield_b => field_b
     else
-      ! Otherwise, use the unpacked communicated element-node hypergraph and P2 field
+      ! Otherwise, use the unpacked communicated element-node graph and P2 field
       ! data
       lenlist_p2_b => data_enlist_p2_b
       lfield_b => data_field_b

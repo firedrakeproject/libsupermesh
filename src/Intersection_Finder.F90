@@ -25,8 +25,7 @@ module libsupermesh_intersection_finder
   
   use libsupermesh_debug, only : abort_pinpoint, current_debug_level, &
     & debug_unit
-  use libsupermesh_hypergraphs, only : eelist_type, deallocate, mesh_eelist, &
-    & sloc
+  use libsupermesh_graphs, only : eelist_type, deallocate, mesh_eelist, sloc
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
   use libsupermesh_octtree_intersection_finder, only : octtree_node, &
