@@ -22,7 +22,7 @@ libsupermesh is derived from Fluidity git revision
 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25). libsupermesh
 additionally uses code from Fluidity 4.1.11 -- see comments in src/Graphs.F90.
 Fluidity copyright information (note that AUTHORS mentioned in the following has
-been renamed to fluidity_AUTHORS):
+been renamed to Fluidity_AUTHORS):
 
   Copyright (C) 2006 Imperial College London and others.
   
@@ -53,9 +53,10 @@ been renamed to fluidity_AUTHORS):
 
 ################################################################################
 
-libsupermesh includes a modified version of TinyXML 2.6.2. Further information
-regarding TinyXML can be found in TinyXML_readme.txt. TinyXML 2.6.2 license
-information:
+libsupermesh includes a modified version of TinyXML 2.6.2 (include/tinystr.h,
+include/tinyxml.h, src/tinystr.cpp, src/tinyxml.cpp, src/tinyxmlerror.cpp, and
+src/tinyxmlparser.cpp). Further information regarding TinyXML can be found in
+TinyXML_readme.txt. TinyXML 2.6.2 license information:
 
 www.sourceforge.net/projects/tinyxml
 Original code by Lee Thomason (www.grinninglizard.com)
@@ -81,10 +82,10 @@ distribution.
 
 ################################################################################
 
-libsupermesh includes a modified version of libspatialindex 1.8.5. libsupermesh
-additionally uses modified versions of code from libspatialindex -- see 
-comments in include/R-Tree_Intersection_Finder_C++.h and
-src/R-Tree_Intersection_Finder_C++.cpp. Further information regarding
+libsupermesh includes a modified version of libspatialindex 1.8.5
+(spatialindex-1.8.5/). libsupermesh additionally uses modified versions of code
+from libspatialindex -- see comments in include/R-Tree_Intersection_Finder_C++.h
+and src/R-Tree_Intersection_Finder_C++.cpp. Further information regarding
 libspatialindex can be found in spatialindex-1.8.5/. libspatialindex 1.8.5
 license information:
 
