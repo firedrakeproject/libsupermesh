@@ -80,17 +80,13 @@ directory. Note that libsupermesh cannot be built in the source directory.
 
 libsupermesh includes a number of different algorithms for identifying candidate
 pairs of elements, in two different meshes, which intersect. These algorithms
-are all based upon a ``minimal bounding box'' intersection predicate. Hence the
-different approaches are all guaranteed to return all pairs of elements which
-have a non-trivial intersection\footnote{Except for numerical precision related
-errors.}, but may additionally return pairs of elements which have zero
+are all based upon an ``axis aligned bounding box'' intersection predicate. Hence
+the different approaches are all guaranteed to return all pairs of elements
+which have a non-trivial intersection\footnote{Except for numerical precision
+related errors.}, but may additionally return pairs of elements which have zero
 intersection.
 
-\subsection{Global intersection finders}
-
-The following intersection finders return an element-element graph which
-associates with all elements in a mesh ``A'' candidate intersecting elements in
-the mesh ``B''. The following definitions are used:
+The following definitions are used:
 \begin{description}[leftmargin=\parindent,labelindent=\parindent]
   \item[$d$] Mesh A defines a subset $\Omega_A \subset \mathbb{R}^d$, and mesh B
     a subset $\Omega_B \subset \mathbb{R}^d$.
@@ -145,6 +141,12 @@ or for the CSR sparsity pattern variant:
 with element \verb+ele_a+ of mesh A. \verb+v+ points at a vector of length
 \verb+n+ containing the indices of elements in mesh B which may intersect with
 element \verb+ele_a+ of mesh A.
+
+\subsection{Global intersection finding}
+
+The following intersection finders return an element-element graph which
+associates with all elements in a mesh ``A'' candidate intersecting elements in
+the mesh ``B''. 
 
 \subsubsection{\texttt{sort\_intersection\_finder}}
 
@@ -242,7 +244,7 @@ and a 1D advancing front.
     $E_A + 1$.
 \end{description}
 
-\subsubsection{\texttt{quadtree\_intersection\_finder}}\label{sect:quadtree}
+\subsubsection{\texttt{quadtree\_intersection\_finder}}\label{sect:quadtree_global}
 
 An intersection finder for 2D meshes, based upon a quadtree data structure. Each
 interface accepts an optional \verb+max_size+ argument, which specifies the
@@ -250,6 +252,18 @@ maximum number of elements in a leaf node. This should be greater than the
 maximum number of elements which can be found in a neighbourhood of an arbitrary
 point. \verb+max_size+ defaults to the maximum of $256$, and the maximal
 node-element graph degree, if not specified.
+
+\begin{lstlisting}[language=FORTRAN]  
+  pure function max_nelist_degree(nnodes, enlist) result(max_degree)
+    integer, intent(in) :: nnodes
+    integer, dimension(:, :), intent(in) :: enlist
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[nnodes] Number of nodes in mesh B, $V_B$.
+  \item[enlist] $l_B \times E_B$ array. Mesh B element-node graph.
+  \item[max\_degree] Maximal mesh B node-element graph degree.
+\end{description}
 
 \begin{lstlisting}[language=FORTRAN]  
   interface quadtree_intersection_finder
@@ -303,11 +317,11 @@ node-element graph degree, if not specified.
   \item[max\_size] Maximum number of elements in a quadtree leaf node.
 \end{description}
 
-\subsubsection{\texttt{octtree\_intersection\_finder}}\label{sect:octtree}
+\subsubsection{\texttt{octtree\_intersection\_finder}}\label{sect:octtree_global}
 
 An intersection finder for 3D meshes, based upon an octtree data structure. See
-section \ref{sect:quadtree} for details regarding the optional \verb+max_size+
-argument.
+section \ref{sect:quadtree_global} for details regarding the optional
+\verb+max_size+ argument.
 
 \begin{lstlisting}[language=FORTRAN]  
   interface octtree_intersection_finder
@@ -364,8 +378,8 @@ argument.
 \subsubsection{\texttt{tree\_intersection\_finder}}
 
 An intersection finder for 2D and 3D meshes, which uses either the
-\verb+quadtree_intersection_finder+ (section \ref{sect:quadtree}) or
-\verb+octree_intersection_finder+ (section \ref{sect:octtree}).
+\verb+quadtree_intersection_finder+ (section \ref{sect:quadtree_global}) or
+\verb+octtree_intersection_finder+ (section \ref{sect:octtree_global}).
 
 \begin{lstlisting}[language=FORTRAN]
   interface tree_intersection_finder
@@ -530,6 +544,367 @@ correct output is guaranteed if:
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
     element-element graph. \linebreak \verb+map_ab_indices+ has length
     $E_A + 1$.
+\end{description}
+
+\subsubsection{\texttt{brute\_force\_intersection\_finder}}
+
+A basic brute force intersection finder with quadratic complexity.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface brute_force_intersection_finder
+    module procedure brute_force_intersection_finder_intersections, &
+      & brute_force_intersection_finder_csr_sparsity
+  end interface brute_force_intersection_finder
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure subroutine brute_force_intersection_finder_intersections( &
+    & positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    type(intersections), dimension(:), intent(out) :: map_ab
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
+  \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
+  \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
+    graph.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure subroutine brute_force_intersection_finder_csr_sparsity( &
+    & positions_a, enlist_a, positions_b, enlist_b, &
+    & map_ab_indices, map_ab_indptr)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    integer, dimension(:), intent(out) :: map_ab_indptr
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
+  \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
+  \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
+    element-element graph. \linebreak \verb+map_ab_indices+ has length
+    $E_A + 1$.
+\end{description}
+
+\subsection{Queryable tree intersection finding}
+
+The following intersection finders use a given mesh B to construct a tree based
+structure which can be queried, one mesh A element at a time, for intersecting
+elements.
+
+\subsubsection{\texttt{quadtree\_type}}\label{sect:quadtree_query}
+  
+An intersection finder for 2D meshes, based upon a quadtree data structure. See
+section \ref{sect:quadtree_global} for details regarding the optional
+\verb+max_size+ argument.
+
+~\newline
+Allocate a \verb+quadtree_type+, which can later be queried for intersecting
+elements.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface allocate
+    module procedure allocate_quadtree
+  end interface allocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine allocate_quadtree(quadtree, positions, enlist, max_size)
+    type(quadtree_type), intent(out) :: quadtree
+    real, dimension(:, :), intent(in) :: positions
+    integer, dimension(:, :), intent(in) :: enlist
+    integer, optional, intent(in) :: max_size 
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[quadtree] Quadtree data structure.
+  \item[positions] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+  \item[max\_size] Maximum number of elements in a quadtree leaf node.
+\end{description}
+
+\noindent Query an allocated \verb+quadtree_type+ for intersecting elements.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface query
+    module procedure query_quadtree_allocatable, query_quadtree_pointer
+  end interface query
+\end{lstlisting}
+    
+\begin{lstlisting}[language=FORTRAN]
+  subroutine query_quadtree_allocatable(quadtree, element_a, eles_b)
+    type(quadtree_type), intent(inout) :: quadtree
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), allocatable, intent(out) :: eles_b
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine query_quadtree_pointer(quadtree, element_a, eles_b)
+    type(quadtree_type), intent(inout) :: quadtree
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), pointer, intent(out) :: eles_b
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[quadtree] Quadtree data structure.
+  \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
+  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
+    with the axis aligned bounding box of the given mesh A element.
+\end{description}
+
+\noindent Deallocate a \verb+quadtree_type+.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface deallocate
+    module procedure deallocate_quadtree
+  end interface deallocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine deallocate_quadtree(quadtree)
+    type(quadtree_type), intent(inout) :: quadtree
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[quadtree] Quadtree data structure.
+\end{description}
+
+\subsubsection{\texttt{octtree\_type}}\label{sect:octtree_query}
+  
+An intersection finder for 3D meshes, based upon an octtree data structure. See
+section \ref{sect:octtree_global} for details regarding the optional
+\verb+max_size+ argument.
+
+~\newline
+Allocate an \verb+octtree_type+, which can later be queried for intersecting
+elements.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface allocate
+    module procedure allocate_octtree
+  end interface allocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine allocate_octtree(octtree, positions, enlist, max_size)
+    type(octtree_type), intent(out) :: octtree
+    real, dimension(:, :), intent(in) :: positions
+    integer, dimension(:, :), intent(in) :: enlist
+    integer, optional, intent(in) :: max_size 
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[octtree] Octtree data structure.
+  \item[positions] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+  \item[max\_size] Maximum number of elements in an octtree leaf node.
+\end{description}
+
+\noindent Query an allocated \verb+octtree_type+ for intersecting elements.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface query
+    module procedure query_octtree_allocatable, query_octtree_pointer
+  end interface query
+\end{lstlisting}
+    
+\begin{lstlisting}[language=FORTRAN]
+  subroutine query_octtree_allocatable(octtree, element_a, eles_b)
+    type(octtree_type), intent(inout) :: octtree
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), allocatable, intent(out) :: eles_b
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine query_octtree_pointer(octtree, element_a, eles_b)
+    type(octtree_type), intent(inout) :: octtree
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), pointer, intent(out) :: eles_b
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[octtree] Octtree data structure.
+  \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
+  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
+    with the axis aligned bounding box of the given mesh A element.
+\end{description}
+
+\noindent Deallocate an \verb+octtree_type+.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface deallocate
+    module procedure deallocate_octtree
+  end interface deallocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine deallocate_octtree(octtree)
+    type(octtree_type), intent(inout) :: octtree
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[octtree] Octtree data structure.
+\end{description}
+
+\subsubsection{\texttt{tree\_type}}
+
+An intersection finder for 2D and 3D meshes, which uses either the
+\verb+quadtree_type+ (section \ref{sect:quadtree_query}) or \verb+octtree_type+
+(section \ref{sect:octtree_query}).
+
+~\newline
+Allocate a \verb+tree_type+, which can later be queried for intersecting
+elements.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface allocate
+    module procedure allocate_tree
+  end interface allocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]
+  subroutine allocate_tree(tree, positions, enlist)
+    type(tree_type), intent(out) :: tree
+    real, dimension(:, :), intent(in) :: positions
+    integer, dimension(:, :), intent(in) :: enlist
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tree] Quadtree or octtree data structure.
+  \item[positions] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+\end{description}
+
+\noindent Query an allocated \verb+tree_type+ for intersecting elements.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface query
+    module procedure query_tree_allocatable, query_tree_pointer
+  end interface query
+\end{lstlisting}
+    
+\begin{lstlisting}[language=FORTRAN]  
+  subroutine query_tree_allocatable(tree, element_a, eles_b)
+    type(tree_type), intent(inout) :: tree
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), allocatable, intent(out) :: eles_b
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]  
+  subroutine query_tree_pointer(tree, element_a, eles_b)
+    type(tree_type), intent(inout) :: tree
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), pointer, intent(out) :: eles_b
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tree] Quadtree or octtree data structure.
+  \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
+  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
+    with the axis aligned bounding box of the given mesh A element.
+\end{description}
+
+\noindent Deallocate a \verb+tree_type+.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface deallocate
+    module procedure deallocate_tree
+  end interface deallocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]  
+  subroutine deallocate_tree(tree)
+    type(tree_type), intent(inout) :: tree
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tree] Quadtree or octtree data structure.
+\end{description}
+
+\subsubsection{\texttt{rtree\_type}}
+
+An intersection finder for 2D and 3D meshes, using a libspatialindex 1.8.5
+R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
+
+~\newline
+Allocate an \verb+rtree_type+, which can later be queried for intersecting
+elements.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface allocate
+    module procedure allocate_rtree
+  end interface allocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]  
+  subroutine allocate_rtree(rtree, positions, enlist)
+    type(rtree_type), intent(out) :: rtree
+    real(kind = c_double), dimension(:, :), intent(in) :: positions
+    integer(kind = c_int), dimension(:, :), intent(in) :: enlist
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[rtree] libspatialindex R${}^*$-tree data structure.
+  \item[positions] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+\end{description}
+
+\noindent Query an allocated \verb+rtree_type+ for intersecting elements.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface query
+    module procedure query_rtree_allocatable, query_rtree_pointer
+  end interface query
+\end{lstlisting}
+    
+\begin{lstlisting}[language=FORTRAN]    
+  subroutine query_rtree_allocatable(rtree, element_a, eles_b)
+    type(rtree_type), intent(inout) :: rtree
+    real(kind = c_double), dimension(:, :), intent(in) :: element_a
+    integer(kind = c_int), dimension(:), allocatable, intent(out) :: eles_b
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]      
+  subroutine query_rtree_pointer(rtree, element_a, eles_b)
+    type(rtree_type), intent(inout) :: rtree
+    real(kind = c_double), dimension(:, :), intent(in) :: element_a
+    integer(kind = c_int), dimension(:), pointer, intent(out) :: eles_b
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[rtree] libspatialindex R${}^*$-tree data structure.
+  \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
+  \item[eles\_b] Elements of mesh B whose axis aligned bounding boxes intersect
+    with the axis aligned bounding box of the given mesh A element.
+\end{description}
+
+\noindent Deallocate an \verb+rtree_type+.
+  
+\begin{lstlisting}[language=FORTRAN]
+  interface deallocate
+    module procedure deallocate_rtree
+  end interface deallocate
+\end{lstlisting}
+  
+\begin{lstlisting}[language=FORTRAN]  
+  subroutine deallocate_rtree(rtree)
+    type(rtree_type), intent(inout) :: rtree
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[rtree] libspatialindex R${}^*$-tree data structure.
 \end{description}
 
 \bibliography{doc/bibliography}
