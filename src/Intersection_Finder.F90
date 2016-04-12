@@ -28,8 +28,8 @@ module libsupermesh_intersection_finder
   use libsupermesh_graphs, only : eelist_type, deallocate, mesh_eelist, sloc
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
-  use libsupermesh_octtree_intersection_finder, only : octtree_node, &
-    & octtree_type, deallocate, octtree_intersection_finder, allocate, query
+  use libsupermesh_octree_intersection_finder, only : octree_node, &
+    & octree_type, deallocate, octree_intersection_finder, allocate, query
   use libsupermesh_quadtree_intersection_finder, only : quadtree_node, &
     & quadtree_type, deallocate, quadtree_intersection_finder, allocate, query
 
@@ -81,10 +81,10 @@ module libsupermesh_intersection_finder
 
   public :: intersections, deallocate, intersection_finder, &
     & advancing_front_intersection_finder, rtree_intersection_finder, &
-    & quadtree_intersection_finder, octtree_intersection_finder, &
+    & quadtree_intersection_finder, octree_intersection_finder, &
     & tree_intersection_finder, sort_intersection_finder, &
     & brute_force_intersection_finder
-  public :: octtree_node, octtree_type, allocate, query
+  public :: octree_node, octree_type, allocate, query
   public :: quadtree_node, quadtree_type
   public :: tree_type
   public :: rtree_type
@@ -134,7 +134,7 @@ module libsupermesh_intersection_finder
   type tree_type
     integer :: dim
     type(quadtree_type), pointer :: quadtree
-    type(octtree_type), pointer :: octtree
+    type(octree_type), pointer :: octree
   end type tree_type
   
   interface allocate
@@ -621,8 +621,8 @@ contains
         allocate(tree%quadtree)
         call allocate(tree%quadtree, positions, enlist)
       case(3)
-        allocate(tree%octtree)
-        call allocate(tree%octtree, positions, enlist)
+        allocate(tree%octree)
+        call allocate(tree%octree, positions, enlist)
       case default
         libsupermesh_abort("Invalid dimension")
     end select
@@ -639,7 +639,7 @@ contains
       case(2)
         call query(tree%quadtree, element_a, eles_b)
       case(3)
-        call query(tree%octtree, element_a, eles_b)
+        call query(tree%octree, element_a, eles_b)
       case default
         libsupermesh_abort("Invalid dimension")
     end select
@@ -656,7 +656,7 @@ contains
       case(2)
         call query(tree%quadtree, element_a, eles_b)
       case(3)
-        call query(tree%octtree, element_a, eles_b)
+        call query(tree%octree, element_a, eles_b)
       case default
         libsupermesh_abort("Invalid dimension")
     end select
@@ -670,7 +670,7 @@ contains
       case(2)
         call deallocate(tree%quadtree)
       case(3)
-        call deallocate(tree%octtree)
+        call deallocate(tree%octree)
       case default
         libsupermesh_abort("Invalid dimension")
     end select
@@ -741,7 +741,7 @@ contains
       case(2)
         call quadtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
       case(3)
-        call octtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
+        call octree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
       case default
         libsupermesh_abort("Invalid dimension")
     end select
@@ -767,7 +767,7 @@ contains
       case(2)
         call quadtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
       case(3)
-        call octtree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
+        call octree_intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
       case default
         libsupermesh_abort("Invalid dimension")
     end select

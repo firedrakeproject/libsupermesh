@@ -4,7 +4,7 @@ subroutine test_intersection_finder_completeness_3d() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder, advancing_front_intersection_finder, &
-    & octtree_intersection_finder, tree_intersection_finder, &
+    & octree_intersection_finder, tree_intersection_finder, &
     & rtree_intersection_finder, brute_force_intersection_finder
   use libsupermesh_supermesh, only : tetrahedron_volume
   use libsupermesh_read_triangle, only : read_ele, read_node
@@ -37,8 +37,8 @@ subroutine test_intersection_finder_completeness_3d() bind(c)
   call check_map_ba("advancing_front_intersection_finder")
   call deallocate(map_ba)
   
-  call octtree_intersection_finder(positions_b, enlist_b, positions_a, enlist_a, map_ba)
-  call check_map_ba("octtree_intersection_finder")
+  call octree_intersection_finder(positions_b, enlist_b, positions_a, enlist_a, map_ba)
+  call check_map_ba("octree_intersection_finder")
   call deallocate(map_ba)
   
   call rtree_intersection_finder(positions_b, enlist_b, positions_a, enlist_a, map_ba)
