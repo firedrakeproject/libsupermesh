@@ -1,6 +1,6 @@
 Except as noted below, libsupermesh is copyright (C) 2016 The University of
-Edinburgh. The GNU Lesser General Public License version 2.1 can be found in
-lgpl-2.1.txt.
+Edinburgh. libsupermesh is available under the GNU Lesser General Public License
+version 2.1, which can be found in lgpl-2.1.txt.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
