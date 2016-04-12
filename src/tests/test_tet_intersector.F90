@@ -8,7 +8,7 @@ subroutine test_tet_intersector() bind(c)
     & intersect_simplices, tetrahedron_volume
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_tet_intersection, only : tet_type, tet_buf_size, &
-    & intersect_tets, get_planes
+    & intersect_tets, intersect_polys, get_planes
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
   
   implicit none
@@ -66,7 +66,7 @@ subroutine test_tet_intersector() bind(c)
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
       tet_b%v = positions_b(:, enlist_b(:, ele_b))
-      call intersect_tets(tet_a, get_planes(tet_b), tets_c, n_tets_c, work = work)
+      call intersect_polys(tet_a, get_planes(tet_b), tets_c, n_tets_c, work = work)
       do ele_c = 1, n_tets_c
         volume_c = volume_c + tetrahedron_volume(tets_c(ele_c)%v)
       end do

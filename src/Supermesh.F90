@@ -7,8 +7,9 @@ module libsupermesh_supermesh
     & interval_buf_size, interval_size
   use libsupermesh_tri_intersection, only : tri_type, line_type, max_n_tris_c, &
     & intersect_tris, tri_buf_size, intersect_polys, get_lines, triangle_area
-  use libsupermesh_tet_intersection, only : tet_type, plane_type, max_n_tets_c, &
-    & intersect_tets, tet_buf_size, tetrahedron_volume
+  use libsupermesh_tet_intersection, only : tet_type, plane_type, &
+    & max_n_tets_c, intersect_tets, tet_buf_size, intersect_polys, &
+    & tetrahedron_volume
 
   implicit none
 
@@ -222,7 +223,7 @@ contains
     planes_b(6)%normal = unit_cross(hex_b(:, 7) - hex_b(:, 8), hex_b(:, 3) - hex_b(:, 8))
     planes_b(6)%c = dot_product(hex_b(:, 8), planes_b(6)%normal)
     
-    call intersect_tets(ltet_a, planes_b, ltets_c, ln_tets_c, work = work)
+    call intersect_polys(ltet_a, planes_b, ltets_c, ln_tets_c, work = work)
     do i = 1, ln_tets_c
       tets_c(:, :, i) = ltets_c(i)%v
     end do

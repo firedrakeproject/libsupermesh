@@ -8,8 +8,8 @@ module libsupermesh_tet_intersection
 
   private
 
-  public :: tet_type, plane_type, max_n_tets_c, intersect_tets, get_planes, &
-    & tetrahedron_volume
+  public :: tet_type, plane_type, max_n_tets_c, intersect_tets, &
+    & intersect_polys, get_planes, tetrahedron_volume
 
   type tet_type
     real, dimension(3, 4) :: v ! vertices of the tet
@@ -21,10 +21,17 @@ module libsupermesh_tet_intersection
     real :: c
   end type plane_type
 
+  interface max_n_tets_c
+    module procedure max_n_tets_c_tet
+  end interface max_n_tets_c
+
   interface intersect_tets
-    module procedure intersect_tets_real, intersect_tets_tet, &
-      & intersect_tets_planes
+    module procedure intersect_tets_real, intersect_tets_tet
   end interface intersect_tets
+
+  interface intersect_polys
+    module procedure intersect_tets_planes
+  end interface intersect_polys
 
   interface get_planes
     module procedure get_planes_tet
@@ -119,14 +126,14 @@ contains
 
   end subroutine intersect_tets_planes_buf
   
-  pure function max_n_tets_c(n_planes_b)
+  pure function max_n_tets_c_tet(n_planes_b) result(max_n_tets_c)
     integer, intent(in) :: n_planes_b
     
     integer :: max_n_tets_c
     
     max_n_tets_c = 3 ** n_planes_b
     
-  end function max_n_tets_c
+  end function max_n_tets_c_tet
   
   subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
     type(tet_type), intent(in) :: tet_a
