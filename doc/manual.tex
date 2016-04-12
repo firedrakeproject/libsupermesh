@@ -10,19 +10,19 @@
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{listings}
 \usepackage{natbib}
+\usepackage{textcomp}
 
 \renewcommand{\ttdefault}{pcr}
 
 \begin{document}
 
-\begin{titlepage}
-\begin{center}
+\title{libsupermesh version \version}
+\date{April 2016}
+\author{Patrick E. Farrell \\ Mathematical Institute, University of Oxford, UK \\
+   \and James R. Maddison \\ School of Mathematics and Maxwell Institute for Mathematical Sciences, \\ University of Edinburgh, UK \\
+   \and Iakovos Panourgias \\ EPCC, University of Edinburgh, UK}
 
-\Huge{libsupermesh version \version} \\[0.15\textheight]
-\Large{Dr. Patrick E. Farrell, Dr. James R. Maddison, \\ Mr. Iakovos Panourgias}
-
-\end{center}
-\end{titlepage}
+\maketitle
 
 \tableofcontents
 
@@ -31,9 +31,9 @@
 libsupermesh is a Fortran library for serial and parallel mesh intersection, or
 supermeshing \citep{farrell2009,farrell2009a}. libsupermesh specifically
 includes components used in the local supermeshing approach described in
-\citet{farrell2011}. Here, given two input finite element meshes, elements in
-each mesh which intersect are identified, and a local mesh of their intersection
-is generated.
+\citet{farrell2011} \citep[see also][]{gander2009,gander2013}. Here, given two
+input finite element meshes, elements in each mesh which intersect are
+identified, and a local mesh of their intersection is generated.
 
 \section{Building libsupermesh}
 
@@ -157,8 +157,27 @@ element \verb+ele_a+ of mesh A.
 \subsection{Identifying all candidate intersections}
 
 The following intersection finders return an element-element graph which
-associates with all elements in a mesh A candidate intersecting elements in the
-mesh B. 
+associates with all elements in mesh A candidate intersecting elements in mesh
+B. 
+
+~\newline
+The ragged array \verb+intersections+ data type, allocated by one of the
+following intersection finder routines, must be deallocated after use.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface deallocate
+    module procedure deallocate_intersections_rank_1
+  end interface deallocate
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure subroutine deallocate_intersections_rank_1(ints)
+    type(intersections), dimension(:), intent(inout) :: ints
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[ints] Length $E_A$ vector. Candidate intersection element-element graph.
+\end{description}
 
 \subsubsection{\texttt{sort\_intersection\_finder}}
 
@@ -260,10 +279,10 @@ An intersection finder for 2D meshes, based upon a quadtree data structure
 \citep{samet1984}. Each interface accepts an optional \verb+max_size+ argument,
 which specifies the maximum number of elements in a leaf node. This should be
 greater than the maximum number of elements (in the mesh used to build the
-quadtree) which can be found in a neighbourhood of an arbitrary point.
-\verb+max_size+ defaults to the maximum of $256$, and the maximum number of mesh
-elements connected to any single node (the maximal node-element graph degree),
-if not specified.
+quadtree) which can be found in a neighbourhood of an arbitrary point. If not
+specified then \verb+max_size+ defaults to the maximum of $256$, and the maximum
+number of mesh elements connected to any single node (the maximal node-element
+graph degree).
 
 \begin{lstlisting}[language=FORTRAN]  
   pure function max_nelist_degree(nnodes, enlist) result(max_degree)
@@ -503,7 +522,7 @@ correct output is guaranteed if:
   \item Element $1$ of mesh A intersects with at least one element of mesh B.
   \item The elements of mesh B which intersect with any given element of mesh A
         define an element-element sub-graph of the mesh B element-element
-        graph\footnote{Here element-element graphs are defined by elements
+        graph\footnote{Here element-element graph edges are defined by elements
         sharing a common facet.}. All of these sub-graphs should be connected. 
 \end{enumerate}
 
@@ -620,7 +639,7 @@ section \ref{sect:quadtree_global}).
 ~\newline
 Allocate a \verb+quadtree_type+, which can later be queried for candidate
 intersecting elements. See section \ref{sect:quadtree_global} for details
-regarding the optional \verb+max_size+ argument).
+regarding the optional \verb+max_size+ argument.
 
 \begin{lstlisting}[language=FORTRAN]
   interface allocate
@@ -639,7 +658,7 @@ regarding the optional \verb+max_size+ argument).
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[quadtree] Quadtree data structure.
   \item[positions] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+  \item[enlist] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[max\_size] Maximum number of elements in a quadtree leaf node.
 \end{description}
 
@@ -670,7 +689,7 @@ elements.
   \item[quadtree] Quadtree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
   \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
-    given mesh A element.
+    given mesh A element. Must be deallocated by the caller.
 \end{description}
 
 \noindent Deallocate a \verb+quadtree_type+.
@@ -698,7 +717,7 @@ section \ref{sect:octree_global}).
 ~\newline
 Allocate an \verb+octree_type+, which can later be queried for candidate
 intersecting elements. See section \ref{sect:quadtree_global} for details
-regarding the optional \verb+max_size+ argument).
+regarding the optional \verb+max_size+ argument.
 
 \begin{lstlisting}[language=FORTRAN]
   interface allocate
@@ -717,7 +736,7 @@ regarding the optional \verb+max_size+ argument).
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[octree] Octree data structure.
   \item[positions] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+  \item[enlist] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[max\_size] Maximum number of elements in an octree leaf node.
 \end{description}
 
@@ -748,7 +767,7 @@ elements.
   \item[octree] Octree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
   \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
-    given mesh A element.
+    given mesh A element. Must be deallocated by the caller.
 \end{description}
 
 \noindent Deallocate an \verb+octree_type+.
@@ -794,7 +813,7 @@ intersecting elements.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tree] Quadtree or octree data structure.
   \item[positions] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+  \item[enlist] $l_B \times E_B$ array. Mesh B element-node graph.
 \end{description}
 
 \noindent Query an allocated \verb+tree_type+ for candidate intersecting
@@ -824,7 +843,7 @@ elements.
   \item[tree] Quadtree or octree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
   \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
-    given mesh A element.
+    given mesh A element. Must be deallocated by the caller.
 \end{description}
 
 \noindent Deallocate a \verb+tree_type+.
@@ -869,7 +888,7 @@ intersecting elements.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[rtree] libspatialindex R${}^*$-tree data structure.
   \item[positions] $d \times V_B$ array. Mesh B node coordinates.
-  \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
+  \item[enlist] $l_B \times E_B$ array. Mesh B element-node graph.
 \end{description}
 
 \noindent Query an allocated \verb+rtree_type+ for candidate intersecting
@@ -899,7 +918,7 @@ elements.
   \item[rtree] libspatialindex R${}^*$-tree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
   \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
-    given mesh A element.
+    given mesh A element. Must be deallocated by the caller.
 \end{description}
 
 \noindent Deallocate an \verb+rtree_type+.
@@ -1176,8 +1195,9 @@ facets.
   \item[tri\_a] $d \times l_A$ array. Element A node coordinates. Element A
     must be a triangle.
   \item[tri\_b] $d \times l_B$ array. Element B node coordinates. Element B
-    must be a triangle. $M_C = 22$.
+    must be a triangle.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+    $M_C = 22$.
   \item[n\_tris\_c] $E_C$.
 \end{description}
 
@@ -1421,7 +1441,7 @@ constitute the half-spaces defined by element facets.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[n\_planes\_b] $F_B$, assuming that element B is a tetrahedron.
+  \item[n\_planes\_b] $F_B$, assuming that element A is a tetrahedron.
   \item[max\_n\_tets\_c] $M_C = 3^{F_B}$.
 \end{description}
 
@@ -1556,7 +1576,7 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
   \item[tet\_a] Element A.
   \item[planes\_b] Element B facet half-spaces. Element B must be a convex
     polyhedron.
-  \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
+  \item[tets\_c] Length $M_C$ vector. Tetrahedra in mesh C.
   \item[n\_tets\_c] $E_C$.
   \item[vol\_b] Volume of element $B$. Used to discard near-degenerate elements
     in mesh C.
@@ -1637,7 +1657,7 @@ cubical-cubical intersection in one, two, and three dimensions.
   \item[dim] Dimension $d$. Must be equal to $1$, $2$, or $3$.
   \item[loc\_a] $l_A$.
   \item[loc\_b] $l_B$.
-  \item[size] $M_C$. Equal to \verb+max_n_simplices_c(d)+ for the
+  \item[size] $M_C$. Equal to \verb+max_n_simplices_c(dim)+ for the
     simplex-simplex case, $46$ for the \linebreak triangle-quadrilateral case,
     $62$ for the quadrilateral-quadrilateral case, $729$ for the \linebreak
     tetrahedron-hexahedron case, and $3,645$ for the hexahedron-hexahedron case.
@@ -1725,6 +1745,7 @@ The following definitions are used:
   \item[$E_B$] Number of elements in the local mesh B.
   \item[$V_B^*$] Number of nodes in a received mesh B.
   \item[$E_B^*$] Number of elements in a received mesh B.
+  \item[$l_A$] Number of nodes per element in mesh A.
   \item[$l_B$] Number of nodes per element in mesh B.
   \item[$l_C$] Number of nodes per element in the intersection mesh C, always
                equal to $d + 1$.
@@ -1869,14 +1890,12 @@ accepts an MPI communicator.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[positions\_a] $d \times V_A$ array. Local mesh A node coordinates.
-  \item[positions\_b] If \verb+local+ is true, a $d \times V_B$ array containing
-    the local mesh B node coordinates. If \verb+local+ is false, a
-    $d \times V_B^*$ array containing the received mesh B coordinates.
+  \item[positions\_a] $d \times l_A$ array. Element A node coordinates.
+  \item[positions\_b] $d \times l_B$ array. Element B node coordinates.
   \item[positions\_c] $d \times l_C \times E_C$. Intersection mesh C.
-  \item[nodes\_b] Length $l_B$ vector. If \verb+local+ is true, mesh nodes
-    associated with the local mesh B. If \verb+local+ is false, mesh nodes
-    associated with the received mesh B.
+  \item[nodes\_b] Length $l_B$ vector. If \verb+local+ is true, local mesh B
+    nodes associated with element B. If \verb+local+ is false, received mesh B
+    nodes associated with element B.
   \item[ele\_a] Index of element A in the local mesh A.
   \item[ele\_b] If \verb+local+ is true, index of element B in the local mesh B.
     If \verb+local+ is false, index of element B in the received mesh B.
@@ -1889,9 +1908,9 @@ accepts an MPI communicator.
 
 \subsection{libsupermesh}
 
-Except as noted below, libsupermesh is copyright (C) 2016 The University of
-Edinburgh. libsupermesh is available under the GNU Lesser General Public License
-version 2.1, which can be found in lgpl-2.1.txt.
+Except as noted below, libsupermesh is copyright \textcopyright\ 2016 The
+University of Edinburgh. libsupermesh is available under the GNU Lesser General
+Public License version 2.1, which can be found in lgpl-2.1.txt.
 
 \begin{lstlisting}[language=]
   This library is free software; you can redistribute it and/or
@@ -2022,7 +2041,7 @@ libsupermesh uses modified versions of code from
 Rtree\footnote{\url{http://toblerity.org/rtree/}} 0.4.3. See comments in
 \linebreak include/R-Tree\_Intersection\_Finder\_C++.h and
 src/R-Tree\_Intersection\_Finder\_C++.cpp. See also \linebreak
-Rtree\_CREDITS.txt. Rtree 0.4.3 copyright information from files
+Rtree\_CREDITS.txt. Rtree 0.4.3 copyright information from Rtree 0.4.3 files
 rtree/gispyspatialindex.cc and rtree/wrapper.cc:
 
 \begin{lstlisting}[language=]

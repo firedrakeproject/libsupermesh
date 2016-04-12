@@ -118,7 +118,7 @@ License (MIT)
 libsupermesh uses modified versions of code from Rtree 0.4.3. See comments
 in include/R-Tree_Intersection_Finder_C++.h and
 src/R-Tree_Intersection_Finder_C++.cpp. See also Rtree_CREDITS.txt. Rtree 0.4.3
-copyright information from files rtree/gispyspatialindex.cc and
+copyright information from Rtree 0.4.3 files rtree/gispyspatialindex.cc and
 rtree/wrapper.cc:
 
 # =============================================================================
