@@ -1812,11 +1812,11 @@ accepts an MPI communicator.
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
       end subroutine unpack_data_b
       
-      subroutine intersection_calculation(positions_a, positions_b, &
-        & positions_c, nodes_b, ele_a, ele_b, local)
-        real, dimension(:, :), intent(in) :: positions_a
-        real, dimension(:, :), intent(in) :: positions_b
-        real, dimension(:, :, :), intent(in) :: positions_c
+      subroutine intersection_calculation(element_a, element_b, elements_c, &
+        & nodes_b, ele_a, ele_b, local)
+        real, dimension(:, :), intent(in) :: element_a
+        real, dimension(:, :), intent(in) :: element_b
+        real, dimension(:, :, :), intent(in) :: elements_c
         integer, dimension(:), intent(in) :: nodes_b
         integer, intent(in) :: ele_a
         integer, intent(in) :: ele_b
@@ -1878,11 +1878,11 @@ accepts an MPI communicator.
 \noindent The final callback performs calculations on each intersection mesh.
       
 \begin{lstlisting}[language=FORTRAN]
-  subroutine intersection_calculation(positions_a, positions_b, positions_c, &
+  subroutine intersection_calculation(element_a, element_b, elements_c, &
     & nodes_b, ele_a, ele_b, local)
-    real, dimension(:, :), intent(in) :: positions_a
-    real, dimension(:, :), intent(in) :: positions_b
-    real, dimension(:, :, :), intent(in) :: positions_c
+    real, dimension(:, :), intent(in) :: element_a
+    real, dimension(:, :), intent(in) :: element_b
+    real, dimension(:, :, :), intent(in) :: elements_c
     integer, dimension(:), intent(in) :: nodes_b
     integer, intent(in) :: ele_a
     integer, intent(in) :: ele_b
@@ -1890,9 +1890,10 @@ accepts an MPI communicator.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[positions\_a] $d \times l_A$ array. Element A node coordinates.
-  \item[positions\_b] $d \times l_B$ array. Element B node coordinates.
-  \item[positions\_c] $d \times l_C \times E_C$. Intersection mesh C.
+  \item[element\_a] $d \times l_A$ array. Element A node coordinates.
+  \item[element\_b] $d \times l_B$ array. Element B node coordinates.
+  \item[elements\_c] $d \times l_C \times E_C$. Intersection mesh C node
+    coordinates.
   \item[nodes\_b] Length $l_B$ vector. If \verb+local+ is true, local mesh B
     nodes associated with element B. If \verb+local+ is false, received mesh B
     nodes associated with element B.

@@ -100,15 +100,15 @@ contains
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
       end subroutine unpack_data_b
       
-      subroutine intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
+      subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
         use iso_c_binding, only : c_int8_t
         implicit none
         ! dim x loc_a
-        real, dimension(:, :), intent(in) :: positions_a
+        real, dimension(:, :), intent(in) :: element_a
         ! dim x loc_b
-        real, dimension(:, :), intent(in) :: positions_b
+        real, dimension(:, :), intent(in) :: element_b
         ! dim x loc_c x nelements_c
-        real, dimension(:, :, :), intent(in) :: positions_c
+        real, dimension(:, :, :), intent(in) :: elements_c
         ! loc_b
         integer, dimension(:), intent(in) :: nodes_b
         integer, intent(in) :: ele_a
@@ -349,15 +349,15 @@ contains
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
       end subroutine unpack_data_b
 
-      subroutine intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
+      subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
         use iso_c_binding, only : c_int8_t
         implicit none
         ! dim x loc_a
-        real, dimension(:, :), intent(in) :: positions_a
+        real, dimension(:, :), intent(in) :: element_a
         ! dim x loc_b
-        real, dimension(:, :), intent(in) :: positions_b
+        real, dimension(:, :), intent(in) :: element_b
         ! dim x loc_c x nelements_c
-        real, dimension(:, :, :), intent(in) :: positions_c
+        real, dimension(:, :, :), intent(in) :: elements_c
         ! loc_b
         integer, dimension(:), intent(in) :: nodes_b
         integer, intent(in) :: ele_a

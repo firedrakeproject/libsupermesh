@@ -254,16 +254,16 @@ contains
   end function interpolate_p1
   
   ! Perform calculations on the local supermesh
-  subroutine intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
+  subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
     ! Target mesh element vertex coordinates
     ! Shape: dim x loc_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real, dimension(:, :), intent(in) :: element_a
     ! Donor mesh element vertex coordinates
     ! Shape: dim x loc_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real, dimension(:, :), intent(in) :: element_b
     ! Supermesh element vertex coordinates
     ! Shape: dim x loc_c x nelements_c
-    real, dimension(:, :, :), intent(in) :: positions_c
+    real, dimension(:, :, :), intent(in) :: elements_c
     ! Donor mesh vertex indices
     ! Shape: loc_b
     integer, dimension(:), intent(in) :: nodes_b
@@ -288,20 +288,20 @@ contains
       lfield_b => data_field_b
     end if
     
-    do ele_c = 1, size(positions_c, 3)
+    do ele_c = 1, size(elements_c, 3)
       ! Compute the supermesh tetrahedron volume
-      volume = tetrahedron_volume(positions_c(:, :, ele_c))
+      volume = tetrahedron_volume(elements_c(:, :, ele_c))
       ! Local contribution to the intersection volume
       volume_parallel = volume_parallel + volume
       ! Local contribution to the multi-mesh inner product, evaluated using
       ! degree 2 quadrature
       do i = 1, size(quad_weights)
-        quad_point(1) = dot_product(quad_points(:, i), positions_c(1, :, ele_c))
-        quad_point(2) = dot_product(quad_points(:, i), positions_c(2, :, ele_c))
-        quad_point(3) = dot_product(quad_points(:, i), positions_c(3, :, ele_c))
+        quad_point(1) = dot_product(quad_points(:, i), elements_c(1, :, ele_c))
+        quad_point(2) = dot_product(quad_points(:, i), elements_c(2, :, ele_c))
+        quad_point(3) = dot_product(quad_points(:, i), elements_c(3, :, ele_c))
         integral_parallel = integral_parallel + quad_weights(i) * volume &
-                                              & * interpolate_p1(positions_b, lfield_b(nodes_b), quad_point) &
-                                              & * interpolate_p1(positions_a, field_a(enlist_a(:, ele_a)), quad_point)
+                                              & * interpolate_p1(element_b, lfield_b(nodes_b), quad_point) &
+                                              & * interpolate_p1(element_a, field_a(enlist_a(:, ele_a)), quad_point)
       end do
     end do
         

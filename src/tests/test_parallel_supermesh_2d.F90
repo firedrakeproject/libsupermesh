@@ -197,13 +197,13 @@ contains
     if(allocated(data_b_data)) deallocate(data_b_data)
   end subroutine cleanup_data_b
 
-  subroutine intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
+  subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real, dimension(:, :), intent(in) :: element_a
     ! dim x loc_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real, dimension(:, :), intent(in) :: element_b
     ! dim x loc_c x nelements_c
-    real, dimension(:, :, :), intent(in) :: positions_c
+    real, dimension(:, :, :), intent(in) :: elements_c
     ! loc_b
     integer, dimension(:), intent(in) :: nodes_b
     integer, intent(in) :: ele_a
@@ -219,10 +219,10 @@ contains
       data_b => data_b_data
     end if
 
-    nelements_c = size(positions_c, 3)
+    nelements_c = size(elements_c, 3)
     do ele_c = 1, nelements_c
-      area_parallel = area_parallel + triangle_area(positions_c(:, :, ele_c))
-      integral_parallel = integral_parallel + data_b(ele_b) * triangle_area(positions_c(:, :, ele_c))
+      area_parallel = area_parallel + triangle_area(elements_c(:, :, ele_c))
+      integral_parallel = integral_parallel + data_b(ele_b) * triangle_area(elements_c(:, :, ele_c))
     end do
 
   end subroutine intersection_calculation

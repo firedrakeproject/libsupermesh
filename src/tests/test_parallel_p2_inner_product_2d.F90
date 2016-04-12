@@ -451,16 +451,16 @@ contains
   end function interpolate_p2
   
   ! Perform calculations on the local supermesh
-  subroutine intersection_calculation(positions_a, positions_b, positions_c, nodes_b, ele_a, ele_b, local)
+  subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
     ! Target mesh element vertex coordinates
     ! Shape: dim x loc_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real, dimension(:, :), intent(in) :: element_a
     ! Donor mesh element vertex coordinates
     ! Shape: dim x loc_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real, dimension(:, :), intent(in) :: element_b
     ! Supermesh element vertex coordinates
     ! Shape: dim x loc_c x nelements_c
-    real, dimension(:, :, :), intent(in) :: positions_c
+    real, dimension(:, :, :), intent(in) :: elements_c
     ! Donor mesh vertex indices
     ! Shape: loc_b
     integer, dimension(:), intent(in) :: nodes_b
@@ -490,9 +490,9 @@ contains
       lfield_b => data_field_b
     end if
   
-    do ele_c = 1, size(positions_c, 3)
+    do ele_c = 1, size(elements_c, 3)
       ! Compute the supermesh triangle area
-      area = triangle_area(positions_c(:, :, ele_c))
+      area = triangle_area(elements_c(:, :, ele_c))
       ! Local contribution to the intersection area
       area_parallel = area_parallel + area
       ! Interpolate the donor and target P2 functions onto a P2 space on the
@@ -500,17 +500,17 @@ contains
       do lnode = 1, 6
         select case(lnode)
           case(1:3)
-            field_b_c(lnode) = interpolate_p2(positions_b, lfield_b(lenlist_p2_b(:, ele_b)), positions_c(:, lnode, ele_c))
-            field_a_c(lnode) = interpolate_p2(positions_a, field_a(enlist_p2_a(:, ele_a)), positions_c(:, lnode, ele_c))
+            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), elements_c(:, lnode, ele_c))
+            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), elements_c(:, lnode, ele_c))
           case(4)
-            field_b_c(lnode) = interpolate_p2(positions_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (positions_c(:, 1, ele_c) + positions_c(:, 2, ele_c)))
-            field_a_c(lnode) = interpolate_p2(positions_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (positions_c(:, 1, ele_c) + positions_c(:, 2, ele_c)))
+            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 2, ele_c)))
+            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 2, ele_c)))
           case(5)
-            field_b_c(lnode) = interpolate_p2(positions_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (positions_c(:, 2, ele_c) + positions_c(:, 3, ele_c)))
-            field_a_c(lnode) = interpolate_p2(positions_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (positions_c(:, 2, ele_c) + positions_c(:, 3, ele_c)))
+            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (elements_c(:, 2, ele_c) + elements_c(:, 3, ele_c)))
+            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (elements_c(:, 2, ele_c) + elements_c(:, 3, ele_c)))
           case(6)
-            field_b_c(lnode) = interpolate_p2(positions_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (positions_c(:, 1, ele_c) + positions_c(:, 3, ele_c)))
-            field_a_c(lnode) = interpolate_p2(positions_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (positions_c(:, 1, ele_c) + positions_c(:, 3, ele_c)))
+            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
+            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
           case default
             stop 1
         end select
