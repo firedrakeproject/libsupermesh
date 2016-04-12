@@ -233,7 +233,9 @@ find_package(LATEX)
 if(LATEX_FOUND AND LATEX_PDFLATEX_FOUND AND LATEX_BIBTEX_FOUND)
   include(${LIBSUPERMESH_SOURCE_DIR}/cmake/UseLATEX.cmake)
   set(LATEX_OUTPUT_PATH ${LIBSUPERMESH_BINARY_DIR}/doc)
-  add_latex_document(doc/manual.tex INPUTS doc/version.tex CONFIGURE doc/version.tex TARGET_NAME doc FORCE_PDF EXCLUDE_FROM_ALL BIBFILES doc/bibliography.bib)
+  add_latex_document(doc/manual.tex INPUTS doc/version.tex
+    CONFIGURE doc/version.tex IMAGES doc/hex_ordering.pdf TARGET_NAME doc
+    FORCE_PDF EXCLUDE_FROM_ALL BIBFILES doc/bibliography.bib)
 endif()
 
 install(TARGETS supermesh DESTINATION lib)

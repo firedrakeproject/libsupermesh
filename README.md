@@ -14,6 +14,8 @@ cmake ..
 make doc
 ```
 
+The manual can then be found in build/doc/manual.pdf.
+
 ## License ##
 
 libsupermesh is available under the [GNU Lesser General Public License version 2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html). See COPYING for complete copyright information.

@@ -6,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage{enumitem}
 \usepackage[a4paper,left=20mm,right=20mm]{geometry}
+\usepackage{graphicx}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{listings}
 \usepackage{natbib}
@@ -18,7 +19,7 @@
 \begin{center}
 
 \Huge{libsupermesh version \version} \\[0.15\textheight]
-\Large{Dr. Patrick E. Farrell, Dr. J. R. Maddison, \\ Mr. I. Panourgias}
+\Large{Dr. Patrick E. Farrell, Dr. James R. Maddison, \\ Mr. Iakovos Panourgias}
 
 \end{center}
 \end{titlepage}
@@ -60,7 +61,8 @@ directory. Note that libsupermesh cannot be built in the source directory.
     build and additional debugging options for the Debug build. Active only if
     the GNU or Cray compilers are used. This overrides other CMake compiler flag
     variables. Default enabled.
-  \item[LIBSUPERMESH\_ENABLE\_JUDY] Use the Judy library. Requires an available
+  \item[LIBSUPERMESH\_ENABLE\_JUDY] Use the Judy
+    library\footnote{\url{http://judy.sourceforge.net/}}. Requires an available
     installation of Judy. Default disabled.
   \item[LIBSUPERMESH\_ENABLE\_TIMERS] Enable internal timers for parallel
     supermeshing. Default disabled.
@@ -88,12 +90,12 @@ described in this manual. This can be accessed via:
 \section{Intersection identification}
 
 libsupermesh includes a number of different algorithms for identifying candidate
-pairs of elements, in two different meshes, which intersect. These algorithms
-are all based upon an ``axis-aligned bounding box'' (AABB) intersection
-predicate. Hence the different approaches are all guaranteed to return all pairs
-of elements which have a non-trivial intersection\footnote{Except for numerical
-precision related errors.}, but may additionally return pairs of elements which
-have zero intersection.
+pairs of elements, in two different meshes A and B , which intersect. These
+algorithms are all based upon an ``axis-aligned bounding box'' (AABB)
+intersection predicate. Hence the different approaches are all guaranteed to
+return all pairs of elements which have a non-trivial
+intersection\footnote{Except for numerical precision related errors.}, but may
+additionally return pairs of elements which have zero intersection.
 
 The following definitions are used:
 \begin{description}[leftmargin=\parindent,labelindent=\parindent]
@@ -121,8 +123,9 @@ stores the element-node graph for mesh A, then in the following:
 \verb+nodes_a+ contains the indices of nodes in mesh A for element \verb+ele_a+.
 
 Candidate intersection element-element graphs are stored either as a ragged
-array or as a Compressed Sparse Row (CSR) sparsity pattern\footnote{See the
-\href{http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html}{SciPy documentation.}}.
+array or as a Compressed Sparse Row (CSR) sparsity\footnote{See e.g. the SciPy
+documentation,
+\url{http://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html}.}.
 For the ragged array variant:
 \begin{lstlisting}[language=FORTRAN]
   type(intersections), dimension(E_A) :: map_ab
@@ -134,7 +137,7 @@ For the ragged array variant:
   n = map_ab(ele_a)%n
   v => map_ab(ele_a)%v
 \end{lstlisting}
-or for the CSR sparsity pattern variant:
+or for the CSR sparsity variant:
 \begin{lstlisting}[language=FORTRAN]
   integer, dimension(:), allocatable, target :: map_ab_indices
   integer, dimension(E_A + 1) :: map_ab_indptr
@@ -154,8 +157,8 @@ element \verb+ele_a+ of mesh A.
 \subsection{Identifying all candidate intersections}
 
 The following intersection finders return an element-element graph which
-associates with all elements in a mesh ``A'' candidate intersecting elements in
-the mesh ``B''. 
+associates with all elements in a mesh A candidate intersecting elements in the
+mesh B. 
 
 \subsubsection{\texttt{sort\_intersection\_finder}}
 
@@ -227,8 +230,7 @@ and a 1D advancing front.
   \item[positions\_b] Length $V_B$ vector. Mesh B node coordinates.
   \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length
-    $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -249,18 +251,19 @@ and a 1D advancing front.
   \item[positions\_b] $1 \times V_B$ array. Mesh B node coordinates.
   \item[enlist\_b] $2 \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length 
-    $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
 \end{description}
 
 \subsubsection{\texttt{quadtree\_intersection\_finder}}\label{sect:quadtree_global}
 
-An intersection finder for 2D meshes, based upon a quadtree data structure. Each
-interface accepts an optional \verb+max_size+ argument, which specifies the
-maximum number of elements in a leaf node. This should be greater than the
-maximum number of elements which can be found in a neighbourhood of an arbitrary
-point. \verb+max_size+ defaults to the maximum of $256$, and the maximal
-node-element graph degree, if not specified.
+An intersection finder for 2D meshes, based upon a quadtree data structure
+\citep{finkel1974}. Each interface accepts an optional \verb+max_size+ argument,
+which specifies the maximum number of elements in a leaf node. This should be
+greater than the maximum number of elements (in the mesh used to build the
+quadtree) which can be found in a neighbourhood of an arbitrary point.
+\verb+max_size+ defaults to the maximum of $256$, and the maximum number of mesh
+elements connected to any single node (the maximal node-element graph degree),
+if not specified.
 
 \begin{lstlisting}[language=FORTRAN]  
   pure function max_nelist_degree(nnodes, enlist) result(max_degree)
@@ -322,26 +325,25 @@ node-element graph degree, if not specified.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length
-    $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
   \item[max\_size] Maximum number of elements in a quadtree leaf node.
 \end{description}
 
-\subsubsection{\texttt{octtree\_intersection\_finder}}\label{sect:octtree_global}
+\subsubsection{\texttt{octree\_intersection\_finder}}\label{sect:octree_global}
 
-An intersection finder for 3D meshes, based upon an octtree data structure. See
+An intersection finder for 3D meshes, based upon an octree data structure. See
 section \ref{sect:quadtree_global} for details regarding the optional
 \verb+max_size+ argument.
 
 \begin{lstlisting}[language=FORTRAN]  
-  interface octtree_intersection_finder
-    module procedure octtree_intersection_finder_intersections, &
-      & octtree_intersection_finder_csr_sparsity
-  end interface octtree_intersection_finder
+  interface octree_intersection_finder
+    module procedure octree_intersection_finder_intersections, &
+      & octree_intersection_finder_csr_sparsity
+  end interface octree_intersection_finder
 \end{lstlisting}
 
 \begin{lstlisting}[language=FORTRAN]
-  subroutine octtree_intersection_finder_intersections( &
+  subroutine octree_intersection_finder_intersections( &
     & positions_a, enlist_a, positions_b, enlist_b, map_ab, max_size)
     real, dimension(:, :), intent(in) :: positions_a
     integer, dimension(:, :), intent(in) :: enlist_a
@@ -358,11 +360,11 @@ section \ref{sect:quadtree_global} for details regarding the optional
   \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
     graph.
-  \item[max\_size] Maximum number of elements in an octtree leaf node.
+  \item[max\_size] Maximum number of elements in an octree leaf node.
 \end{description}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine octtree_intersection_finder_csr_sparsity( &
+  subroutine octree_intersection_finder_csr_sparsity( &
     & positions_a, enlist_a, positions_b, enlist_b, &
     & map_ab_indices, map_ab_indptr, max_size)
     real, dimension(:, :), intent(in) :: positions_a
@@ -380,16 +382,15 @@ section \ref{sect:quadtree_global} for details regarding the optional
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length
-    $E_A + 1$.
-  \item[max\_size] Maximum number of elements in an octtree leaf node.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
+  \item[max\_size] Maximum number of elements in an octree leaf node.
 \end{description}
 
 \subsubsection{\texttt{tree\_intersection\_finder}}
 
 An intersection finder for 2D and 3D meshes, which uses either the
 \verb+quadtree_intersection_finder+ (section \ref{sect:quadtree_global}) or
-\verb+octtree_intersection_finder+ (section \ref{sect:octtree_global}).
+\verb+octree_intersection_finder+ (section \ref{sect:octree_global}).
 
 \begin{lstlisting}[language=FORTRAN]
   interface tree_intersection_finder
@@ -435,14 +436,14 @@ An intersection finder for 2D and 3D meshes, which uses either the
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length
-    $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
 \end{description}
 
-\subsubsection{\texttt{rtree\_intersection\_finder}}
+\subsubsection{\texttt{rtree\_intersection\_finder}}\label{sect:rtree_global}
 
-An intersection finder for 2D and 3D meshes, using a libspatialindex 1.8.5
-R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
+An intersection finder for 2D and 3D meshes, using a libspatialindex
+\footnote{\url{https://libspatialindex.github.io/}} R${}^*$-tree
+\citep{guttman1984,beckmann1990}.
 
 \begin{lstlisting}[language=FORTRAN]
   interface rtree_intersection_finder
@@ -488,15 +489,14 @@ R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length
-    $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
 \end{description}
 
 \subsubsection{\texttt{advancing\_front\_intersection\_finder}}
 
-An intersection finder for meshes with simplex or hypercubic elements, using
+An intersection finder for meshes with simplicial or cubical elements, using
 the algorithm described in \citet{farrell2011}
-\citep[see also][]{gander2009,gander2013}. The intersection finder is primarily
+\citep[see also][]{gander2009,gander2013}. This intersection finder is primarily
 intended for the case where the meshes A and B cover the same domain. However
 correct output is guaranteed if:
 \begin{enumerate}
@@ -552,8 +552,7 @@ correct output is guaranteed if:
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length
-    $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
 \end{description}
 
 \subsubsection{\texttt{brute\_force\_intersection\_finder}}
@@ -604,25 +603,24 @@ A basic brute force intersection finder with quadratic complexity.
   \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
   \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
-    element-element graph. \linebreak \verb+map_ab_indices+ has length
-    $E_A + 1$.
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
 \end{description}
 
 \subsection{Identifying candidate intersections using queryable trees}
 
 The following intersection finders use a given mesh B to construct a tree based
-structure which can be queried, one mesh A element at a time, for intersecting
-elements.
+structure which can be queried, one mesh A element at a time, for candidate
+intersecting elements.
 
 \subsubsection{\texttt{quadtree\_type}}\label{sect:quadtree_query}
   
-An intersection finder for 2D meshes, based upon a quadtree data structure. See
-section \ref{sect:quadtree_global} for details regarding the optional
-\verb+max_size+ argument.
+An intersection finder for 2D meshes, based upon a quadtree data structure (see
+section \ref{sect:quadtree_global}).
 
 ~\newline
-Allocate a \verb+quadtree_type+, which can later be queried for intersecting
-elements.
+Allocate a \verb+quadtree_type+, which can later be queried for candidate
+intersecting elements. See section \ref{sect:quadtree_global} for details
+regarding the optional \verb+max_size+ argument).
 
 \begin{lstlisting}[language=FORTRAN]
   interface allocate
@@ -645,7 +643,8 @@ elements.
   \item[max\_size] Maximum number of elements in a quadtree leaf node.
 \end{description}
 
-\noindent Query an allocated \verb+quadtree_type+ for intersecting elements.
+\noindent Query an allocated \verb+quadtree_type+ for candidate intersecting
+elements.
   
 \begin{lstlisting}[language=FORTRAN]
   interface query
@@ -691,92 +690,93 @@ elements.
   \item[quadtree] Quadtree data structure.
 \end{description}
 
-\subsubsection{\texttt{octtree\_type}}\label{sect:octtree_query}
+\subsubsection{\texttt{octree\_type}}\label{sect:octree_query}
   
-An intersection finder for 3D meshes, based upon an octtree data structure. See
-section \ref{sect:octtree_global} for details regarding the optional
-\verb+max_size+ argument.
+An intersection finder for 3D meshes, based upon an octree data structure (see
+section \ref{sect:octree_global}).
 
 ~\newline
-Allocate an \verb+octtree_type+, which can later be queried for intersecting
-elements.
+Allocate an \verb+octree_type+, which can later be queried for candidate
+intersecting elements. See section \ref{sect:quadtree_global} for details
+regarding the optional \verb+max_size+ argument).
 
 \begin{lstlisting}[language=FORTRAN]
   interface allocate
-    module procedure allocate_octtree
+    module procedure allocate_octree
   end interface allocate
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine allocate_octtree(octtree, positions, enlist, max_size)
-    type(octtree_type), intent(out) :: octtree
+  subroutine allocate_octree(octree, positions, enlist, max_size)
+    type(octree_type), intent(out) :: octree
     real, dimension(:, :), intent(in) :: positions
     integer, dimension(:, :), intent(in) :: enlist
     integer, optional, intent(in) :: max_size 
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[octtree] Octtree data structure.
+  \item[octree] Octree data structure.
   \item[positions] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
-  \item[max\_size] Maximum number of elements in an octtree leaf node.
+  \item[max\_size] Maximum number of elements in an octree leaf node.
 \end{description}
 
-\noindent Query an allocated \verb+octtree_type+ for intersecting elements.
+\noindent Query an allocated \verb+octree_type+ for candidate intersecting
+elements.
   
 \begin{lstlisting}[language=FORTRAN]
   interface query
-    module procedure query_octtree_allocatable, query_octtree_pointer
+    module procedure query_octree_allocatable, query_octree_pointer
   end interface query
 \end{lstlisting}
     
 \begin{lstlisting}[language=FORTRAN]
-  subroutine query_octtree_allocatable(octtree, element_a, eles_b)
-    type(octtree_type), intent(inout) :: octtree
+  subroutine query_octree_allocatable(octree, element_a, eles_b)
+    type(octree_type), intent(inout) :: octree
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine query_octtree_pointer(octtree, element_a, eles_b)
-    type(octtree_type), intent(inout) :: octtree
+  subroutine query_octree_pointer(octree, element_a, eles_b)
+    type(octree_type), intent(inout) :: octree
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[octtree] Octtree data structure.
+  \item[octree] Octree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
   \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
     given mesh A element.
 \end{description}
 
-\noindent Deallocate an \verb+octtree_type+.
+\noindent Deallocate an \verb+octree_type+.
   
 \begin{lstlisting}[language=FORTRAN]
   interface deallocate
-    module procedure deallocate_octtree
+    module procedure deallocate_octree
   end interface deallocate
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine deallocate_octtree(octtree)
-    type(octtree_type), intent(inout) :: octtree
+  subroutine deallocate_octree(octree)
+    type(octree_type), intent(inout) :: octree
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[octtree] Octtree data structure.
+  \item[octree] Octree data structure.
 \end{description}
 
 \subsubsection{\texttt{tree\_type}}
 
 An intersection finder for 2D and 3D meshes, which uses either the
-\verb+quadtree_type+ (section \ref{sect:quadtree_query}) or \verb+octtree_type+
-(section \ref{sect:octtree_query}).
+\verb+quadtree_type+ (section \ref{sect:quadtree_query}) or \verb+octree_type+
+(section \ref{sect:octree_query}).
 
 ~\newline
-Allocate a \verb+tree_type+, which can later be queried for intersecting
-elements.
+Allocate a \verb+tree_type+, which can later be queried for candidate
+intersecting elements.
 
 \begin{lstlisting}[language=FORTRAN]
   interface allocate
@@ -792,12 +792,13 @@ elements.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[tree] Quadtree or octtree data structure.
+  \item[tree] Quadtree or octree data structure.
   \item[positions] $d \times V_B$ array. Mesh B node coordinates.
   \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
 \end{description}
 
-\noindent Query an allocated \verb+tree_type+ for intersecting elements.
+\noindent Query an allocated \verb+tree_type+ for candidate intersecting
+elements.
   
 \begin{lstlisting}[language=FORTRAN]
   interface query
@@ -820,7 +821,7 @@ elements.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[tree] Quadtree or octtree data structure.
+  \item[tree] Quadtree or octree data structure.
   \item[element\_a] $d \times l_A$ array. Node coordinates of a mesh A element.
   \item[eles\_b] Elements of mesh B whose AABBs intersect with the AABB of the
     given mesh A element.
@@ -840,17 +841,17 @@ elements.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[tree] Quadtree or octtree data structure.
+  \item[tree] Quadtree or octree data structure.
 \end{description}
 
 \subsubsection{\texttt{rtree\_type}}\label{sect:rtree_query}
 
-An intersection finder for 2D and 3D meshes, using a libspatialindex 1.8.5
-R${}^*$-tree\footnote{\url{https://libspatialindex.github.io/}}.
+An intersection finder for 2D and 3D meshes, using a libspatialindex
+R${}^*$-tree (see section \ref{sect:rtree_global}).
 
 ~\newline
-Allocate an \verb+rtree_type+, which can later be queried for intersecting
-elements.
+Allocate an \verb+rtree_type+, which can later be queried for candidate
+intersecting elements.
 
 \begin{lstlisting}[language=FORTRAN]
   interface allocate
@@ -871,7 +872,8 @@ elements.
   \item[enlist] $l_A \times E_B$ array. Mesh B element-node graph.
 \end{description}
 
-\noindent Query an allocated \verb+rtree_type+ for intersecting elements.
+\noindent Query an allocated \verb+rtree_type+ for candidate intersecting
+elements.
   
 \begin{lstlisting}[language=FORTRAN]
   interface query
@@ -920,16 +922,16 @@ elements.
 \section{Element intersection}
 
 Given two elements, element A from mesh A and element B from mesh B, the
-following routines are used to construct a simplicial mesh ``C'', which is a
-mesh of their intersection (the ``local supermesh'').
+following routines are used to construct a simplicial mesh C, which is a mesh of
+their intersection (the ``local supermesh'').
 
 The following definitions are used:
 \begin{description}[leftmargin=\parindent,labelindent=\parindent]
   \item[$d$] Mesh A defines a subset $\Omega_A \subset \mathbb{R}^d$, and mesh B
     a subset $\Omega_B \subset \mathbb{R}^d$.
   \item[$l$] Number of nodes in an element.
-  \item[$l_A$] Number of nodes in element A.
-  \item[$l_B$] Number of nodes in element B.
+  \item[$l_A$] Number of nodes in element A from mesh A.
+  \item[$l_B$] Number of nodes in element B from mesh B.
   \item[$F_A$] Number of element A facets.
   \item[$F_B$] Number of element B facets.
   \item[$l_C$] Number of nodes per element in the intersection mesh C, always
@@ -987,8 +989,9 @@ Interval intersection.
   \item[interval\_a] Length $2$ vector. Element A node coordinates.
   \item[interval\_b] Length $2$ vector. Element B node coordinates.
   \item[interval\_c] $2 \times M_C$ array. Intersection mesh C node coordinates.
+     $M_C = 1$.
   \item[n\_intervals\_c] Number of elements in mesh C. Equal to $1$ if elements
-    A and B intersect, and $0$ otherwise. $M_C = 1$.
+    A and B intersect, and $0$ otherwise.
 \end{description}
   
 \begin{lstlisting}[language=FORTRAN]  
@@ -1058,7 +1061,7 @@ algorithm.
 \end{description}
 
 \noindent \verb+line_type+ data type, used to define the lines which constitute
-element facets.
+the half-spaces defined by element facets.
 
 \begin{lstlisting}[language=FORTRAN]   
   type line_type
@@ -1070,7 +1073,8 @@ element facets.
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[normal] Length $d$ vector. Components of an outward pointing facet
     normal. Need not have unit norm.
-  \item[point] Length $d$ vector. Coordinates of a point on the facet.
+  \item[point] Length $d$ vector. Coordinates of a point on the line defining
+    the half-space.
 \end{description}
 
 \noindent Definition of $M_C$ for triangle-triangle intersection.
@@ -1119,7 +1123,8 @@ element facets.
   \item[max\_n\_tris\_c] $M_C = F_A \left( 2^{F_B} \right) - 2$.
 \end{description}
 
-\noindent Obtain a \verb+line_type+ representation of facets.
+\noindent Obtain a \verb+line_type+ representation of the half-spaces defined by
+facets.
 
 \begin{lstlisting}[language=FORTRAN]
   interface get_lines
@@ -1135,7 +1140,7 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tri] A triangle.
-  \item[lines] The three facets of the triangle.
+  \item[lines] The three half-spaces.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -1146,8 +1151,9 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[poly] $d \times l$ array. Coordinates of the polygon nodes, in either
-    clockwise or anti-clockwise order. Must define a convex polygon.
-  \item[lines] Length $l$ array. The facets of the polygon.
+    clockwise or anti-clockwise order.
+  \item[lines] Length $l$ array. The half-spaces defined by the facets of the
+    polygon.
 \end{description}
 
 \noindent Triangle-triangle intersection.
@@ -1170,9 +1176,9 @@ element facets.
   \item[tri\_a] $d \times l_A$ array. Element A node coordinates. Element A
     must be a triangle.
   \item[tri\_b] $d \times l_B$ array. Element B node coordinates. Element B
-    must be a triangle.
+    must be a triangle. $M_C = 22$.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
-  \item[n\_tris\_c] $E_C$. $M_C = 22$.
+  \item[n\_tris\_c] $E_C$.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
@@ -1253,7 +1259,8 @@ element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tri\_a] Element A.
-  \item[lines\_b] Element B facets. Must be facets for a convex polygon.
+  \item[lines\_b] Element B facet half-spaces. Element B must be a convex
+    polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
   \item[area\_b] Area of element B. Used to discard near-degenerate elements in
@@ -1313,8 +1320,8 @@ element facets.
   \item[poly\_a] $d \times l_A$ array. Element A node coordinates. The node
     coordinates must be in either clockwise or anti-clockwise order, and must
     define a convex polygon.
-  \item[lines\_b] $d \times l_B$ array. Element B facets. Must be facets for a
-    convex polygon.
+  \item[lines\_b] $d \times l_B$ array. Element B facet half-spaces. Element B
+    must be a convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
   \item[area\_a] Area of element A. Used to discard near-degenerate elements in
@@ -1378,7 +1385,7 @@ clipping'' algorithm described in \citet[][section 2.4.3]{eberly2007}.
 \end{description}
 
 \noindent \verb+plane_type+ data type, used to define the planes which
-constitute element facets.
+constitute the half-spaces defined by element facets.
 
 \begin{lstlisting}[language=FORTRAN]
   type plane_type
@@ -1388,9 +1395,9 @@ constitute element facets.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[normal] Length $d$. Components of an outward pointing facet normal, with
-    unit norm.
-  \item[c] Distance of the origin from the plane.
+  \item[normal] Length $d$ vector. Components of an outward pointing facet
+    normal, with unit norm.
+  \item[c] Distance of the origin from the plane defining the half-space.
 \end{description}
 
 \noindent Definition of $M_C$ for tetrahedron-tetrahedron intersection.
@@ -1402,7 +1409,13 @@ constitute element facets.
 \noindent Definition of $M_C$ for tetrahderon-polyhedron intersection.
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function max_n_tets_c(n_planes_b)
+  interface max_n_tets_c
+    module procedure max_n_tets_c_tet
+  end interface max_n_tets_c
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  pure function max_n_tets_c_tet(n_planes_b) result(max_n_tets_c)
     integer, intent(in) :: n_planes_b    
     integer :: max_n_tets_c
 \end{lstlisting}
@@ -1412,7 +1425,8 @@ constitute element facets.
   \item[max\_n\_tets\_c] $M_C = 3^{F_B}$.
 \end{description}
 
-\noindent Obtain a \verb+plane_type+ representation of facets.
+\noindent Obtain a \verb+plane_type+ representation of the half-spaces defined
+by facets.
 
 \begin{lstlisting}[language=FORTRAN]
   interface get_planes
@@ -1428,10 +1442,10 @@ constitute element facets.
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tet] A tetrahedron.
-  \item[plane] The four facets of the tetrahedron.
+  \item[plane] The four half-spaces.
 \end{description}
 
-\noindent Tetrahedron-tetrahderon intersection.
+\noindent Tetrahedron-tetrahedron intersection.
 
 \begin{lstlisting}[language=FORTRAN]
   interface intersect_tets
@@ -1486,8 +1500,8 @@ constitute element facets.
   \item[tet\_a] $d \times l_A$ array. Element A node coordinates. Element A must
     be a tetrahedron.
   \item[hex\_b] $d \times l_B$ array. Element B node coordinates. Element B must
-    be a convex hexahedron with Gmsh 2.12 node
-    ordering\footnote{See \url{http://gmsh.info/doc/texinfo/gmsh.html\#Node-ordering}.}.
+    be a convex hexahedron with node ordering as in figure
+    \ref{fig:hex_ordering}.
   \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
     $M_C = 729$.
   \item[n\_tets\_c] $E_C$.
@@ -1506,19 +1520,26 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[hex\_a, hex\_b] $d \times l_A$ arrays. Element A and B node coordinates.
-    Each element must be a convex hexahedron with Gmsh 2.12 node ordering.
+  \item[hex\_a, hex\_b] $d \times l_A$ and $d \times l_B$ arrays. Element A and
+    B node coordinates. Each element must be a convex hexahedron with node
+    ordering as in figure \ref{fig:hex_ordering}.
   \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
     $M_C = 3,645$.
   \item[n\_tets\_c] $E_C$.
 \end{description}
 
+\begin{figure}\begin{centering}
+  \includegraphics[height=0.25\textwidth]{doc/hex_ordering}
+  \caption{Hexahedron node ordering used by libsupermesh, as used in
+           Gmsh 2.12 (\url{http://gmsh.info/}).}\label{fig:hex_ordering}
+\end{centering}\end{figure}
+
 \noindent Tetrahedron-polyhedron intersection.
 
 \begin{lstlisting}[language=FORTRAN]
-  interface intersect_tets
+  interface intersect_polys
     module procedure intersect_tets_planes
-  end interface intersect_tets
+  end interface intersect_polys
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
@@ -1533,7 +1554,8 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
   \item[tet\_a] Element A.
-  \item[planes\_b] Element B facets. Must be facets for a convex polyhedron.
+  \item[planes\_b] Element B facet half-spaces. Element B must be a convex
+    polyhedron.
   \item[tets\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
   \item[n\_tets\_c] $E_C$.
   \item[vol\_b] Volume of element $B$. Used to discard near-degenerate elements
@@ -1589,13 +1611,13 @@ dimensions.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[dim] Dimension $d$.
+  \item[dim] Dimension $d$. Must be equal to $1$, $2$, or $3$.
   \item[size] $M_C$. Equal to $1$ for the interval-interval case, $22$ for the
     triangle-triangle case, and $81$ for the tetrahedron-tetrahedron case.
 \end{description}
 
-\noindent Definition of $M_C$ for simplex-simplex, simplex-hypercube, and
-hypercube-hypercube intersection in one, two, and three dimensions.
+\noindent Definition of $M_C$ for simplex-simplex, simplex-cubical, and
+cubical-cubical intersection in one, two, and three dimensions.
   
 \begin{lstlisting}[language=FORTRAN]
   interface max_n_simplices_c
@@ -1616,9 +1638,9 @@ hypercube-hypercube intersection in one, two, and three dimensions.
   \item[loc\_a] $l_A$.
   \item[loc\_b] $l_B$.
   \item[size] $M_C$. Equal to \verb+max_n_simplices_c(d)+ for the
-    simplex-simplex case, $46$ for the triangle-quadrilateral case, $62$ for the
-    quadrilateral-quadrilateral case, $729$ for the tetrahedron-hexahedron case,
-    and $3,645$ for the hexahedron-hexahedron case.
+    simplex-simplex case, $46$ for the \linebreak triangle-quadrilateral case,
+    $62$ for the quadrilateral-quadrilateral case, $729$ for the \linebreak
+    tetrahedron-hexahedron case, and $3,645$ for the hexahedron-hexahedron case.
 \end{description}
 
 \noindent Simplex-simplex intersection in one, two, and three dimensions.
@@ -1633,13 +1655,14 @@ hypercube-hypercube intersection in one, two, and three dimensions.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[simplex\_a, simplex\_b] $d \times l_A$ arrays. Element A and B node
-    coordinates. Each element must be a one, two, or three dimensional simplex.
+  \item[simplex\_a, simplex\_b] $d \times l_A$ and $d \times l_B$ arrays.
+    Element A and B node coordinates. Each element must be a one, two, or three
+    dimensional simplex.
   \item[simplex\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
   \item[n\_simplices\_c] $E_C$.
 \end{description}
 
-\noindent Simplex-simplex, simplex-hypercube, and hypercube-hypercube
+\noindent Simplex-simplex, simplex-cubical, and cubical-cubical
 intersection in one, two, and three dimensions.
 
 \begin{lstlisting}[language=FORTRAN]
@@ -1651,10 +1674,11 @@ intersection in one, two, and three dimensions.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[element\_a, element\_b] $d \times l_A$ arrays. Element A and B node
-    coordinates. Each element must be a one, two, or three dimensional simplex
-    or convex hypercube. Quadrilaterals must have nodes ordered in a clockwise
-    or anti-clockwise order, and hexahedra must use Gmsh 2.12 node ordering.
+  \item[element\_a, element\_b] $d \times l_A$ and $d \times l_B$ arrays.
+    Element A and B node coordinates. Each element must be a one, two, or three
+    dimensional simplex or convex cubical. Quadrilaterals must have nodes
+    ordered in a clockwise or anti-clockwise order, and hexahedra have node
+    ordering as in figure \ref{fig:hex_ordering}.
   \item[elements\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
   \item[n\_simplices\_c] $E_C$.
 \end{description}
@@ -1701,6 +1725,7 @@ The following definitions are used:
   \item[$E_B$] Number of elements in the local mesh B.
   \item[$V_B^*$] Number of nodes in a received mesh B.
   \item[$E_B^*$] Number of elements in a received mesh B.
+  \item[$l_B$] Number of nodes per element in mesh B.
   \item[$l_C$] Number of nodes per element in the intersection mesh C, always
                equal to $d + 1$.
   \item[$E_C$] Number of elements in the intersection mesh C.
@@ -1806,11 +1831,11 @@ accepts an MPI communicator.
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[nodes\_b] Number of mesh B nodes to be communicated.
+  \item[nodes\_b] The mesh B nodes to be communicated.
   \item[eles\_b] The mesh B elements to be communicated.
   \item[data\_b] Mesh B data to be communicated. This should consist of all
     data which will later be required by the \verb+intersection_calculation+
-    callback, excluding the mesh coordinates themselves.
+    callback, excluding the mesh node coordinates, and node and element indices.
 \end{description}
 
 \noindent The second callpack unpacks these data.
@@ -1849,8 +1874,9 @@ accepts an MPI communicator.
     the local mesh B node coordinates. If \verb+local+ is false, a
     $d \times V_B^*$ array containing the received mesh B coordinates.
   \item[positions\_c] $d \times l_C \times E_C$. Intersection mesh C.
-  \item[nodes\_b] \verb+positions_b(:, ele_b)+ are the mesh nodes associated
-    with element B.
+  \item[nodes\_b] Length $l_B$ vector. If \verb+local+ is true, mesh nodes
+    associated with the local mesh B. If \verb+local+ is false, mesh nodes
+    associated with the received mesh B.
   \item[ele\_a] Index of element A in the local mesh A.
   \item[ele\_b] If \verb+local+ is true, index of element B in the local mesh B.
     If \verb+local+ is false, index of element B in the received mesh B.
@@ -1885,7 +1911,8 @@ version 2.1, which can be found in lgpl-2.1.txt.
 
 \subsection{Fluidity}
 
-libsupermesh is derived from Fluidity git revision
+libsupermesh is derived from
+Fluidity\footnote{\url{http://fluidityproject.github.io/}} git revision
 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25). libsupermesh
 additionally uses code from Fluidity 4.1.11 -- see comments in src/Graphs.F90.
 Fluidity copyright information (note that AUTHORS mentioned in the following has
@@ -1922,9 +1949,11 @@ been renamed to Fluidity\_AUTHORS):
 
 \subsection{TinyXML}
 
-libsupermesh includes a modified version of TinyXML 2.6.2 (include/tinystr.h,
-include/tinyxml.h, src/tinystr.cpp, src/tinyxml.cpp, src/tinyxmlerror.cpp, and
-src/tinyxmlparser.cpp). Further information regarding TinyXML can be found in
+libsupermesh includes a modified version of
+TinyXML\footnote{\url{http://www.grinninglizard.com/tinyxml/}} 2.6.2
+(include/tinystr.h, include/tinyxml.h, \linebreak src/tinystr.cpp,
+src/tinyxml.cpp, src/tinyxmlerror.cpp, src/tinyxmlparser.cpp, and
+TinyXML\_readme.txt). Further information regarding TinyXML can be found in
 TinyXML\_readme.txt. TinyXML 2.6.2 license information:
 
 \begin{lstlisting}[language=]
@@ -1953,9 +1982,10 @@ distribution.
 
 \subsection{libspatialindex}
 
-libsupermesh includes a modified version of libspatialindex 1.8.5
-(spatialindex-1.8.5/). libsupermesh additionally uses modified versions of code
-from libspatialindex -- see comments in
+libsupermesh includes a modified version of
+libspatialindex\footnote{\url{https://libspatialindex.github.io/}} 1.8.5
+(in spatialindex-1.8.5/). libsupermesh additionally uses modified versions of
+code from libspatialindex -- see comments in \linebreak
 include/R-Tree\_Intersection\_Finder\_C++.h and
 src/R-Tree\_Intersection\_Finder\_C++.cpp. Further information regarding
 libspatialindex can be found in spatialindex-1.8.5/. libspatialindex 1.8.5
@@ -1988,8 +2018,9 @@ License (MIT)
 
 \subsection{Rtree}
 
-libsupermesh uses modified versions of code from Rtree 0.4.3. See comments
-in \linebreak include/R-Tree\_Intersection\_Finder\_C++.h and
+libsupermesh uses modified versions of code from
+Rtree\footnote{\url{http://toblerity.org/rtree/}} 0.4.3. See comments in
+\linebreak include/R-Tree\_Intersection\_Finder\_C++.h and
 src/R-Tree\_Intersection\_Finder\_C++.cpp. See also \linebreak
 Rtree\_CREDITS.txt. Rtree 0.4.3 copyright information from files
 rtree/gispyspatialindex.cc and rtree/wrapper.cc:
@@ -2016,10 +2047,11 @@ rtree/gispyspatialindex.cc and rtree/wrapper.cc:
   =============================================================================
 \end{lstlisting}
 
-\subsection{UseLATEX}
+\subsection{UseLATEX.cmake}
 
-libsupermesh includes UseLATEX. See also cmake/UseLATEX.cmake. CMakeUserUseLATEX
-copyright information:
+libsupermesh includes
+UseLATEX.cmake\footnote{\url{https://cmake.org/Wiki/CMakeUserUseLATEX}} in
+cmake/UseLATEX.cmake. UseLATEX.cmake copyright information:
 
 \begin{lstlisting}[language=] 
   Copyright 2004, 2015 Sandia Corporation.
@@ -2063,13 +2095,17 @@ supermeshing for multimesh modelling''.
 
 libsupermesh is derived from Fluidity git revision
 4e6c1d2b022df3a519cdec120fad28e60d1b08d9, and additionally uses code from
-Fluidity 4.1.11, TinyXML 2.6.2, libspatialindex 1.8.5, Rtree 0.4.3, and UseLATEX
-(see section \ref{sect:copyright}).
+Fluidity 4.1.11, TinyXML 2.6.2, libspatialindex 1.8.5, Rtree 0.4.3, and
+UseLATEX.cmake (see section \ref{sect:copyright}).
+
+read\_node and read\_ele, in src/Read\_Triangle.F90, are based upon the
+Triangle file formats described at
+\url{https://www.cs.cmu.edu/~quake/triangle.html}.
 
 Gmsh \citep{geuzaine2009} was used to generate a number of the test meshes
 contained in src/tests/data/. The Fluidity fldecomp tool, which uses the METIS
-graph partitioner\footnote{\url{http://glaros.dtc.umn.edu/gkhome/views/metis}},
-was used to partition a number of the test meshes contained in src/tests/data/.
+graph partitioner \citep{karypis1998}, was used to partition a number of the
+test meshes contained in src/tests/data/.
 
 \bibliography{doc/bibliography}
 \bibliographystyle{plainnat}
