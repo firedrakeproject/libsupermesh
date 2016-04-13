@@ -28,11 +28,11 @@
 
 \section{Introduction}
 
-libsupermesh is a Fortran library for serial and parallel mesh intersection, or
-supermeshing \citep{farrell2009,farrell2009a}. libsupermesh specifically
-includes components used in the local supermeshing approach described in
-\citet{farrell2011} \citep[see also][]{gander2009,gander2013}. Here, given two
-input finite element meshes, elements in each mesh which intersect are
+libsupermesh is a Fortran 2008 library for serial and parallel mesh
+intersection, or supermeshing \citep{farrell2009,farrell2009a}. libsupermesh
+specifically includes components used in the local supermeshing approach
+described in \citet{farrell2011} \citep[see also][]{gander2009,gander2013}.
+Here, given two input meshes, elements in each mesh which intersect are
 identified, and a local mesh of their intersection is generated.
 
 \section{Building libsupermesh}
@@ -1384,7 +1384,7 @@ facets.
 \subsection{Three dimensions}\label{sect:3D_intersection}
 
 Intersection of three-dimensional convex polyhedra using the ``plane-at-a-time
-clipping'' algorithm described in \citet[][section 2.4.3]{eberly2007}.
+clipping'' algorithm described in \citet{eberly2007} (section 2.4.3).
 
 ~\newline
 \verb+tet_type+ data type, used to define tetrahedra.
@@ -2121,6 +2121,13 @@ UseLATEX.cmake (see section \ref{sect:copyright}).
 read\_node and read\_ele, in src/Read\_Triangle.F90, are based upon the
 Triangle file formats described at
 \url{https://www.cs.cmu.edu/~quake/triangle.html}.
+
+src/tests/test\_parallel\_p1\_inner\_product\_2d.F90 uses the degree two
+quadrature rule for triangles in \citet{dunavant1985} (appendix II).
+src/tests/test\_parallel\_p1\_inner\_product\_3d.F90 uses the degree two
+quadrature rule for tetrahedra in
+\citet{stroud1971} (section 8.8, $T_n$: 2-1 upper sign)
+\citep[see also][]{hammer1956}.
 
 Gmsh \citep{geuzaine2009} was used to generate a number of the test meshes
 contained in src/tests/data/. The Fluidity fldecomp tool, which uses the METIS
