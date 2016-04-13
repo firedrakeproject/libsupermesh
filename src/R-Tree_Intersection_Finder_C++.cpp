@@ -169,7 +169,7 @@ extern "C" {
   
   void libsupermesh_query_rtree(void **rtree, const int *dim, const int *loc_a,
     const double *element_a, int *neles_b) {
-    assert((uint32_t)(*dim) == ((libsupermesh::RTree*)(*rtree))->dim);
+    assert((*dim) == ((libsupermesh::RTree*)(*rtree))->dim);
     *neles_b = ((libsupermesh::RTree*)(*rtree))->query(*loc_a, element_a);
     
     return;
