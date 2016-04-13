@@ -64,8 +64,8 @@ module libsupermesh_read_triangle
 contains
 
 #if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
-  ! Based upon free_unit in femtools/Futils.F90 in Fluidity git revision
-  ! 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25)
+  ! Modified version of free_unit in femtools/Futils.F90 in Fluidity git
+  ! revision 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25)
   function free_unit()
     integer :: free_unit
 
