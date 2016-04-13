@@ -22,6 +22,7 @@ subroutine test_parallel_p1_inner_product_2d() bind(c)
 
   use iso_c_binding, only : c_int8_t
   use iso_fortran_env, only : error_unit, output_unit
+  use mpi
 
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_halo_ownership, only : element_ownership
@@ -32,8 +33,6 @@ subroutine test_parallel_p1_inner_product_2d() bind(c)
   use libsupermesh_unittest_tools, only : operator(.fne.), report_test
 
   implicit none
-
-#include <mpif.h>
   
   ! Input Triangle mesh base names
   character(len = *), parameter :: basename_a = "data/triangle_0_01", &

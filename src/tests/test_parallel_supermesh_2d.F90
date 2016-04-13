@@ -22,6 +22,7 @@ subroutine test_parallel_supermesh_2d() bind(c)
 
   use iso_c_binding, only : c_int8_t
   use iso_fortran_env, only : error_unit, output_unit
+  use mpi
 
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_halo_ownership, only : element_ownership
@@ -35,8 +36,6 @@ subroutine test_parallel_supermesh_2d() bind(c)
   use libsupermesh_unittest_tools, only : operator(.fne.), report_test
 
   implicit none
-
-#include <mpif.h>
 
   character(len = int(log10(real(huge(0)))) + 1) :: nprocs_chr, rank_chr
   integer :: ele_a, ele_b, ele_c, i, ierr, loc_b, n_tris_c, nelements_a, &

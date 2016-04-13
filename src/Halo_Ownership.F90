@@ -20,12 +20,12 @@
 
 module libsupermesh_halo_ownership
 
+  use mpi
+
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_read_halos, only : halo_type
 
   implicit none
-
-#include <mpif.h>
 
   private
 

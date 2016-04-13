@@ -53,13 +53,13 @@
 #include "libsupermesh_debug.h"
 
 module libsupermesh_debug
+
+  use mpi
       
   use libsupermesh_debug_parameters, only : current_debug_level, &
     & debug_error_unit, debug_log_unit
   
   implicit none
-  
-#include <mpif.h>
   
   private
   

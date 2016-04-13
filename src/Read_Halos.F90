@@ -55,12 +55,11 @@
 module libsupermesh_read_halos
 
   use iso_c_binding, only : c_int, c_ptr
+  use mpi
 
   use libsupermesh_debug, only : abort_pinpoint
 
   implicit none
-
-#include <mpif.h>
 
   private
 

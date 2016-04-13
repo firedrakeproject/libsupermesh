@@ -21,6 +21,7 @@
 module libsupermesh_parallel_supermesh
 
   use iso_c_binding, only : c_int8_t
+  use mpi
   
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_debug_parameters, only : debug_log_unit
@@ -33,8 +34,6 @@ module libsupermesh_parallel_supermesh
   use libsupermesh_supermesh, only : max_n_simplices_c, intersect_elements
 
   implicit none
-
-#include <mpif.h>
 
   private
 
@@ -369,7 +368,8 @@ contains
     integer :: buffer_size, dim, ele_a, ele_b, i, ierr, j, k, l, loc_a, loc_b, &
       & n_c, ndata, nelements, nelements_b, nnodes, position
     integer, dimension(MPI_STATUS_SIZE) :: status
-    integer, dimension(:), allocatable :: eles_a, recv_enlist, statuses
+    integer, dimension(:), allocatable :: eles_a, recv_enlist
+    integer, dimension(:, :), allocatable :: statuses
     integer(kind = c_int8_t), dimension(:), allocatable :: data
     real, dimension(:), allocatable :: recv_positions
     real, dimension(:, :), allocatable :: nodes_a, nodes_b
@@ -398,7 +398,7 @@ contains
         & i, MPI_ANY_TAG, mpi_comm, status, ierr);  assert(ierr == MPI_SUCCESS)
     end do
 
-    allocate(statuses(nsends * MPI_STATUS_SIZE))
+    allocate(statuses(MPI_STATUS_SIZE, nsends))
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
     do i = 1, nprocs
