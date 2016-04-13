@@ -16,6 +16,39 @@
 !  License along with this library; if not, write to the Free Software
 !  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+! The following uses code from
+! femtools/Futils.F90 in Fluidity git revision
+! 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25)
+!
+! Fluidity copyright information (note that AUTHORS mentioned in the following
+! has been renamed to fluidity_AUTHORS):
+!
+!  Copyright (C) 2006 Imperial College London and others.
+!  
+!  Please see the AUTHORS file in the main source directory for a full list
+!  of copyright holders.
+!
+!  Prof. C Pain
+!  Applied Modelling and Computation Group
+!  Department of Earth Science and Engineering
+!  Imperial College London
+!
+!  amcgsoftware@imperial.ac.uk
+!  
+!  This library is free software; you can redistribute it and/or
+!  modify it under the terms of the GNU Lesser General Public
+!  License as published by the Free Software Foundation,
+!  version 2.1 of the License.
+!
+!  This library is distributed in the hope that it will be useful,
+!  but WITHOUT ANY WARRANTY; without even the implied warranty of
+!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+!  Lesser General Public License for more details.
+!
+!  You should have received a copy of the GNU Lesser General Public
+!  License along with this library; if not, write to the Free Software
+!  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
+
 #include "libsupermesh_debug.h"
 
 module libsupermesh_read_triangle
@@ -29,6 +62,23 @@ module libsupermesh_read_triangle
   public :: read_node, read_ele
 
 contains
+
+#if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
+  ! Based upon free_unit in femtools/Futils.F90 in Fluidity git revision
+  ! 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25)
+  function free_unit()
+    integer :: free_unit
+
+    logical :: connected
+
+    do free_unit = 100, 1000
+       inquire(unit = free_unit, opened = connected)
+       if(.not. connected) return
+    end do
+    libsupermesh_abort("Unable to find I/O unit")
+
+  end function free_unit
+#endif
 
   ! Read Triangle .node file, as described at:
   !   https://www.cs.cmu.edu/~quake/triangle.node.html
@@ -52,7 +102,12 @@ contains
     real, dimension(dim) :: coord
     real, dimension(:), allocatable :: attribute
 
+#if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
+    unit = free_unit()
+    open(unit = unit, file = trim(filename), status = "old", action = "read")
+#else
     open(newunit = unit, file = trim(filename), status = "old", action = "read")
+#endif
 
     read(unit, *) nnodes, ldim, nattrs, nbm
     if(nnodes < 0) then
@@ -118,7 +173,12 @@ contains
     integer, dimension(:), allocatable :: cell_nodes
     real, dimension(:), allocatable :: attribute
 
+#if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
+    unit = free_unit()
+    open(unit = unit, file = trim(filename), status = "old", action = "read")
+#else
     open(newunit = unit, file = trim(filename), status = "old", action = "read")
+#endif
 
     read(unit, *) nelements, ncell_nodes, nattrs
     if(nelements < 0) then
