@@ -179,7 +179,61 @@ following intersection finder routines, must be deallocated after use.
   \item[ints] Length $E_A$ vector. Candidate intersection element-element graph.
 \end{description}
 
-\subsubsection{\texttt{sort\_intersection\_finder}}
+\subsubsection{\texttt{intersection\_finder}}
+
+An intersection finder for one, two, and three dimensional meshes. Uses the
+\verb+sort_intersection_finder+ (section \ref{sect:sort_global}) in the one
+dimensional case, and the \verb+rtree_intersection_finder+ (section
+\ref{sect:rtree_global}) in the two and three dimensional cases.
+
+\begin{lstlisting}[language=FORTRAN]
+  interface intersection_finder
+    module procedure intersection_finder_intersections, &
+      & intersection_finder_csr_sparsity
+  end interface intersection_finder
+\end{lstlisting}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersection_finder_intersections( &
+    & positions_a, enlist_a, positions_b, enlist_b, map_ab)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    type(intersections), dimension(:), intent(out) :: map_ab
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
+  \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
+  \item[map\_ab] Length $E_A$ vector. Candidate intersection element-element
+    graph.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersection_finder_csr_sparsity( &
+    & positions_a, enlist_a, positions_b, enlist_b, &
+    & map_ab_indices, map_ab_indptr)
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
+    integer, dimension(:), allocatable, intent(out) :: map_ab_indices
+    integer, dimension(:), intent(out) :: map_ab_indptr
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[positions\_a] $d \times V_A$ array. Mesh A node coordinates.
+  \item[enlist\_a] $l_A \times E_A$ array. Mesh A element-node graph.
+  \item[positions\_b] $d \times V_B$ array. Mesh B node coordinates.
+  \item[enlist\_b] $l_B \times E_B$ array. Mesh B element-node graph.
+  \item[map\_ab\_indices, map\_ab\_indptr] CSR sparsity. Candidate intersection
+    element-element graph. \linebreak \verb+map_ab_indptr+ has length $E_A + 1$.
+\end{description}
+
+\subsubsection{\texttt{sort\_intersection\_finder}}\label{sect:sort_global}
 
 An intersection finder for 1D meshes, based upon a combination of a merge sort
 and a 1D advancing front.
