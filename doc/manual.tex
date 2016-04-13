@@ -1531,7 +1531,7 @@ by facets.
   subroutine intersect_tets_real(tet_a, tet_b, tets_c, n_tets_c)
     real, dimension(3, 4), intent(in) :: tet_a
     real, dimension(3, 4), intent(in) :: tet_b
-    real, dimension(3, 4, tet_buf_size), intent(inout) :: tets_c
+    real, dimension(:, :, :), intent(inout) :: tets_c
     integer, intent(out) :: n_tets_c
 \end{lstlisting}
 
@@ -2164,8 +2164,12 @@ cmake/UseLATEX.cmake. UseLATEX.cmake copyright information:
 
 \section{Acknowledgements}
 
-Development of libsupermesh was funded by ARCHER eCSE03-8, ``Parallel
-supermeshing for multimesh modelling''.
+This work was funded under the embedded CSE programme of the ARCHER UK National
+Supercomputing Service (\url{http://www.archer.ac.uk}). The project was
+eCSE03-8, ``Parallel supermeshing for multimesh modelling''.
+
+This work used the ARCHER UK National Supercomputing Service
+(\url{http://www.archer.ac.uk}).
 
 libsupermesh is derived from Fluidity git revision
 4e6c1d2b022df3a519cdec120fad28e60d1b08d9, and additionally uses code from
