@@ -184,7 +184,7 @@ module libsupermesh_intersection_finder
   end interface deallocate    
     
   logical, save :: rtree_allocated = .false.
-  integer(kind = c_int), dimension(:), allocatable, save :: rtree_eles
+  integer, dimension(:), allocatable, save :: rtree_eles
   type(rtree_type), save :: rtree
   
   logical, save :: tree_allocated = .false.
@@ -480,9 +480,9 @@ contains
   subroutine allocate_rtree(rtree, positions, enlist)
     type(rtree_type), intent(out) :: rtree
     ! dim x nnodes
-    real(kind = c_double), dimension(:, :), intent(in) :: positions
+    real, dimension(:, :), intent(in) :: positions
     ! loc x nelements
-    integer(kind = c_int), dimension(:, :), intent(in) :: enlist
+    integer, dimension(:, :), intent(in) :: enlist
     
     integer(kind = c_int) :: dim, loc, nelements, nnodes
     
@@ -501,8 +501,8 @@ contains
   subroutine query_rtree_allocatable(rtree, element_a, eles_b)
     type(rtree_type), intent(inout) :: rtree
     ! dim x loc_a
-    real(kind = c_double), dimension(:, :), intent(in) :: element_a
-    integer(kind = c_int), dimension(:), allocatable, intent(out) :: eles_b
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), allocatable, intent(out) :: eles_b
     
     integer(kind = c_int) :: dim, loc_a, neles_b
     
@@ -518,8 +518,8 @@ contains
   subroutine query_rtree_pointer(rtree, element_a, eles_b)
     type(rtree_type), intent(inout) :: rtree
     ! dim x loc_a
-    real(kind = c_double), dimension(:, :), intent(in) :: element_a
-    integer(kind = c_int), dimension(:), pointer, intent(out) :: eles_b
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), pointer, intent(out) :: eles_b
     
     integer(kind = c_int) :: dim, loc_a, neles_b
     
@@ -589,13 +589,13 @@ contains
 
   subroutine rtree_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
-    real(kind = c_double), dimension(:, :), intent(in) :: positions_a
+    real, dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
-    integer(kind = c_int), dimension(:, :), intent(in) :: enlist_a
+    integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real(kind = c_double), dimension(:, :), intent(in) :: positions_b
+    real, dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
-    integer(kind = c_int), dimension(:, :), intent(in) :: enlist_b
+    integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
     type(intersections), dimension(:), intent(out) :: map_ab
 

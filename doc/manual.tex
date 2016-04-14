@@ -474,10 +474,10 @@ An intersection finder for 2D and 3D meshes, using a libspatialindex
 \begin{lstlisting}[language=FORTRAN]
   subroutine rtree_intersection_finder_intersections( &
     & positions_a, enlist_a, positions_b, enlist_b, map_ab)
-    real(kind = c_double), dimension(:, :), intent(in) :: positions_a
-    integer(kind = c_int), dimension(:, :), intent(in) :: enlist_a
-    real(kind = c_double), dimension(:, :), intent(in) :: positions_b
-    integer(kind = c_int), dimension(:, :), intent(in) :: enlist_b
+    real, dimension(:, :), intent(in) :: positions_a
+    integer, dimension(:, :), intent(in) :: enlist_a
+    real, dimension(:, :), intent(in) :: positions_b
+    integer, dimension(:, :), intent(in) :: enlist_b
     type(intersections), dimension(:), intent(out) :: map_ab
 \end{lstlisting}
 
@@ -935,8 +935,8 @@ intersecting elements.
 \begin{lstlisting}[language=FORTRAN]  
   subroutine allocate_rtree(rtree, positions, enlist)
     type(rtree_type), intent(out) :: rtree
-    real(kind = c_double), dimension(:, :), intent(in) :: positions
-    integer(kind = c_int), dimension(:, :), intent(in) :: enlist
+    real, dimension(:, :), intent(in) :: positions
+    integer, dimension(:, :), intent(in) :: enlist
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
@@ -957,15 +957,15 @@ elements.
 \begin{lstlisting}[language=FORTRAN]    
   subroutine query_rtree_allocatable(rtree, element_a, eles_b)
     type(rtree_type), intent(inout) :: rtree
-    real(kind = c_double), dimension(:, :), intent(in) :: element_a
-    integer(kind = c_int), dimension(:), allocatable, intent(out) :: eles_b
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), allocatable, intent(out) :: eles_b
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]      
   subroutine query_rtree_pointer(rtree, element_a, eles_b)
     type(rtree_type), intent(inout) :: rtree
-    real(kind = c_double), dimension(:, :), intent(in) :: element_a
-    integer(kind = c_int), dimension(:), pointer, intent(out) :: eles_b
+    real, dimension(:, :), intent(in) :: element_a
+    integer, dimension(:), pointer, intent(out) :: eles_b
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
@@ -1854,6 +1854,7 @@ accepts an MPI communicator.
     
     interface
       subroutine pack_data_b(nodes_b, eles_b, data_b)
+        use iso_c_binding, only : c_int8_t
         integer, dimension(:), intent(in) :: nodes_b
         integer, dimension(:), intent(in) :: eles_b
         integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: &
@@ -1861,6 +1862,7 @@ accepts an MPI communicator.
       end subroutine pack_data_b
 
       subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
+        use iso_c_binding, only : c_int8_t
         integer, intent(in) :: nnodes_b
         integer, intent(in) :: nelements_b
         integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
@@ -1900,6 +1902,7 @@ accepts an MPI communicator.
 
 \begin{lstlisting}[language=FORTRAN]
   subroutine pack_data_b(nodes_b, eles_b, data_b)
+    use iso_c_binding, only : c_int8_t
     integer, dimension(:), intent(in) :: nodes_b
     integer, dimension(:), intent(in) :: eles_b
     integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
@@ -1917,6 +1920,7 @@ accepts an MPI communicator.
 
 \begin{lstlisting}[language=FORTRAN]
   subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
+    use iso_c_binding, only : c_int8_t
     integer, intent(in) :: nnodes_b
     integer, intent(in) :: nelements_b
     integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
