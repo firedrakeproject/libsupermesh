@@ -22,6 +22,7 @@ libsupermesh is available under the [GNU Lesser General Public License version 2
 
 ## Authors ##
 
-* Dr. Patrick E. Farrell, Mathematical Institute, The University of Oxford
-* Dr. James R. Maddison, School of Mathematics and Maxwell Institute for Mathematical Sciences, The University of Edinburgh, [j.r.maddison@ed.ac.uk](mailto:j.r.maddison@ed.ac.uk)
-* Mr. Iakovos Panourgias, EPCC, The University of Edinburgh
+* Dr. James R. Maddison, School of Mathematics and Maxwell Institute for Mathematical Sciences, University of Edinburgh, UK [j.r.maddison@ed.ac.uk](mailto:j.r.maddison@ed.ac.uk)
+* Mr. Iakovos Panourgias, EPCC, University of Edinburgh, UK
+* Dr. Patrick E. Farrell, Mathematical Institute, University of Oxford, UK,
+  and Center for Biomedical Computing, Simula Research Laboratory, Oslo, Norway
