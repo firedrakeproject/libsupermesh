@@ -87,11 +87,11 @@ contains
   !
   ! Expected format differs from that in the Triangle documentation, in that
   ! arbitrary dimensional nodal data is supported.
-  subroutine read_node(filename, dim, coords, attributes, boundary_markers)
+  subroutine read_node(filename, dim, positions, attributes, boundary_markers)
     character(len = *), intent(in) :: filename
     integer, intent(in) :: dim
     ! dim x nnodes
-    real, dimension(:, :), allocatable, intent(out) :: coords
+    real, dimension(:, :), allocatable, intent(out) :: positions
     ! nattrs x nnodes
     real, dimension(:, :), allocatable, optional, intent(out) :: attributes
     ! nbm x nnodes
@@ -123,7 +123,7 @@ contains
       libsupermesh_abort("Invalid number of boundary markers")
     end if
 
-    allocate(coords(dim, nnodes))
+    allocate(positions(dim, nnodes))
     if(present(attributes)) allocate(attributes(nattrs, nnodes))
     if(present(boundary_markers)) allocate(boundary_markers(nbm, nnodes))
 
@@ -143,7 +143,7 @@ contains
       if(i /= ind) then
         libsupermesh_abort("Invalid vertex number")
       end if
-      coords(:, i) = coord
+      positions(:, i) = coord
       if(present(attributes) .and. nattrs > 0) attributes(:, i) = attribute
       if(present(boundary_markers) .and. nbm > 0) boundary_markers(:, i) = boundary_marker
     end do

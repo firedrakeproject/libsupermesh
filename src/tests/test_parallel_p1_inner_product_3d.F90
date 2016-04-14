@@ -75,7 +75,7 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
 
   ! Read the donor mesh partition
-  call read_node(trim(basename_a) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".node", dim = 3, coords = positions_a)
+  call read_node(trim(basename_a) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".node", dim = 3, positions = positions_a)
   call read_ele(trim(basename_a) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".ele", dim = 3, enlist = enlist_a)
   nnodes_a = size(positions_a, 2)
   nelements_a = size(enlist_a, 2)
@@ -89,7 +89,7 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   field_a = positions_a(1, :) + positions_a(3, :)
 
   ! Read the target mesh partition
-  call read_node(trim(basename_b) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".node", dim = 3, coords = positions_b)
+  call read_node(trim(basename_b) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".node", dim = 3, positions = positions_b)
   call read_ele(trim(basename_b) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".ele", dim = 3, enlist = enlist_b)
   nnodes_b = size(positions_b, 2)
   nelements_b = size(enlist_b, 2)
