@@ -2366,8 +2366,8 @@ unpacked data. Note that \verb+cleanup_data_b+ is also called after the
 
 ~\newline
 The final callback performs calculations on the intersection mesh. Two utility
-functions are defined, which interpolate $P_1$ nodal data onto an arbitrary
-point (using Lagrange basis functions).
+functions are defined, which are used to interpolate $P_1$ nodal data onto an
+arbitrary point (using Lagrange basis functions).
 \begin{lstlisting}[language=FORTRAN] 
   ! Evaluate P1 basis functions at a given point
   pure function basis_functions_p1(element, coord) result(fns)
