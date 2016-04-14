@@ -48,7 +48,8 @@ make install
 \end{lstlisting}
 where \verb+[LIBSUPERMESH_SOURCE_PATH]+ is the path to the source directory, and
 \linebreak \verb+[LIBSUPERMESH_INSTALL_PATH]+ is the path to the installation
-directory. Note that libsupermesh cannot be built in the source directory.
+directory. Note that libsupermesh cannot be built in the source directory, and
+must be built with double precision Fortran reals.
 
 \subsection*{CMake variables}
 
@@ -1963,6 +1964,711 @@ accepts an MPI communicator.
     mesh B.
 \end{description}
 
+\section{Examples}
+
+\subsection{Serial}\label{sect:serial_example}
+
+In this example two triangle meshes A and B, possibly covering differing domains
+$\Omega_A$ and $\Omega_B$, are considered, and their area of intersection is
+computed.
+
+libsupermesh requires that the calling code set up all relevant mesh data.
+However for internal testing purposes libsupermesh includes the \verb+read_node+
+and \verb+read_ele+ routines which can be used to read files which are in
+Triangle\footnote{\url{https://www.cs.cmu.edu/~quake/triangle.html}} or
+TetGen\footnote{\url{http://wias-berlin.de/software/tetgen/}} .node and .ele
+format (with some generalisation to allow cubical mesh input). Note that these
+additional routines are not included in the \verb+libsupermesh+ Fortran module.
+
+~\newline
+First the necessary libsupermesh library functionality is accessed.
+\begin{lstlisting}[language=FORTRAN]
+program serial_example
+
+  use libsupermesh, only : quadtree_type, allocate, query, deallocate
+  use libsupermesh, only : tri_buf_size, intersect_tris, triangle_area
+  use libsupermesh_read_triangle, only : read_node, read_ele
+
+  implicit none
+\end{lstlisting}
+
+~\newline
+Variables are defined.
+\begin{lstlisting}[language=FORTRAN]
+  real, dimension(:, :), allocatable :: positions_a, positions_b
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  integer :: nnodes_a, nnodes_b, nelements_a
+  
+  type(quadtree_type) :: tree
+  integer :: ele_a, i_eles_b
+  integer, dimension(:), allocatable :: eles_b
+  
+  real, dimension(2, 3) :: tri_a, tri_b
+  real, dimension(2, 3, tri_buf_size) :: tris_c
+  integer :: n_tris_c, ele_c
+  
+  real :: area
+\end{lstlisting}
+
+~\newline
+The mesh node coordinates and element-node graphs are read.
+\begin{lstlisting}[language=FORTRAN]
+  ! Read mesh A data
+  call read_node('square_0_01.node', dim = 2, positions = positions_a)
+  call read_ele('square_0_01.ele', dim = 2, enlist = enlist_a)
+  nnodes_a = size(positions_a, 2)
+  nelements_a = size(enlist_a, 2)
+  
+  ! Read mesh B data
+  call read_node('triangle_0_01.node', dim = 2, positions = positions_b)
+  call read_ele('triangle_0_01.ele', dim = 2, enlist = enlist_b)
+  nnodes_b = size(positions_b, 2)
+\end{lstlisting}
+
+~\newline
+In the following a quadtree is constructed, and successively
+queried for candidate intersecting mesh B elements, using mesh A element node
+coordinates (see section \ref{sect:quadtree_query}). These are used to construct
+(possibly empty) intersection meshes. The intersection area is added to
+\verb+area+.
+\begin{lstlisting}[language=FORTRAN]
+  ! Build a quadtree
+  call allocate(tree, positions_b, enlist_b)
+  
+  area = 0.0D0
+  do ele_a = 1, nelements_a
+    tri_a = positions_a(:, enlist_a(:, ele_a))
+    ! Query the quadtree for candidate intersecting elements
+    call query(tree, tri_a, eles_b)
+    do i_eles_b = 1, size(eles_b)
+      tri_b = positions_b(:, enlist_b(:, eles_b(i_eles_b)))
+      ! Construct an intersection mesh
+      call intersect_tris(tri_a, tri_b, tris_c, n_tris_c)
+      do ele_c = 1, n_tris_c
+        ! Add the area of the intersection mesh element
+        area = area + triangle_area(tris_c(:, :, ele_c))
+      end do
+    end do
+  end do
+\end{lstlisting}
+
+~\newline
+Finally the result is displayed, and necessary deallocation is performed.
+\begin{lstlisting}[language=FORTRAN]    
+  ! Display the result
+  print '(a,e26.18e3)', 'Area of intersection = ', area
+  
+  ! Deallocation
+  call deallocate(tree)
+  deallocate(positions_a, enlist_a, positions_b, enlist_b)
+  
+end program serial_example
+\end{lstlisting}
+
+~\newline
+The complete code.
+\begin{lstlisting}[language=FORTRAN]
+program serial_example
+
+  use libsupermesh, only : quadtree_type, allocate, query, deallocate
+  use libsupermesh, only : tri_buf_size, intersect_tris, triangle_area
+  use libsupermesh_read_triangle, only : read_node, read_ele
+
+  implicit none
+  
+  real, dimension(:, :), allocatable :: positions_a, positions_b
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  integer :: nnodes_a, nnodes_b, nelements_a
+  
+  type(quadtree_type) :: tree
+  integer :: ele_a, i_eles_b
+  integer, dimension(:), allocatable :: eles_b
+  
+  real, dimension(2, 3) :: tri_a, tri_b
+  real, dimension(2, 3, tri_buf_size) :: tris_c
+  integer :: n_tris_c, ele_c
+  
+  real :: area
+  
+  ! Read mesh A data
+  call read_node('square_0_01.node', dim = 2, positions = positions_a)
+  call read_ele('square_0_01.ele', dim = 2, enlist = enlist_a)
+  nnodes_a = size(positions_a, 2)
+  nelements_a = size(enlist_a, 2)
+  
+  ! Read mesh B data
+  call read_node('triangle_0_01.node', dim = 2, positions = positions_b)
+  call read_ele('triangle_0_01.ele', dim = 2, enlist = enlist_b)
+  nnodes_b = size(positions_b, 2)
+  
+  ! Build a quadtree
+  call allocate(tree, positions_b, enlist_b)
+  
+  area = 0.0D0
+  do ele_a = 1, nelements_a
+    tri_a = positions_a(:, enlist_a(:, ele_a))
+    ! Query the quadtree for candidate intersecting elements
+    call query(tree, tri_a, eles_b)
+    do i_eles_b = 1, size(eles_b)
+      tri_b = positions_b(:, enlist_b(:, eles_b(i_eles_b)))
+      ! Construct an intersection mesh
+      call intersect_tris(tri_a, tri_b, tris_c, n_tris_c)
+      do ele_c = 1, n_tris_c
+        ! Add the area of the intersection mesh element
+        area = area + triangle_area(tris_c(:, :, ele_c))
+      end do
+    end do
+  end do
+  
+  ! Display the result
+  print '(a,e26.18e3)', 'Area of intersection = ', area
+  
+  ! Deallocation
+  call deallocate(tree)
+  deallocate(positions_a, enlist_a, positions_b, enlist_b)
+  
+end program serial_example
+\end{lstlisting}
+
+\subsection{Parallel}
+
+In this example two triangle meshes A and B, possibly covering differing domains
+$\Omega_A$ and $\Omega_B$ and partitioned for an MPI calculation, are
+considered. A $C^0$ real function $\phi_B$ which is piecewise linear within the
+elements of mesh B is defined (a $P_1$ function on mesh B), and the integral
+over the intersection region,
+\begin{equation*}
+  I = \int_{\Omega_A \cap \Omega_B} \phi_B,
+\end{equation*}
+is computed.
+
+libsupermesh requires that the calling code set up all relevant mesh and element
+ownership data. Here local mesh data are read as described in section
+\ref{sect:serial_example}. For internal testing purposes libsupermesh includes
+routines for reading Fluidity .halo files, which define node ownership in an
+overlap ``halo'' (or ``ghost'') region. libsupermesh similarly includes, for
+testing purposes, the routine \verb+element_ownership+, which can be used to
+generate consistent element ownership information from these halo data. Note
+that these additional routines are not included in the \verb+libsupermesh+
+Fortran module.
+
+In this example packing and unpacking of additional data, via the
+\verb+pack_data_b+ and \linebreak \verb+unpack_data_b+ callbacks, could be
+avoided by swapping the roles of meshes A and B. Here this arrangement is
+retained in order to illustrate the principles of packing and unpacking data in
+parallel supermeshing.
+
+~\newline
+First necessary Fortran modules are used.
+\begin{lstlisting}[language=FORTRAN]
+program parallel_example
+
+  use iso_c_binding, only : c_int8_t
+  use iso_fortran_env, only : output_unit, error_unit
+  use mpi
+  
+  use libsupermesh, only : parallel_supermesh, triangle_area
+  use libsupermesh_halo_ownership, only : element_ownership
+  use libsupermesh_read_halos, only : halo_type, read_halo, deallocate
+  use libsupermesh_read_triangle, only : read_node, read_ele
+
+  implicit none
+\end{lstlisting}
+
+~\newline
+Variables are defined.
+\begin{lstlisting}[language=FORTRAN]
+  character(len = int(log10(real(huge(0)))) + 1) :: rank_chr
+  integer :: ierr, rank, real_extent
+  
+  real, dimension(:, :), allocatable :: positions_a, positions_b
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  integer :: nnodes_b, nelements_a, nelements_b
+  real, dimension(:), allocatable, target :: phi_b
+  
+  type(halo_type) :: halo
+  integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
+  
+  real, dimension(:), allocatable, target :: phi_b_received
+  
+  real :: integral
+\end{lstlisting}
+
+~\newline
+MPI is initialised, and the extent of MPI double precision variables is
+determined. The extent will later be used to faciliate packing and unpacking of
+data for parallel supermeshing.
+\begin{lstlisting}[language=FORTRAN]
+  call MPI_Init(ierr)
+  if(ierr /= MPI_SUCCESS) stop 1
+  
+  ! Find the extent of a double precision variable
+  call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+\end{lstlisting}
+
+~\newline
+The mesh node coordinates and element-node graphs are read, and element
+ownership is determined by reading halo data.
+\begin{lstlisting}[language=FORTRAN]    
+  ! Find the process rank, and convert to a string
+  call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+  write(rank_chr, '(i0)') rank
+  rank_chr = adjustl(rank_chr)
+  
+  ! Read mesh A data
+  call read_node('square_0_01_4_' // trim(rank_chr) // '.node', dim = 2, &
+    & positions = positions_a)
+  call read_ele('square_0_01_4_' // trim(rank_chr) // '.ele', dim = 2, &
+    & enlist = enlist_a)
+  nelements_a = size(enlist_a, 2)
+    
+  ! Read mesh A halo data, and construct element ownership
+  call read_halo('square_0_01_4', halo, level = 2)
+  allocate(ele_owner_a(nelements_a))
+  call element_ownership(size(positions_a, 2), enlist_a, halo, ele_owner_a)
+  call deallocate(halo)
+    
+  ! Read mesh B data
+  call read_node('triangle_0_01_4_' // trim(rank_chr) // '.node', dim = 2, &
+    & positions = positions_b)
+  call read_ele('triangle_0_01_4_' // trim(rank_chr) // '.ele', dim = 2, &
+    & enlist = enlist_b)
+  nnodes_b = size(positions_b, 2)
+  nelements_b = size(enlist_b, 2)
+    
+  ! Read mesh B halo data, and construct element ownership
+  call read_halo('triangle_0_01_4', halo, level = 2)
+  allocate(ele_owner_b(nelements_b))
+  call element_ownership(size(positions_b, 2), enlist_b, halo, ele_owner_b)
+  call deallocate(halo)
+\end{lstlisting}
+
+~\newline
+Nodal data for $\phi_B$ are constructed. Here $\phi_B$ is set equal to the value
+of the $x$-coordinate. The vector \verb+phi_b+ contains the values of $\phi_B$
+on the mesh nodes.
+\begin{lstlisting}[language=FORTRAN]
+  ! Construct a P1 field on mesh B
+  allocate(phi_b(nnodes_b))
+  phi_b = positions_b(1, :)
+\end{lstlisting}
+
+~\newline
+Parallel supermeshing is used to compute the integral over the local mesh A.
+The callbacks and the \verb+cleanup_data_b+ routine are described below.
+\begin{lstlisting}[language=FORTRAN]
+  ! Compute the integral over the local mesh A
+  integral = 0.0D0
+  call parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
+     & positions_b, enlist_b, ele_owner_b, &
+     & pack_data_b, unpack_data_b, intersection_calculation, &
+     & comm = MPI_COMM_WORLD)
+  call cleanup_data_b()
+\end{lstlisting}
+
+~\newline
+The integral over the whole of mesh A is computed using \verb+MPI_Allreduce+.
+\begin{lstlisting}[language=FORTRAN]  
+  ! Compute the total integral over mesh A
+  call MPI_Allreduce(MPI_IN_PLACE, integral, 1, MPI_DOUBLE_PRECISION, &
+    & MPI_SUM, MPI_COMM_WORLD, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+\end{lstlisting}
+
+~\newline
+Finally the result is displayed, and necessary deallocation and MPI finalisation
+is performed.
+\begin{lstlisting}[language=FORTRAN]  
+  ! Display the result
+  flush(output_unit)
+  flush(error_unit)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+  if(rank == 0) print '(a,e26.18e3)', 'Integral = ', integral
+  flush(output_unit)
+  flush(error_unit)
+      
+  ! Deallocation
+  deallocate(positions_a, enlist_a, positions_b, enlist_b, &
+    & ele_owner_a, ele_owner_b, phi_b)
+  
+  call MPI_Finalize(ierr)
+  if(ierr /= MPI_SUCCESS) stop 1
+\end{lstlisting}
+
+~\newline
+The first callback packs the $P_1$ nodal data used to represent $\phi_B$ using
+\verb+MPI_Pack+. Note that, since the ordering of degree-of-freedom data in
+\verb+phi_b+ is consistent with the ordering of nodes in \verb+positions_b+, no
+degree-of-freedom ordering information need be packed
+here.
+\begin{lstlisting}[language=FORTRAN]  
+contains
+
+  subroutine pack_data_b(nodes_b, eles_b, data_b)
+    integer, dimension(:), intent(in) :: nodes_b
+    integer, dimension(:), intent(in) :: eles_b
+    integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
+
+    integer :: ierr, ndata_b, position
+    real, dimension(:), allocatable :: ldata
+
+    ! Extract nodal data to be communicated
+    allocate(ldata(size(nodes_b)))
+    ldata = phi_b(nodes_b)
+
+    ! Pack data for sending
+    ndata_b = size(nodes_b) * real_extent
+    allocate(data_b(ndata_b))
+    position = 0
+    call MPI_Pack(ldata, size(nodes_b), MPI_DOUBLE_PRECISION, data_b, ndata_b, &
+      & position, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+
+    ! Deallocation
+    deallocate(ldata)
+    
+  end subroutine pack_data_b
+\end{lstlisting}
+
+~\newline
+The second callback unpacks received mesh B data using \verb+MPI_Unpack+. The
+additional routine \verb+cleanup_data_b+ is used to deallocate any previously
+unpacked data. Note that \verb+cleanup_data_b+ is also called after the
+\verb+parallel_supermesh+ call above.
+\begin{lstlisting}[language=FORTRAN] 
+  subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
+    integer, intent(in) :: nnodes_b
+    integer, intent(in) :: nelements_b
+    integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+
+    integer :: ierr, position
+
+    ! Deallocate any previously unpacked data
+    call cleanup_data_b()
+
+    ! Unpack received data
+    allocate(phi_b_received(nnodes_b))
+    position = 0
+    call MPI_Unpack(data_b, size(data_b), position, phi_b_received, nnodes_b, &
+      & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+
+  end subroutine unpack_data_b 
+
+  ! Deallocate any previously unpacked data
+  subroutine cleanup_data_b()
+    if(allocated(phi_b_received)) deallocate(phi_b_received)
+  end subroutine cleanup_data_b
+\end{lstlisting}
+
+~\newline
+The final callback performs calculations on the intersection mesh. Two utility
+functions are defined, which interpolate $P_1$ nodal data onto an arbitrary
+point (using Lagrange basis functions).
+\begin{lstlisting}[language=FORTRAN] 
+  ! Evaluate P1 basis functions at a given point
+  pure function basis_functions_p1(element, coord) result(fns)
+    real, dimension(2, 3), intent(in) :: element
+    real, dimension(2), intent(in) :: coord
+
+    real, dimension(3) :: fns
+
+    real, dimension(2) :: e1, e2
+    real, dimension(2, 2) :: jac
+        
+    e1 = element(:, 2) - element(:, 1)
+    e2 = element(:, 3) - element(:, 1)
+
+    jac(1, 1) =  e2(2);  jac(1, 2) = -e2(1)
+    jac(2, 1) = -e1(2);  jac(2, 2) =  e1(1)
+    jac = jac / (jac(1, 1) * jac(2, 2) - jac(1, 2) * jac(2, 1))
+
+    fns(2:3) = matmul(jac, coord - element(:, 1))
+    fns(1) = 1.0D0 - fns(2) - fns(3)
+
+  end function basis_functions_p1
+
+  ! Interpolate a P1 function at given point
+  pure function interpolate_p1(element, phi, coord) result(phi_c)
+    real, dimension(2, 3), intent(in) :: element
+    real, dimension(3), intent(in) :: phi
+    real, dimension(2), intent(in) :: coord
+
+    real :: phi_c
+
+    phi_c = dot_product(basis_functions_p1(element, coord), phi)
+
+  end function interpolate_p1
+\end{lstlisting}
+The callback itself computes an intergal over each intersection mesh C using
+degree one quadrature. The \verb+local+ argument is used to determine if local
+mesh B data, \verb+phi_b+, or received mesh B data,
+\verb+phi_b_received+, should be used in this calculation.
+\begin{lstlisting}[language=FORTRAN] 
+  subroutine intersection_calculation(element_a, element_b, elements_c, &
+    & nodes_b, ele_a, ele_b, local)
+    real, dimension(:, :), intent(in) :: element_a
+    real, dimension(:, :), intent(in) :: element_b
+    real, dimension(:, :, :), intent(in) :: elements_c
+    integer, dimension(:), intent(in) :: nodes_b
+    integer, intent(in) :: ele_a
+    integer, intent(in) :: ele_b
+    logical, intent(in) :: local
+
+    integer :: ele_c, nelements_c
+    real, dimension(:), pointer :: lphi_b
+    
+    if(local) then
+      ! If calculations are being performed using the local mesh B, use the
+      ! local field data
+      lphi_b => phi_b
+    else
+      ! Otherwise use previously unpacked received field data
+      lphi_b => phi_b_received
+    end if
+
+    nelements_c = size(elements_c, 3)
+    do ele_c = 1, nelements_c
+      ! Add the integral over an intersection element using one-point quadrature
+      integral = integral + &
+        & interpolate_p1(element_b, lphi_b(nodes_b), &
+          & sum(elements_c(:, :, ele_c), 2) / 3.0D0) &
+        & * triangle_area(elements_c(:, :, ele_c))
+    end do    
+    
+  end subroutine intersection_calculation
+  
+end program parallel_example
+\end{lstlisting}
+
+~\newline
+The complete code.
+\begin{lstlisting}[language=FORTRAN]
+program parallel_example
+
+  use iso_c_binding, only : c_int8_t
+  use iso_fortran_env, only : output_unit, error_unit
+  use mpi
+  
+  use libsupermesh, only : parallel_supermesh, triangle_area
+  use libsupermesh_halo_ownership, only : element_ownership
+  use libsupermesh_read_halos, only : halo_type, read_halo, deallocate
+  use libsupermesh_read_triangle, only : read_node, read_ele
+
+  implicit none
+  
+  character(len = int(log10(real(huge(0)))) + 1) :: rank_chr
+  integer :: ierr, rank, real_extent
+  
+  real, dimension(:, :), allocatable :: positions_a, positions_b
+  integer, dimension(:, :), allocatable :: enlist_a, enlist_b
+  integer :: nnodes_b, nelements_a, nelements_b
+  real, dimension(:), allocatable, target :: phi_b
+  
+  type(halo_type) :: halo
+  integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
+  
+  real, dimension(:), allocatable, target :: phi_b_received
+  
+  real :: integral
+  
+  call MPI_Init(ierr)
+  if(ierr /= MPI_SUCCESS) stop 1
+  
+  ! Find the extent of a double precision variable
+  call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+  
+  ! Find the process rank, and convert to a string
+  call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+  write(rank_chr, '(i0)') rank
+  rank_chr = adjustl(rank_chr)
+  
+  ! Read mesh A data
+  call read_node('square_0_01_4_' // trim(rank_chr) // '.node', dim = 2, &
+    & positions = positions_a)
+  call read_ele('square_0_01_4_' // trim(rank_chr) // '.ele', dim = 2, &
+    & enlist = enlist_a)
+  nelements_a = size(enlist_a, 2)
+    
+  ! Read mesh A halo data, and construct element ownership
+  call read_halo('square_0_01_4', halo, level = 2)
+  allocate(ele_owner_a(nelements_a))
+  call element_ownership(size(positions_a, 2), enlist_a, halo, ele_owner_a)
+  call deallocate(halo)
+    
+  ! Read mesh B data
+  call read_node('triangle_0_01_4_' // trim(rank_chr) // '.node', dim = 2, &
+    & positions = positions_b)
+  call read_ele('triangle_0_01_4_' // trim(rank_chr) // '.ele', dim = 2, &
+    & enlist = enlist_b)
+  nnodes_b = size(positions_b, 2)
+  nelements_b = size(enlist_b, 2)
+    
+  ! Read mesh B halo data, and construct element ownership
+  call read_halo('triangle_0_01_4', halo, level = 2)
+  allocate(ele_owner_b(nelements_b))
+  call element_ownership(size(positions_b, 2), enlist_b, halo, ele_owner_b)
+  call deallocate(halo)
+    
+  ! Construct a P1 field on mesh B
+  allocate(phi_b(nnodes_b))
+  phi_b = positions_b(1, :)
+  
+  ! Compute the integral over the local mesh A
+  integral = 0.0D0
+  call parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
+     & positions_b, enlist_b, ele_owner_b, &
+     & pack_data_b, unpack_data_b, intersection_calculation, &
+     & comm = MPI_COMM_WORLD)
+  call cleanup_data_b()  
+  
+  ! Compute the total integral over mesh A
+  call MPI_Allreduce(MPI_IN_PLACE, integral, 1, MPI_DOUBLE_PRECISION, &
+    & MPI_SUM, MPI_COMM_WORLD, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+
+  ! Display the result
+  flush(output_unit)
+  flush(error_unit)
+  call MPI_Barrier(MPI_COMM_WORLD, ierr)
+  if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+  if(rank == 0) print '(a,e26.18e3)', 'Integral = ', integral
+  flush(output_unit)
+  flush(error_unit)
+      
+  ! Deallocation
+  deallocate(positions_a, enlist_a, positions_b, enlist_b, &
+    & ele_owner_a, ele_owner_b, phi_b)
+  
+  call MPI_Finalize(ierr)
+  if(ierr /= MPI_SUCCESS) stop 1
+
+contains
+
+  subroutine pack_data_b(nodes_b, eles_b, data_b)
+    integer, dimension(:), intent(in) :: nodes_b
+    integer, dimension(:), intent(in) :: eles_b
+    integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
+
+    integer :: ierr, ndata_b, position
+    real, dimension(:), allocatable :: ldata
+
+    ! Extract nodal data to be communicated
+    allocate(ldata(size(nodes_b)))
+    ldata = phi_b(nodes_b)
+
+    ! Pack data for sending
+    ndata_b = size(nodes_b) * real_extent
+    allocate(data_b(ndata_b))
+    position = 0
+    call MPI_Pack(ldata, size(nodes_b), MPI_DOUBLE_PRECISION, data_b, ndata_b, &
+      & position, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+
+    ! Deallocation
+    deallocate(ldata)
+    
+  end subroutine pack_data_b
+
+  subroutine unpack_data_b(nnodes_b, nelements_b, data_b)
+    integer, intent(in) :: nnodes_b
+    integer, intent(in) :: nelements_b
+    integer(kind = c_int8_t), dimension(:), intent(in) :: data_b
+
+    integer :: ierr, position
+
+    ! Deallocate any previously unpacked data
+    call cleanup_data_b()
+
+    ! Unpack received data
+    allocate(phi_b_received(nnodes_b))
+    position = 0
+    call MPI_Unpack(data_b, size(data_b), position, phi_b_received, nnodes_b, &
+      & MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr)
+    if(ierr /= MPI_SUCCESS) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
+
+  end subroutine unpack_data_b
+
+  ! Deallocate any previously unpacked data
+  subroutine cleanup_data_b()
+    if(allocated(phi_b_received)) deallocate(phi_b_received)
+  end subroutine cleanup_data_b
+  
+  ! Evaluate P1 basis functions at a given point
+  pure function basis_functions_p1(element, coord) result(fns)
+    real, dimension(2, 3), intent(in) :: element
+    real, dimension(2), intent(in) :: coord
+
+    real, dimension(3) :: fns
+
+    real, dimension(2) :: e1, e2
+    real, dimension(2, 2) :: jac
+        
+    e1 = element(:, 2) - element(:, 1)
+    e2 = element(:, 3) - element(:, 1)
+
+    jac(1, 1) =  e2(2);  jac(1, 2) = -e2(1)
+    jac(2, 1) = -e1(2);  jac(2, 2) =  e1(1)
+    jac = jac / (jac(1, 1) * jac(2, 2) - jac(1, 2) * jac(2, 1))
+
+    fns(2:3) = matmul(jac, coord - element(:, 1))
+    fns(1) = 1.0D0 - fns(2) - fns(3)
+
+  end function basis_functions_p1
+
+  ! Interpolate a P1 function at given point
+  pure function interpolate_p1(element, phi, coord) result(phi_c)
+    real, dimension(2, 3), intent(in) :: element
+    real, dimension(3), intent(in) :: phi
+    real, dimension(2), intent(in) :: coord
+
+    real :: phi_c
+
+    phi_c = dot_product(basis_functions_p1(element, coord), phi)
+
+  end function interpolate_p1
+  
+  subroutine intersection_calculation(element_a, element_b, elements_c, &
+    & nodes_b, ele_a, ele_b, local)
+    real, dimension(:, :), intent(in) :: element_a
+    real, dimension(:, :), intent(in) :: element_b
+    real, dimension(:, :, :), intent(in) :: elements_c
+    integer, dimension(:), intent(in) :: nodes_b
+    integer, intent(in) :: ele_a
+    integer, intent(in) :: ele_b
+    logical, intent(in) :: local
+
+    integer :: ele_c, nelements_c
+    real, dimension(:), pointer :: lphi_b
+    
+    if(local) then
+      ! If calculations are being performed using the local mesh B, use the
+      ! local field data
+      lphi_b => phi_b
+    else
+      ! Otherwise use previously unpacked received field data
+      lphi_b => phi_b_received
+    end if
+
+    nelements_c = size(elements_c, 3)
+    do ele_c = 1, nelements_c
+      ! Add the integral over an intersection element using one-point quadrature
+      integral = integral + &
+        & interpolate_p1(element_b, lphi_b(nodes_b), &
+          & sum(elements_c(:, :, ele_c), 2) / 3.0D0) &
+        & * triangle_area(elements_c(:, :, ele_c))
+    end do    
+    
+  end subroutine intersection_calculation
+  
+end program parallel_example
+\end{lstlisting}
+
 \section{Copyright}\label{sect:copyright}
 
 \subsection{libsupermesh}
@@ -2180,9 +2886,9 @@ libsupermesh is derived from Fluidity git revision
 Fluidity 4.1.11, TinyXML 2.6.2, libspatialindex 1.8.5, Rtree 0.4.3, and
 UseLATEX.cmake (see section \ref{sect:copyright}).
 
-read\_node and read\_ele, in src/Read\_Triangle.F90, are based upon the
-Triangle file formats described at
-\url{https://www.cs.cmu.edu/~quake/triangle.html}.
+read\_node and read\_ele, in src/Read\_Triangle.F90, read .node and .ele files
+with format based upon the Triangle and TetGen file formats (see section
+\ref{sect:serial_example}).
 
 src/tests/test\_parallel\_p1\_inner\_product\_2d.F90 uses the degree two
 quadrature rule for triangles in \citet{dunavant1985} (appendix II).
