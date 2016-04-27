@@ -111,6 +111,8 @@ contains
       map_ab(ele_a)%n = size(map_ab(ele_a)%v)
     end do
     
+    call deallocate(octree)
+    
   end subroutine octree_intersection_finder_intersections
   
   subroutine octree_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr, max_size)
