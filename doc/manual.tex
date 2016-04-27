@@ -520,7 +520,8 @@ the algorithm described in \citet{farrell2011}
 intended for the case where the meshes A and B cover the same domain. However
 correct output is guaranteed if:
 \begin{enumerate}
-  \item Element $1$ of mesh A intersects with at least one element of mesh B.
+  \item The first element in each connected sub-domain of mesh A intersects with
+        at least one element of mesh B.
   \item The elements of mesh B which intersect with any given element of mesh A
         define an element-element sub-graph of the mesh B element-element
         graph\footnote{Here element-element graph edges are defined by elements
