@@ -21,10 +21,10 @@
 module libsupermesh_parallel_supermesh
 
   use iso_c_binding, only : c_int8_t
+  use iso_fortran_env, only : output_unit
   use mpi
   
   use libsupermesh_debug, only : abort_pinpoint
-  use libsupermesh_debug_parameters, only : debug_log_unit
   use libsupermesh_integer_hash_table, only : integer_hash_table, allocate, &
     & insert, fetch, deallocate
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
@@ -632,7 +632,7 @@ contains
     if(present(unit)) then
       lunit = unit
     else
-      lunit = debug_log_unit
+      lunit = output_unit
     end if
     
     call MPI_Comm_rank(lcomm, rank, ierr);  assert(ierr == MPI_SUCCESS)

@@ -54,16 +54,14 @@
 
 module libsupermesh_debug
 
+  use iso_fortran_env, only : error_unit
   use mpi
-      
-  use libsupermesh_debug_parameters, only : current_debug_level, &
-    & debug_error_unit, debug_log_unit
   
   implicit none
   
   private
   
-  public :: current_debug_level, debug_unit, abort_pinpoint
+  public :: abort_pinpoint
 
   interface print_backtrace
     subroutine libsupermesh_print_backtrace(max_size) bind(c)
@@ -74,19 +72,6 @@ module libsupermesh_debug
   end interface print_backtrace
   
 contains
-  
-  function debug_unit(priority)    
-    integer, intent(in) :: priority
-    
-    integer :: debug_unit
-    
-    if(priority < 1) then
-       debug_unit = debug_error_unit
-    else
-       debug_unit = debug_log_unit
-    end if
-    
-  end function debug_unit
 
   subroutine abort_pinpoint(error, file, line_number)
     character(len = *), intent(in) :: error
@@ -97,9 +82,9 @@ contains
     logical :: mpi_init
     
     call MPI_Initialized(mpi_init, ierr)
-    ewrite(-1, "(a)")      "*** libsupermesh error ***"
-    ewrite(-1, "(a,i0,a)") "Source location: (" // trim(file) // ",", line_number, ")"
-    ewrite(-1, "(a)")      "Error message: " // trim(error)
+    write(error_unit, "(a)")      "*** libsupermesh error ***"
+    write(error_unit, "(a,i0,a)") "Source location: (" // trim(file) // ",", line_number, ")"
+    write(error_unit, "(a)")      "Error message: " // trim(error)
     call print_backtrace(max_size = 64)
     if(mpi_init) call MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER, ierr)
     stop 1

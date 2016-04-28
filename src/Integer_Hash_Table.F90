@@ -56,7 +56,7 @@ module libsupermesh_integer_hash_table
 
   use iso_c_binding, only : c_ptr
   
-  use libsupermesh_debug, only : abort_pinpoint, current_debug_level, debug_unit
+  use libsupermesh_debug, only : abort_pinpoint
 
   implicit none
 
@@ -160,16 +160,12 @@ module libsupermesh_integer_hash_table
     module procedure integer_hash_table_fetch_pair
   end interface fetch_pair
 
-  interface print
-    module procedure print_hash_table
-  end interface print
-
   interface copy
     module procedure integer_hash_table_copy
   end interface copy
 
   public :: integer_hash_table, allocate, deallocate, has_key, key_count, &
-    & fetch, insert, fetch_pair, print, remove, copy
+    & fetch, insert, fetch_pair, remove, copy
 
 contains 
 
@@ -261,17 +257,5 @@ contains
 
     call integer_hash_table_fetch_pair_c(ihash%address, idx, key, val)
   end subroutine integer_hash_table_fetch_pair
-
-  subroutine print_hash_table(ihash, priority)
-    type(integer_hash_table), intent(in) :: ihash
-    integer, intent(in) :: priority
-
-    integer :: i, key, val
-
-    ewrite(priority,*) "Writing hash table: "
-    do i=1,key_count(ihash)
-      call fetch_pair(ihash, i, key, val)
-      ewrite(priority,*) key, " --> ", val
-    end do
-  end subroutine print_hash_table
+  
 end module libsupermesh_integer_hash_table

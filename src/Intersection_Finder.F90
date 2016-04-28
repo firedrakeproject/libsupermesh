@@ -55,9 +55,9 @@
 module libsupermesh_intersection_finder
 
   use iso_c_binding, only : c_double, c_int, c_ptr
+!   use iso_fortran_env, only : error_unit
   
-  use libsupermesh_debug, only : abort_pinpoint, current_debug_level, &
-    & debug_unit
+  use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_graphs, only : eelist_type, deallocate, mesh_eelist, sloc
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
@@ -284,13 +284,12 @@ contains
     real, dimension(:, :, :), allocatable :: bboxes_b
     type(eelist_type) :: eelist_b, eelist_a
 
-    integer :: clue_a, ele_b, ele_a, loc_b, loc_a, neigh_b, neigh_a, nsub_a, seed_a
+    integer :: clue_a, ele_b, ele_a, loc_b, loc_a, neigh_b, neigh_a, seed_a
     integer, dimension(:), allocatable :: front_b, ints
     logical, dimension(:), allocatable :: seen_b, seen_a
     integer, dimension(:, :), allocatable :: front_a
     integer :: nfront_b, nfront_a, nints
-
-!     real :: t_0
+!     integer :: nsub_a
 
     dim = size(positions_b, 1)
     nnodes_b = size(positions_b, 2)
@@ -307,10 +306,8 @@ contains
       return
     end if
 
-!     t_0 = mpi_wtime()
     call mesh_eelist(nnodes_b, enlist_b, sloc(dim, loc_b), eelist_b)
     call mesh_eelist(nnodes_a, enlist_a, sloc(dim, loc_a), eelist_a)
-!     ewrite(2, "(a,e25.17e3)") "eelist creation time = ", mpi_wtime() - t_0
     allocate(bboxes_b(2, dim, nelements_b))
     do i = 1, nelements_b
       bboxes_b(:, :, i) = bbox(positions_b(:, enlist_b(:, i)))
@@ -322,9 +319,9 @@ contains
     seen_a = .false.
     ! Stage 0: Initial target mesh seed element
     seed_a = 1
-    nsub_a = 0
+!     nsub_a = 0
     seed_a_loop: do
-      nsub_a = nsub_a + 1
+!       nsub_a = nsub_a + 1
       seen_a(seed_a) = .true.
       bbox_a = bbox(positions_a(:, enlist_a(:, seed_a)))
 
@@ -390,7 +387,7 @@ contains
           seen_b(front_b(i)) = .false.
         end do
 !         if(nints == 0) then
-!           ewrite(-1, "(a,i0)") "WARNING: Failed to find intersections for target element ", ele_a
+!           write(error_unit, "(a,i0)") "WARNING: Failed to find intersections for target element ", ele_a
 !         end if
         allocate(map_ab(ele_a)%v(nints))
         map_ab(ele_a)%v = ints(:nints)
@@ -413,13 +410,13 @@ contains
         seed_a = seed_a + 1
         if(seed_a > nelements_a) exit seed_a_loop
       end do
-      if(nsub_a == 1) then
-        ewrite(-1, "(a)") "WARNING: Target mesh is not connected"
-      end if
+!       if(nsub_a == 1) then
+!         write(error_unit, "(a)") "WARNING: Target mesh is not connected"
+!       end if
     end do seed_a_loop
-    if(nsub_a > 1) then
-      ewrite(-1 ,"(a,i0)") "WARNING: Number of target connected sub-domains = ", nsub_a
-    end if
+!     if(nsub_a > 1) then
+!       write(error_unit ,"(a,i0)") "WARNING: Number of target connected sub-domains = ", nsub_a
+!     end if
 
     deallocate(seen_b, seen_a, front_b, front_a, ints)
     call deallocate(eelist_b)

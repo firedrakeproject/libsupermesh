@@ -62,8 +62,6 @@
 #define __LINE__ -1
 #endif
 
-#define ewrite(priority, format) if(priority <= current_debug_level) write(debug_unit(priority), format) 
-
 #define libsupermesh_abort(X) call abort_pinpoint(X, __FILE__, __LINE__)
 
 #ifdef NDEBUG
