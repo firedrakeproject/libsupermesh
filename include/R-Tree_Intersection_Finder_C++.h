@@ -112,7 +112,8 @@
  * DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#pragma once
+#ifndef LIBSUPERMESH_R_TREE_INTERSECTION_FINDER_CPP_H
+#define LIBSUPERMESH_R_TREE_INTERSECTION_FINDER_CPP_H
 
 #include "libsupermesh_configuration.h"
 
@@ -281,3 +282,5 @@ extern "C" {
     const int *neles_b, int *eles_b);
   void libsupermesh_deallocate_rtree(void **rtree);
 }
+
+#endif

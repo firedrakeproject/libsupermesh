@@ -50,7 +50,8 @@
 !  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 !  USA
 
-#pragma once
+#ifndef LIBSUPERMESH_LIBSUPERMESH_DEBUG_H
+#define LIBSUPERMESH_LIBSUPERMESH_DEBUG_H
 
 #include "libsupermesh_configuration.h"
 
@@ -68,4 +69,6 @@
 #define assert(X)
 #else
 #define assert(X) if(.not. (X)) libsupermesh_abort("Failed assertion " // "X")
+#endif
+
 #endif

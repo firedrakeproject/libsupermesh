@@ -56,7 +56,8 @@
   USA
 */
 
-#pragma once
+#ifndef LIBSUPERMESH_READ_HALOS_CPP_H
+#define LIBSUPERMESH_READ_HALOS_CPP_H
 
 #include "libsupermesh_configuration.h"
 #include "tinyxml.h"
@@ -93,3 +94,5 @@ extern "C" {
     int *send, int *recv);
   void libsupermesh_deallocate_halo(void **data);
 }
+
+#endif

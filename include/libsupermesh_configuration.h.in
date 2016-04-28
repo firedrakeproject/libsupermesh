@@ -19,7 +19,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
-#pragma once
+#ifndef LIBSUPERMESH_LIBSUPERMESH_CONFIGURATION_H
+#define LIBSUPERMESH_LIBSUPERMESH_CONFIGURATION_H
 
 #include "libsupermesh.h"
 
@@ -38,3 +39,5 @@
 
 #cmakedefine LIBSUPERMESH_ENABLE_JUDY
 #cmakedefine LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
+
+#endif
