@@ -23,28 +23,18 @@
 
 #include "libsupermesh.h"
 
-#define DDEBUG @LIBSUPERMESH_DEBUG@
-#if DDEBUG == 0
-#undef DDEBUG
+#cmakedefine LIBSUPERMESH_DEBUG
+#ifdef LIBSUPERMESH_DEBUG
+#ifndef DEBUG
+#define DEBUG
+#endif
+#undef NDEBUG
+#else
+#undef DEBUG
 #ifndef NDEBUG
 #define NDEBUG
 #endif
-#else
-#undef NDEBUG
 #endif
 
-#define ENABLE_JUDY @LIBSUPERMESH_ENABLE_JUDY@
-#if ENABLE_JUDY == OFF
-#undef ENABLE_JUDY
-#endif
-
-#ifdef LIBSUPERMESH_TIMERS
-#define PROFILE 1
-#else
-#undef PROFILE
-#endif
-
-#define OVERLAP_COMPUTE_COMMS @LIBSUPERMESH_OVERLAP_COMPUTE_COMMS@
-#if OVERLAP_COMPUTE_COMMS == OFF
-#undef OVERLAP_COMPUTE_COMMS
-#endif
+#cmakedefine LIBSUPERMESH_ENABLE_JUDY
+#cmakedefine LIBSUPERMESH_OVERLAP_COMPUTE_COMMS

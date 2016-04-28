@@ -57,7 +57,7 @@
 
 #include "libsupermesh_configuration.h"
 
-#ifndef ENABLE_JUDY
+#ifndef LIBSUPERMESH_ENABLE_JUDY
 
 #include <cassert>
 #include <cstdlib>

@@ -59,7 +59,7 @@
 
 #include "libsupermesh_configuration.h"
 
-#ifdef ENABLE_JUDY
+#ifdef LIBSUPERMESH_ENABLE_JUDY
 
 #include "Judy.h"
 #include "stdio.h"

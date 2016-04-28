@@ -56,9 +56,9 @@ module libsupermesh_parallel_supermesh
   type(buffer), dimension(:), allocatable, save :: send_buffer
 
   integer, save :: libsupermesh_mpi_comm, nprocs, rank
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
   real :: t_0, all_to_all_time, local_compute_time, remote_compute_time
-#ifndef OVERLAP_COMPUTE_COMMS
+#ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
   real :: point_to_point_time
 #endif
 #endif
@@ -151,7 +151,7 @@ contains
     integer, dimension(:), intent(in) :: ele_owner_b
 
     integer :: dim, ierr
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     real :: t_1
 #endif
 
@@ -166,7 +166,7 @@ contains
     allocate(parallel_bbox_a(2, dim, nprocs))
     allocate(parallel_bbox_b(2, dim, nprocs))
 
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     t_1 = mpi_wtime()
 #endif
     call MPI_Allgather(bbox_a, 2 * dim, MPI_DOUBLE_PRECISION, &
@@ -176,7 +176,7 @@ contains
     call MPI_Allgather(bbox_b, 2 * dim, MPI_DOUBLE_PRECISION, &
       & parallel_bbox_b, 2 * dim, MPI_DOUBLE_PRECISION, &
       & libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     all_to_all_time = mpi_wtime() - t_1
 #endif
 
@@ -209,7 +209,7 @@ contains
     type(integer_hash_table) :: node_map
     type(integer_set) :: nodes_send
 
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     t_0 = -1.0D0
 #endif
 
@@ -310,7 +310,7 @@ contains
         end if
         deallocate(send_enlist, send_nodes_array, send_positions)
 
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
         if(t_0 < 0.0D0) t_0 = mpi_wtime()
 #endif
 
@@ -375,17 +375,17 @@ contains
     real, dimension(:, :), allocatable :: nodes_a, nodes_b
     real, dimension(:, :, :), allocatable :: positions_c
     type(rtree_type) :: rtree
-#ifdef OVERLAP_COMPUTE_COMMS
+#ifdef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
     integer(kind = c_int8_t), dimension(:), allocatable :: recv_buffer
 #else
     integer(kind = c_int8_t), dimension(:), pointer :: recv_buffer
     type(buffer), dimension(:), allocatable :: recv_buffers
 #endif
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     real :: t_1
 #endif
 
-#ifndef OVERLAP_COMPUTE_COMMS
+#ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
     allocate(recv_buffers(nprocs))
     do i = 0, nprocs - 1
       if(.not. recv(i + 1)) cycle
@@ -407,7 +407,7 @@ contains
         nullify(send_buffer(i)%v)
       end if
     end do
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     if(t_0 >= 0.0D0) then
       point_to_point_time = mpi_wtime() - t_0
     else
@@ -427,7 +427,7 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!! Self-self integration !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     t_1 = mpi_wtime()
 #endif
     call allocate(rtree, positions_a, enlist_a)
@@ -448,7 +448,7 @@ contains
       end do
       deallocate(eles_a)
     end do
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     local_compute_time = mpi_wtime() - t_1
 #endif
 
@@ -458,7 +458,7 @@ contains
     do i = 0, nprocs - 1
       if(.not. recv(i + 1)) cycle
     
-#ifdef OVERLAP_COMPUTE_COMMS
+#ifdef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
       call MPI_Probe(i, MPI_ANY_TAG, libsupermesh_mpi_comm, status, ierr);  assert(ierr == MPI_SUCCESS)
       call MPI_Get_count(status, MPI_PACKED, buffer_size, ierr);  assert(ierr == MPI_SUCCESS)
 
@@ -475,7 +475,7 @@ contains
         & 1, MPI_INTEGER, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
 
       if(nelements <= 0) then
-#ifdef OVERLAP_COMPUTE_COMMS
+#ifdef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
         deallocate(recv_buffer)
 #else
         deallocate(recv_buffers(i + 1)%v)
@@ -498,7 +498,7 @@ contains
       call MPI_Unpack(recv_buffer, buffer_size, position, data, &
         & ndata, MPI_BYTE, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
         
-#ifdef OVERLAP_COMPUTE_COMMS
+#ifdef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
       deallocate(recv_buffer)
 #else
       deallocate(recv_buffers(i + 1)%v)
@@ -507,7 +507,7 @@ contains
 
       call unpack_data_b(nnodes, nelements, data)
 
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
       t_1 = mpi_wtime()
 #endif
       do ele_b = 1, nelements
@@ -532,7 +532,7 @@ contains
         end do
         deallocate(eles_a)
       end do
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
       remote_compute_time = mpi_wtime() - t_1
 #endif
 
@@ -542,7 +542,7 @@ contains
     call deallocate(rtree)
     deallocate(nodes_a, nodes_b, positions_c)
 
-#ifdef OVERLAP_COMPUTE_COMMS
+#ifdef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
     allocate(statuses(MPI_STATUS_SIZE, nsends))
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
@@ -580,10 +580,10 @@ contains
     allocate(send_buffer(nprocs), send_requests(nprocs), recv(nprocs))
     send_requests = MPI_REQUEST_NULL
     
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     t_0 = -1.0D0
     all_to_all_time = 0.0D0
-#ifndef OVERLAP_COMPUTE_COMMS
+#ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
     point_to_point_time = 0.0D0
 #endif
     local_compute_time = 0.0D0
@@ -613,12 +613,12 @@ contains
     integer, optional, intent(in) :: comm
     integer, optional, intent(in) :: unit
     
-#ifdef PROFILE
+#ifdef LIBSUPERMESH_ENABLE_TIMERS
     integer :: lcomm, lunit
   
     integer :: ierr, nprocs, rank
     real :: all_to_all_max, all_to_all_min, all_to_all_sum
-#ifndef OVERLAP_COMPUTE_COMMS
+#ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
     real :: point_to_point_max, point_to_point_min, point_to_point_sum
 #endif
     real :: local_compute_max, local_compute_min, local_compute_sum
@@ -641,7 +641,7 @@ contains
     call MPI_Allreduce(all_to_all_time,     all_to_all_min,     1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(all_to_all_time,     all_to_all_max,     1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(all_to_all_time,     all_to_all_sum,     1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
-#ifndef OVERLAP_COMPUTE_COMMS
+#ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
     call MPI_Allreduce(point_to_point_time, point_to_point_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(point_to_point_time, point_to_point_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Allreduce(point_to_point_time, point_to_point_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
@@ -655,7 +655,7 @@ contains
 
     if(rank == 0) then
       write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "All to all time, min, max, mean     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
-#ifndef OVERLAP_COMPUTE_COMMS
+#ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
       write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Point to point time, min, max, mean = ", point_to_point_min, ", ", point_to_point_max, ", ", point_to_point_sum / nprocs
 #endif
       write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Local compute time, min, max, mean  = ", local_compute_min,  ", ", local_compute_max,  ", ", local_compute_sum  / nprocs
