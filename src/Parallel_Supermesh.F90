@@ -543,7 +543,7 @@ contains
     deallocate(nodes_a, nodes_b, positions_c)
 
 #ifdef OVERLAP_COMPUTE_COMMS
-    allocate(statuses(nsends * MPI_STATUS_SIZE))
+    allocate(statuses(MPI_STATUS_SIZE, nsends))
     call MPI_Waitall(nsends, send_requests, statuses, ierr);  assert(ierr == MPI_SUCCESS)
     deallocate(statuses)
     do i = 1, nprocs
