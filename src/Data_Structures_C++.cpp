@@ -59,11 +59,12 @@
 
 #ifndef LIBSUPERMESH_ENABLE_JUDY
 
-#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <map>
 #include <set>
+
+#include "libsupermesh_debug_C.h"
 
 using namespace std;
 
@@ -106,8 +107,7 @@ class integer_set {
       if(!this->v_array) {
         this->v_array = (int*)malloc(this->v_set.size() * sizeof(int));
         if(!this->v_array) {
-          cerr << "malloc failure" << endl;
-          exit(1);
+          libsupermesh_abort("malloc failure");
         }
         set<int>::size_type i = 0;
         for(set<int>::const_iterator iter = this->v_set.begin();iter != this->v_set.end();iter++) {
@@ -201,8 +201,7 @@ class integer_hash_table {
       if(!this->k_array) {
         this->k_array = (int*)malloc(this->v_map.size() * sizeof(int));
         if(!this->k_array) {
-          cerr << "malloc failure" << endl;
-          exit(1);
+          libsupermesh_abort("malloc failure");
         }
         map<int, int>::size_type i = 0;
         for(map<int, int>::const_iterator iter = this->v_map.begin();iter != this->v_map.end();iter++) {
@@ -227,8 +226,7 @@ extern "C" {
   void libsupermesh_integer_set_create(void **i) {
     (*i) = (void*)(new libsupermesh::integer_set());
     if(!((libsupermesh::integer_set*)(*i))) {
-      cerr << "new failure" << endl;
-      exit(1);
+      libsupermesh_abort("new failure");
     }
     
     return;
@@ -273,8 +271,7 @@ extern "C" {
   void libsupermesh_integer_hash_table_create(void **i) {
     (*i) = (void*)(new libsupermesh::integer_hash_table());
     if(!((libsupermesh::integer_hash_table*)(*i))) {
-      cerr << "new failure" << endl;
-      exit(1);
+      libsupermesh_abort("new failure");
     }
     
     return;

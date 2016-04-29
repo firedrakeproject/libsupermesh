@@ -233,7 +233,7 @@ contains
               call insert(node_map_p2(node_p1_1), node_p1_2, node_p2)
             end if
           case default
-            stop 1
+            libsupermesh_abort("Invalid local node")
         end select
         enlist_p2(lnode, ele) = node_p2
       end do      
@@ -286,7 +286,7 @@ contains
           case(6)
             field_p2(node_p2) = 0.5D0 * (field_p1(enlist_p1(1, ele)) + field_p1(enlist_p1(3, ele)))
           case default
-            stop 1
+            libsupermesh_abort("Invalid local node")
         end select
       end do
     end do
@@ -511,7 +511,7 @@ contains
             field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
             field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
           case default
-            stop 1
+            libsupermesh_abort("Invalid local node")
         end select
       end do
       ! Local contribution to the multi-mesh inner product

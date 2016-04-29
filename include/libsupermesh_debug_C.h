@@ -19,13 +19,15 @@
 */
 
 /*
- * The following code is derived from include/Halos_IO.h and include/Tokenize.h
- * in Fluidity git revision 4e6c1d2b022df3a519cdec120fad28e60d1b08d9
- * (dated 2015-02-25)
+ * The following code is derived from include/fdebug.h and debug/C++_Debug.cpp
+ * in Fluidity git revision 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated
+ * 2015-02-25)
  */
  
-// Fluidity copyright information (note that AUTHORS mentioned in the following
-// has been renamed to fluidity_AUTHORS):
+/*
+ * Fluidity copyright information (note that AUTHORS mentioned in the following
+ * has been renamed to fluidity_AUTHORS):
+ */
 
 /*
   Copyright (C) 2006 Imperial College London and others.
@@ -56,44 +58,29 @@
   USA
 */
 
-#ifndef LIBSUPERMESH_READ_HALOS_CPP_H
-#define LIBSUPERMESH_READ_HALOS_CPP_H
+#ifndef LIBSUPERMESH_LIBSUPERMESH_DEBUG_C_H
+#define LIBSUPERMESH_LIBSUPERMESH_DEBUG_C_H
 
 #include "libsupermesh_configuration.h"
-#include "tinyxml.h"
 
-#include <iostream>
-#include <map>
-#include <sstream>
-#include <string>
-#include <vector>
-
-#include "libsupermesh_debug_C.h"
-
-namespace libsupermesh {  
-  void ReadHalos(const std::string &filename, int &process, int &nprocs,
-    std::map<int, int> &npnodes,
-    std::map<int, std::vector<std::vector<int> > > &send,
-    std::map<int, std::vector<std::vector<int> > > &recv);
-  
-  struct HaloData {
-      int process, nprocs;
-      std::map<int, int> npnodes;
-      std::map<int, std::vector<std::vector<int> > > send, recv;
-  };
-  
-  void Tokenize(const std::string &str, std::vector<std::string> &tokens, const std::string &delimiters = " ");
-}
-
+#ifdef __cplusplus
 extern "C" {
-  void libsupermesh_read_halo(void **data, const char *basename,
-    const int *basename_len, const int *process, const int *nprocs);
-  void libsupermesh_halo_sizes(const void **data, const int *level, 
-    const int *nprocs, int *nsends, int *nreceives);
-  void libsupermesh_halo_data(const void **data, const int *level,
-    const int *nprocs, const int *nsends, const int *nreceives, int *npnodes,
-    int *send, int *recv);
-  void libsupermesh_deallocate_halo(void **data);
+#endif
+  void libsupermesh_print_backtrace(const int max_size);
+  void libsupermesh_abort_pinpoint(const char *error, const char *file, const int line_number);
+#ifdef __cplusplus
 }
+#endif
+
+#define libsupermesh_abort(X) libsupermesh_abort_pinpoint(X, __FILE__, __LINE__)
+
+#ifdef assert
+#undef assert
+#endif
+#ifdef NDEBUG
+#define assert(X)
+#else
+#define assert(X) if(!(X)) libsupermesh_abort("Failed assertion " #X)
+#endif
 
 #endif

@@ -116,15 +116,15 @@
 #define LIBSUPERMESH_R_TREE_INTERSECTION_FINDER_CPP_H
 
 #include "libsupermesh_configuration.h"
+#include "spatialindex/SpatialIndex.h"
 
-#include <spatialindex/SpatialIndex.h>
-
-#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iostream>
 #include <limits>
 #include <vector>
+
+#include "libsupermesh_debug_C.h"
 
 namespace libsupermesh {
   // Modified version of code from rtree/gispyspatialindex.h (GISPySpatialIndex)
@@ -173,8 +173,7 @@ namespace libsupermesh {
         SpatialIndex::RTree::Data *m_pNext = new SpatialIndex::RTree::Data((uint32_t)0, NULL,
                                                                            bbox, id);
         if(!m_pNext) {
-          std::cerr << "new failure" << std::endl;
-          exit(1);
+          libsupermesh_abort("new failure");
         }
         
         this->ele++;
@@ -202,8 +201,7 @@ namespace libsupermesh {
         inline ElementListVisitor(const int &nelements) {
           this->eles = (int*)malloc(nelements * sizeof(int));
           if(!this->eles) {
-            std::cerr << "malloc failure" << std::endl;
-            exit(1);
+            libsupermesh_abort("malloc failure");
           }
           this->neles = 0;
         }
@@ -211,8 +209,7 @@ namespace libsupermesh {
         inline virtual void visitNode(const SpatialIndex::INode &n) {}
         inline virtual void visitData(const SpatialIndex::IData &d) {this->eles[this->neles++] = d.getIdentifier();}
         inline virtual void visitData(std::vector<const SpatialIndex::IData*> &d) {
-          std::cerr << "void ElementListVisitor::visitData(std::vector<const SpatialIndex::IData*>& not implemented" << std::endl;
-          exit(1);
+          libsupermesh_abort("void ElementListVisitor::visitData(std::vector<const SpatialIndex::IData*>& not implemented");
         }
         inline virtual void clear(void) {this->neles = 0;}
         inline virtual const int size(void) const {return this->neles;}

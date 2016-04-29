@@ -72,8 +72,8 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
   TiXmlDocument doc(filename.c_str());
   if(!doc.LoadFile()) {
     cerr << doc.ErrorDesc() << endl;
-    cerr << "Failed to read Halo file '" << filename << "'" << endl;
-    exit(1);
+    string error = string("Failed to read halo file '") + filename + string("'");
+    libsupermesh_abort(error.c_str());
   }
   
   const char *buffer;
@@ -84,43 +84,43 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
     header = header->NextSibling();
   }
   if(!header) {
-    cerr << "Invalid halo file '" << filename << "': Missing XML declaration" << endl;
-    exit(1);
+    string error = string("Invalid halo file '") + filename + string("': Missing XML declaration");
+    libsupermesh_abort(error.c_str());
   }
 
   // Extract the root node
   TiXmlNode *rootNode = header->NextSiblingElement();
   if(!rootNode) {
-    cerr << "Invalid halo file '" << filename << "': Missing root element" << endl;
-    exit(1);
+    string error = string("Invalid halo file '") + filename + string("': Missing root element");
+    libsupermesh_abort(error.c_str());
   }
   TiXmlElement *rootEle = rootNode->ToElement();
   
   // Extract process
   buffer = rootEle->Attribute("process");
   if(!buffer) {
-    cerr << "Invalid halo file '" << filename << "': Missing process attribute" << endl;
-    exit(1);
+    string error = string("Invalid halo file '") + filename + string("': Missing process attribute");
+    libsupermesh_abort(error.c_str());
   }
   process = atoi(buffer);
   if(process < 0) {
-    cerr << "Invalid halo file '" << filename << "': Invalid process attribute" << endl;
-    exit(1);
+    string error = string("Invalid halo file '") + filename + string("': Invalid process attribute");
+    libsupermesh_abort(error.c_str());
   }
   
   // Extract nprocs
   buffer = rootEle->Attribute("nprocs");
   if(!buffer) {
-    cerr << "Invalid halo file '" << filename << "': Missing nprocs attribute" << endl;
-    exit(1);
+    string error = string("Invalid halo file '") + filename + string("': Missing nprocs attribute");
+    libsupermesh_abort(error.c_str());
   }
   nprocs = atoi(buffer);
   if(nprocs < 1) {
-    cerr << "Invalid halo file '" << filename << "': Invalid nprocs attribute" << endl;
-    exit(1);
+    string error = string("Invalid halo file '") + filename + string("': Invalid nprocs attribute");
+    libsupermesh_abort(error.c_str());
   } else if(process >= nprocs) {
-    cerr << "Invalid halo file '" << filename << "': Invalid process / nprocs attributes" << endl;
-    exit(1);
+    string error = string("Invalid halo file '") + filename + string("': Invalid process / nprocs attributes");
+    libsupermesh_abort(error.c_str());
   }
   
   // Extract halo data for each process for each level
@@ -131,14 +131,14 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
     // Extract the level
     buffer = haloEle->Attribute("level");
     if(!buffer) {
-      cerr << "Invalid halo file '" << filename << "': halo_data element missing level attribute" << endl;
-      exit(1);
+      string error = string("Invalid halo file '") + filename + string("': halo_data element missing level attribute");
+      libsupermesh_abort(error.c_str());
     }
     // Check that data for this level has not already been extracted
     int level = atoi(buffer);
     if(send.count(level) > 0 or recv.count(level) > 0) {
-      cerr << "Invalid halo file '" << filename << "': Multiple halos defined for a single level" << endl;
-      exit(1);
+      string error = string("Invalid halo file '") + filename + string("': Multiple halos defined for a single level");
+      libsupermesh_abort(error.c_str());
     }
     send[level] = vector<vector<int> >(nprocs);
     recv[level] = vector<vector<int> >(nprocs);
@@ -146,8 +146,8 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
     // Extract n_private_nodes
     buffer = haloEle->Attribute("n_private_nodes");
     if(!buffer) {      
-      cerr << "Invalid halo file '" << filename << "': halo_data element missing n_private_nodes attribute" << endl;
-      exit(1);
+      string error = string("Invalid halo file '") + filename + string("': halo_data element missing n_private_nodes attribute");
+      libsupermesh_abort(error.c_str());
     }
     npnodes[level] = atoi(buffer);
     
@@ -158,19 +158,19 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
       // Extract the process
       buffer = dataEle->Attribute("process");
       if(!buffer) {
-        cerr << "Invalid halo file '" << filename << "': halo_data element missing process attribute" << endl;
-        exit(1);
+        string error = string("Invalid halo file '") + filename + string("': halo_data element missing process attribute");
+        libsupermesh_abort(error.c_str());
       }
       int proc = atoi(buffer);
       if(proc < 0 or proc >= nprocs) {
-        cerr << "Invalid halo file '" << filename << "': Invalid halo_data element process / nprocs attributes" << endl;
-        exit(1);
+        string error = string("Invalid halo file '") + filename + string("': Invalid halo_data element process / nprocs attributes");
+        libsupermesh_abort(error.c_str());
       }
       
       // Check that data for this level and process has not already been extracted
       if(send[level][proc].size() > 0 or recv[level][proc].size() > 0) {        
-        cerr << "Invalid halo file '" << filename << "': Multiple halos defined for a single level and process" << endl;
-        exit(1);
+        string error = string("Invalid halo file '") + filename + string("': Multiple halos defined for a single level and process");
+        libsupermesh_abort(error.c_str());
       }
       
       // Extract the send data
@@ -189,8 +189,8 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
         }
         
         if(sendDataNode->NextSiblingElement("data")) {        
-          cerr << "Invalid halo file '" << filename << "': Multiple sets of sends defined for a single level and process" << endl;
-          exit(1);
+          string error = string("Invalid halo file '") + filename + string("': Multiple sets of sends defined for a single level and process");
+          libsupermesh_abort(error.c_str());
         }
       }
       
@@ -210,8 +210,8 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
         }
         
         if(recvDataNode->NextSiblingElement("data")) {        
-          cerr << "Invalid halo file '" << filename << "': Multiple sets of receives defined for a single level and process" << endl;
-          exit(1);
+          string error = string("Invalid halo file '") + filename + string("': Multiple sets of receives defined for a single level and process");
+          libsupermesh_abort(error.c_str());
         }
       }
     }
@@ -248,22 +248,22 @@ extern "C" {
     const int *basename_len, const int *process, const int *nprocs) {      
     (*data) = (void*)(new HaloData());
     if(!((HaloData*)(*data))) {
-      cerr << "new failure" << endl;
-      exit(1);
+      libsupermesh_abort("new failure");
     }
     
-    ostringstream filename;
-    filename << string(basename, *basename_len) << "_" << *process << ".halo";
+    ostringstream filename_buffer;
+    filename_buffer << string(basename, *basename_len) << "_" << *process << ".halo";
+    string filename = filename_buffer.str();
   
-    ReadHalos(filename.str(),
+    ReadHalos(filename,
       ((HaloData*)(*data))->process, ((HaloData*)(*data))->nprocs,
       ((HaloData*)(*data))->npnodes, ((HaloData*)(*data))->send, ((HaloData*)(*data))->recv);  
     if(((HaloData*)(*data))->process != *process) {    
-      cerr << "Failed to read Halo file '" << filename << "': Unexpected process number" << endl;
-      exit(1);
+      string error = string("Failed to read halo file '") + filename + string("': Unexpected process number");
+      libsupermesh_abort(error.c_str());
     } else if(((HaloData*)(*data))->nprocs != *nprocs) {    
-      cerr << "Failed to read Halo file '" << filename << "': Unexpected number of processes" << endl;
-      exit(1);
+      string error = string("Failed to read halo file '") + filename + string("': Unexpected number of processes");
+      libsupermesh_abort(error.c_str());
     }
     
     return;

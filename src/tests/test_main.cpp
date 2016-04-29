@@ -60,6 +60,8 @@
 
 #include <mpi.h>
 
+#include "libsupermesh_debug_C.h"
+
 extern "C" {
   void TESTNAME();
 }

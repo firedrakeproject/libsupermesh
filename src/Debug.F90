@@ -54,6 +54,7 @@
 
 module libsupermesh_debug
 
+  use iso_c_binding, only : c_char, c_int, c_null_char
   use iso_fortran_env, only : error_unit
   use mpi
   
@@ -67,7 +68,7 @@ module libsupermesh_debug
     subroutine libsupermesh_print_backtrace(max_size) bind(c)
       use iso_c_binding, only : c_int
       implicit none
-      integer(kind = c_int) :: max_size
+      integer(kind = c_int), value :: max_size
     end subroutine libsupermesh_print_backtrace
   end interface print_backtrace
   
@@ -90,5 +91,39 @@ contains
     stop 1
     
   end subroutine abort_pinpoint
+  
+  subroutine cabort_pinpoint(error, file, line_number) bind(c, name = "libsupermesh_abort_pinpoint")
+    character(kind = c_char), dimension(*), intent(in) :: error
+    character(kind = c_char), dimension(*), intent(in) :: file
+    integer(kind = c_int), value, intent(in) :: line_number
+    
+    call abort_pinpoint(from_cstring(error), from_cstring(file), line_number)
+    
+  end subroutine cabort_pinpoint
+  
+  pure function len_cstring(cs) result(l)
+    character(kind = c_char), dimension(*), intent(in) :: cs
+    
+    integer :: l
+    
+    l = 0
+    do while(cs(l + 1) /= c_null_char)
+      l = l + 1
+    end do
+    
+  end function len_cstring
+  
+  pure function from_cstring(cs) result(fs)
+    character(kind = c_char), dimension(*), intent(in) :: cs
+    
+    character(len = len_cstring(cs)) :: fs
+    
+    integer :: i
+    
+    forall(i = 1:len(fs))
+      fs(i:i) = cs(i)
+    end forall
+    
+  end function from_cstring
 
 end module libsupermesh_debug

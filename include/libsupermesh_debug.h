@@ -55,14 +55,6 @@
 
 #include "libsupermesh_configuration.h"
 
-#ifndef __FILE__
-#define __FILE__ "unknown"
-#endif
-
-#ifndef __LINE__
-#define __LINE__ -1
-#endif
-
 #define libsupermesh_abort(X) call abort_pinpoint(X, __FILE__, __LINE__)
 
 #ifdef NDEBUG

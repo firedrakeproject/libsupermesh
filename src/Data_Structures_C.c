@@ -61,9 +61,9 @@
 
 #ifdef LIBSUPERMESH_ENABLE_JUDY
 
-#include "Judy.h"
-#include "stdio.h"
-#include "assert.h"
+#include <Judy.h>
+
+#include "libsupermesh_debug_C.h"
 
 /* To understand these, read
    http://judy.sourceforge.net/doc/Judy1_3x.htm and
@@ -168,11 +168,7 @@ void libsupermesh_integer_hash_table_fetch(Pvoid_t* i, int* k, int* v)
   PWord_t pvalue = &value;
   Pvoid_t ptr = (Pvoid_t) *i;
   JLG(pvalue, ptr, key); 
-  if (pvalue == NULL)
-  {
-    fprintf(stderr, "Error: hash table has no key %d\n", *k);
-    assert(pvalue != NULL);
-  }
+  assert(pvalue != NULL);
   *v = *pvalue;
   *i = ptr;
 }

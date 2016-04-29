@@ -112,10 +112,10 @@
  * DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#include <spatialindex/SpatialIndex.h>
-#include <rtree/RTree.h>
-#include <rtree/BulkLoader.h>
-
+#include "libsupermesh_configuration.h"
+#include "spatialindex/SpatialIndex.h"
+#include "rtree/RTree.h"
+#include "rtree/BulkLoader.h"
 #include "R-Tree_Intersection_Finder_C++.h"
 
 using namespace libsupermesh;
@@ -160,8 +160,7 @@ extern "C" {
     const int *enlist) {
     (*rtree) = (void*)(new libsupermesh::RTree(*dim, positions, *loc, *nelements, enlist));
     if(!((libsupermesh::RTree*)(*rtree))) {
-      std::cerr << "new failure" << std::endl;
-      exit(1);
+      libsupermesh_abort("new failure");
     }
   
     return;
