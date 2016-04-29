@@ -55,7 +55,7 @@
   USA
 */
 
-#include "libsupermesh_configuration.h"
+#include "Data_Structures_C.h"
 
 #ifndef LIBSUPERMESH_ENABLE_JUDY
 
@@ -234,7 +234,7 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_integer_set_length(const void **i, int *l) {
+  void libsupermesh_integer_set_length(void **i, int *l) {
     ((libsupermesh::integer_set*)(*i))->length(*l);
     
     return;
@@ -252,7 +252,7 @@ extern "C" {
     return;
   }
 
-  void libsupermesh_integer_set_has_value(const void **i, const int *v, int *present) {
+  void libsupermesh_integer_set_has_value(void **i, const int *v, int *present) {
     ((libsupermesh::integer_set*)(*i))->has_value(*v, *present);
     
     return;
@@ -276,7 +276,7 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_integer_hash_table_length(const void **i, int *l) {    
+  void libsupermesh_integer_hash_table_length(void **i, int *l) {    
     ((libsupermesh::integer_hash_table*)(*i))->length(*l);
     
     return;
@@ -294,7 +294,7 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_integer_hash_table_has_key(const void **i, const int *k, int *present) {
+  void libsupermesh_integer_hash_table_has_key(void **i, const int *k, int *present) {
     ((libsupermesh::integer_hash_table*)(*i))->has_key(*k, *present);
 
     return;
