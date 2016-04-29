@@ -159,9 +159,6 @@ extern "C" {
     const double *positions, const int *loc, const int *nelements,
     const int *enlist) {
     (*rtree) = (void*)(new libsupermesh::RTree(*dim, positions, *loc, *nelements, enlist));
-    if(!((libsupermesh::RTree*)(*rtree))) {
-      libsupermesh_abort("new failure");
-    }
   
     return;
   }

@@ -172,9 +172,6 @@ namespace libsupermesh {
                                                                            // No data
         SpatialIndex::RTree::Data *m_pNext = new SpatialIndex::RTree::Data((uint32_t)0, NULL,
                                                                            bbox, id);
-        if(!m_pNext) {
-          libsupermesh_abort("new failure");
-        }
         
         this->ele++;
         return m_pNext;
@@ -199,13 +196,10 @@ namespace libsupermesh {
   class ElementListVisitor : public SpatialIndex::IVisitor {
     public:
         inline ElementListVisitor(const int &nelements) {
-          this->eles = (int*)malloc(nelements * sizeof(int));
-          if(!this->eles) {
-            libsupermesh_abort("malloc failure");
-          }
+          this->eles = new int[nelements];
           this->neles = 0;
         }
-        inline virtual ~ElementListVisitor(void) {free(this->eles);}
+        inline virtual ~ElementListVisitor(void) {delete[] this->eles;}
         inline virtual void visitNode(const SpatialIndex::INode &n) {}
         inline virtual void visitData(const SpatialIndex::IData &d) {this->eles[this->neles++] = d.getIdentifier();}
         inline virtual void visitData(std::vector<const SpatialIndex::IData*> &d) {

@@ -247,9 +247,6 @@ extern "C" {
   void libsupermesh_read_halo(void **data, const char *basename,
     const int *basename_len, const int *process, const int *nprocs) {      
     (*data) = (void*)(new HaloData());
-    if(!((HaloData*)(*data))) {
-      libsupermesh_abort("new failure");
-    }
     
     ostringstream filename_buffer;
     filename_buffer << string(basename, *basename_len) << "_" << *process << ".halo";
