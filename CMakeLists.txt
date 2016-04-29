@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 if(DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Build type. Valid values are \"Debug\" and \"Release\".")
@@ -63,6 +63,12 @@ if(LIBSUPERMESH_ENABLE_JUDY)
   include_directories(${JUDY_INCLUDE_DIR})
 endif()
 
+find_package(Backtrace)
+if(Backtrace_FOUND)
+  set(link_libraries ${link_libraries} ${Backtrace_LIBRARIES})
+  include_directories(${Backtrace_INCLUDE_DIRS})
+endif()
+
 option(LIBSUPERMESH_ENABLE_TIMERS "Enable internal timers" OFF)
 option(LIBSUPERMESH_OVERLAP_COMPUTE_COMMS "Overlap computation and communication. Efficiency of this depends upon the specific MPI implementation." OFF)
 
@@ -82,7 +88,7 @@ if(LIBSUPERMESH_AUTO_COMPILER_FLAGS)
   endif()
 
   if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_C_FLAGS "-pipe -D_GNU_SOURCE -std=c90")
+    set(CMAKE_C_FLAGS "-pipe -std=c90")
     if(BUILD_SHARED_LIBS)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     endif()
@@ -117,7 +123,7 @@ else()
   endif()
 
   if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE -std=c90")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c90")
     if(BUILD_SHARED_LIBS)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     endif()

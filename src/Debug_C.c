@@ -57,8 +57,10 @@
   USA
 */
 
-#ifdef _GNU_SOURCE
-#include <execinfo.h>
+#include "libsupermesh_configuration.h"
+
+#ifdef Backtrace_FOUND
+#include Backtrace_HEADER
 #include <stdio.h>
 #include <stdlib.h>
 

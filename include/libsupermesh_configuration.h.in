@@ -37,6 +37,8 @@
 #endif
 #endif
 
+#cmakedefine Backtrace_FOUND
+#cmakedefine Backtrace_HEADER <@Backtrace_HEADER@>
 #cmakedefine LIBSUPERMESH_ENABLE_JUDY
 #cmakedefine LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
 
