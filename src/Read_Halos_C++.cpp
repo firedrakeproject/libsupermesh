@@ -245,11 +245,11 @@ void libsupermesh::Tokenize(const string &str, vector<string> &tokens, const str
   
 extern "C" {  
   void libsupermesh_read_halo(void **data, const char *basename,
-    const int *basename_len, const int *process, const int *nprocs) {      
+    const int *process, const int *nprocs) {      
     (*data) = (void*)(new HaloData());
     
     ostringstream filename_buffer;
-    filename_buffer << string(basename, *basename_len) << "_" << *process << ".halo";
+    filename_buffer << string(basename) << "_" << *process << ".halo";
     string filename = filename_buffer.str();
   
     ReadHalos(filename,
@@ -266,8 +266,8 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_halo_sizes(const void **data, const int *level,
-    const int *nprocs, int *nsends, int *nreceives) {
+  void libsupermesh_halo_sizes(void **data, const int *level, const int *nprocs,
+    int *nsends, int *nreceives) {
     assert(*nprocs == ((HaloData*)(*data))->nprocs);
     
     if(((HaloData*)(*data))->send.count(*level) == 0) {      
@@ -292,9 +292,9 @@ extern "C" {
     return;
   }
   
-  void libsupermesh_halo_data(const void **data, const int *level,
-    const int *nprocs, const int *nsends, const int *nreceives, int *npnodes,
-    int *send, int *recv) {
+  void libsupermesh_halo_data(void **data, const int *level, const int *nprocs,
+    const int *nsends, const int *nreceives, int *npnodes, int *send,
+    int *recv) {
 #ifndef NDEBUG
     assert(*nprocs == ((HaloData*)(*data))->nprocs);
     for(int i = 0;i < *nprocs;i++) {

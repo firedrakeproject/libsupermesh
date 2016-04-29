@@ -87,12 +87,12 @@ namespace libsupermesh {
 
 extern "C" {
   void libsupermesh_read_halo(void **data, const char *basename,
-    const int *basename_len, const int *process, const int *nprocs);
-  void libsupermesh_halo_sizes(const void **data, const int *level, 
-    const int *nprocs, int *nsends, int *nreceives);
-  void libsupermesh_halo_data(const void **data, const int *level,
-    const int *nprocs, const int *nsends, const int *nreceives, int *npnodes,
-    int *send, int *recv);
+    const int *process, const int *nprocs);
+  void libsupermesh_halo_sizes(void **data, const int *level, const int *nprocs,
+    int *nsends, int *nreceives);
+  void libsupermesh_halo_data(void **data, const int *level, const int *nprocs,
+    const int *nsends, const int *nreceives, int *npnodes, int *send,
+    int *recv);
   void libsupermesh_deallocate_halo(void **data);
 }
 

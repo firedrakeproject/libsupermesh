@@ -54,7 +54,7 @@
 
 module libsupermesh_read_halos
 
-  use iso_c_binding, only : c_int, c_ptr
+  use iso_c_binding, only : c_char, c_int, c_null_char, c_ptr
   use mpi
 
   use libsupermesh_debug, only : abort_pinpoint
@@ -66,12 +66,11 @@ module libsupermesh_read_halos
   public :: int_array, halo_type, read_halo, deallocate
 
   interface
-    subroutine cread_halo(data, basename, basename_len, process, nprocs) bind(c, name = "libsupermesh_read_halo")
+    subroutine cread_halo(data, basename, process, nprocs) bind(c, name = "libsupermesh_read_halo")
       use iso_c_binding, only : c_char, c_int, c_ptr
       implicit none
-      integer(kind = c_int) :: basename_len
       type(c_ptr) :: data
-      character(kind = c_char) :: basename(basename_len)
+      character(kind = c_char), dimension(*) :: basename
       integer(kind = c_int) :: process
       integer(kind = c_int) :: nprocs
     end subroutine cread_halo
@@ -145,7 +144,7 @@ contains
 
     call MPI_Comm_rank(halo%comm, halo%process, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Comm_size(halo%comm, halo%nprocs, ierr);  assert(ierr == MPI_SUCCESS)         
-    call cread_halo(data, basename, len_trim(basename), halo%process, halo%nprocs)
+    call cread_halo(data, to_cstring(basename), halo%process, halo%nprocs)
 
     if(present(level)) then
       halo%level = level
@@ -176,6 +175,20 @@ contains
     call cdeallocate_halo(data)
 
   end subroutine read_halo
+    
+  pure function to_cstring(fs) result(cs)
+    character(len = *), intent(in) :: fs
+    
+    character(kind = c_char), dimension(len_trim(fs) + 1) :: cs
+    
+    integer :: i
+    
+    forall(i = 1:size(cs) - 1)
+      cs(i) = fs(i:i)
+    end forall
+    cs(size(cs)) = c_null_char
+    
+  end function to_cstring
 
   subroutine deallocate_halo(halo)
     type(halo_type), intent(inout) :: halo
