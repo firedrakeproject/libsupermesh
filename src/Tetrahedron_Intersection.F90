@@ -436,7 +436,7 @@ contains
     type(plane_type), intent(in) :: plane
     type(tet_type), intent(in) :: tet
     type(tet_type), dimension(:), intent(inout) :: tets_new
-    integer, intent(out) :: ntets_new
+    integer, intent(inout) :: ntets_new
 
     real, dimension(4) :: dists
     integer :: neg_cnt, pos_cnt, zer_cnt
