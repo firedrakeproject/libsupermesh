@@ -25,8 +25,8 @@ module libsupermesh_parallel_supermesh
   use mpi
   
   use libsupermesh_debug, only : abort_pinpoint
-  use libsupermesh_integer_hash_table, only : integer_hash_table, allocate, &
-    & insert, fetch, deallocate
+  use libsupermesh_integer_map, only : integer_map, allocate, insert, fetch, &
+    & deallocate
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
     & insert, key_count, fetch
   use libsupermesh_intersection_finder, only : rtree_type, allocate, query, &
@@ -206,7 +206,7 @@ contains
       & send_nodes_array
     integer(kind = c_int8_t), dimension(:), allocatable :: data
     real, dimension(:), allocatable :: send_positions
-    type(integer_hash_table) :: node_map
+    type(integer_map) :: node_map
     type(integer_set) :: nodes_send
 
 #ifdef LIBSUPERMESH_ENABLE_TIMERS

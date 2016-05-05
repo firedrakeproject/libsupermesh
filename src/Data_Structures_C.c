@@ -116,64 +116,64 @@ void libsupermesh_integer_set_has_value(Pvoid_t *i, int value, int *present) {
   J1T(*present, *i, lvalue); 
 }
 
-void libsupermesh_integer_hash_table_new(Pvoid_t *i) {
+void libsupermesh_integer_map_new(Pvoid_t *i) {
   *i = NULL;
 }
 
-void libsupermesh_integer_hash_table_delete(Pvoid_t *i) {
+void libsupermesh_integer_map_delete(Pvoid_t *i) {
   Word_t mem_freed;
   JLFA(mem_freed, *i);
 }
 
-void libsupermesh_integer_hash_table_insert(Pvoid_t *i, int key, int value) {
+void libsupermesh_integer_map_insert(Pvoid_t *i, int key, int value) {
   Word_t lkey = key;
   PWord_t lvalue;
   JLI(lvalue, *i, lkey);
   *lvalue = value;
 }
 
-void libsupermesh_integer_hash_table_size(Pvoid_t *i, int *size) {
+void libsupermesh_integer_map_size(Pvoid_t *i, int *size) {
   Word_t lsize;
   JLC(lsize, *i, 0, -1);
   *size = lsize;
 }
 
-void libsupermesh_integer_hash_table_fetch(Pvoid_t *i, int key, int *value) {
+void libsupermesh_integer_map_fetch(Pvoid_t *i, int key, int *value) {
   Word_t lkey = key;
   PWord_t lvalue;
   JLG(lvalue, *i, lkey); 
   if(!lvalue) {
-    fprintf(stderr, "Failed to fetch integer hash table element with key %i\n", key);
-    libsupermesh_abort("Failed to fetch integer hash table element");
+    fprintf(stderr, "Failed to fetch integer map element with key %i\n", key);
+    libsupermesh_abort("Failed to fetch integer map element");
   }
   *value = *lvalue;
 }
 
-void libsupermesh_integer_hash_table_remove(Pvoid_t *i, int key) {
+void libsupermesh_integer_map_remove(Pvoid_t *i, int key) {
   Word_t lkey = key;
   int worked;
   JLD(worked, *i, lkey); 
   if(!worked) {
-    fprintf(stderr, "Failed to remove integer hash table element with key %i\n", key);
-    libsupermesh_abort("Failed to remove integer hash table element");
+    fprintf(stderr, "Failed to remove integer map element with key %i\n", key);
+    libsupermesh_abort("Failed to remove integer map element");
   }
 }
 
-void libsupermesh_integer_hash_table_has_key(Pvoid_t *i, int key, int *present) {
+void libsupermesh_integer_map_has_key(Pvoid_t *i, int key, int *present) {
   Word_t lkey = key;
   PWord_t lvalue;
   JLG(lvalue, *i, lkey); 
   *present = (lvalue != NULL);
 }
 
-void libsupermesh_integer_hash_table_fetch_pair(Pvoid_t *i, int index, int *key, int *value) {
+void libsupermesh_integer_map_fetch_pair(Pvoid_t *i, int index, int *key, int *value) {
   Word_t lindex = index;
   Word_t lkey;
   PWord_t lvalue;
   JLBC(lvalue, *i, lindex, lkey); 
   if(!lvalue) {
-    fprintf(stderr, "Failed to fetch integer hash table element with index %i\n", index);
-    libsupermesh_abort("Failed to fetch integer hash table element");
+    fprintf(stderr, "Failed to fetch integer map element with index %i\n", index);
+    libsupermesh_abort("Failed to fetch integer map element");
   }
   *key = lkey;
   *value = *lvalue;

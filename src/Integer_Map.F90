@@ -52,7 +52,7 @@
 
 #include "libsupermesh_debug.h"
 
-module libsupermesh_integer_hash_table
+module libsupermesh_integer_map
 
   use iso_c_binding, only : c_int, c_ptr
   
@@ -60,154 +60,154 @@ module libsupermesh_integer_hash_table
 
   private
   
-  type integer_hash_table
+  type integer_map
     type(c_ptr), pointer :: ptr
-  end type integer_hash_table
+  end type integer_map
 
   interface
-    subroutine cinteger_hash_table_new(i) bind(c, name = "libsupermesh_integer_hash_table_new")
+    subroutine cinteger_map_new(i) bind(c, name = "libsupermesh_integer_map_new")
       use iso_c_binding, only : c_ptr
       implicit none
       type(c_ptr) :: i
-    end subroutine cinteger_hash_table_new
+    end subroutine cinteger_map_new
 
-    subroutine cinteger_hash_table_delete(i) bind(c, name = "libsupermesh_integer_hash_table_delete")
+    subroutine cinteger_map_delete(i) bind(c, name = "libsupermesh_integer_map_delete")
       use iso_c_binding, only : c_ptr
       implicit none
       type(c_ptr) :: i
-    end subroutine cinteger_hash_table_delete
+    end subroutine cinteger_map_delete
 
-    subroutine cinteger_hash_table_insert(i, key, value) bind(c, name = "libsupermesh_integer_hash_table_insert")
+    subroutine cinteger_map_insert(i, key, value) bind(c, name = "libsupermesh_integer_map_insert")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
       integer(kind = c_int), value :: key
       integer(kind = c_int), value :: value
-    end subroutine cinteger_hash_table_insert
+    end subroutine cinteger_map_insert
 
-    subroutine cinteger_hash_table_size(i, size) bind(c, name = "libsupermesh_integer_hash_table_size")
+    subroutine cinteger_map_size(i, size) bind(c, name = "libsupermesh_integer_map_size")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
       integer(kind = c_int) :: size
-    end subroutine cinteger_hash_table_size
+    end subroutine cinteger_map_size
 
-    subroutine cinteger_hash_table_fetch(i, key, value) bind(c, name = "libsupermesh_integer_hash_table_fetch")
+    subroutine cinteger_map_fetch(i, key, value) bind(c, name = "libsupermesh_integer_map_fetch")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
       integer(kind = c_int), value :: key
       integer(kind = c_int) :: value
-    end subroutine cinteger_hash_table_fetch
+    end subroutine cinteger_map_fetch
 
-    subroutine cinteger_hash_table_remove(i, key) bind(c, name = "libsupermesh_integer_hash_table_remove")
+    subroutine cinteger_map_remove(i, key) bind(c, name = "libsupermesh_integer_map_remove")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
       integer(kind = c_int), value :: key
-    end subroutine cinteger_hash_table_remove
+    end subroutine cinteger_map_remove
 
-    subroutine cinteger_hash_table_has_key(i, key, present) bind(c, name = "libsupermesh_integer_hash_table_has_key")
+    subroutine cinteger_map_has_key(i, key, present) bind(c, name = "libsupermesh_integer_map_has_key")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
       integer(kind = c_int), value :: key
       integer(kind = c_int) :: present
-    end subroutine cinteger_hash_table_has_key
+    end subroutine cinteger_map_has_key
 
-    subroutine cinteger_hash_table_fetch_pair(i, index, key, value) bind(c, name = "libsupermesh_integer_hash_table_fetch_pair")
+    subroutine cinteger_map_fetch_pair(i, index, key, value) bind(c, name = "libsupermesh_integer_map_fetch_pair")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
       integer(kind = c_int), value :: index
       integer(kind = c_int) :: key
       integer(kind = c_int) :: value
-    end subroutine cinteger_hash_table_fetch_pair
+    end subroutine cinteger_map_fetch_pair
   end interface
 
   interface allocate
-    module procedure allocate_integer_hash_table
+    module procedure allocate_integer_map
   end interface allocate
   
   interface deallocate
-    module procedure deallocate_integer_hash_table
+    module procedure deallocate_integer_map
   end interface deallocate
 
   interface insert
-    module procedure integer_hash_table_insert
+    module procedure integer_map_insert
   end interface insert
 
   interface key_count
-    module procedure integer_hash_table_size
+    module procedure integer_map_size
   end interface key_count
 
   interface fetch
-    module procedure integer_hash_table_fetch, integer_hash_table_fetch_rank_1
+    module procedure integer_map_fetch, integer_map_fetch_rank_1
   end interface fetch
 
   interface remove
-    module procedure integer_hash_table_remove
+    module procedure integer_map_remove
   end interface remove
 
   interface has_key
-    module procedure integer_hash_table_has_key
+    module procedure integer_map_has_key
   end interface has_key
 
   interface fetch_pair
-    module procedure integer_hash_table_fetch_pair
+    module procedure integer_map_fetch_pair
   end interface fetch_pair
 
-  public :: integer_hash_table, allocate, deallocate, insert, key_count, &
+  public :: integer_map, allocate, deallocate, insert, key_count, &
     & fetch, remove, has_key, fetch_pair
 
 contains 
 
-  subroutine allocate_integer_hash_table(ihash)
-    type(integer_hash_table), intent(out) :: ihash
+  subroutine allocate_integer_map(imap)
+    type(integer_map), intent(out) :: imap
 
-    allocate(ihash%ptr)
-    call cinteger_hash_table_new(ihash%ptr)
+    allocate(imap%ptr)
+    call cinteger_map_new(imap%ptr)
 
-  end subroutine allocate_integer_hash_table
+  end subroutine allocate_integer_map
 
-  subroutine deallocate_integer_hash_table(ihash)
-    type(integer_hash_table), intent(inout) :: ihash
+  subroutine deallocate_integer_map(imap)
+    type(integer_map), intent(inout) :: imap
 
-    call cinteger_hash_table_delete(ihash%ptr)
-    deallocate(ihash%ptr)
+    call cinteger_map_delete(imap%ptr)
+    deallocate(imap%ptr)
 
-  end subroutine deallocate_integer_hash_table
+  end subroutine deallocate_integer_map
 
-  subroutine integer_hash_table_insert(ihash, key, value)
-    type(integer_hash_table), intent(inout) :: ihash
+  subroutine integer_map_insert(imap, key, value)
+    type(integer_map), intent(inout) :: imap
     integer, intent(in) :: key
     integer, intent(in) :: value
 
-    call cinteger_hash_table_insert(ihash%ptr, key, value)
+    call cinteger_map_insert(imap%ptr, key, value)
 
-  end subroutine integer_hash_table_insert
+  end subroutine integer_map_insert
 
-  function integer_hash_table_size(ihash) result(s)
-    type(integer_hash_table), intent(inout) :: ihash
+  function integer_map_size(imap) result(s)
+    type(integer_map), intent(inout) :: imap
 
     integer :: s
 
-    call cinteger_hash_table_size(ihash%ptr, s)
+    call cinteger_map_size(imap%ptr, s)
 
-  end function integer_hash_table_size
+  end function integer_map_size
 
-  function integer_hash_table_fetch(ihash, key) result(value)
-    type(integer_hash_table), intent(inout) :: ihash
+  function integer_map_fetch(imap, key) result(value)
+    type(integer_map), intent(inout) :: imap
     integer, intent(in) :: key
 
     integer :: value
 
-    call cinteger_hash_table_fetch(ihash%ptr, key, value)
+    call cinteger_map_fetch(imap%ptr, key, value)
 
-  end function integer_hash_table_fetch
+  end function integer_map_fetch
   
-  function integer_hash_table_fetch_rank_1(ihash, keys) result(values)
-    type(integer_hash_table), intent(inout) :: ihash
+  function integer_map_fetch_rank_1(imap, keys) result(values)
+    type(integer_map), intent(inout) :: imap
     integer, dimension(:), intent(in) :: keys
 
     integer, dimension(size(keys)) :: values
@@ -215,40 +215,40 @@ contains
     integer :: i
 
     do i = 1, size(keys)
-      call cinteger_hash_table_fetch(ihash%ptr, keys(i), values(i))
+      call cinteger_map_fetch(imap%ptr, keys(i), values(i))
     end do
 
-  end function integer_hash_table_fetch_rank_1
+  end function integer_map_fetch_rank_1
 
-  subroutine integer_hash_table_remove(ihash, key)
-    type(integer_hash_table), intent(inout) :: ihash
+  subroutine integer_map_remove(imap, key)
+    type(integer_map), intent(inout) :: imap
     integer, intent(in) :: key
 
-    call cinteger_hash_table_remove(ihash%ptr, key)
+    call cinteger_map_remove(imap%ptr, key)
 
-  end subroutine integer_hash_table_remove
+  end subroutine integer_map_remove
 
-  function integer_hash_table_has_key(ihash, key) result(present)
-    type(integer_hash_table), intent(inout) :: ihash
+  function integer_map_has_key(imap, key) result(present)
+    type(integer_map), intent(inout) :: imap
     integer, intent(in) :: key
 
     logical :: present
 
     integer(kind = c_int) :: lpresent
 
-    call cinteger_hash_table_has_key(ihash%ptr, key, lpresent)
+    call cinteger_map_has_key(imap%ptr, key, lpresent)
     present = (lpresent /= 0)
 
-  end function integer_hash_table_has_key
+  end function integer_map_has_key
 
-  subroutine integer_hash_table_fetch_pair(ihash, index, key, value)
-    type(integer_hash_table), intent(inout) :: ihash
+  subroutine integer_map_fetch_pair(imap, index, key, value)
+    type(integer_map), intent(inout) :: imap
     integer, intent(in) :: index
     integer, intent(out) :: key
     integer, intent(out) :: value
 
-    call cinteger_hash_table_fetch_pair(ihash%ptr, index, key, value)
+    call cinteger_map_fetch_pair(imap%ptr, index, key, value)
 
-  end subroutine integer_hash_table_fetch_pair
+  end subroutine integer_map_fetch_pair
 
-end module libsupermesh_integer_hash_table
+end module libsupermesh_integer_map

@@ -26,8 +26,8 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
 
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_halo_ownership, only : element_ownership
-  use libsupermesh_integer_hash_table, only : integer_hash_table, allocate, &
-    & deallocate, has_key, fetch, insert
+  use libsupermesh_integer_map, only : integer_map, allocate, deallocate, &
+    & has_key, fetch, insert
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
     & insert, key_count, fetch
   use libsupermesh_parallel_supermesh, only : parallel_supermesh
@@ -169,8 +169,8 @@ contains
     integer, dimension(:, :), intent(out) :: enlist_p2
     
     integer :: ele, lnode, nelements, node_p1, node_p1_1, node_p1_2, node_p2
-    type(integer_hash_table) :: node_map_p1_p2
-    type(integer_hash_table), dimension(:), allocatable :: node_map_p2
+    type(integer_map) :: node_map_p1_p2
+    type(integer_map), dimension(:), allocatable :: node_map_p2
     
     nelements = size(enlist_p1, 2)
     
@@ -306,7 +306,7 @@ contains
  
     integer :: ele, i, lnode, ndata_b, node_b, nnodes_p2_b, position
     integer, dimension(:, :), allocatable :: data_enlist_p2_b
-    type(integer_hash_table) :: node_map
+    type(integer_map) :: node_map
     type(integer_set) :: nodes_p2_b
     
     ! For which P2 nodes do we need to send data?

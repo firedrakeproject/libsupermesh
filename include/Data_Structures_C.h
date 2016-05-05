@@ -73,14 +73,14 @@ extern "C" {
   void libsupermesh_integer_set_remove(void **i, int value);
   void libsupermesh_integer_set_has_value(void **i, int value, int *present);
   
-  void libsupermesh_integer_hash_table_new(void **i);
-  void libsupermesh_integer_hash_table_delete(void **i);
-  void libsupermesh_integer_hash_table_insert(void **i, int key, int value);
-  void libsupermesh_integer_hash_table_size(void **i, int *size);
-  void libsupermesh_integer_hash_table_fetch(void **i, int key, int *value);
-  void libsupermesh_integer_hash_table_remove(void **i, int key);
-  void libsupermesh_integer_hash_table_has_key(void **i, int key, int *present);
-  void libsupermesh_integer_hash_table_fetch_pair(void **i, int index, int *key, int *value);
+  void libsupermesh_integer_map_new(void **i);
+  void libsupermesh_integer_map_delete(void **i);
+  void libsupermesh_integer_map_insert(void **i, int key, int value);
+  void libsupermesh_integer_map_size(void **i, int *size);
+  void libsupermesh_integer_map_fetch(void **i, int key, int *value);
+  void libsupermesh_integer_map_remove(void **i, int key);
+  void libsupermesh_integer_map_has_key(void **i, int key, int *present);
+  void libsupermesh_integer_map_fetch_pair(void **i, int index, int *key, int *value);
 #ifdef __cplusplus
 }
 #endif

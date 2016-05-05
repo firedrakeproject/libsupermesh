@@ -131,13 +131,13 @@ class integer_set {
     int *value_array;
 };
 
-class integer_hash_table {
+class integer_map {
   public:
-    inline integer_hash_table(void) {
+    inline integer_map(void) {
       this->key_array = NULL;
     }
     
-    inline ~integer_hash_table(void) {
+    inline ~integer_map(void) {
       if(this->key_array) {
         delete[] this->key_array;
       }
@@ -157,8 +157,8 @@ class integer_hash_table {
     
     inline void fetch(const int &key, int &value) {
       if(this->value_map.count(key) == 0) {
-        cerr << "Failed to fetch integer hash table element with key " << key << endl;
-        libsupermesh_abort("Failed to fetch integer hash table element");
+        cerr << "Failed to fetch integer map element with key " << key << endl;
+        libsupermesh_abort("Failed to fetch integer map element");
       }
       value = this->value_map[key];
     }
@@ -170,8 +170,8 @@ class integer_hash_table {
       }
       map<int, int>::size_type count = this->value_map.erase(key);
       if(count == 0) {
-        cerr << "Failed to remove integer hash table element with key " << key << endl;
-        libsupermesh_abort("Failed to remove integer hash table element");
+        cerr << "Failed to remove integer map element with key " << key << endl;
+        libsupermesh_abort("Failed to remove integer map element");
       }
     }
     
@@ -189,8 +189,8 @@ class integer_hash_table {
         }
       }
       if(index < 1 || index > this->value_map.size()) {
-        cerr << "Failed to fetch integer hash table element with index " << index << endl;
-        libsupermesh_abort("Failed to fetch integer hash table element");
+        cerr << "Failed to fetch integer map element with index " << index << endl;
+        libsupermesh_abort("Failed to fetch integer map element");
       }
       key = this->key_array[index - 1];
       value = this->value_map[key];
@@ -232,36 +232,36 @@ extern "C" {
     (static_cast<libsupermesh::integer_set*>(*i))->has_value(value, *present);
   }
   
-  void libsupermesh_integer_hash_table_new(void **i) {
-    *i = static_cast<void*>(new libsupermesh::integer_hash_table());
+  void libsupermesh_integer_map_new(void **i) {
+    *i = static_cast<void*>(new libsupermesh::integer_map());
   }
   
-  void libsupermesh_integer_hash_table_delete(void **i) {
-    delete (static_cast<libsupermesh::integer_hash_table*>(*i));
+  void libsupermesh_integer_map_delete(void **i) {
+    delete (static_cast<libsupermesh::integer_map*>(*i));
   }
   
-  void libsupermesh_integer_hash_table_insert(void **i, int key, int value) {
-    (static_cast<libsupermesh::integer_hash_table*>(*i))->insert(key, value);
+  void libsupermesh_integer_map_insert(void **i, int key, int value) {
+    (static_cast<libsupermesh::integer_map*>(*i))->insert(key, value);
   }
   
-  void libsupermesh_integer_hash_table_size(void **i, int *size) {    
-    (static_cast<libsupermesh::integer_hash_table*>(*i))->size(*size);
+  void libsupermesh_integer_map_size(void **i, int *size) {    
+    (static_cast<libsupermesh::integer_map*>(*i))->size(*size);
   }
   
-  void libsupermesh_integer_hash_table_fetch(void **i, int key, int *value) {
-    (static_cast<libsupermesh::integer_hash_table*>(*i))->fetch(key, *value);
+  void libsupermesh_integer_map_fetch(void **i, int key, int *value) {
+    (static_cast<libsupermesh::integer_map*>(*i))->fetch(key, *value);
   }
   
-  void libsupermesh_integer_hash_table_remove(void **i, int key) {
-    (static_cast<libsupermesh::integer_hash_table*>(*i))->remove(key);
+  void libsupermesh_integer_map_remove(void **i, int key) {
+    (static_cast<libsupermesh::integer_map*>(*i))->remove(key);
   }
   
-  void libsupermesh_integer_hash_table_has_key(void **i, int key, int *present) {
-    (static_cast<libsupermesh::integer_hash_table*>(*i))->has_key(key, *present);
+  void libsupermesh_integer_map_has_key(void **i, int key, int *present) {
+    (static_cast<libsupermesh::integer_map*>(*i))->has_key(key, *present);
   }
 
-  void libsupermesh_integer_hash_table_fetch_pair(void **i, int index, int *key, int *value) {
-    (static_cast<libsupermesh::integer_hash_table*>(*i))->fetch_pair(index, *key, *value);
+  void libsupermesh_integer_map_fetch_pair(void **i, int index, int *key, int *value) {
+    (static_cast<libsupermesh::integer_map*>(*i))->fetch_pair(index, *key, *value);
   }
 }
 
