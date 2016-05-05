@@ -56,6 +56,16 @@
   USA
 */
 
+#include "tinyxml.h"
+
+#include <cstddef>
+#include <cstring>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include "Read_Halos_C++.h"
 
 using namespace std;
@@ -216,8 +226,6 @@ void libsupermesh::ReadHalos(const string &filename, int &process, int &nprocs,
       }
     }
   }
-
-  return;
 }
 
 void libsupermesh::Tokenize(const string &str, vector<string> &tokens, const string &delimiters) {
@@ -239,96 +247,72 @@ void libsupermesh::Tokenize(const string &str, vector<string> &tokens, const str
     // Find next delimiter
     pos = str.find_first_of(delimiters, lastPos);
   }
-  
-  return;
 }
   
 extern "C" {  
-  void libsupermesh_read_halo(void **data, const char *basename,
-    const int *process, const int *nprocs) {      
-    (*data) = (void*)(new HaloData());
-    
-    ostringstream filename_buffer;
-    filename_buffer << string(basename) << "_" << *process << ".halo";
-    string filename = filename_buffer.str();
+  void libsupermesh_read_halo(void **data, const char *filename, int *process,
+    int *nprocs) {      
+    HaloData *halo_data = new HaloData();
+    *data = static_cast<void*>(halo_data);
   
-    ReadHalos(filename,
-      ((HaloData*)(*data))->process, ((HaloData*)(*data))->nprocs,
-      ((HaloData*)(*data))->npnodes, ((HaloData*)(*data))->send, ((HaloData*)(*data))->recv);  
-    if(((HaloData*)(*data))->process != *process) {    
-      string error = string("Failed to read halo file '") + filename + string("': Unexpected process number");
-      libsupermesh_abort(error.c_str());
-    } else if(((HaloData*)(*data))->nprocs != *nprocs) {    
-      string error = string("Failed to read halo file '") + filename + string("': Unexpected number of processes");
-      libsupermesh_abort(error.c_str());
-    }
+    ReadHalos(string(filename),
+      halo_data->process, halo_data->nprocs,
+      halo_data->npnodes, halo_data->send, halo_data->recv);
     
-    return;
+    *process = halo_data->process;
+    *nprocs = halo_data->nprocs;
   }
   
-  void libsupermesh_halo_sizes(void **data, const int *level, const int *nprocs,
-    int *nsends, int *nreceives) {
-    assert(*nprocs == ((HaloData*)(*data))->nprocs);
+  void libsupermesh_halo_sizes(void **data, int level, int *nsends,
+    int *nreceives) {
+    HaloData *halo_data = static_cast<HaloData*>(*data);
+    int nprocs = halo_data->nprocs;
     
-    if(((HaloData*)(*data))->send.count(*level) == 0) {      
-      for(int i = 0;i < *nprocs;i++) {
-        nsends[i] = 0;
-      }
-    } else {      
-      for(int i = 0;i < *nprocs;i++) {
-        nsends[i] = ((HaloData*)(*data))->send[*level][i].size();
-      }
+    if(halo_data->npnodes.count(level) == 0 || 
+       halo_data->send.count(level) == 0 ||
+       halo_data->recv.count(level) == 0) {
+       ostringstream error_buffer;
+       error_buffer << "Data not found for halo level " << level << "";
+       libsupermesh_abort(error_buffer.str().c_str());
+     }
+          
+    for(int i = 0;i < nprocs;i++) {
+      nsends[i] = halo_data->send[level][i].size();
+      nreceives[i] = halo_data->recv[level][i].size();
     }
-    if(((HaloData*)(*data))->recv.count(*level) == 0) {      
-      for(int i = 0;i < *nprocs;i++) {
-        nreceives[i] = 0;
-      }
-    } else {      
-      for(int i = 0;i < *nprocs;i++) {
-        nreceives[i] = ((HaloData*)(*data))->recv[*level][i].size();
-      }
-    }
-    
-    return;
   }
   
-  void libsupermesh_halo_data(void **data, const int *level, const int *nprocs,
-    const int *nsends, const int *nreceives, int *npnodes, int *send,
-    int *recv) {
-#ifndef NDEBUG
-    assert(*nprocs == ((HaloData*)(*data))->nprocs);
-    for(int i = 0;i < *nprocs;i++) {
-      assert(nsends[i] == ((HaloData*)(*data))->send[*level][i].size());
-      assert(nreceives[i] == ((HaloData*)(*data))->recv[*level][i].size());
-    }
-#endif
+  void libsupermesh_halo_data(void **data, int level, int *npnodes,
+    int *send, int *recv) {
+    HaloData *halo_data = static_cast<HaloData*>(*data);
+    int nprocs = halo_data->nprocs;
     
-    *npnodes = ((HaloData*)(*data))->npnodes[*level];
-    if(((HaloData*)(*data))->send.count(*level) > 0) {
-      int sendIndex = 0;
-      for(int i = 0;i < *nprocs;i++) {
-        for(int j = 0;j < nsends[i];j++) {
-          send[sendIndex] = ((HaloData*)(*data))->send[*level][i][j];
-          sendIndex++;
-        }
-      }
-    }
-    if(((HaloData*)(*data))->recv.count(*level) > 0) {
-      int recvIndex = 0;
-      for(int i = 0;i < *nprocs;i++) {
-        for(int j = 0;j < nreceives[i];j++) {
-          recv[recvIndex] = ((HaloData*)(*data))->recv[*level][i][j];
-          recvIndex++;
-        }
-      }
+    if(halo_data->npnodes.count(level) == 0 || 
+       halo_data->send.count(level) == 0 ||
+       halo_data->recv.count(level) == 0) {
+       ostringstream error_buffer;
+       error_buffer << "Data not found for halo level " << level << "";
+       libsupermesh_abort(error_buffer.str().c_str());
+     }
+    
+    *npnodes = halo_data->npnodes[level];
+    
+    ptrdiff_t index = 0;
+    for(int i = 0;i < nprocs;i++) {
+      std::vector<int>::size_type nsends = halo_data->send[level][i].size();
+      memcpy(send + index, halo_data->send[level][i].data(), nsends * sizeof(int));
+      index += nsends;
     }
     
-    return;
+    index = 0;
+    for(int i = 0;i < nprocs;i++) {
+      std::vector<int>::size_type nreceives = halo_data->recv[level][i].size();
+      memcpy(recv + index, halo_data->recv[level][i].data(), nreceives * sizeof(int));
+      index += nreceives;
     }
+  }
     
   void libsupermesh_deallocate_halo(void **data) {
-    delete ((HaloData*)(*data));
-  
-    return;
+    delete (static_cast<HaloData*>(*data));
   }
 }

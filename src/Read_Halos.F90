@@ -66,36 +66,32 @@ module libsupermesh_read_halos
   public :: int_array, halo_type, read_halo, deallocate
 
   interface
-    subroutine cread_halo(data, basename, process, nprocs) bind(c, name = "libsupermesh_read_halo")
+    subroutine cread_halo(data, filename, process, nprocs) bind(c, name = "libsupermesh_read_halo")
       use iso_c_binding, only : c_char, c_int, c_ptr
       implicit none
       type(c_ptr) :: data
-      character(kind = c_char), dimension(*) :: basename
+      character(kind = c_char), dimension(*) :: filename
       integer(kind = c_int) :: process
       integer(kind = c_int) :: nprocs
     end subroutine cread_halo
 
-    subroutine chalo_sizes(data, level, nprocs, nsends, nreceives) bind(c, name = "libsupermesh_halo_sizes")
+    subroutine chalo_sizes(data, level, nsends, nreceives) bind(c, name = "libsupermesh_halo_sizes")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: data
-      integer(kind = c_int) :: level
-      integer(kind = c_int) :: nprocs
-      integer(kind = c_int), dimension(nprocs) :: nsends
-      integer(kind = c_int), dimension(nprocs) :: nreceives
+      integer(kind = c_int), value :: level
+      integer(kind = c_int), dimension(*) :: nsends
+      integer(kind = c_int), dimension(*) :: nreceives
     end subroutine chalo_sizes
 
-    subroutine chalo_data(data, level, nprocs, nsends, nreceives, npnodes, send, recv) bind(c, name = "libsupermesh_halo_data")
+    subroutine chalo_data(data, level, npnodes, send, recv) bind(c, name = "libsupermesh_halo_data")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: data
-      integer(kind = c_int) :: level
-      integer(kind = c_int) :: nprocs
-      integer(kind = c_int), dimension(nprocs) :: nsends
-      integer(kind = c_int), dimension(nprocs) :: nreceives
+      integer(kind = c_int), value :: level
       integer(kind = c_int) :: npnodes
-      integer(kind = c_int), dimension(sum(nsends)) :: send      
-      integer(kind = c_int), dimension(sum(nreceives)) :: recv
+      integer(kind = c_int), dimension(*) :: send      
+      integer(kind = c_int), dimension(*) :: recv
     end subroutine chalo_data
     
     subroutine cdeallocate_halo(data) bind(c, name = "libsupermesh_deallocate_halo")
@@ -131,9 +127,11 @@ contains
     integer, optional, intent(in) :: level
     integer, optional, intent(in) :: comm
 
+    character(len = len_trim(basename) + int(log10(real(huge(halo%nprocs)))) + 8) :: filename
+    integer :: i, ierr, index
+    integer(kind = c_int) :: nprocs, process
     integer(kind = c_int), dimension(:), allocatable :: nsends, nreceives, &
       & send, recv
-    integer :: i, ierr, index
     type(c_ptr) :: data
     
     if(present(comm)) then
@@ -143,8 +141,14 @@ contains
     end if
 
     call MPI_Comm_rank(halo%comm, halo%process, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Comm_size(halo%comm, halo%nprocs, ierr);  assert(ierr == MPI_SUCCESS)         
-    call cread_halo(data, to_cstring(basename), halo%process, halo%nprocs)
+    call MPI_Comm_size(halo%comm, halo%nprocs, ierr);  assert(ierr == MPI_SUCCESS)        
+    write(filename, "(a,a,i0,a)") trim(basename), "_", halo%process, ".halo"
+    call cread_halo(data, to_cstring(filename), process, nprocs)
+    if(nprocs /= halo%nprocs) then
+      libsupermesh_abort("Failed to read halo file '" // trim(filename) // "': Unexpected number of processes")
+    else if(process /= halo%process) then
+      libsupermesh_abort("Failed to read halo file '" // trim(filename) // "': Unexpected process number")
+    end if
 
     if(present(level)) then
       halo%level = level
@@ -152,14 +156,14 @@ contains
       halo%level = 2
     end if
     allocate(nsends(halo%nprocs), nreceives(halo%nprocs))
-    call chalo_sizes(data, halo%level, halo%nprocs, nsends, nreceives)
+    call chalo_sizes(data, halo%level, nsends, nreceives)
     
     allocate(halo%send(halo%nprocs), halo%recv(halo%nprocs))
     do i = 1, halo%nprocs
       allocate(halo%send(i)%v(nsends(i)), halo%recv(i)%v(nreceives(i)))
     end do
     allocate(send(sum(nsends)), recv(sum(nreceives)))
-    call chalo_data(data, halo%level, halo%nprocs, nsends, nreceives, halo%npnodes, send, recv)
+    call chalo_data(data, halo%level, halo%npnodes, send, recv)
     index = 1
     do i = 1, halo%nprocs
       halo%send(i)%v = send(index:index + nsends(i) - 1)

@@ -60,11 +60,8 @@
 #define LIBSUPERMESH_READ_HALOS_CPP_H
 
 #include "libsupermesh_configuration.h"
-#include "tinyxml.h"
 
-#include <iostream>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -83,17 +80,6 @@ namespace libsupermesh {
   };
   
   void Tokenize(const std::string &str, std::vector<std::string> &tokens, const std::string &delimiters = " ");
-}
-
-extern "C" {
-  void libsupermesh_read_halo(void **data, const char *basename,
-    const int *process, const int *nprocs);
-  void libsupermesh_halo_sizes(void **data, const int *level, const int *nprocs,
-    int *nsends, int *nreceives);
-  void libsupermesh_halo_data(void **data, const int *level, const int *nprocs,
-    const int *nsends, const int *nreceives, int *npnodes, int *send,
-    int *recv);
-  void libsupermesh_deallocate_halo(void **data);
 }
 
 #endif
