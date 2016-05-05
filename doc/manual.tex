@@ -1525,7 +1525,8 @@ by facets.
 
 \begin{lstlisting}[language=FORTRAN]
   interface intersect_tets
-    module procedure intersect_tets_real, intersect_tets_tet
+    module procedure intersect_tets_real, intersect_tets_tet, &
+      & intersect_tets_planes
   end interface intersect_tets
 \end{lstlisting}
 
@@ -1560,6 +1561,24 @@ by facets.
   \item[tet\_b] Element B.
   \item[tets\_c] Length $M_C$ vector. Tetrahedra in mesh C. $M_C = 81$.
   \item[n\_tets\_c] $E_C$.
+\end{description}
+
+\begin{lstlisting}[language=FORTRAN]
+  subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b)
+    type(tet_type), intent(in) :: tet_a
+    type(plane_type), dimension(4), intent(in)  :: planes_b
+    type(tet_type), dimension(tet_buf_size), intent(inout) :: tets_c
+    integer, intent(out) :: n_tets_c
+    real, optional, intent(in) :: vol_b
+\end{lstlisting}
+
+\begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
+  \item[tet\_a] Element A.
+  \item[planes\_b] Element B facet half-spaces. Element B must be a tetrahedron.
+  \item[tets\_c] Length $M_C$ vector. Tetrahedra in mesh C. $M_C = 81$.
+  \item[n\_tets\_c] $E_C$.
+  \item[vol\_b] Volume of element $B$. Used to discard near-degenerate elements
+    in mesh C.
 \end{description}
 
 \noindent Tetrahedron-hexahedron intersection.
@@ -1614,12 +1633,12 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
 
 \begin{lstlisting}[language=FORTRAN]
   interface intersect_polys
-    module procedure intersect_tets_planes
+    module procedure intersect_tet_planes
   end interface intersect_polys
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  pure subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
+  pure subroutine intersect_tet_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
     type(tet_type), intent(in) :: tet_a
     type(plane_type), dimension(:), intent(in)  :: planes_b
     type(tet_type), dimension(:), intent(inout) :: tets_c

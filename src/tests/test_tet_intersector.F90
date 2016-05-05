@@ -118,13 +118,27 @@ subroutine test_tet_intersector() bind(c)
     do i = 1, map_ab(ele_a)%n
       ele_b = map_ab(ele_a)%v(i)
       tet_b%v = positions_b(:, enlist_b(:, ele_b))
-      call intersect_polys(tet_a, get_planes(tet_b), tets_c, n_tets_c, work = work)
+      call intersect_tets(tet_a, get_planes(tet_b), tets_c, n_tets_c)
       do ele_c = 1, n_tets_c
         volume_c = volume_c + tetrahedron_volume(tets_c(ele_c)%v)
       end do
     end do    
   end do
   call report_test("[intersect_tets]", volume_c .fne. 1.0D0 / 3.0D0, .false., "Incorrect intersection volume")
+
+  volume_c = 0.0D0
+  do ele_a = 1, size(enlist_a, 2)
+    tet_a%v = positions_a(:, enlist_a(:, ele_a))
+    do i = 1, map_ab(ele_a)%n
+      ele_b = map_ab(ele_a)%v(i)
+      tet_b%v = positions_b(:, enlist_b(:, ele_b))
+      call intersect_polys(tet_a, get_planes(tet_b), tets_c, n_tets_c, work = work)
+      do ele_c = 1, n_tets_c
+        volume_c = volume_c + tetrahedron_volume(tets_c(ele_c)%v)
+      end do
+    end do    
+  end do
+  call report_test("[intersect_polys]", volume_c .fne. 1.0D0 / 3.0D0, .false., "Incorrect intersection volume")
   
   volume_c = 0.0D0
   do ele_a = 1, size(enlist_a, 2)

@@ -78,11 +78,12 @@ module libsupermesh_tet_intersection
   end interface max_n_tets_c
 
   interface intersect_tets
-    module procedure intersect_tets_real, intersect_tets_tet
+    module procedure intersect_tets_real, intersect_tets_tet, &
+      & intersect_tets_planes
   end interface intersect_tets
 
   interface intersect_polys
-    module procedure intersect_tets_planes
+    module procedure intersect_tet_planes
   end interface intersect_polys
 
   interface get_planes
@@ -126,11 +127,11 @@ contains
     type(tet_type), dimension(BUF_SIZE), intent(inout) :: tets_c
     integer, intent(out) :: n_tets_c
 
-    call intersect_tets_planes_buf(tet_a, get_planes(tet_b), tets_c, n_tets_c, vol_b = tetrahedron_volume(tet_b))
+    call intersect_tets_planes(tet_a, get_planes(tet_b), tets_c, n_tets_c, vol_b = tetrahedron_volume(tet_b))
 
   end subroutine intersect_tets_tet
 
-  subroutine intersect_tets_planes_buf(tet_a, planes_b, tets_c, n_tets_c, vol_b)
+  subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b)
     type(tet_type), intent(in) :: tet_a
     type(plane_type), dimension(4), intent(in)  :: planes_b
     type(tet_type), dimension(BUF_SIZE), intent(inout) :: tets_c
@@ -172,7 +173,7 @@ contains
       end if
     end do
 
-  end subroutine intersect_tets_planes_buf
+  end subroutine intersect_tets_planes
   
   pure function max_n_tets_c_tet(n_planes_b) result(max_n_tets_c)
     integer, intent(in) :: n_planes_b
@@ -183,7 +184,7 @@ contains
     
   end function max_n_tets_c_tet
   
-  pure subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
+  pure subroutine intersect_tet_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
     type(tet_type), intent(in) :: tet_a
     type(plane_type), dimension(:), intent(in)  :: planes_b
     type(tet_type), dimension(:), intent(inout) :: tets_c
@@ -235,7 +236,7 @@ contains
     
     if(.not. present(work)) deallocate(tets_new)
   
-  end subroutine intersect_tets_planes
+  end subroutine intersect_tet_planes
 
   subroutine clip_buf(plane, tet)
     ! Clip tet against the plane and append any output to tets_tmp_buf.
