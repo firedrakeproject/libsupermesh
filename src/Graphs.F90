@@ -191,7 +191,7 @@ contains
       ! Simplex
       sloc = loc - 1
     else if(loc == 2 ** dim) then
-      ! Cubic
+      ! Cubical
       sloc = loc / 2
     else
       sloc = -1
