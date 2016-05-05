@@ -118,9 +118,7 @@
 #include "libsupermesh_configuration.h"
 #include "spatialindex/SpatialIndex.h"
 
-#include <cmath>
 #include <cstring>
-#include <iostream>
 #include <limits>
 #include <vector>
 
@@ -130,13 +128,13 @@ namespace libsupermesh {
   // Modified version of code from rtree/gispyspatialindex.h (GISPySpatialIndex)
   // and rtree/gispyspatialindex.cc (GISPySpatialIndex) in Rtree 0.4.3. Added
   // 2016-02-24.
-  uint32_t capacity = 10;
-  bool bWriteThrough = false;
+  const uint32_t capacity = 10;
+  const bool bWriteThrough = false;
 
   // R-Tree parameters
-  double fillFactor = 0.7;
-  uint32_t indexCapacity = 10;
-  uint32_t leafCapacity = 10;
+  const double fillFactor = 0.7;
+  const uint32_t indexCapacity = 10;
+  const uint32_t leafCapacity = 10;
   // End of modified code from rtree/gispyspatialindex.h and
   // rtree/gispyspatialindex.cc in Rtree 0.4.3
   
@@ -147,8 +145,8 @@ namespace libsupermesh {
     // regressiontest/rtree/RTreeBulkLoad.cc in spatialindex 1.2.0
   class MeshDataStream : public SpatialIndex::IDataStream {
     public:
-      inline MeshDataStream(const int &dim, const double *&positions,
-        const int &loc, const int &nelements, const int *&enlist)
+      inline MeshDataStream(const int &dim, const double *positions,
+        const int &loc, const int &nelements, const int *enlist)
      : dim(dim), loc(loc), nelements(nelements), positions(positions),
        enlist(enlist), ele(0) {};
       inline virtual ~MeshDataStream(void) {}
@@ -223,15 +221,15 @@ namespace libsupermesh {
     // Uses code from gispatialindex.{cc,h} in Rtree 0.4.1
   class RTree {
     public:
-      RTree(const int &dim, const double *&positions, const int &loc,
-        const int &nelements, const int *&enlist);
+      RTree(const int &dim, const double *positions, const int &loc,
+        const int &nelements, const int *enlist);
       
       inline ~RTree(void) {
         delete this->tree;
         delete this->buffer;
         delete this->memory;
       }      
-      inline const uint32_t query(const int &loc_a, const double *&element_a) {
+      inline const uint32_t query(const int &loc_a, const double *element_a) {
         // See MeshDataStream::getNext above
         double low[this->dim], high[this->dim];
         for(uint32_t i = 0;i < this->dim;i++) {
@@ -250,7 +248,7 @@ namespace libsupermesh {
         
         return this->visitor.size();
       }         
-      inline void query_intersections(int *&eles_b) const {this->visitor.data(eles_b);}
+      inline void query_intersections(int *eles_b) const {this->visitor.data(eles_b);}
     
       const uint32_t dim;
     private:
@@ -261,17 +259,6 @@ namespace libsupermesh {
   };
   // End of modified code from rtree/gispyspatialindex.h,
   // rtree/gispyspatialindex.cc, and rtree/wrapper.cc
-}
-
-extern "C" {  
-  void libsupermesh_build_rtree(void **rtree, const int *dim, const int *nnodes,
-    const double *positions, const int *loc, const int *nelements,
-    const int *enlist);
-  void libsupermesh_query_rtree(void **rtree, const int *dim, const int *loc_a,
-    const double *element_a, int *neles_b);
-  void libsupermesh_query_rtree_intersections(const void **rtree,
-    const int *neles_b, int *eles_b);
-  void libsupermesh_deallocate_rtree(void **rtree);
 }
 
 #endif

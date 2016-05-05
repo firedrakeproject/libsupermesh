@@ -116,6 +116,9 @@
 #include "spatialindex/SpatialIndex.h"
 #include "rtree/RTree.h"
 #include "rtree/BulkLoader.h"
+
+#include <cmath>
+
 #include "R-Tree_Intersection_Finder_C++.h"
 
 using namespace libsupermesh;
@@ -128,8 +131,8 @@ using namespace libsupermesh::SpatialIndex;
   // Interface to spatialindex to calculate element intersection lists between
   // meshes using bulk storage
   // Uses code from gispatialindex.{cc,h} in Rtree 0.4.1
-libsupermesh::RTree::RTree(const int &dim, const double *&positions,
-  const int &loc, const int &nelements, const int *&enlist)
+libsupermesh::RTree::RTree(const int &dim, const double *positions,
+  const int &loc, const int &nelements, const int *enlist)
   : dim(dim), visitor(nelements) {
   this->memory = StorageManager::createNewMemoryStorageManager();
   this->buffer = StorageManager::createNewRandomEvictionsBuffer(*this->memory, capacity, bWriteThrough);
@@ -148,39 +151,27 @@ libsupermesh::RTree::RTree(const int &dim, const double *&positions,
   bl.bulkLoadUsingSTR(static_cast<SpatialIndex::RTree::RTree*>(this->tree), stream, bindex, bleaf, pageSize, numberOfPages); 
   // End of modified code from createAndBulkLoadNewRTree in
   // src/rtree/RTree.cc in libspatialindex 1.8.5
-  
-  return;
 }
 // End of modified code from rtree/gispyspatialindex.h,
 // rtree/gispyspatialindex.cc, and rtree/wrapper.cc
 
 extern "C" {  
-  void libsupermesh_build_rtree(void **rtree, const int *dim, const int *nnodes,
-    const double *positions, const int *loc, const int *nelements,
-    const int *enlist) {
-    (*rtree) = (void*)(new libsupermesh::RTree(*dim, positions, *loc, *nelements, enlist));
-  
-    return;
+  void libsupermesh_build_rtree(void **rtree, int dim, int nnodes,
+    const double *positions, int loc, int nelements, const int *enlist) {
+    *rtree = static_cast<void*>(new libsupermesh::RTree(dim, positions, loc, nelements, enlist));
   }
   
-  void libsupermesh_query_rtree(void **rtree, const int *dim, const int *loc_a,
+  void libsupermesh_query_rtree(void **rtree, int dim, int loc_a,
     const double *element_a, int *neles_b) {
-    assert((*dim) == ((libsupermesh::RTree*)(*rtree))->dim);
-    *neles_b = ((libsupermesh::RTree*)(*rtree))->query(*loc_a, element_a);
-    
-    return;
+    assert(dim == (static_cast<libsupermesh::RTree*>(*rtree))->dim);
+    *neles_b = (static_cast<libsupermesh::RTree*>(*rtree))->query(loc_a, element_a);
   }
   
-  void libsupermesh_query_rtree_intersections(const void **rtree,
-    const int *neles_b, int *eles_b) {
-    ((libsupermesh::RTree*)(*rtree))->query_intersections(eles_b);
-    
-    return;
+  void libsupermesh_query_rtree_intersections(void **rtree, int *eles_b) {
+    (static_cast<libsupermesh::RTree*>(*rtree))->query_intersections(eles_b);
   }
   
   void libsupermesh_deallocate_rtree(void **rtree) {
-    delete ((libsupermesh::RTree*)(*rtree));
-  
-    return;
+    delete (static_cast<libsupermesh::RTree*>(*rtree));
   }
 }

@@ -75,11 +75,11 @@ module libsupermesh_intersection_finder
       use iso_c_binding, only : c_double, c_int, c_ptr
       implicit none
       type(c_ptr) :: rtree
-      integer(kind = c_int) :: dim
-      integer(kind = c_int) :: nnodes
+      integer(kind = c_int), value :: dim
+      integer(kind = c_int), value :: nnodes
       real(kind = c_double), dimension(dim, nnodes) :: positions
-      integer(kind = c_int) :: loc
-      integer(kind = c_int) :: nelements
+      integer(kind = c_int), value :: loc
+      integer(kind = c_int), value :: nelements
       integer(kind = c_int), dimension(loc, nelements) :: enlist
     end subroutine libsupermesh_build_rtree
   end interface cbuild_rtree
@@ -89,19 +89,18 @@ module libsupermesh_intersection_finder
       use iso_c_binding, only : c_double, c_int, c_ptr
       implicit none
       type(c_ptr) :: rtree
-      integer(kind = c_int) :: dim
-      integer(kind = c_int) :: loc_a
+      integer(kind = c_int), value :: dim
+      integer(kind = c_int), value :: loc_a
       real(kind = c_double), dimension(dim, loc_a) :: element_a
       integer(kind = c_int) :: neles_b
     end subroutine libsupermesh_query_rtree
   end interface cquery_rtree
   
   interface cquery_rtree_intersections
-    subroutine libsupermesh_query_rtree_intersections(rtree, neles_b, eles_b) bind(c)
+    subroutine libsupermesh_query_rtree_intersections(rtree, eles_b) bind(c)
       use iso_c_binding, only : c_int, c_ptr
       type(c_ptr) :: rtree
-      integer(kind = c_int) :: neles_b
-      integer(kind = c_int), dimension(neles_b) :: eles_b
+      integer(kind = c_int), dimension(*) :: eles_b
     end subroutine libsupermesh_query_rtree_intersections
   end interface cquery_rtree_intersections
   
@@ -508,7 +507,7 @@ contains
     
     call cquery_rtree(rtree%rtree, dim, loc_a, element_a, neles_b)
     allocate(eles_b(neles_b))
-    call cquery_rtree_intersections(rtree%rtree, neles_b, eles_b)
+    call cquery_rtree_intersections(rtree%rtree, eles_b)
   
   end subroutine query_rtree_allocatable
     
@@ -525,7 +524,7 @@ contains
     
     call cquery_rtree(rtree%rtree, dim, loc_a, element_a, neles_b)
     allocate(eles_b(neles_b))
-    call cquery_rtree_intersections(rtree%rtree, neles_b, eles_b)
+    call cquery_rtree_intersections(rtree%rtree, eles_b)
   
   end subroutine query_rtree_pointer
   
@@ -607,7 +606,7 @@ contains
     do ele_a = 1, nelements_a
       call cquery_rtree(rtree%rtree, dim, loc_a, positions_a(:, enlist_a(:, ele_a)), map_ab(ele_a)%n)
       allocate(map_ab(ele_a)%v(map_ab(ele_a)%n))
-      call cquery_rtree_intersections(rtree%rtree, map_ab(ele_a)%n, map_ab(ele_a)%v)   
+      call cquery_rtree_intersections(rtree%rtree, map_ab(ele_a)%v)   
     end do
     call deallocate(rtree)
 
