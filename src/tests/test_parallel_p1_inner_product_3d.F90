@@ -39,7 +39,7 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
                                  & basename_b = "data/cube_0_05"
   real, parameter :: volume_ref = 3.3333333333333331D+02 / 1.0D3, integral_ref = 1.2499999999999989D+04 / 1.0D5
 
-  character(len = int(log10(real(huge(0)))) + 1) :: rank_chr, nprocs_chr
+  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, nprocs_chr
   integer :: ierr, integer_extent, nprocs, rank, real_extent
  
   integer :: nelements_a, nelements_b, nnodes_a, nnodes_b

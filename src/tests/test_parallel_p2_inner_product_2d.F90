@@ -43,7 +43,7 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
                                  & basename_b = "data/square_0_01"
   real, parameter :: area_ref = 0.5D0, integral_ref = 2.7083333333333272D-02
 
-  character(len = int(log10(real(huge(0)))) + 1) :: rank_chr, nprocs_chr
+  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, nprocs_chr
   integer :: ierr, integer_extent, nprocs, rank, real_extent
 
   integer :: nelements_a, nelements_b, nnodes_p1_a, nnodes_p2_a, &

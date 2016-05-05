@@ -253,7 +253,7 @@ contains
     else if(present(area_a)) then
       tol = 10.0D0 * spacing(area_a)
     else
-      tol = 10.0D0 * epsilon(0.0D0)
+      tol = 10.0D0 * tiny(tol)
     end if
     do i = 1, n_points_new - 2
       n_tris_c = n_tris_c + 1

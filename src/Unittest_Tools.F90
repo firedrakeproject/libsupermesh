@@ -226,7 +226,7 @@ contains
     if(present(tol)) then
       eps = abs(tol)
     else
-      eps = 1.0D2 * max(epsilon(0.0D0), spacing(float1), spacing(float2))
+      eps = 1.0D2 * max(epsilon(eps), spacing(float1), spacing(float2))
     end if
     equals = abs(float1 - float2) < eps
 

@@ -701,7 +701,7 @@ contains
     dim = size(positions, 1)
     nelements = size(enlist, 2)    
     if(nelements == 0) then
-      bbox = huge(0.0D0)
+      if(size(bbox) > 0) bbox = huge(bbox(1, 1))
       return
     end if
     
@@ -709,7 +709,7 @@ contains
     do while(ele_owner(ele_0) /= rank)
       ele_0 = ele_0 + 1
       if(ele_0 > nelements) then
-        bbox = huge(0.0D0)
+        if(size(bbox) > 0) bbox = huge(bbox(1, 1))
         return
       end if
     end do    

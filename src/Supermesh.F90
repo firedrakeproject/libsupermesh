@@ -344,7 +344,7 @@ contains
       case(3)
         volume = tetrahedron_volume(simplex)
       case default
-        volume = -huge(0.0D0)
+        volume = -huge(volume)
     end select
   
   end function simplex_volume

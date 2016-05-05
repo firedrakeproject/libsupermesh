@@ -37,7 +37,7 @@ subroutine test_parallel_supermesh_2d() bind(c)
 
   implicit none
 
-  character(len = int(log10(real(huge(0)))) + 1) :: nprocs_chr, rank_chr
+  character(len = int(log10(real(huge(0)))) + 2) :: nprocs_chr, rank_chr
   integer :: ele_a, ele_b, ele_c, i, ierr, loc_b, n_tris_c, nelements_a, &
     & nelements_b, nprocs, rank, real_extent
   integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
