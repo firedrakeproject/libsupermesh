@@ -125,6 +125,13 @@ contains
       libsupermesh_abort("Invalid dimension")
     end if
     nelements_a = size(enlist_a, 2)
+    if(nelements_a == 0 .or. size(enlist_b, 2) == 0) then
+      do ele_a = 1, nelements_a
+        allocate(map_ab(ele_a)%v(0))
+        map_ab(ele_a)%n = 0
+      end do
+      return
+    end if
     call allocate(quadtree, positions_b, enlist_b, max_size = max_size)
     
     do ele_a = 1, nelements_a
