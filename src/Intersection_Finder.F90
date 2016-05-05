@@ -894,10 +894,10 @@ contains
         i_2 = (n / 2) + 1
         do i = 1, n
           if(i_1 > (n / 2)) then
-            indices(i:) = work(i_2:)
+            indices(i:n) = work(i_2:n)
             exit
           else if(i_2 > n) then
-            indices(i:) = work(i_1:n / 2)
+            indices(i:n) = work(i_1:n / 2)
             exit
           ! <= here for a stable sort
           else if(v(work(i_1)) <= v(work(i_2))) then
