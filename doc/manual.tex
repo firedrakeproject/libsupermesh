@@ -167,17 +167,17 @@ following intersection finder routines, must be deallocated after use.
 
 \begin{lstlisting}[language=FORTRAN]
   interface deallocate
-    module procedure deallocate_intersections_rank_1
+    module procedure deallocate_intersections
   end interface deallocate
 \end{lstlisting}
 
 \begin{lstlisting}[language=FORTRAN]
-  pure subroutine deallocate_intersections_rank_1(ints)
-    type(intersections), dimension(:), intent(inout) :: ints
+  pure elemental subroutine deallocate_intersections(ints)
+    type(intersections), intent(inout) :: ints
 \end{lstlisting}
 
 \begin{description}[font=\ttfamily\bfseries,leftmargin=2.2\parindent,labelindent=1.7\parindent,noitemsep]
-  \item[ints] Length $E_A$ vector. Candidate intersection element-element graph.
+  \item[ints] Candidate intersecting mesh B elements for a mesh A element.
 \end{description}
 
 \subsubsection{\texttt{sort\_intersection\_finder}}\label{sect:sort_global}
@@ -757,7 +757,7 @@ elements.
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  pure subroutine deallocate_quadtree(quadtree)
+  pure elemental subroutine deallocate_quadtree(quadtree)
     type(quadtree_type), intent(inout) :: quadtree
 \end{lstlisting}
 
@@ -835,7 +835,7 @@ elements.
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  pure subroutine deallocate_octree(octree)
+  pure elemental subroutine deallocate_octree(octree)
     type(octree_type), intent(inout) :: octree
 \end{lstlisting}
 
@@ -1167,7 +1167,7 @@ the half-spaces defined by element facets.
 \end{lstlisting}
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function max_n_tris_c_tri(n_lines_b) result(max_n_tris_c)
+  pure elemental function max_n_tris_c_tri(n_lines_b) result(max_n_tris_c)
     integer, intent(in) :: n_lines_b
     integer :: max_n_tris_c
 \end{lstlisting} 
@@ -1186,7 +1186,7 @@ the half-spaces defined by element facets.
 \end{lstlisting} 
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function max_n_tris_c_poly(n_lines_a, n_lines_b) result(max_n_tris_c)
+  pure elemental function max_n_tris_c_poly(n_lines_a, n_lines_b) result(max_n_tris_c)
     integer, intent(in) :: n_lines_a
     integer, intent(in) :: n_lines_b
     integer :: max_n_tris_c
@@ -1427,7 +1427,7 @@ facets.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function triangle_area_tri(tri) result(area)
+  pure elemental function triangle_area_tri(tri) result(area)
     type(tri_type), intent(in) :: tri
     real :: area
 \end{lstlisting}
@@ -1491,7 +1491,7 @@ constitute the half-spaces defined by element facets.
 \end{lstlisting}
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function max_n_tets_c_tet(n_planes_b) result(max_n_tets_c)
+  pure elemental function max_n_tets_c_tet(n_planes_b) result(max_n_tets_c)
     integer, intent(in) :: n_planes_b    
     integer :: max_n_tets_c
 \end{lstlisting}
@@ -1678,7 +1678,7 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function tetrahedron_volume_tet(tet) result(volume)
+  pure elemental function tetrahedron_volume_tet(tet) result(volume)
     type(tet_type), intent(in) :: tet
     real :: volume
 \end{lstlisting}
@@ -1700,7 +1700,7 @@ dimensions.
 \end{lstlisting}
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function max_n_simplices_c_simplices(dim) result(size)
+  pure elemental function max_n_simplices_c_simplices(dim) result(size)
     integer, intent(in) :: dim
     integer :: size
 \end{lstlisting}
@@ -1721,7 +1721,7 @@ cubical-cubical intersection in one, two, and three dimensions.
 \end{lstlisting}
 
 \begin{lstlisting}[language=FORTRAN]
-  pure function max_n_simplices_c_elements(dim, loc_a, loc_b) result(size)
+  pure elemental function max_n_simplices_c_elements(dim, loc_a, loc_b) result(size)
     integer, intent(in) :: dim
     integer, intent(in) :: loc_a
     integer, intent(in) :: loc_b

@@ -175,7 +175,7 @@ contains
 
   end subroutine intersect_tets_planes
   
-  pure function max_n_tets_c_tet(n_planes_b) result(max_n_tets_c)
+  pure elemental function max_n_tets_c_tet(n_planes_b) result(max_n_tets_c)
     integer, intent(in) :: n_planes_b
     
     integer :: max_n_tets_c
@@ -700,7 +700,7 @@ contains
 
   end function tetrahedron_volume_real
 
-  pure function tetrahedron_volume_tet(tet) result(volume)
+  pure elemental function tetrahedron_volume_tet(tet) result(volume)
     type(tet_type), intent(in) :: tet
 
     real :: volume
@@ -719,7 +719,7 @@ contains
     
   end function tetrahedron_volume_tet
 
-  pure function face_no(i, j, k) result(face)
+  pure elemental function face_no(i, j, k) result(face)
     ! Given three local node numbers, what is the face that they share?
     integer, intent(in) :: i, j, k
     integer :: face

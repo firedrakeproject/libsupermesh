@@ -100,7 +100,7 @@ module libsupermesh_tri_intersection
 
 contains
 
-  pure function max_n_tris_c_tri(n_lines_b) result(max_n_tris_c)
+  pure elemental function max_n_tris_c_tri(n_lines_b) result(max_n_tris_c)
     integer, intent(in) :: n_lines_b
     
     integer :: max_n_tris_c
@@ -109,7 +109,7 @@ contains
     
   end function max_n_tris_c_tri
 
-  pure function max_n_tris_c_poly(n_lines_a, n_lines_b) result(max_n_tris_c)
+  pure elemental function max_n_tris_c_poly(n_lines_a, n_lines_b) result(max_n_tris_c)
     integer, intent(in) :: n_lines_a
     integer, intent(in) :: n_lines_b
     
@@ -446,7 +446,7 @@ contains
 
   end function triangle_area_real
 
-  pure function triangle_area_tri(tri) result(area)
+  pure elemental function triangle_area_tri(tri) result(area)
     type(tri_type), intent(in) :: tri
 
     real :: area

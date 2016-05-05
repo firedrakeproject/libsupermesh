@@ -83,7 +83,7 @@ module libsupermesh_supermesh
 
 contains
 
-  pure function max_n_simplices_c_simplices(dim) result(size)
+  pure elemental function max_n_simplices_c_simplices(dim) result(size)
     integer, intent(in) :: dim
 
     integer :: size
@@ -101,7 +101,7 @@ contains
 
   end function max_n_simplices_c_simplices
 
-  pure function max_n_simplices_c_elements(dim, loc_a, loc_b) result(size)
+  pure elemental function max_n_simplices_c_elements(dim, loc_a, loc_b) result(size)
     integer, intent(in) :: dim
     integer, intent(in) :: loc_a
     integer, intent(in) :: loc_b

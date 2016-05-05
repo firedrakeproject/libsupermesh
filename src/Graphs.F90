@@ -181,7 +181,7 @@ contains
 
   end subroutine mesh_eelist
 
-  pure function sloc(dim, loc)
+  pure elemental function sloc(dim, loc)
     integer, intent(in) :: dim
     integer, intent(in) :: loc
 
@@ -199,7 +199,7 @@ contains
 
   end function sloc
 
-  pure subroutine deallocate_eelist(eelist)
+  pure elemental subroutine deallocate_eelist(eelist)
     type(eelist_type), intent(inout) :: eelist
 
     deallocate(eelist%v, eelist%n)

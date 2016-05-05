@@ -239,7 +239,7 @@ contains
   
   end subroutine allocate_quadtree
   
-  pure subroutine deallocate_quadtree(quadtree)
+  pure elemental subroutine deallocate_quadtree(quadtree)
     type(quadtree_type), intent(inout) :: quadtree
     
     deallocate(quadtree%eles_b, quadtree%neles_b, quadtree%seen_ele_b)

@@ -220,7 +220,7 @@ contains
   
   end subroutine allocate_octree
   
-  pure subroutine deallocate_octree(octree)
+  pure elemental subroutine deallocate_octree(octree)
     type(octree_type), intent(inout) :: octree
     
     deallocate(octree%eles_b, octree%neles_b, octree%seen_ele_b)

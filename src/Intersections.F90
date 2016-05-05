@@ -32,28 +32,17 @@ module libsupermesh_intersections
   end type intersections
 
   interface deallocate
-    module procedure deallocate_intersections, deallocate_intersections_rank_1
+    module procedure deallocate_intersections
   end interface deallocate
   
 contains
 
-  pure subroutine deallocate_intersections(ints)
+  pure elemental subroutine deallocate_intersections(ints)
     type(intersections), intent(inout) :: ints
 
     deallocate(ints%v)
 
   end subroutine deallocate_intersections
-
-  pure subroutine deallocate_intersections_rank_1(ints)
-    type(intersections), dimension(:), intent(inout) :: ints
-
-    integer :: i
-
-    do i = 1, size(ints)
-      deallocate(ints(i)%v)
-    end do
-
-  end subroutine deallocate_intersections_rank_1
 
   pure subroutine intersections_to_csr_sparsity(ints, indices, indptr)
     type(intersections), dimension(:), intent(in) :: ints
