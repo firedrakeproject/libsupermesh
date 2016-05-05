@@ -72,238 +72,196 @@ namespace libsupermesh {
 class integer_set {
   public:
     inline integer_set(void) {
-      this->v_array = NULL;
-      
-      return;
+      this->value_array = NULL;
     }
     
     inline ~integer_set(void) {
-      if(this->v_array) {
-        delete[] this->v_array;
+      if(this->value_array) {
+        delete[] this->value_array;
       }
-      
-      return;
     }
     
-    inline void insert(const int &v, int &changed) {
-      pair<set<int>::const_iterator, bool> position = this->v_set.insert(v);
+    inline void insert(const int &value, int &changed) {
+      pair<set<int>::const_iterator, bool> position = this->value_set.insert(value);
       changed = position.second ? 1 : 0;
-      if(changed && this->v_array) {
-        delete[] this->v_array;
-        this->v_array = NULL;
+      if(changed && this->value_array) {
+        delete[] this->value_array;
+        this->value_array = NULL;
       }
-      
-      return;
     }
     
-    inline void length(int &l) const {
-      l = this->v_set.size();
-      
-      return;
+    inline void size(int &size) const {
+      size = this->value_set.size();
     };
     
-    inline void fetch(const int &idx, int &v) {
-      if(!this->v_array) {
-        this->v_array = new int[this->v_set.size()];
+    inline void fetch(const int &index, int &value) {
+      if(!this->value_array) {
+        this->value_array = new int[this->value_set.size()];
         set<int>::size_type i = 0;
-        for(set<int>::const_iterator iter = this->v_set.begin();iter != this->v_set.end();iter++) {
-          this->v_array[i] = *iter;
-          i++;
+        for(set<int>::const_iterator iter = this->value_set.begin();iter != this->value_set.end();iter++) {
+          this->value_array[i++] = *iter;
         }
       }
-      v = this->v_array[idx - 1];
-      
-      return;
+      if(index < 0 || index > this->value_set.size()) {
+        std::cerr << "Failed to fetch integer set element with index " << index << endl;
+        libsupermesh_abort("Failed to fetch integer set element");
+      }
+      value = this->value_array[index - 1];
     };
     
-    inline void remove(const int &v, int &status) {
-      if(this->v_array) {
-        delete[] this->v_array;
-        this->v_array = NULL;
+    inline void remove(const int &value) {
+      if(this->value_array) {
+        delete[] this->value_array;
+        this->value_array = NULL;
       }
-      set<int>::size_type count = this->v_set.erase(v);
-      status = (count > 0) ? 1 : 0;
-      
-      return;
+      set<int>::size_type count = this->value_set.erase(value);
+      if(count == 0) {
+        cerr << "Failed to remove integer set element with value " << value << endl;
+        libsupermesh_abort("Failed to remove integer set element");
+      }
     }
     
-    inline void has_value(const int &v, int &present) const {
-      set<int>::const_iterator iter = this->v_set.find(v);
-      present = (iter == this->v_set.end()) ? 0 : 1;
-      
-      return;
+    inline void has_value(const int &value, int &present) const {
+      set<int>::const_iterator iter = this->value_set.find(value);
+      present = (iter == this->value_set.end()) ? 0 : 1;
     }
     
   private:
-    set<int> v_set;
-    int *v_array;
+    set<int> value_set;
+    int *value_array;
 };
 
 class integer_hash_table {
   public:
     inline integer_hash_table(void) {
-      this->k_array = NULL;
-      
-      return;
+      this->key_array = NULL;
     }
     
     inline ~integer_hash_table(void) {
-      if(this->k_array) {
-        delete[] this->k_array;
+      if(this->key_array) {
+        delete[] this->key_array;
       }
     }
     
-    inline void insert(const int &k, const int &v) {
-      if(this->k_array) {
-        delete[] this->k_array;
-        this->k_array = NULL;
+    inline void insert(const int &key, const int &value) {
+      if(this->key_array) {
+        delete[] this->key_array;
+        this->key_array = NULL;
       }
-      this->v_map[k] = v;
-      
-      return;
+      this->value_map[key] = value;
     }
     
-    inline void length(int &l) const {
-      l = this->v_map.size();
-      
-      return;
+    inline void size(int &size) const {
+      size = this->value_map.size();
     }
     
-    inline void fetch(const int &k, int &v) {
-      v = this->v_map[k];
-      
-      return;
-    }
-    
-    inline void remove(const int &k, int &status) {
-      if(this->k_array) {
-        delete[] this->k_array;
-        this->k_array = NULL;
+    inline void fetch(const int &key, int &value) {
+      if(this->value_map.count(key) == 0) {
+        cerr << "Failed to fetch integer hash table element with key " << key << endl;
+        libsupermesh_abort("Failed to fetch integer hash table element");
       }
-      map<int, int>::size_type count = this->v_map.erase(k);
-      status = (count > 0) ? 1 : 0;
-      
-      return;
+      value = this->value_map[key];
     }
     
-    inline void has_key(const int &k, int &present) const {
-      map<int, int>::const_iterator iter = this->v_map.find(k);
-      present = (iter == this->v_map.end()) ? 0 : 1;
-      
-      return;
+    inline void remove(const int &key) {
+      if(this->key_array) {
+        delete[] this->key_array;
+        this->key_array = NULL;
+      }
+      map<int, int>::size_type count = this->value_map.erase(key);
+      if(count == 0) {
+        cerr << "Failed to remove integer hash table element with key " << key << endl;
+        libsupermesh_abort("Failed to remove integer hash table element");
+      }
     }
     
-    inline void fetch_pair(const int &idx, int &k, int &v) {
-      if(!this->k_array) {
-        this->k_array = new int[this->v_map.size()];
+    inline void has_key(const int &key, int &present) const {
+      map<int, int>::const_iterator iter = this->value_map.find(key);
+      present = (iter == this->value_map.end()) ? 0 : 1;
+    }
+    
+    inline void fetch_pair(const int &index, int &key, int &value) {
+      if(!this->key_array) {
+        this->key_array = new int[this->value_map.size()];
         map<int, int>::size_type i = 0;
-        for(map<int, int>::const_iterator iter = this->v_map.begin();iter != this->v_map.end();iter++) {
-          this->k_array[i] = iter->first;
-          i++;
+        for(map<int, int>::const_iterator iter = this->value_map.begin();iter != this->value_map.end();iter++) {
+          this->key_array[i++] = iter->first;
         }
       }
-      k = this->k_array[idx - 1];
-      v = this->v_map[k];
-      
-      return;
+      if(index < 1 || index > this->value_map.size()) {
+        cerr << "Failed to fetch integer hash table element with index " << index << endl;
+        libsupermesh_abort("Failed to fetch integer hash table element");
+      }
+      key = this->key_array[index - 1];
+      value = this->value_map[key];
     }
     
   private:
-    map<int, int> v_map;
-    int *k_array;
+    map<int, int> value_map;
+    int *key_array;
 };
 
 }
 
 extern "C" {
-  void libsupermesh_integer_set_create(void **i) {
-    (*i) = (void*)(new libsupermesh::integer_set());
-    
-    return;
+  void libsupermesh_integer_set_new(void **i) {
+    *i = static_cast<void*>(new libsupermesh::integer_set());
   }
   
   void libsupermesh_integer_set_delete(void **i) {
-    delete ((libsupermesh::integer_set*)(*i));
-    
-    return;
+    delete (static_cast<libsupermesh::integer_set*>(*i));
   }
   
-  void libsupermesh_integer_set_insert(void **i, const int *v, int *changed) {
-    ((libsupermesh::integer_set*)(*i))->insert(*v, *changed);
-    
-    return;
+  void libsupermesh_integer_set_insert(void **i, int value, int *changed) {
+    (static_cast<libsupermesh::integer_set*>(*i))->insert(value, *changed);
   }
   
-  void libsupermesh_integer_set_length(void **i, int *l) {
-    ((libsupermesh::integer_set*)(*i))->length(*l);
-    
-    return;
+  void libsupermesh_integer_set_size(void **i, int *size) {
+    (static_cast<libsupermesh::integer_set*>(*i))->size(*size);
   }
   
-  void libsupermesh_integer_set_fetch(void **i, const int *idx, int *v) {
-    ((libsupermesh::integer_set*)(*i))->fetch(*idx, *v);
-    
-    return;
+  void libsupermesh_integer_set_fetch(void **i, int index, int *value) {
+    (static_cast<libsupermesh::integer_set*>(*i))->fetch(index, *value);
   }
   
-  void libsupermesh_integer_set_remove(void **i, const int *v, int *status) {
-    ((libsupermesh::integer_set*)(*i))->remove(*v, *status);
-    
-    return;
+  void libsupermesh_integer_set_remove(void **i, int value) {
+    (static_cast<libsupermesh::integer_set*>(*i))->remove(value);
   }
 
-  void libsupermesh_integer_set_has_value(void **i, const int *v, int *present) {
-    ((libsupermesh::integer_set*)(*i))->has_value(*v, *present);
-    
-    return;
+  void libsupermesh_integer_set_has_value(void **i, int value, int *present) {
+    (static_cast<libsupermesh::integer_set*>(*i))->has_value(value, *present);
   }
   
-  void libsupermesh_integer_hash_table_create(void **i) {
-    (*i) = (void*)(new libsupermesh::integer_hash_table());
-    
-    return;
+  void libsupermesh_integer_hash_table_new(void **i) {
+    *i = static_cast<void*>(new libsupermesh::integer_hash_table());
   }
   
   void libsupermesh_integer_hash_table_delete(void **i) {
-    delete ((libsupermesh::integer_hash_table*)(*i));
-    
-    return;
+    delete (static_cast<libsupermesh::integer_hash_table*>(*i));
   }
   
-  void libsupermesh_integer_hash_table_insert(void **i, const int *k, const int *v) {
-    ((libsupermesh::integer_hash_table*)(*i))->insert(*k, *v);
-    
-    return;
+  void libsupermesh_integer_hash_table_insert(void **i, int key, int value) {
+    (static_cast<libsupermesh::integer_hash_table*>(*i))->insert(key, value);
   }
   
-  void libsupermesh_integer_hash_table_length(void **i, int *l) {    
-    ((libsupermesh::integer_hash_table*)(*i))->length(*l);
-    
-    return;
+  void libsupermesh_integer_hash_table_size(void **i, int *size) {    
+    (static_cast<libsupermesh::integer_hash_table*>(*i))->size(*size);
   }
   
-  void libsupermesh_integer_hash_table_fetch(void **i, const int *k, int *v) {
-    ((libsupermesh::integer_hash_table*)(*i))->fetch(*k, *v);
-    
-    return;
+  void libsupermesh_integer_hash_table_fetch(void **i, int key, int *value) {
+    (static_cast<libsupermesh::integer_hash_table*>(*i))->fetch(key, *value);
   }
   
-  void libsupermesh_integer_hash_table_remove(void **i, const int *k, int *status) {
-    ((libsupermesh::integer_hash_table*)(*i))->remove(*k, *status);
-    
-    return;
+  void libsupermesh_integer_hash_table_remove(void **i, int key) {
+    (static_cast<libsupermesh::integer_hash_table*>(*i))->remove(key);
   }
   
-  void libsupermesh_integer_hash_table_has_key(void **i, const int *k, int *present) {
-    ((libsupermesh::integer_hash_table*)(*i))->has_key(*k, *present);
-
-    return;
+  void libsupermesh_integer_hash_table_has_key(void **i, int key, int *present) {
+    (static_cast<libsupermesh::integer_hash_table*>(*i))->has_key(key, *present);
   }
 
-  void libsupermesh_integer_hash_table_fetch_pair(void **i, const int *idx, int *k, int *v) {
-    ((libsupermesh::integer_hash_table*)(*i))->fetch_pair(*idx, *k, *v);
-
-    return;
+  void libsupermesh_integer_hash_table_fetch_pair(void **i, int index, int *key, int *value) {
+    (static_cast<libsupermesh::integer_hash_table*>(*i))->fetch_pair(index, *key, *value);
   }
 }
 

@@ -54,96 +54,85 @@
 
 module libsupermesh_integer_set
 
-  use iso_c_binding, only : c_ptr
+  use iso_c_binding, only : c_int, c_ptr
   
-  use libsupermesh_debug, only : abort_pinpoint
-
   implicit none
   
   private
   
   type integer_set
-    type(c_ptr) :: address
+    type(c_ptr), pointer :: ptr
   end type integer_set
 
-  type integer_set_vector
-     type(integer_set), dimension(:), pointer :: sets
-  end type integer_set_vector
-
   interface
-    subroutine integer_set_create_c(i) bind(c, name = "libsupermesh_integer_set_create")
+    subroutine cinteger_set_new(i) bind(c, name = "libsupermesh_integer_set_new")
       use iso_c_binding, only : c_ptr
       implicit none
       type(c_ptr) :: i
-    end subroutine integer_set_create_c
+    end subroutine cinteger_set_new
 
-    subroutine integer_set_delete_c(i) bind(c, name = "libsupermesh_integer_set_delete")
+    subroutine cinteger_set_delete(i) bind(c, name = "libsupermesh_integer_set_delete")
       use iso_c_binding, only : c_ptr
       implicit none
       type(c_ptr) :: i
-    end subroutine integer_set_delete_c
+    end subroutine cinteger_set_delete
 
-    subroutine integer_set_insert_c(i, v, changed) bind(c, name = "libsupermesh_integer_set_insert")
+    subroutine cinteger_set_insert(i, value, changed) bind(c, name = "libsupermesh_integer_set_insert")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: v
+      integer(kind = c_int), value :: value
       integer(kind = c_int) :: changed
-    end subroutine integer_set_insert_c
+    end subroutine cinteger_set_insert
 
-    subroutine integer_set_length_c(i, l) bind(c, name = "libsupermesh_integer_set_length")
+    subroutine cinteger_set_size(i, size) bind(c, name = "libsupermesh_integer_set_size")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: l
-    end subroutine integer_set_length_c
+      integer(kind = c_int) :: size
+    end subroutine cinteger_set_size
 
-    subroutine integer_set_fetch_c(i, idx, v) bind(c, name = "libsupermesh_integer_set_fetch")
+    subroutine cinteger_set_fetch(i, index, value) bind(c, name = "libsupermesh_integer_set_fetch")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: idx
-      integer(kind = c_int) :: v
-    end subroutine integer_set_fetch_c
+      integer(kind = c_int), value :: index
+      integer(kind = c_int) :: value
+    end subroutine cinteger_set_fetch
 
-    subroutine integer_set_remove_c(i, v, status) bind(c, name = "libsupermesh_integer_set_remove")
+    subroutine cinteger_set_remove(i, value) bind(c, name = "libsupermesh_integer_set_remove")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: v
-      integer(kind = c_int) :: status
-    end subroutine integer_set_remove_c
+      integer(kind = c_int), value :: value
+    end subroutine cinteger_set_remove
 
-    subroutine integer_set_has_value_c(i, v, present) bind(c, name = "libsupermesh_integer_set_has_value")
+    subroutine cinteger_set_has_value(i, value, present) bind(c, name = "libsupermesh_integer_set_has_value")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: v
+      integer(kind = c_int), value :: value
       integer(kind = c_int) :: present
-    end subroutine integer_set_has_value_c
+    end subroutine cinteger_set_has_value
   end interface
 
   interface allocate
-    module procedure integer_set_allocate_single, integer_set_allocate_vector
+    module procedure allocate_integer_set, allocate_integer_set_rank_1
   end interface allocate
-
-  interface insert
-    module procedure integer_set_insert, integer_set_insert_multiple, &
-      integer_set_insert_set
-  end interface insert
-
+  
   interface deallocate
-    module procedure integer_set_delete_single, integer_set_delete_vector
+    module procedure deallocate_integer_set, deallocate_integer_set_rank_1
   end interface deallocate
 
-  interface has_value
-    module procedure integer_set_has_value, integer_set_has_value_multiple
-  end interface has_value
-
+  interface insert
+    module procedure integer_set_insert, integer_set_insert_rank_1, &
+      integer_set_insert_integer_set
+  end interface insert
+  
   interface key_count
-    module procedure integer_set_length_single, integer_set_length_vector
+    module procedure integer_set_size, integer_set_size_rank_1
   end interface key_count
-
+  
   interface fetch
     module procedure integer_set_fetch
   end interface fetch
@@ -151,238 +140,161 @@ module libsupermesh_integer_set
   interface remove
     module procedure integer_set_remove
   end interface remove
-  
-  interface copy
-    module procedure integer_set_copy, integer_set_copy_multiple
-  end interface copy
-  
-  interface set_intersection
-    module procedure set_intersection_two, set_intersection_multiple
-  end interface set_intersection
-  
-  public :: integer_set, allocate, deallocate, has_value, key_count, fetch, &
-    & insert, set_complement, set_intersection, set_minus, remove, copy, &
-    & integer_set_vector
+
+  interface has_value
+    module procedure integer_set_has_value, integer_set_has_value_rank_1
+  end interface has_value
+
+  public :: integer_set, allocate, deallocate, insert, key_count, fetch, &
+    & remove, has_value
 
 contains 
   
-  subroutine integer_set_allocate_single(iset)
+  subroutine allocate_integer_set(iset)
     type(integer_set), intent(out) :: iset
-    iset = integer_set_create()
-  end subroutine integer_set_allocate_single
+
+    allocate(iset%ptr)
+    call cinteger_set_new(iset%ptr)
+
+  end subroutine allocate_integer_set
   
-  subroutine integer_set_allocate_vector(iset)
-    type(integer_set), dimension(:), intent(out) :: iset
+  subroutine allocate_integer_set_rank_1(isets)
+    type(integer_set), dimension(:), intent(out) :: isets
     
     integer :: i
     
-    do i = 1, size(iset)
-      call allocate(iset(i))
+    do i = 1, size(isets)
+      allocate(isets(i)%ptr)
+      call cinteger_set_new(isets(i)%ptr)
     end do
   
-  end subroutine integer_set_allocate_vector
+  end subroutine allocate_integer_set_rank_1
 
-  function integer_set_create() result(iset)
-    type(integer_set) :: iset
-    call integer_set_create_c(iset%address)
-  end function integer_set_create
-
-  subroutine integer_set_delete_single(iset)
+  subroutine deallocate_integer_set(iset)
     type(integer_set), intent(inout) :: iset
-    call integer_set_delete_c(iset%address)
-  end subroutine integer_set_delete_single
-  
-  subroutine integer_set_delete_vector(iset)
-    type(integer_set), dimension(:), intent(inout) :: iset
+
+    call cinteger_set_delete(iset%ptr)
+    deallocate(iset%ptr)
+
+  end subroutine deallocate_integer_set
+
+  subroutine deallocate_integer_set_rank_1(isets)
+    type(integer_set), dimension(:), intent(inout) :: isets
     
     integer :: i
     
-    do i = 1, size(iset)
-      call deallocate(iset(i))
+    do i = 1, size(isets)
+      call cinteger_set_delete(isets(i)%ptr)
+      deallocate(isets(i)%ptr)
     end do
     
-  end subroutine integer_set_delete_vector
+  end subroutine deallocate_integer_set_rank_1
 
-  subroutine integer_set_insert(iset, val, changed)
+  subroutine integer_set_insert(iset, value, changed)
     type(integer_set), intent(inout) :: iset
-    integer, intent(in) :: val
+    integer, intent(in) :: value
     logical, intent(out), optional :: changed
-    integer :: lchanged
 
-    call integer_set_insert_c(iset%address, val, lchanged)
+    integer(kind = c_int) :: lchanged
 
-    if (present(changed)) then
-      changed = (lchanged == 1)
-    end if
+    call cinteger_set_insert(iset%ptr, value, lchanged)
+    if(present(changed)) changed = (lchanged /= 0)
+
   end subroutine integer_set_insert
 
-  subroutine integer_set_insert_multiple(iset, values)
+  subroutine integer_set_insert_rank_1(iset, values)
     type(integer_set), intent(inout) :: iset
     integer, dimension(:), intent(in) :: values
+
     integer :: i
+    integer(kind = c_int) :: lchanged
 
-    do i=1,size(values)
-      call insert(iset, values(i))
+    do i = 1, size(values)
+      call cinteger_set_insert(iset%ptr, values(i), lchanged)
     end do
-  end subroutine integer_set_insert_multiple
 
-  subroutine integer_set_insert_set(iset, value_set)
+  end subroutine integer_set_insert_rank_1
+
+  subroutine integer_set_insert_integer_set(iset, values)
     type(integer_set), intent(inout) :: iset
-    type(integer_set), intent(in) :: value_set
+    type(integer_set), intent(inout) :: values
+
     integer :: i
+    integer(kind = c_int) :: lchanged
 
-    do i=1, key_count(value_set)
-      call insert(iset, fetch(value_set,i))
+    do i = 1, key_count(values)
+      call cinteger_set_insert(iset%ptr, fetch(values, i), lchanged)
     end do
-  end subroutine integer_set_insert_set
   
-  function integer_set_length_single(iset) result(len)
-    type(integer_set), intent(in) :: iset
-    integer :: len
-
-    call integer_set_length_c(iset%address, len)
-  end function integer_set_length_single
+  end subroutine integer_set_insert_integer_set
   
-  function integer_set_length_vector(iset) result(len)
-    type(integer_set), dimension(:), intent(in) :: iset
+  function integer_set_size(iset) result(s)
+    type(integer_set), intent(inout) :: iset
 
-    integer, dimension(size(iset)) :: len
+    integer :: s
+
+    call cinteger_set_size(iset%ptr, s)
+
+  end function integer_set_size
+  
+  function integer_set_size_rank_1(isets) result(s)
+    type(integer_set), dimension(:), intent(inout) :: isets
+
+    integer, dimension(size(isets)) :: s
     
     integer :: i
     
-    do i = 1, size(iset)
-      len(i) = key_count(iset(i))
+    do i = 1, size(isets)
+      call cinteger_set_size(isets(i)%ptr, s(i))
     end do
   
-  end function integer_set_length_vector
+  end function integer_set_size_rank_1
 
-  function integer_set_fetch(iset, idx) result(val)
-    type(integer_set), intent(in) :: iset
-    integer, intent(in) :: idx
-    integer :: val
+  function integer_set_fetch(iset, index) result(value)
+    type(integer_set), intent(inout) :: iset
+    integer, intent(in) :: index
 
-    call integer_set_fetch_c(iset%address, idx, val)
+    integer :: value
+
+    call cinteger_set_fetch(iset%ptr, index, value)
+
   end function integer_set_fetch
 
-  subroutine integer_set_remove(iset, val)
-    type(integer_set), intent(in) :: iset
-    integer, intent(in) :: val
-    integer :: stat
+  subroutine integer_set_remove(iset, value)
+    type(integer_set), intent(inout) :: iset
+    integer, intent(in) :: value
 
-    call integer_set_remove_c(iset%address, val, stat)
-    assert(stat == 1)
+    call cinteger_set_remove(iset%ptr, value)
+  
   end subroutine integer_set_remove
 
-  function integer_set_has_value(iset, val) result(bool)
-    type(integer_set), intent(in) :: iset
-    integer, intent(in) :: val
-    logical :: bool
+  function integer_set_has_value(iset, value) result(present)
+    type(integer_set), intent(inout) :: iset
+    integer, intent(in) :: value
 
-    integer :: lbool
-    call integer_set_has_value_c(iset%address, val, lbool)
-    bool = (lbool == 1)
+    logical :: present
+
+    integer(kind = c_int) :: lpresent
+    
+    call cinteger_set_has_value(iset%ptr, value, lpresent)
+    present = (lpresent /= 0)
+
   end function integer_set_has_value
 
-  function integer_set_has_value_multiple(iset, val) result(bool)
-    type(integer_set), intent(in) :: iset
-    integer, dimension(:), intent(in) :: val
-    logical, dimension(size(val)) :: bool
+  function integer_set_has_value_rank_1(iset, values) result(present)
+    type(integer_set), intent(inout) :: iset
+    integer, dimension(:), intent(in) :: values
+
+    logical, dimension(size(values)) :: present
     
     integer:: i
+    integer(kind = c_int) :: lpresent
     
-    do i=1, size(val)
-      bool(i)=integer_set_has_value(iset, val(i))
+    do i = 1, size(values)
+      call cinteger_set_has_value(iset%ptr, values(i), lpresent)
+      present(i) = (lpresent /= 0)
     end do
-  end function integer_set_has_value_multiple
-  
-  subroutine set_complement(complement, universe, current)
-    ! complement = universe \ current
-    type(integer_set), intent(out) :: complement
-    type(integer_set), intent(in) :: universe, current
-    integer :: i, val
 
-    call allocate(complement)
-    do i=1,key_count(universe)
-      val = fetch(universe, i)
-      if (.not. has_value(current, val)) then
-        call insert(complement, val)
-      end if
-    end do
-  end subroutine set_complement
-
-  subroutine set_intersection_two(intersection, A, B)
-    ! intersection = A n B
-    type(integer_set), intent(out) :: intersection
-    type(integer_set), intent(in) :: A, B
-    integer :: i, val
-
-    call allocate(intersection)
-    do i=1,key_count(A)
-      val = fetch(A, i)
-      if (has_value(B, val)) then
-        call insert(intersection, val)
-      end if
-    end do
-  end subroutine set_intersection_two
-
-  subroutine set_intersection_multiple(intersection, isets)
-    ! intersection = isets(i) n isets(j), forall i /= j
-    type(integer_set), intent(out) :: intersection
-    type(integer_set), dimension(:), intent(in) :: isets
-    integer :: i
-    
-    type(integer_set) :: tmp_intersection, tmp_iset
-
-    tmp_iset = isets(1)
-    do i = 2, size(isets)
-      call set_intersection(tmp_intersection, tmp_iset, isets(i))
-      call copy(tmp_iset, tmp_intersection)
-      call deallocate(tmp_intersection)
-    end do
-    intersection = tmp_iset
-    
-  end subroutine set_intersection_multiple
-  
-  subroutine integer_set_copy(iset_copy, iset)
-    type(integer_set), intent(out) :: iset_copy
-    type(integer_set), intent(in) :: iset
-    
-    integer :: i, val
-    
-    call allocate(iset_copy)
-    
-    do i = 1, key_count(iset)
-      val = fetch(iset, i)
-      call insert(iset_copy, val)
-    end do
-  
-  end subroutine integer_set_copy
-
-  subroutine integer_set_copy_multiple(iset_copy, iset)
-    type(integer_set), dimension(:), intent(out) :: iset_copy
-    type(integer_set), dimension(:), intent(in) :: iset
-    
-    integer :: n
-    
-    do n=1, size(iset)
-      call copy(iset_copy(n), iset(n))
-    end do
-  
-  end subroutine integer_set_copy_multiple
-  
-  subroutine set_minus(minus, A, B)
-  ! minus = A \ B
-    type(integer_set), intent(out) :: minus
-    type(integer_set), intent(in) :: A, B
-    integer :: i, val
-
-    call allocate(minus)
-    do i=1,key_count(A)
-      val = fetch(A, i)
-      if (.not. has_value(B, val)) then
-        call insert(minus, val)
-      end if
-    end do
-  end subroutine set_minus
+  end function integer_set_has_value_rank_1
 
 end module libsupermesh_integer_set

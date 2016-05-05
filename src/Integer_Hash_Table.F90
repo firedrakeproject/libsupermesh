@@ -54,208 +54,201 @@
 
 module libsupermesh_integer_hash_table
 
-  use iso_c_binding, only : c_ptr
+  use iso_c_binding, only : c_int, c_ptr
   
-  use libsupermesh_debug, only : abort_pinpoint
-
   implicit none
 
   private
   
   type integer_hash_table
-    type(c_ptr) :: address
+    type(c_ptr), pointer :: ptr
   end type integer_hash_table
 
   interface
-    subroutine integer_hash_table_create_c(i) bind(c, name = "libsupermesh_integer_hash_table_create")
+    subroutine cinteger_hash_table_new(i) bind(c, name = "libsupermesh_integer_hash_table_new")
       use iso_c_binding, only : c_ptr
       implicit none
       type(c_ptr) :: i
-    end subroutine integer_hash_table_create_c
+    end subroutine cinteger_hash_table_new
 
-    subroutine integer_hash_table_delete_c(i) bind(c, name = "libsupermesh_integer_hash_table_delete")
+    subroutine cinteger_hash_table_delete(i) bind(c, name = "libsupermesh_integer_hash_table_delete")
       use iso_c_binding, only : c_ptr
       implicit none
       type(c_ptr) :: i
-    end subroutine integer_hash_table_delete_c
+    end subroutine cinteger_hash_table_delete
 
-    subroutine integer_hash_table_insert_c(i, k, v) bind(c, name = "libsupermesh_integer_hash_table_insert")
+    subroutine cinteger_hash_table_insert(i, key, value) bind(c, name = "libsupermesh_integer_hash_table_insert")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: k
-      integer(kind = c_int) :: v
-    end subroutine integer_hash_table_insert_c
+      integer(kind = c_int), value :: key
+      integer(kind = c_int), value :: value
+    end subroutine cinteger_hash_table_insert
 
-    subroutine integer_hash_table_length_c(i, l) bind(c, name = "libsupermesh_integer_hash_table_length")
+    subroutine cinteger_hash_table_size(i, size) bind(c, name = "libsupermesh_integer_hash_table_size")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: l
-    end subroutine integer_hash_table_length_c
+      integer(kind = c_int) :: size
+    end subroutine cinteger_hash_table_size
 
-    subroutine integer_hash_table_fetch_c(i, k, v) bind(c, name = "libsupermesh_integer_hash_table_fetch")
+    subroutine cinteger_hash_table_fetch(i, key, value) bind(c, name = "libsupermesh_integer_hash_table_fetch")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: k
-      integer(kind = c_int) :: v
-    end subroutine integer_hash_table_fetch_c
+      integer(kind = c_int), value :: key
+      integer(kind = c_int) :: value
+    end subroutine cinteger_hash_table_fetch
 
-    subroutine integer_hash_table_remove_c(i, k, status) bind(c, name = "libsupermesh_integer_hash_table_remove")
+    subroutine cinteger_hash_table_remove(i, key) bind(c, name = "libsupermesh_integer_hash_table_remove")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: k
-      integer(kind = c_int) :: status
-    end subroutine integer_hash_table_remove_c
+      integer(kind = c_int), value :: key
+    end subroutine cinteger_hash_table_remove
 
-    subroutine integer_hash_table_has_key_c(i, k, present) bind(c, name = "libsupermesh_integer_hash_table_has_key")
+    subroutine cinteger_hash_table_has_key(i, key, present) bind(c, name = "libsupermesh_integer_hash_table_has_key")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: k
+      integer(kind = c_int), value :: key
       integer(kind = c_int) :: present
-    end subroutine integer_hash_table_has_key_c
+    end subroutine cinteger_hash_table_has_key
 
-    subroutine integer_hash_table_fetch_pair_c(i, idx, k, v) bind(c, name = "libsupermesh_integer_hash_table_fetch_pair")
+    subroutine cinteger_hash_table_fetch_pair(i, index, key, value) bind(c, name = "libsupermesh_integer_hash_table_fetch_pair")
       use iso_c_binding, only : c_int, c_ptr
       implicit none
       type(c_ptr) :: i
-      integer(kind = c_int) :: idx
-      integer(kind = c_int) :: k
-      integer(kind = c_int) :: v
-    end subroutine integer_hash_table_fetch_pair_c
+      integer(kind = c_int), value :: index
+      integer(kind = c_int) :: key
+      integer(kind = c_int) :: value
+    end subroutine cinteger_hash_table_fetch_pair
   end interface
 
   interface allocate
-    module procedure integer_hash_table_allocate
+    module procedure allocate_integer_hash_table
   end interface allocate
+  
+  interface deallocate
+    module procedure deallocate_integer_hash_table
+  end interface deallocate
 
   interface insert
     module procedure integer_hash_table_insert
   end interface insert
 
+  interface key_count
+    module procedure integer_hash_table_size
+  end interface key_count
+
+  interface fetch
+    module procedure integer_hash_table_fetch, integer_hash_table_fetch_rank_1
+  end interface fetch
+
   interface remove
     module procedure integer_hash_table_remove
   end interface remove
-
-  interface deallocate
-    module procedure integer_hash_table_delete
-  end interface deallocate
 
   interface has_key
     module procedure integer_hash_table_has_key
   end interface has_key
 
-  interface key_count
-    module procedure integer_hash_table_length
-  end interface key_count
-
-  interface fetch
-    module procedure integer_hash_table_fetch, integer_hash_table_fetch_v
-  end interface fetch
-
   interface fetch_pair
     module procedure integer_hash_table_fetch_pair
   end interface fetch_pair
 
-  interface copy
-    module procedure integer_hash_table_copy
-  end interface copy
-
-  public :: integer_hash_table, allocate, deallocate, has_key, key_count, &
-    & fetch, insert, fetch_pair, remove, copy
+  public :: integer_hash_table, allocate, deallocate, insert, key_count, &
+    & fetch, remove, has_key, fetch_pair
 
 contains 
 
-  subroutine integer_hash_table_copy(ihash_copy, ihash)
-    type(integer_hash_table), intent(out) :: ihash_copy
-    type(integer_hash_table), intent(in) :: ihash
-
-    integer :: ind, key, key_val
-
-    call allocate(ihash_copy)
-    do ind = 1, key_count(ihash)
-      call fetch_pair(ihash, ind, key, key_val)
-      call insert(ihash_copy, key, key_val)
-    end do
-
-  end subroutine integer_hash_table_copy
-
-  subroutine integer_hash_table_allocate(ihash)
+  subroutine allocate_integer_hash_table(ihash)
     type(integer_hash_table), intent(out) :: ihash
-    ihash = integer_hash_table_create()
-  end subroutine integer_hash_table_allocate
 
-  function integer_hash_table_create() result(ihash)
-    type(integer_hash_table) :: ihash
-    call integer_hash_table_create_c(ihash%address)
-  end function integer_hash_table_create
+    allocate(ihash%ptr)
+    call cinteger_hash_table_new(ihash%ptr)
 
-  subroutine integer_hash_table_delete(ihash)
+  end subroutine allocate_integer_hash_table
+
+  subroutine deallocate_integer_hash_table(ihash)
     type(integer_hash_table), intent(inout) :: ihash
-    call integer_hash_table_delete_c(ihash%address)
-  end subroutine integer_hash_table_delete
 
-  subroutine integer_hash_table_insert(ihash, key, val)
+    call cinteger_hash_table_delete(ihash%ptr)
+    deallocate(ihash%ptr)
+
+  end subroutine deallocate_integer_hash_table
+
+  subroutine integer_hash_table_insert(ihash, key, value)
     type(integer_hash_table), intent(inout) :: ihash
-    integer, intent(in) :: key, val
+    integer, intent(in) :: key
+    integer, intent(in) :: value
 
-    call integer_hash_table_insert_c(ihash%address, key, val)
+    call cinteger_hash_table_insert(ihash%ptr, key, value)
+
   end subroutine integer_hash_table_insert
 
-  function integer_hash_table_length(ihash) result(len)
-    type(integer_hash_table), intent(in) :: ihash
-    integer :: len
+  function integer_hash_table_size(ihash) result(s)
+    type(integer_hash_table), intent(inout) :: ihash
 
-    call integer_hash_table_length_c(ihash%address, len)
-  end function integer_hash_table_length
+    integer :: s
 
-  function integer_hash_table_fetch(ihash, key) result(val)
-    type(integer_hash_table), intent(in) :: ihash
+    call cinteger_hash_table_size(ihash%ptr, s)
+
+  end function integer_hash_table_size
+
+  function integer_hash_table_fetch(ihash, key) result(value)
+    type(integer_hash_table), intent(inout) :: ihash
     integer, intent(in) :: key
-    integer :: val
 
-    call integer_hash_table_fetch_c(ihash%address, key, val)
+    integer :: value
+
+    call cinteger_hash_table_fetch(ihash%ptr, key, value)
+
   end function integer_hash_table_fetch
+  
+  function integer_hash_table_fetch_rank_1(ihash, keys) result(values)
+    type(integer_hash_table), intent(inout) :: ihash
+    integer, dimension(:), intent(in) :: keys
+
+    integer, dimension(size(keys)) :: values
+
+    integer :: i
+
+    do i = 1, size(keys)
+      call cinteger_hash_table_fetch(ihash%ptr, keys(i), values(i))
+    end do
+
+  end function integer_hash_table_fetch_rank_1
 
   subroutine integer_hash_table_remove(ihash, key)
     type(integer_hash_table), intent(inout) :: ihash
     integer, intent(in) :: key
-    integer :: stat
 
-    call integer_hash_table_remove_c(ihash%address, key, stat)
-    assert(stat == 1)
+    call cinteger_hash_table_remove(ihash%ptr, key)
+
   end subroutine integer_hash_table_remove
 
-  function integer_hash_table_fetch_v(ihash, keys) result(vals)
-    type(integer_hash_table), intent(in) :: ihash
-    integer, intent(in), dimension(:) :: keys
-    integer, dimension(size(keys)) :: vals
-    integer :: i
-
-    do i=1,size(keys)
-      call integer_hash_table_fetch_c(ihash%address, keys(i), vals(i))
-    end do
-  end function integer_hash_table_fetch_v
-
-  function integer_hash_table_has_key(ihash, key) result(bool)
-    type(integer_hash_table), intent(in) :: ihash
+  function integer_hash_table_has_key(ihash, key) result(present)
+    type(integer_hash_table), intent(inout) :: ihash
     integer, intent(in) :: key
-    logical :: bool
 
-    integer :: lbool
-    call integer_hash_table_has_key_c(ihash%address, key, lbool)
-    bool = (lbool == 1)
+    logical :: present
+
+    integer(kind = c_int) :: lpresent
+
+    call cinteger_hash_table_has_key(ihash%ptr, key, lpresent)
+    present = (lpresent /= 0)
+
   end function integer_hash_table_has_key
 
-  subroutine integer_hash_table_fetch_pair(ihash, idx, key, val)
-    type(integer_hash_table), intent(in) :: ihash
-    integer, intent(in) :: idx
-    integer, intent(out) :: key, val
+  subroutine integer_hash_table_fetch_pair(ihash, index, key, value)
+    type(integer_hash_table), intent(inout) :: ihash
+    integer, intent(in) :: index
+    integer, intent(out) :: key
+    integer, intent(out) :: value
 
-    call integer_hash_table_fetch_pair_c(ihash%address, idx, key, val)
+    call cinteger_hash_table_fetch_pair(ihash%ptr, index, key, value)
+
   end subroutine integer_hash_table_fetch_pair
-  
+
 end module libsupermesh_integer_hash_table

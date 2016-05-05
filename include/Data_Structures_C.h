@@ -65,22 +65,22 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void libsupermesh_integer_set_create(void **i);
+  void libsupermesh_integer_set_new(void **i);
   void libsupermesh_integer_set_delete(void **i);
-  void libsupermesh_integer_set_insert(void **i, const int *v, int *changed);
-  void libsupermesh_integer_set_length(void **i, int *l);
-  void libsupermesh_integer_set_fetch(void **i, const int *idx, int *v);
-  void libsupermesh_integer_set_remove(void **i, const int *v, int *status);
-  void libsupermesh_integer_set_has_value(void **i, const int *v, int *present);
+  void libsupermesh_integer_set_insert(void **i, int value, int *changed);
+  void libsupermesh_integer_set_size(void **i, int *size);
+  void libsupermesh_integer_set_fetch(void **i, int index, int *value);
+  void libsupermesh_integer_set_remove(void **i, int value);
+  void libsupermesh_integer_set_has_value(void **i, int value, int *present);
   
-  void libsupermesh_integer_hash_table_create(void **i);
+  void libsupermesh_integer_hash_table_new(void **i);
   void libsupermesh_integer_hash_table_delete(void **i);
-  void libsupermesh_integer_hash_table_insert(void **i, const int *k, const int *v);
-  void libsupermesh_integer_hash_table_length(void **i, int *l);
-  void libsupermesh_integer_hash_table_fetch(void **i, const int *k, int *v);
-  void libsupermesh_integer_hash_table_remove(void **i, const int *k, int *status);
-  void libsupermesh_integer_hash_table_has_key(void **i, const int *k, int *present);
-  void libsupermesh_integer_hash_table_fetch_pair(void **i, const int *idx, int *k, int *v);
+  void libsupermesh_integer_hash_table_insert(void **i, int key, int value);
+  void libsupermesh_integer_hash_table_size(void **i, int *size);
+  void libsupermesh_integer_hash_table_fetch(void **i, int key, int *value);
+  void libsupermesh_integer_hash_table_remove(void **i, int key);
+  void libsupermesh_integer_hash_table_has_key(void **i, int key, int *present);
+  void libsupermesh_integer_hash_table_fetch_pair(void **i, int index, int *key, int *value);
 #ifdef __cplusplus
 }
 #endif
