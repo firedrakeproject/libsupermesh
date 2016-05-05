@@ -194,7 +194,7 @@ contains
     
   end function to_cstring
 
-  subroutine deallocate_halo(halo)
+  pure subroutine deallocate_halo(halo)
     type(halo_type), intent(inout) :: halo
 
     integer :: i

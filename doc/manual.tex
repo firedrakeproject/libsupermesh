@@ -728,14 +728,14 @@ elements.
 \end{lstlisting}
     
 \begin{lstlisting}[language=FORTRAN]
-  subroutine query_quadtree_allocatable(quadtree, element_a, eles_b)
+  pure subroutine query_quadtree_allocatable(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine query_quadtree_pointer(quadtree, element_a, eles_b)
+  pure subroutine query_quadtree_pointer(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
@@ -757,7 +757,7 @@ elements.
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine deallocate_quadtree(quadtree)
+  pure subroutine deallocate_quadtree(quadtree)
     type(quadtree_type), intent(inout) :: quadtree
 \end{lstlisting}
 
@@ -806,14 +806,14 @@ elements.
 \end{lstlisting}
     
 \begin{lstlisting}[language=FORTRAN]
-  subroutine query_octree_allocatable(octree, element_a, eles_b)
+  pure subroutine query_octree_allocatable(octree, element_a, eles_b)
     type(octree_type), intent(inout) :: octree
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine query_octree_pointer(octree, element_a, eles_b)
+  pure subroutine query_octree_pointer(octree, element_a, eles_b)
     type(octree_type), intent(inout) :: octree
     real, dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
@@ -835,7 +835,7 @@ elements.
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine deallocate_octree(octree)
+  pure subroutine deallocate_octree(octree)
     type(octree_type), intent(inout) :: octree
 \end{lstlisting}
 
@@ -1324,7 +1324,7 @@ facets.
 \end{lstlisting}
 
 \begin{lstlisting}[language=FORTRAN]
-  subroutine intersect_tri_lines(tri_a, lines_b, tris_c, n_tris_c, area_b, work)
+  pure subroutine intersect_tri_lines(tri_a, lines_b, tris_c, n_tris_c, area_b, work)
     type(tri_type), intent(in) :: tri_a
     type(line_type), dimension(:), intent(in) :: lines_b
     type(tri_type), dimension(:), intent(out) :: tris_c
@@ -1353,7 +1353,7 @@ facets.
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine intersect_polys_real(poly_a, poly_b, tris_c, n_tris_c, &
+  pure subroutine intersect_polys_real(poly_a, poly_b, tris_c, n_tris_c, &
     & area_a, area_b, work)
     real, dimension(:, :), intent(in) :: poly_a
     real, dimension(:, :), intent(in) :: poly_b
@@ -1381,7 +1381,7 @@ facets.
 \end{description}
 
 \begin{lstlisting}[language=FORTRAN]
-  subroutine intersect_polys_lines(poly_a, lines_b, tris_c, n_tris_c, &
+  pure subroutine intersect_polys_lines(poly_a, lines_b, tris_c, n_tris_c, &
     & area_a, area_b, work)
     real, dimension(:, :), intent(in) :: poly_a
     type(line_type), dimension(:), intent(in) :: lines_b
@@ -1619,7 +1619,7 @@ into five tetraheda \citep[as in][figure 2.29]{wenger2013}, and then uses
 \end{lstlisting}
   
 \begin{lstlisting}[language=FORTRAN]
-  subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
+  pure subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
     type(tet_type), intent(in) :: tet_a
     type(plane_type), dimension(:), intent(in)  :: planes_b
     type(tet_type), dimension(:), intent(inout) :: tets_c

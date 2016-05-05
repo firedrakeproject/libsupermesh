@@ -213,7 +213,7 @@ contains
   
   end subroutine allocate_octree
   
-  subroutine deallocate_octree(octree)
+  pure subroutine deallocate_octree(octree)
     type(octree_type), intent(inout) :: octree
     
     deallocate(octree%eles_b, octree%neles_b, octree%seen_ele_b)
@@ -341,7 +341,7 @@ contains
     
   end subroutine query_node_internal
   
-  subroutine query_octree_allocatable(octree, element_a, eles_b)
+  pure subroutine query_octree_allocatable(octree, element_a, eles_b)
     type(octree_type), intent(inout) :: octree
     ! TREE_DIM x loc_a
     real, dimension(:, :), intent(in) :: element_a
@@ -355,7 +355,7 @@ contains
   
   end subroutine query_octree_allocatable
   
-  subroutine query_octree_pointer(octree, element_a, eles_b)
+  pure subroutine query_octree_pointer(octree, element_a, eles_b)
     type(octree_type), intent(inout) :: octree
     ! TREE_DIM x loc_a
     real, dimension(:, :), intent(in) :: element_a

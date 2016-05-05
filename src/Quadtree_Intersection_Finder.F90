@@ -232,7 +232,7 @@ contains
   
   end subroutine allocate_quadtree
   
-  subroutine deallocate_quadtree(quadtree)
+  pure subroutine deallocate_quadtree(quadtree)
     type(quadtree_type), intent(inout) :: quadtree
     
     deallocate(quadtree%eles_b, quadtree%neles_b, quadtree%seen_ele_b)
@@ -352,7 +352,7 @@ contains
     
   end subroutine query_node_internal
   
-  subroutine query_quadtree_allocatable(quadtree, element_a, eles_b)
+  pure subroutine query_quadtree_allocatable(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
     ! TREE_DIM x loc_a
     real, dimension(:, :), intent(in) :: element_a
@@ -366,7 +366,7 @@ contains
   
   end subroutine query_quadtree_allocatable
   
-  subroutine query_quadtree_pointer(quadtree, element_a, eles_b)
+  pure subroutine query_quadtree_pointer(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
     ! TREE_DIM x loc_a
     real, dimension(:, :), intent(in) :: element_a

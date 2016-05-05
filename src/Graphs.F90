@@ -72,7 +72,7 @@ module libsupermesh_graphs
   
 contains
 
-  subroutine mesh_nelist(nnodes, enlist, nelist_indices, nelist_indptr)
+  pure subroutine mesh_nelist(nnodes, enlist, nelist_indices, nelist_indptr)
     integer, intent(in) :: nnodes
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist

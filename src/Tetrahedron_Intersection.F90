@@ -183,7 +183,7 @@ contains
     
   end function max_n_tets_c_tet
   
-  subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
+  pure subroutine intersect_tets_planes(tet_a, planes_b, tets_c, n_tets_c, vol_b, work)
     type(tet_type), intent(in) :: tet_a
     type(plane_type), dimension(:), intent(in)  :: planes_b
     type(tet_type), dimension(:), intent(inout) :: tets_c
@@ -431,7 +431,7 @@ contains
 
   end subroutine clip_buf
 
-  subroutine clip(plane, tet, tets_new, ntets_new)
+  pure subroutine clip(plane, tet, tets_new, ntets_new)
     ! Clip tet against the plane.
     type(plane_type), intent(in) :: plane
     type(tet_type), intent(in) :: tet

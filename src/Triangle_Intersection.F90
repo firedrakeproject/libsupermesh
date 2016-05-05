@@ -181,7 +181,7 @@ contains
 
   end subroutine intersect_tris_tri
 
-  subroutine intersect_tri_lines(tri_a, lines_b, tris_c, n_tris_c, area_b, work)
+  pure subroutine intersect_tri_lines(tri_a, lines_b, tris_c, n_tris_c, area_b, work)
     type(tri_type), intent(in) :: tri_a
     type(line_type), dimension(:), intent(in) :: lines_b
     type(tri_type), dimension(:), intent(out) :: tris_c
@@ -193,7 +193,7 @@ contains
 
   end subroutine intersect_tri_lines
   
-  subroutine intersect_polys_real(poly_a, poly_b, tris_c, n_tris_c, area_a, area_b, work)
+  pure subroutine intersect_polys_real(poly_a, poly_b, tris_c, n_tris_c, area_a, area_b, work)
     ! 2 x loc_a
     real, dimension(:, :), intent(in) :: poly_a
     ! 2 x loc_b
@@ -208,7 +208,7 @@ contains
   
   end subroutine intersect_polys_real
 
-  subroutine intersect_polys_lines(poly_a, lines_b, tris_c, n_tris_c, area_a, area_b, work)
+  pure subroutine intersect_polys_lines(poly_a, lines_b, tris_c, n_tris_c, area_a, area_b, work)
     ! 2 x loc_a
     real, dimension(:, :), intent(in) :: poly_a
     ! loc_b
@@ -326,7 +326,7 @@ contains
   ! Sutherland-Hodgman clipping algorithm. See:
   !   Reentrant polygon clipping, I. E. Sutherland and G. W. Hodgman,
   !   Communications of the ACM vol. 17, 1974, pp. 32--42.
-  subroutine clip(line, points, n_points, points_new, n_points_new)
+  pure subroutine clip(line, points, n_points, points_new, n_points_new)
     type(line_type), intent(in) :: line
     real, dimension(:, :), intent(in) :: points
     integer, intent(in) :: n_points
