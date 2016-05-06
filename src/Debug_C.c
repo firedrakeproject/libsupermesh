@@ -66,7 +66,7 @@
 
 #include "libsupermesh_debug_C.h"
 
-void libsupermesh_print_backtrace(const int max_size) {
+void libsupermesh_print_backtrace(int max_size) {
   char **symbols = NULL;
   int i, size;
   void **buffer = NULL;
@@ -78,16 +78,14 @@ void libsupermesh_print_backtrace(const int max_size) {
   symbols = backtrace_symbols(buffer, size);
   if(!symbols) goto cleanup;
   
-  for(i = 0;i < size;i++){
+  for(i = 0;i < size;i++) {
     fprintf(stderr, "%s\n", symbols[i]);
   }
   
 cleanup:
   if(buffer) free(buffer);
   if(symbols) free(symbols);
-    
-  return;
 }
 #else
-void libsupermesh_print_backtrace(const int max_size) {}
+void libsupermesh_print_backtrace(int max_size) {}
 #endif
