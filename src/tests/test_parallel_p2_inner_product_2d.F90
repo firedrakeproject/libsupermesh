@@ -176,9 +176,7 @@ contains
     
     call allocate(node_map_p1_p2)
     allocate(node_map_p2(nnodes_p1))
-    do node_p1 = 1, nnodes_p1
-      call allocate(node_map_p2(node_p1))
-    end do
+    call allocate(node_map_p2)
     nnodes_p2 = 0
         
     do ele = 1, nelements    
@@ -240,9 +238,7 @@ contains
     end do
     
     call deallocate(node_map_p1_p2)
-    do node_p1 = 1, nnodes_p1
-      call deallocate(node_map_p2(node_p1))
-    end do
+    call deallocate(node_map_p2)
     deallocate(node_map_p2)
     
   end subroutine p2_connectivity
@@ -312,11 +308,7 @@ contains
     ! For which P2 nodes do we need to send data?
     call allocate(nodes_p2_b)
     do i = 1, size(eles_b)
-      ele = eles_b(i)
-      do lnode = 1, 6
-        node_b = enlist_p2_b(lnode, ele)
-        call insert(nodes_p2_b, node_b)
-      end do
+      call insert(nodes_p2_b, enlist_p2_b(:, eles_b(i)))
     end do
     nnodes_p2_b = key_count(nodes_p2_b)
     

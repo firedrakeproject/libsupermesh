@@ -246,9 +246,7 @@ contains
         ! Build a set of nodes to send
         call allocate(nodes_send)
         do j = 1, nelements_send
-          do k = 1, loc_b
-            call insert(nodes_send, enlist_b(k, elements_send(j)))
-          end do
+          call insert(nodes_send, enlist_b(:, elements_send(j)))
         end do        
         nnodes_send = key_count(nodes_send)
 

@@ -66,8 +66,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void libsupermesh_print_backtrace(const int max_size);
-  void libsupermesh_abort_pinpoint(const char *error, const char *file, const int line_number);
+  void libsupermesh_print_backtrace(int max_size);
+  void libsupermesh_abort_pinpoint(const char *error, const char *file, int line_number);
 #ifdef __cplusplus
 }
 #endif

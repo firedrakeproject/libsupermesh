@@ -60,6 +60,7 @@
 #ifndef LIBSUPERMESH_ENABLE_JUDY
 
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <set>
 
@@ -71,23 +72,15 @@ namespace libsupermesh {
 
 class integer_set {
   public:
-    inline integer_set(void) {
-      this->value_array = NULL;
-    }
-    
-    inline ~integer_set(void) {
-      if(this->value_array) {
-        delete[] this->value_array;
-      }
-    }
+    inline integer_set(void) : index(0) {};    
+    inline ~integer_set(void) {}
     
     inline void insert(const int &value, int &changed) {
-      pair<set<int>::const_iterator, bool> position = this->value_set.insert(value);
-      changed = position.second ? 1 : 0;
-      if(changed && this->value_array) {
-        delete[] this->value_array;
-        this->value_array = NULL;
+      if(this->index != 0) {
+        this->index = 0;
       }
+      pair<set<int>::iterator, bool> position = this->value_set.insert(value);
+      changed = position.second ? 1 : 0;
     }
     
     inline void size(int &size) const {
@@ -95,24 +88,23 @@ class integer_set {
     };
     
     inline void fetch(const int &index, int &value) {
-      if(!this->value_array) {
-        this->value_array = new int[this->value_set.size()];
-        set<int>::size_type i = 0;
-        for(set<int>::const_iterator iter = this->value_set.begin();iter != this->value_set.end();iter++) {
-          this->value_array[i++] = *iter;
-        }
-      }
-      if(index < 0 || index > this->value_set.size()) {
+      if(index <= 0 || index > this->value_set.size()) {
         std::cerr << "Failed to fetch integer set element with index " << index << endl;
         libsupermesh_abort("Failed to fetch integer set element");
       }
-      value = this->value_array[index - 1];
+      if(this->index != index) {
+        this->iter = this->value_set.begin();
+        advance(this->iter, index - 1);
+        this->index = index;
+      }
+      value = *this->iter;
+      this->iter++;
+      this->index++;
     };
     
     inline void remove(const int &value) {
-      if(this->value_array) {
-        delete[] this->value_array;
-        this->value_array = NULL;
+      if(this->index != 0) {
+        this->index = 0;
       }
       set<int>::size_type count = this->value_set.erase(value);
       if(count == 0) {
@@ -122,31 +114,23 @@ class integer_set {
     }
     
     inline void has_value(const int &value, int &present) const {
-      set<int>::const_iterator iter = this->value_set.find(value);
-      present = (iter == this->value_set.end()) ? 0 : 1;
+      present = (this->value_set.find(value) == this->value_set.end()) ? 0 : 1;
     }
     
   private:
     set<int> value_set;
-    int *value_array;
+    set<int>::iterator iter;
+    set<int>::size_type index;
 };
 
 class integer_map {
   public:
-    inline integer_map(void) {
-      this->key_array = NULL;
-    }
-    
-    inline ~integer_map(void) {
-      if(this->key_array) {
-        delete[] this->key_array;
-      }
-    }
+    inline integer_map(void) : index(0) {}    
+    inline ~integer_map(void) {}
     
     inline void insert(const int &key, const int &value) {
-      if(this->key_array) {
-        delete[] this->key_array;
-        this->key_array = NULL;
+      if(this->index != 0) {
+        this->index = 0;
       }
       this->value_map[key] = value;
     }
@@ -164,9 +148,8 @@ class integer_map {
     }
     
     inline void remove(const int &key) {
-      if(this->key_array) {
-        delete[] this->key_array;
-        this->key_array = NULL;
+      if(this->index != 0) {
+        this->index = 0;
       }
       map<int, int>::size_type count = this->value_map.erase(key);
       if(count == 0) {
@@ -176,29 +159,29 @@ class integer_map {
     }
     
     inline void has_key(const int &key, int &present) const {
-      map<int, int>::const_iterator iter = this->value_map.find(key);
-      present = (iter == this->value_map.end()) ? 0 : 1;
+      present =  (this->value_map.find(key) == this->value_map.end()) ? 0 : 1;
     }
     
     inline void fetch_pair(const int &index, int &key, int &value) {
-      if(!this->key_array) {
-        this->key_array = new int[this->value_map.size()];
-        map<int, int>::size_type i = 0;
-        for(map<int, int>::const_iterator iter = this->value_map.begin();iter != this->value_map.end();iter++) {
-          this->key_array[i++] = iter->first;
-        }
-      }
-      if(index < 1 || index > this->value_map.size()) {
+      if(index <= 0 || index > this->value_map.size()) {
         cerr << "Failed to fetch integer map element with index " << index << endl;
         libsupermesh_abort("Failed to fetch integer map element");
       }
-      key = this->key_array[index - 1];
-      value = this->value_map[key];
+      if(this->index != index) {
+        this->iter = this->value_map.begin();
+        advance(this->iter, index - 1);
+        this->index = index;
+      }
+      key = this->iter->first;
+      value = this->iter->second;
+      this->iter++;
+      this->index++;
     }
     
   private:
     map<int, int> value_map;
-    int *key_array;
+    map<int, int>::iterator iter;
+    map<int, int>::size_type index;
 };
 
 }

@@ -125,8 +125,7 @@ module libsupermesh_integer_set
   end interface deallocate
 
   interface insert
-    module procedure integer_set_insert, integer_set_insert_rank_1, &
-      integer_set_insert_integer_set
+    module procedure integer_set_insert, integer_set_insert_rank_1
   end interface insert
   
   interface key_count
@@ -134,11 +133,11 @@ module libsupermesh_integer_set
   end interface key_count
   
   interface fetch
-    module procedure integer_set_fetch
+    module procedure integer_set_fetch, integer_set_fetch_rank_1
   end interface fetch
 
   interface remove
-    module procedure integer_set_remove
+    module procedure integer_set_remove, integer_set_remove_rank_1
   end interface remove
 
   interface has_value
@@ -214,19 +213,6 @@ contains
     end do
 
   end subroutine integer_set_insert_rank_1
-
-  subroutine integer_set_insert_integer_set(iset, values)
-    type(integer_set), intent(inout) :: iset
-    type(integer_set), intent(inout) :: values
-
-    integer :: i
-    integer(kind = c_int) :: lchanged
-
-    do i = 1, key_count(values)
-      call cinteger_set_insert(iset%ptr, fetch(values, i), lchanged)
-    end do
-  
-  end subroutine integer_set_insert_integer_set
   
   function integer_set_size(iset) result(s)
     type(integer_set), intent(inout) :: iset
@@ -260,6 +246,20 @@ contains
 
   end function integer_set_fetch
 
+  function integer_set_fetch_rank_1(iset, indices) result(values)
+    type(integer_set), intent(inout) :: iset
+    integer, dimension(:), intent(in) :: indices
+
+    integer, dimension(size(indices)) :: values
+    
+    integer :: i
+    
+    do i = 1, size(indices)
+      call cinteger_set_fetch(iset%ptr, indices(i), values(i))
+    end do
+
+  end function integer_set_fetch_rank_1
+
   subroutine integer_set_remove(iset, value)
     type(integer_set), intent(inout) :: iset
     integer, intent(in) :: value
@@ -267,6 +267,18 @@ contains
     call cinteger_set_remove(iset%ptr, value)
   
   end subroutine integer_set_remove
+
+  subroutine integer_set_remove_rank_1(iset, values)
+    type(integer_set), intent(inout) :: iset
+    integer, dimension(:), intent(in) :: values
+
+    integer :: i
+
+    do i = 1, size(values)
+      call cinteger_set_remove(iset%ptr, values(i))
+    end do
+  
+  end subroutine integer_set_remove_rank_1
 
   function integer_set_has_value(iset, value) result(present)
     type(integer_set), intent(inout) :: iset

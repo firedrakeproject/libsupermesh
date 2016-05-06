@@ -126,19 +126,19 @@ module libsupermesh_integer_map
   end interface
 
   interface allocate
-    module procedure allocate_integer_map
+    module procedure allocate_integer_map, allocate_integer_map_rank_1
   end interface allocate
   
   interface deallocate
-    module procedure deallocate_integer_map
+    module procedure deallocate_integer_map, deallocate_integer_map_rank_1
   end interface deallocate
 
   interface insert
-    module procedure integer_map_insert
+    module procedure integer_map_insert, integer_map_insert_rank_1
   end interface insert
 
   interface key_count
-    module procedure integer_map_size
+    module procedure integer_map_size, integer_map_size_rank_1
   end interface key_count
 
   interface fetch
@@ -146,15 +146,15 @@ module libsupermesh_integer_map
   end interface fetch
 
   interface remove
-    module procedure integer_map_remove
+    module procedure integer_map_remove, integer_map_remove_rank_1
   end interface remove
 
   interface has_key
-    module procedure integer_map_has_key
+    module procedure integer_map_has_key, integer_map_has_key_rank_1
   end interface has_key
 
   interface fetch_pair
-    module procedure integer_map_fetch_pair
+    module procedure integer_map_fetch_pair, integer_map_fetch_pair_rank_1
   end interface fetch_pair
 
   public :: integer_map, allocate, deallocate, insert, key_count, &
@@ -169,6 +169,18 @@ contains
     call cinteger_map_new(imap%ptr)
 
   end subroutine allocate_integer_map
+  
+  subroutine allocate_integer_map_rank_1(imaps)
+    type(integer_map), dimension(:), intent(out) :: imaps
+    
+    integer :: i
+    
+    do i = 1, size(imaps)
+      allocate(imaps(i)%ptr)
+      call cinteger_map_new(imaps(i)%ptr)
+    end do
+  
+  end subroutine allocate_integer_map_rank_1
 
   subroutine deallocate_integer_map(imap)
     type(integer_map), intent(inout) :: imap
@@ -178,6 +190,18 @@ contains
 
   end subroutine deallocate_integer_map
 
+  subroutine deallocate_integer_map_rank_1(imaps)
+    type(integer_map), dimension(:), intent(inout) :: imaps
+
+    integer :: i
+
+    do i = 1, size(imaps)
+      call cinteger_map_delete(imaps(i)%ptr)
+      deallocate(imaps(i)%ptr)
+    end do
+
+  end subroutine deallocate_integer_map_rank_1
+
   subroutine integer_map_insert(imap, key, value)
     type(integer_map), intent(inout) :: imap
     integer, intent(in) :: key
@@ -186,6 +210,19 @@ contains
     call cinteger_map_insert(imap%ptr, key, value)
 
   end subroutine integer_map_insert
+  
+  subroutine integer_map_insert_rank_1(imap, keys, values)
+    type(integer_map), intent(inout) :: imap
+    integer, dimension(:), intent(in) :: keys
+    integer, dimension(size(keys)), intent(in) :: values
+    
+    integer :: i
+    
+    do i = 1, size(keys)
+      call cinteger_map_insert(imap%ptr, keys(i), values(i))
+    end do
+  
+  end subroutine integer_map_insert_rank_1      
 
   function integer_map_size(imap) result(s)
     type(integer_map), intent(inout) :: imap
@@ -195,6 +232,19 @@ contains
     call cinteger_map_size(imap%ptr, s)
 
   end function integer_map_size
+  
+  function integer_map_size_rank_1(imaps) result(s)
+    type(integer_map), dimension(:), intent(inout) :: imaps
+    
+    integer, dimension(size(imaps)) :: s
+    
+    integer :: i
+    
+    do i = 1, size(imaps)
+      call cinteger_map_size(imaps(i)%ptr, s(i))
+    end do
+    
+  end function integer_map_size_rank_1
 
   function integer_map_fetch(imap, key) result(value)
     type(integer_map), intent(inout) :: imap
@@ -227,6 +277,18 @@ contains
     call cinteger_map_remove(imap%ptr, key)
 
   end subroutine integer_map_remove
+  
+  subroutine integer_map_remove_rank_1(imap, keys)
+    type(integer_map), intent(inout) :: imap
+    integer, dimension(:), intent(in) :: keys
+    
+    integer :: i
+    
+    do i = 1, size(keys)
+      call cinteger_map_remove(imap%ptr, keys(i))
+    end do
+  
+  end subroutine integer_map_remove_rank_1
 
   function integer_map_has_key(imap, key) result(present)
     type(integer_map), intent(inout) :: imap
@@ -240,6 +302,22 @@ contains
     present = (lpresent /= 0)
 
   end function integer_map_has_key
+  
+  function integer_map_has_key_rank_1(imap, keys) result(present)
+    type(integer_map), intent(inout) :: imap
+    integer, dimension(:), intent(in) :: keys
+    
+    logical, dimension(size(keys)) :: present
+    
+    integer :: i
+    integer(kind = c_int) :: lpresent
+    
+    do i = 1, size(keys)
+      call cinteger_map_has_key(imap%ptr, keys(i), lpresent)
+      present(i) = (lpresent /= 0)
+    end do
+    
+  end function integer_map_has_key_rank_1
 
   subroutine integer_map_fetch_pair(imap, index, key, value)
     type(integer_map), intent(inout) :: imap
@@ -250,5 +328,20 @@ contains
     call cinteger_map_fetch_pair(imap%ptr, index, key, value)
 
   end subroutine integer_map_fetch_pair
+
+  subroutine integer_map_fetch_pair_rank_1(imap, indices, keys, values)
+    type(integer_map), intent(inout) :: imap
+    integer, dimension(:), intent(in) :: indices
+    integer, dimension(size(indices)), intent(out) :: keys
+    integer, dimension(size(indices)), intent(out) :: values
+
+    integer :: i
+
+    do i = 1, size(indices)
+      call cinteger_map_fetch_pair(imap%ptr, indices(i), keys(i), values(i))
+    end do
+
+  end subroutine integer_map_fetch_pair_rank_1
+  
 
 end module libsupermesh_integer_map
