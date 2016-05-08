@@ -59,7 +59,7 @@ module libsupermesh_graphs
 
   private
 
-  public :: eelist_type, deallocate, mesh_nelist, mesh_eelist, sloc
+  public :: eelist_type, deallocate, mesh_nelist, mesh_eelist, sloc, nneigh_ele
 
   type eelist_type
     integer, dimension(:, :), pointer :: v
@@ -114,14 +114,15 @@ contains
   
   end subroutine mesh_nelist    
 
-  subroutine mesh_eelist(nnodes, enlist, sloc, eelist)
+  subroutine mesh_eelist(nnodes, enlist, sloc, eelist, nneigh_ele)
     integer, intent(in) :: nnodes
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
     integer, intent(in) :: sloc
     type(eelist_type), intent(out) :: eelist
+    integer, optional, intent(in) :: nneigh_ele
 
-    integer :: ele, i, j, k, k_max, k_min, loc, nelements, nneigh_ele
+    integer :: ele, i, j, k, k_max, k_min, loc, nelements, lnneigh_ele
 
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
     !   http://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.sparse.csr_matrix.html
@@ -138,9 +139,12 @@ contains
     
     allocate(seen_eles(nelements), seen(nelements))
     seen = 0
-    nneigh_ele = loc  ! Linear simplex assumption here (works for more general
-                      ! cases, but less efficient)
-    allocate(eelist%v(nneigh_ele, nelements), eelist%n(nelements))
+    if(present(nneigh_ele)) then
+      lnneigh_ele = nneigh_ele
+    else
+      lnneigh_ele = loc
+    end if
+    allocate(eelist%v(lnneigh_ele, nelements), eelist%n(nelements))
     eelist%n = 0
     do i = 1, nelements
       nseen_eles = 0
@@ -158,13 +162,13 @@ contains
             if(seen(ele) == sloc) then
               eelist%n(i) = eelist%n(i) + 1
 #ifndef NDEBUG
-              if(eelist%n(i) > nneigh_ele) then
+              if(eelist%n(i) > lnneigh_ele) then
                 libsupermesh_abort("Invalid connectivity")
               end if
 #endif
               eelist%v(eelist%n(i), i) = ele
 #ifdef NDEBUG
-              if(eelist%n(i) == nneigh_ele) exit loc_loop
+              if(eelist%n(i) == lnneigh_ele) exit loc_loop
 #else
             else if(seen(ele) > sloc) then
               libsupermesh_abort("Invalid connectivity")
@@ -198,6 +202,24 @@ contains
     end if
 
   end function sloc
+  
+  pure elemental function nneigh_ele(dim, loc)
+    integer, intent(in) :: dim
+    integer, intent(in) :: loc
+
+    integer :: nneigh_ele
+
+    if(loc == dim + 1) then
+      ! Simplex
+      nneigh_ele = loc
+    else if(loc == 2 ** dim) then
+      ! Cubical
+      nneigh_ele = 2 * dim
+    else
+      nneigh_ele = -1
+    end if
+  
+  end function nneigh_ele
 
   pure elemental subroutine deallocate_eelist(eelist)
     type(eelist_type), intent(inout) :: eelist

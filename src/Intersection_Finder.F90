@@ -58,7 +58,8 @@ module libsupermesh_intersection_finder
 !   use iso_fortran_env, only : error_unit
   
   use libsupermesh_debug, only : abort_pinpoint
-  use libsupermesh_graphs, only : eelist_type, deallocate, mesh_eelist, sloc
+  use libsupermesh_graphs, only : eelist_type, deallocate, mesh_eelist, sloc, &
+    & nneigh_ele
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
   use libsupermesh_octree_intersection_finder, only : octree_node, &
@@ -305,8 +306,10 @@ contains
       return
     end if
 
-    call mesh_eelist(nnodes_b, enlist_b, sloc(dim, loc_b), eelist_b)
-    call mesh_eelist(nnodes_a, enlist_a, sloc(dim, loc_a), eelist_a)
+    call mesh_eelist(nnodes_b, enlist_b, sloc(dim, loc_b), eelist_b, &
+      & nneigh_ele = nneigh_ele(dim, loc_b))
+    call mesh_eelist(nnodes_a, enlist_a, sloc(dim, loc_a), eelist_a, &
+      & nneigh_ele = nneigh_ele(dim, loc_a))
     allocate(bboxes_b(2, dim, nelements_b))
     do i = 1, nelements_b
       bboxes_b(:, :, i) = bbox(positions_b(:, enlist_b(:, i)))
