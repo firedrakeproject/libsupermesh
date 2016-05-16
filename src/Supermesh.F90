@@ -76,6 +76,7 @@ module libsupermesh_supermesh
     & intersect_hexes
   public :: max_n_simplices_c, intersect_simplices, intersect_elements, &
     & simplex_volume
+  public :: divide_polygon, divide_hex, divide_prism, divide_pyramid
   
   interface max_n_simplices_c
     module procedure max_n_simplices_c_simplices, max_n_simplices_c_elements
@@ -348,5 +349,73 @@ contains
     end select
   
   end function simplex_volume
+  
+  pure function divide_polygon(poly) result(tris)
+    ! 2 x loc
+    real, dimension(:, :), intent(in) :: poly
+    
+    type(tri_type), dimension(size(poly, 2) - 2) :: tris
+  
+    integer :: i
+  
+    ! Assumes clockwise or anti-clockwise ordering
+    
+    forall(i = 1:(size(poly, 2) - 2))
+      tris(i)%v(:, 1) = poly(:, 1)
+      tris(i)%v(:, 2) = poly(:, i + 1)
+      tris(i)%v(:, 3) = poly(:, i + 2)
+    end forall
+    
+  end function divide_polygon
+  
+  pure function divide_hex(hex) result(tets)
+    real, dimension(3, 8), intent(in) :: hex
+    
+    type(tet_type), dimension(5) :: tets
+    
+    ! Gmsh node ordering. See:
+    !   http://gmsh.info/doc/texinfo/gmsh.html#Node-ordering
+    
+    ! Cube slicing as e.g. in:
+    !   Isosurfaces: Geometry, Topology, and Algorithms, R. Wenger, CRC Press,
+    !   2013, figure 2.29
+    
+    ! Slicing off two opposite corners on the top ...
+    tets(1)%v = hex(:, (/3, 6, 7, 8/))
+    tets(2)%v = hex(:, (/1, 3, 4, 8/))
+    ! ... and two opposite corners on the bottom ...
+    tets(3)%v = hex(:, (/1, 5, 6, 8/))
+    tets(4)%v = hex(:, (/1, 2, 3, 6/))
+    ! ... to leave a single tetrahedron in the centre
+    tets(5)%v = hex(:, (/1, 3, 6, 8/))
+    
+  end function divide_hex
+  
+  pure function divide_prism(prism) result(tets)
+    real, dimension(3, 6), intent(in) :: prism
+    
+    type(tet_type), dimension(3) :: tets
+    
+    ! Gmsh node ordering. See:
+    !   http://gmsh.info/doc/texinfo/gmsh.html#Node-ordering
+    
+    tets(1)%v = prism(:, (/1, 2, 3, 5/))
+    tets(2)%v = prism(:, (/1, 3, 5, 6/))
+    tets(3)%v = prism(:, (/1, 4, 5, 6/))
+  
+  end function divide_prism
+  
+  pure function divide_pyramid(pyramid) result(tets)
+    real, dimension(3, 5), intent(in) :: pyramid
+    
+    type(tet_type), dimension(2) :: tets
+    
+    ! Gmsh node ordering. See:
+    !   http://gmsh.info/doc/texinfo/gmsh.html#Node-ordering
+    
+    tets(1)%v = pyramid(:, (/1, 2, 3, 5/))
+    tets(2)%v = pyramid(:, (/1, 3, 4, 5/))
+  
+  end function divide_pyramid
 
 end module libsupermesh_supermesh
