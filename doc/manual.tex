@@ -517,8 +517,9 @@ An intersection finder for 2D and 3D meshes, using a libspatialindex
 An intersection finder for meshes with simplicial or cubical elements, using
 the algorithm described in \citet{farrell2011}
 \citep[see also][]{gander2009,gander2013}. This intersection finder is primarily
-intended for the case where the meshes A and B cover the same domain. However
-correct output is guaranteed if:
+intended for the case where the meshes A and B cover the same domain. More
+generally, for correct output the input meshes must satisfy certain properties
+\citep{gander2009}. Correct output is guaranteed if:
 \begin{enumerate}
   \item The first element in each connected sub-domain of mesh A intersects with
         at least one element of mesh B.
@@ -2198,7 +2199,7 @@ program parallel_example
 ~\newline
 Variables are defined.
 \begin{lstlisting}[language=FORTRAN]
-  character(len = int(log10(real(huge(0)))) + 1) :: rank_chr
+  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr
   integer :: ierr, rank, real_extent
   
   real, dimension(:, :), allocatable :: positions_a, positions_b
@@ -2480,7 +2481,7 @@ program parallel_example
 
   implicit none
   
-  character(len = int(log10(real(huge(0)))) + 1) :: rank_chr
+  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr
   integer :: ierr, rank, real_extent
   
   real, dimension(:, :), allocatable :: positions_a, positions_b
