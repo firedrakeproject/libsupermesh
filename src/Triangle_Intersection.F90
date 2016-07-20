@@ -413,7 +413,8 @@ contains
     
     loc = size(poly, 2)
   
-    ! Assumes clockwise or anti-clockwise ordering
+    ! Assumes clockwise or anti-clockwise ordering, and that the first three
+    ! nodes are not co-linear
     ! Note that the normals are not normalised
 
     do i = 1, loc - 1
