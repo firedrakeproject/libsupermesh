@@ -272,6 +272,7 @@ contains
   ! Sutherland-Hodgman clipping algorithm. See:
   !   Reentrant polygon clipping, I. E. Sutherland and G. W. Hodgman,
   !   Communications of the ACM vol. 17, 1974, pp. 32--42.
+  ! Note that the role of the "initial" and "terminal" is swapped here
   subroutine clip_buf(line, points, n_points)
     type(line_type), intent(in) :: line
     real, dimension(2, BUF_SIZE + 2), intent(in) :: points
@@ -298,11 +299,17 @@ contains
         d2 = d(i + 1)
       end if
 
-      if(d1 <= 0.0D0) then
-        if(d2 <= 0.0D0) then
+      if(d1 < 0.0D0) then
+        if(d2 < 0.0D0) then
           ! No clip
           n_points_tmp = n_points_tmp + 1
           points_tmp(:, n_points_tmp) = p1
+        else if(d2 == 0.0D0) then
+          ! New point
+          n_points_tmp = n_points_tmp + 1
+          points_tmp(:, n_points_tmp) = p1
+          n_points_tmp = n_points_tmp + 1
+          points_tmp(:, n_points_tmp) = p2
         else
           ! New point
           n_points_tmp = n_points_tmp + 1
@@ -311,7 +318,15 @@ contains
           f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
           points_tmp(:, n_points_tmp) = p1 + f * (p2 - p1)
         end if
-      else if(d2 <= 0.0D0) then
+      else if(d1 == 0.0D0) then
+        if(d2 < 0.0D0) then
+          ! No clip
+          n_points_tmp = n_points_tmp + 1
+          points_tmp(:, n_points_tmp) = p1
+        !else
+          ! Full clip
+        end if
+      else if(d2 < 0.0D0) then
         ! Move point
         n_points_tmp = n_points_tmp + 1
         f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
@@ -326,6 +341,7 @@ contains
   ! Sutherland-Hodgman clipping algorithm. See:
   !   Reentrant polygon clipping, I. E. Sutherland and G. W. Hodgman,
   !   Communications of the ACM vol. 17, 1974, pp. 32--42.
+  ! Note that the role of the "initial" and "terminal" is swapped here
   pure subroutine clip(line, points, n_points, points_new, n_points_new)
     type(line_type), intent(in) :: line
     real, dimension(:, :), intent(in) :: points
@@ -351,11 +367,17 @@ contains
         d2 = dot_product(line%normal, points(:, i + 1) - line%point)
       end if
 
-      if(d1 <= 0.0D0) then
-        if(d2 <= 0.0D0) then
+      if(d1 < 0.0D0) then
+        if(d2 < 0.0D0) then
           ! No clip
           n_points_new = n_points_new + 1
           points_new(:, n_points_new) = p1
+        else if(d2 == 0.0D0) then
+          ! New point
+          n_points_new = n_points_new + 1
+          points_new(:, n_points_new) = p1
+          n_points_new = n_points_new + 1
+          points_new(:, n_points_new) = p2
         else
           ! New point
           n_points_new = n_points_new + 1
@@ -364,7 +386,15 @@ contains
           f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
           points_new(:, n_points_new) = p1 + f * (p2 - p1)
         end if
-      else if(d2 <= 0.0D0) then
+      else if(d1 == 0.0D0) then
+        if(d2 < 0.0D0) then
+          ! No clip
+          n_points_new = n_points_new + 1
+          points_new(:, n_points_new) = p1
+        !else
+          ! Full clip
+        end if
+      else if(d2 < 0.0D0) then
         ! Move point
         n_points_new = n_points_new + 1
         f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
