@@ -1312,6 +1312,7 @@ facets.
   \item[quad\_b] $d \times l_B$ array. Element B node coordinates. Element B
     must be a convex quadrilateral with the node coordinates in either clockwise
     or anti-clockwise order, and the first three nodes must not be co-linear.
+    The intersection of elements A and B must be a convex polygon.
   \item[tris\_c] $d \times l_C \times M_C$ array. Mesh C node coordinates.
     $M_C = 62$.
   \item[n\_tris\_c] $E_C$.
@@ -1372,6 +1373,7 @@ facets.
   \item[poly\_b] $d \times l_B$ array. Element B node coordinates. The node
     coordinates must be in either clockwise or anti-clockwise order, the first
     three nodes must not be co-linear, and the element must be a convex polygon.
+    The intersection of elements A and B must be a convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
   \item[area\_a] Area of element A. Used to discard near-degenerate elements in
@@ -1398,6 +1400,7 @@ facets.
     coordinates must be in either clockwise or anti-clockwise order.
   \item[lines\_b] $d \times l_B$ array. Element B facet half-spaces. Element B
     must be a convex polygon.
+    The intersection of elements A and B must be a convex polygon.
   \item[tris\_c] Length $M_C$ vector. Triangles in mesh C.
   \item[n\_tris\_c] $E_C$.
   \item[area\_a] Area of element A. Used to discard near-degenerate elements in
