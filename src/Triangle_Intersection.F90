@@ -300,16 +300,10 @@ contains
       end if
 
       if(d1 < 0.0D0) then
-        if(d2 < 0.0D0) then
+        if(d2 <= 0.0D0) then
           ! No clip
           n_points_tmp = n_points_tmp + 1
           points_tmp(:, n_points_tmp) = p1
-        else if(d2 == 0.0D0) then
-          ! New point
-          n_points_tmp = n_points_tmp + 1
-          points_tmp(:, n_points_tmp) = p1
-          n_points_tmp = n_points_tmp + 1
-          points_tmp(:, n_points_tmp) = p2
         else
           ! New point
           n_points_tmp = n_points_tmp + 1
@@ -319,13 +313,9 @@ contains
           points_tmp(:, n_points_tmp) = p1 + f * (p2 - p1)
         end if
       else if(d1 == 0.0D0) then
-        if(d2 < 0.0D0) then
-          ! No clip
-          n_points_tmp = n_points_tmp + 1
-          points_tmp(:, n_points_tmp) = p1
-        !else
-          ! Full clip
-        end if
+        ! No clip
+        n_points_tmp = n_points_tmp + 1
+        points_tmp(:, n_points_tmp) = p1
       else if(d2 < 0.0D0) then
         ! Move point
         n_points_tmp = n_points_tmp + 1
@@ -368,16 +358,10 @@ contains
       end if
 
       if(d1 < 0.0D0) then
-        if(d2 < 0.0D0) then
+        if(d2 <= 0.0D0) then
           ! No clip
           n_points_new = n_points_new + 1
           points_new(:, n_points_new) = p1
-        else if(d2 == 0.0D0) then
-          ! New point
-          n_points_new = n_points_new + 1
-          points_new(:, n_points_new) = p1
-          n_points_new = n_points_new + 1
-          points_new(:, n_points_new) = p2
         else
           ! New point
           n_points_new = n_points_new + 1
@@ -387,13 +371,9 @@ contains
           points_new(:, n_points_new) = p1 + f * (p2 - p1)
         end if
       else if(d1 == 0.0D0) then
-        if(d2 < 0.0D0) then
-          ! No clip
-          n_points_new = n_points_new + 1
-          points_new(:, n_points_new) = p1
-        !else
-          ! Full clip
-        end if
+        ! No clip
+        n_points_new = n_points_new + 1
+        points_new(:, n_points_new) = p1
       else if(d2 < 0.0D0) then
         ! Move point
         n_points_new = n_points_new + 1
