@@ -51,12 +51,14 @@ where \verb+[LIBSUPERMESH_SOURCE_PATH]+ is the path to the source directory, and
 directory. Note that libsupermesh cannot be built in the source directory, and
 must be built with double precision Fortran reals.
 
-\subsection*{CMake variables}
+\subsection*{CMake options}
 
 \begin{description}[font=\ttfamily\bfseries]
   \item[CMAKE\_BUILD\_TYPE] Build type. Valid options are ``Release'' and
     ``Debug''. Default ``Release''.
   \item[BUILD\_SHARED\_LIBS] Build a shared library. Default disabled. 
+  \item[LIBSUPERMESH\_DOUBLE\_PRECISION] Use double precision Fortran reals.
+    If disabled then single precision Fortran reals are used. Default enabled.
   \item[LIBSUPERMESH\_AUTO\_COMPILER\_FLAGS] Choose compiler flags
     automatically, enabling aggressive optimisation options for the Release
     build and additional debugging options for the Debug build. Active only if
@@ -87,6 +89,13 @@ described in this manual. This can be accessed via:
 \begin{lstlisting}[language=FORTRAN]
   use libsupermesh
 \end{lstlisting}
+
+If \verb+libsupermesh+ is compiled with the \verb+LIBSUPERMESH_DOUBLE_PRECISION+
+CMake option enabled then \verb+libsupermesh+ Fortran real variables have kind
+\verb+real64+. Otherwise \verb+libsupermesh+ Fortran real variables have kind
+\verb+real32+. The kind is defined by the default integer \verb+real_kind+
+variable. Throughout this manual the real kind is omitted from variable
+declarations.
 
 \section{Intersection identification}
 
@@ -2897,8 +2906,9 @@ cmake/UseLATEX.cmake. UseLATEX.cmake copyright information:
 \section{Acknowledgements}
 
 This work was funded under the embedded CSE programme of the ARCHER UK National
-Supercomputing Service (\url{http://www.archer.ac.uk}). eCSE03-8,
-``Parallel supermeshing for multimesh modelling''.
+Supercomputing Service (\url{http://www.archer.ac.uk}). The eCSE Technical
+Report for eCSE03-08, ``Parallel supermeshing for multimesh modelling'', can be
+found at \url{https://www.archer.ac.uk/community/eCSE/eCSE03-08/eCSE03-08.php}.
 
 This work used the ARCHER UK National Supercomputing Service
 (\url{http://www.archer.ac.uk}).
@@ -2923,6 +2933,9 @@ Gmsh \citep{geuzaine2009} was used to generate a number of the test meshes
 contained in src/tests/data/. The Fluidity fldecomp tool, which uses the METIS
 graph partitioner \citep{karypis1998}, was used to partition a number of the
 test meshes contained in src/tests/data/.
+
+src/Precision.F90 includes an implementation of Kahan summation 
+\citep{kahan1965,kahan1973,higham1993}.
 
 \bibliography{doc/bibliography}
 \bibliographystyle{plainnat}

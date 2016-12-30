@@ -31,6 +31,7 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
     & insert, key_count, fetch
   use libsupermesh_parallel_supermesh, only : parallel_supermesh
+  use libsupermesh_precision, only : mpi_real_kind, real_format, real_kind
   use libsupermesh_read_halos, only : halo_type, deallocate, read_halo
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_supermesh, only : triangle_area
@@ -41,9 +42,9 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   ! Input Triangle mesh base names
   character(len = *), parameter :: basename_a = "data/triangle_0_01", &
                                  & basename_b = "data/square_0_01"
-  real, parameter :: area_ref = 0.5D0, integral_ref = 2.7083333333333272D-02
+  real(kind = real_kind), parameter :: area_ref = 0.5_real_kind, &
+    & integral_ref = 2.7083333333333272e-02_real_kind
 
-  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, nprocs_chr
   integer :: ierr, integer_extent, nprocs, rank, real_extent
 
   integer :: nelements_a, nelements_b, nnodes_p1_a, nnodes_p2_a, &
@@ -52,23 +53,28 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   integer, dimension(:, :), allocatable :: enlist_p1_a, enlist_p1_b, &
     & enlist_p2_a
   integer, dimension(:, :), allocatable, target :: enlist_p2_b
-  real, dimension(:), allocatable :: interpolated, field_a
-  real, dimension(:), allocatable, target :: field_b
-  real, dimension(:, :), allocatable :: positions_a, positions_b
+  real(kind = real_kind), dimension(:), allocatable :: interpolated, field_a
+  real(kind = real_kind), dimension(:), allocatable, target :: field_b
+  real(kind = real_kind), dimension(:, :), allocatable :: positions_a, positions_b
   type(halo_type) :: halo_a, halo_b
 
   integer :: data_nelements_b, data_nnodes_p2_b
   integer, dimension(:, :), allocatable, target :: data_enlist_p2_b
-  real, dimension(:), allocatable, target :: data_field_b
+  real(kind = real_kind), dimension(:), allocatable, target :: data_field_b
 
   ! P2 mass matrix
-  real, dimension(6, 6), parameter :: mass_p2 = reshape((/ 6.0D0, -1.0D0, -1.0D0,  0.0D0, -4.0D0,  0.0D0, &
-                                                        & -1.0D0,  6.0D0, -1.0D0,  0.0D0,  0.0D0, -4.0D0, &
-                                                        & -1.0D0, -1.0D0,  6.0D0, -4.0D0,  0.0D0,  0.0D0, &
-                                                        &  0.0D0,  0.0D0, -4.0D0, 32.0D0, 16.0D0, 16.0D0, &
-                                                        & -4.0D0,  0.0D0,  0.0D0, 16.0D0, 32.0D0, 16.0D0, &
-                                                        &  0.0D0, -4.0D0,  0.0D0, 16.0D0, 16.0D0, 32.0D0/) / 360.0D0, (/6, 6/))
-  real :: area_parallel, integral_parallel
+  real(kind = real_kind), dimension(6, 6), parameter :: mass_p2 = &
+    & reshape((/ 6.0_real_kind, -1.0_real_kind, -1.0_real_kind,  0.0_real_kind, -4.0_real_kind,  0.0_real_kind, &
+              & -1.0_real_kind,  6.0_real_kind, -1.0_real_kind,  0.0_real_kind,  0.0_real_kind, -4.0_real_kind, &
+              & -1.0_real_kind, -1.0_real_kind,  6.0_real_kind, -4.0_real_kind,  0.0_real_kind,  0.0_real_kind, &
+              &  0.0_real_kind,  0.0_real_kind, -4.0_real_kind, 32.0_real_kind, 16.0_real_kind, 16.0_real_kind, &
+              & -4.0_real_kind,  0.0_real_kind,  0.0_real_kind, 16.0_real_kind, 32.0_real_kind, 16.0_real_kind, &
+              &  0.0_real_kind, -4.0_real_kind,  0.0_real_kind, 16.0_real_kind, 16.0_real_kind, 32.0_real_kind/) &
+    & / 360.0_real_kind, (/6, 6/))
+  real(kind = real_kind) :: area_parallel, integral_parallel
+  
+  character(len = int(log10(real(huge(rank)))) + 2) :: rank_chr
+  character(len = int(log10(real(huge(nprocs)))) + 2) :: nprocs_chr
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
@@ -77,7 +83,7 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   rank_chr = adjustl(rank_chr)
   nprocs_chr = adjustl(nprocs_chr)
   call MPI_Type_extent(MPI_INTEGER, integer_extent, ierr);  assert(ierr == MPI_SUCCESS)
-  call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Type_extent(mpi_real_kind, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
 
   ! Read the donor mesh partition
   call read_node(trim(basename_a) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".node", dim = 2, positions = positions_a)
@@ -119,8 +125,8 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   field_b = field_b * field_b
 
   ! Perform multi-mesh integration
-  area_parallel = 0.0D0
-  integral_parallel = 0.0D0
+  area_parallel = 0.0_real_kind
+  integral_parallel = 0.0_real_kind
   call parallel_supermesh(positions_a, enlist_p1_a, ele_owner_a, &
                         & positions_b, enlist_p1_b, ele_owner_b, &
                         & pack_data_b, unpack_data_b, intersection_calculation, &
@@ -129,16 +135,18 @@ subroutine test_parallel_p2_inner_product_2d() bind(c)
   call cleanup_unpack_data_b()
 
   ! Sum all process contributions to the multi-mesh integrals
-  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
-  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, mpi_real_kind, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, mpi_real_kind, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   flush(output_unit)
   flush(error_unit)
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if(rank == 0) then
     ! Display the multi-mesh integrals on rank 0
-    print "(a,e26.18e3,a,e26.18e3,a)", "Area     = ", area_parallel, " (error = ", abs(area_parallel - area_ref), ")"
-    print "(a,e26.18e3,a,e26.18e3,a)", "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - integral_ref), ")"
+    write(output_unit, "(a,"//real_format//",a,"//real_format//",a)") &
+      & "Area     = ", area_parallel, " (error = ", abs(area_parallel - area_ref), ")"
+    write(output_unit, "(a,"//real_format//",a,"//real_format//",a)") &
+      & "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - integral_ref), ")"
     
     ! Test the multi-mesh integrals against the reference values
     call report_test("[test_parallel_p1_inner_product_2d area]", area_parallel .fne. area_ref, .false., "Incorrect area")
@@ -250,13 +258,13 @@ contains
     integer, dimension(:, :), intent(in) :: enlist_p1
     ! P1 field
     ! Shape: nnodes_p1
-    real, dimension(:), intent(in) :: field_p1
+    real(kind = real_kind), dimension(:), intent(in) :: field_p1
     ! P2 element-node graph
     ! Shape: 6 x nelements
     integer, dimension(:, :), intent(in) :: enlist_p2
     ! P2 field
     ! Shape: nnodes_p2
-    real, dimension(:), intent(out) :: field_p2
+    real(kind = real_kind), dimension(:), intent(out) :: field_p2
     
     integer :: ele, lnode, nelements, node_p2, nnodes_p2
     logical, dimension(:), allocatable :: seen_node_p2
@@ -276,11 +284,11 @@ contains
           case(1:3)
             field_p2(node_p2) = field_p1(enlist_p1(lnode, ele))
           case(4)
-            field_p2(node_p2) = 0.5D0 * (field_p1(enlist_p1(1, ele)) + field_p1(enlist_p1(2, ele)))
+            field_p2(node_p2) = 0.5_real_kind * (field_p1(enlist_p1(1, ele)) + field_p1(enlist_p1(2, ele)))
           case(5)
-            field_p2(node_p2) = 0.5D0 * (field_p1(enlist_p1(2, ele)) + field_p1(enlist_p1(3, ele)))
+            field_p2(node_p2) = 0.5_real_kind * (field_p1(enlist_p1(2, ele)) + field_p1(enlist_p1(3, ele)))
           case(6)
-            field_p2(node_p2) = 0.5D0 * (field_p1(enlist_p1(1, ele)) + field_p1(enlist_p1(3, ele)))
+            field_p2(node_p2) = 0.5_real_kind * (field_p1(enlist_p1(1, ele)) + field_p1(enlist_p1(3, ele)))
           case default
             libsupermesh_abort("Invalid local node")
         end select
@@ -344,7 +352,7 @@ contains
     position = 0
     call MPI_Pack(nnodes_p2_b, 1, MPI_INTEGER, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Pack(data_enlist_p2_b, 6 * size(eles_b), MPI_INTEGER, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
-    call MPI_Pack(data_field_b, nnodes_p2_b, MPI_DOUBLE_PRECISION, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Pack(data_field_b, nnodes_p2_b, mpi_real_kind, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     
     call deallocate(nodes_p2_b)
     call deallocate(node_map)
@@ -376,7 +384,7 @@ contains
     call MPI_Unpack(data_b, size(data_b), position, data_enlist_p2_b, 6 * data_nelements_b, MPI_INTEGER, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     ! Unpack the P2 field values
     allocate(data_field_b(data_nnodes_p2_b))
-    call MPI_Unpack(data_b, size(data_b), position, data_field_b, data_nnodes_p2_b, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Unpack(data_b, size(data_b), position, data_field_b, data_nnodes_p2_b, mpi_real_kind, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     
   end subroutine unpack_data_b
   
@@ -390,18 +398,18 @@ contains
   pure function basis_functions_p2(cell_coords, coord) result(fns)
     ! Triangle vertex coordinates
     ! Shape: dim x loc_p1
-    real, dimension(2, 3), intent(in) :: cell_coords
+    real(kind = real_kind), dimension(2, 3), intent(in) :: cell_coords
     ! Coordinate at which to evaluate the basis functions
     ! Shape: dim
-    real, dimension(2), intent(in) :: coord
+    real(kind = real_kind), dimension(2), intent(in) :: coord
 
     ! Basis function values
     ! Shape: loc_p2
-    real, dimension(6) :: fns
+    real(kind = real_kind), dimension(6) :: fns
 
-    real :: x, y
-    real, dimension(2) :: e1, e2, lcoord
-    real, dimension(2, 2) :: jac
+    real(kind = real_kind) :: x, y
+    real(kind = real_kind), dimension(2) :: e1, e2, lcoord
+    real(kind = real_kind), dimension(2, 2) :: jac
 
     e1 = cell_coords(:, 2) - cell_coords(:, 1)
     e2 = cell_coords(:, 3) - cell_coords(:, 1)
@@ -414,12 +422,12 @@ contains
     x = lcoord(1)
     y = lcoord(2)
     
-    fns(1) = (1.0D0 - x - y) * (1.0D0 - 2.0D0 * x - 2.0D0 * y)
-    fns(2) = x * (2.0D0 * x - 1.0D0)
-    fns(3) = y * (2.0D0 * y - 1.0D0)
-    fns(4) = 4.0D0 * x * (1.0D0 - x - y)
-    fns(5) = 4.0D0 * x * y
-    fns(6) = 4.0D0 * y * (1.0D0 - x - y)
+    fns(1) = (1.0_real_kind - x - y) * (1.0_real_kind - 2.0_real_kind * x - 2.0_real_kind * y)
+    fns(2) = x * (2.0_real_kind * x - 1.0_real_kind)
+    fns(3) = y * (2.0_real_kind * y - 1.0_real_kind)
+    fns(4) = 4.0_real_kind * x * (1.0_real_kind - x - y)
+    fns(5) = 4.0_real_kind * x * y
+    fns(6) = 4.0_real_kind * y * (1.0_real_kind - x - y)
 
   end function basis_functions_p2
 
@@ -427,15 +435,15 @@ contains
   pure function interpolate_p2(cell_coords_d, cell_x_d, coord_s) result(x_s)
     ! Triangle vertex coordinates
     ! Shape: dim x loc_p1
-    real, dimension(2, 3), intent(in) :: cell_coords_d
+    real(kind = real_kind), dimension(2, 3), intent(in) :: cell_coords_d
     ! P2 nodal values
     ! Shape: loc_p2
-    real, dimension(6), intent(in) :: cell_x_d
+    real(kind = real_kind), dimension(6), intent(in) :: cell_x_d
     ! Coordinate at which to evaluate the P2 function
     ! Shape: dim
-    real, dimension(2), intent(in) :: coord_s
+    real(kind = real_kind), dimension(2), intent(in) :: coord_s
 
-    real :: x_s
+    real(kind = real_kind) :: x_s
 
     x_s = dot_product(basis_functions_p2(cell_coords_d, coord_s), cell_x_d)
 
@@ -445,13 +453,13 @@ contains
   subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
     ! Target mesh element vertex coordinates
     ! Shape: dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     ! Donor mesh element vertex coordinates
     ! Shape: dim x loc_b
-    real, dimension(:, :), intent(in) :: element_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_b
     ! Supermesh element vertex coordinates
     ! Shape: dim x loc_c x nelements_c
-    real, dimension(:, :, :), intent(in) :: elements_c
+    real(kind = real_kind), dimension(:, :, :), intent(in) :: elements_c
     ! Donor mesh vertex indices
     ! Shape: loc_b
     integer, dimension(:), intent(in) :: nodes_b
@@ -465,9 +473,9 @@ contains
     
     integer :: ele_c, lnode
     integer, dimension(:, :), pointer :: lenlist_p2_b
-    real :: area
-    real, dimension(6) :: field_a_c, field_b_c
-    real, dimension(:), pointer :: lfield_b
+    real(kind = real_kind) :: area
+    real(kind = real_kind), dimension(6) :: field_a_c, field_b_c
+    real(kind = real_kind), dimension(:), pointer :: lfield_b
     
     if(local) then
       ! If this is a local calculation, use the local P2 element-node graph and
@@ -494,20 +502,20 @@ contains
             field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), elements_c(:, lnode, ele_c))
             field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), elements_c(:, lnode, ele_c))
           case(4)
-            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 2, ele_c)))
-            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 2, ele_c)))
+            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5_real_kind * (elements_c(:, 1, ele_c) + elements_c(:, 2, ele_c)))
+            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5_real_kind * (elements_c(:, 1, ele_c) + elements_c(:, 2, ele_c)))
           case(5)
-            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (elements_c(:, 2, ele_c) + elements_c(:, 3, ele_c)))
-            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (elements_c(:, 2, ele_c) + elements_c(:, 3, ele_c)))
+            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5_real_kind * (elements_c(:, 2, ele_c) + elements_c(:, 3, ele_c)))
+            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5_real_kind * (elements_c(:, 2, ele_c) + elements_c(:, 3, ele_c)))
           case(6)
-            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
-            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5D0 * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
+            field_b_c(lnode) = interpolate_p2(element_b, lfield_b(lenlist_p2_b(:, ele_b)), 0.5_real_kind * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
+            field_a_c(lnode) = interpolate_p2(element_a, field_a(enlist_p2_a(:, ele_a)), 0.5_real_kind * (elements_c(:, 1, ele_c) + elements_c(:, 3, ele_c)))
           case default
             libsupermesh_abort("Invalid local node")
         end select
       end do
       ! Local contribution to the multi-mesh inner product
-      integral_parallel = integral_parallel + 2.0D0 * area * dot_product(field_b_c, matmul(mass_p2, field_a_c))
+      integral_parallel = integral_parallel + 2.0_real_kind * area * dot_product(field_b_c, matmul(mass_p2, field_a_c))
     end do
     
   end subroutine intersection_calculation

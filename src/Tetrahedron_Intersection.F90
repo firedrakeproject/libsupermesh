@@ -56,6 +56,8 @@
 
 module libsupermesh_tet_intersection
 
+  use libsupermesh_precision, only : real_kind
+
   implicit none
 
   private
@@ -64,13 +66,13 @@ module libsupermesh_tet_intersection
     & intersect_polys, get_planes, tetrahedron_volume
 
   type tet_type
-    real, dimension(3, 4) :: v ! vertices of the tet
+    real(kind = real_kind), dimension(3, 4) :: v ! vertices of the tet
     integer, dimension(4) :: colours = -1 ! surface colours
   end type tet_type
 
   type plane_type
-    real, dimension(3) :: normal
-    real :: c
+    real(kind = real_kind), dimension(3) :: normal
+    real(kind = real_kind) :: c
   end type plane_type
 
   interface max_n_tets_c
@@ -102,9 +104,9 @@ module libsupermesh_tet_intersection
 contains
 
   subroutine intersect_tets_real(tet_a, tet_b, tets_c, n_tets_c)
-    real, dimension(3, 4), intent(in) :: tet_a
-    real, dimension(3, 4), intent(in) :: tet_b
-    real, dimension(:, :, :), intent(inout) :: tets_c
+    real(kind = real_kind), dimension(3, 4), intent(in) :: tet_a
+    real(kind = real_kind), dimension(3, 4), intent(in) :: tet_b
+    real(kind = real_kind), dimension(:, :, :), intent(inout) :: tets_c
     integer, intent(out) :: n_tets_c
 
     integer :: i
@@ -136,18 +138,18 @@ contains
     type(plane_type), dimension(4), intent(in)  :: planes_b
     type(tet_type), dimension(BUF_SIZE), intent(inout) :: tets_c
     integer, intent(out) :: n_tets_c
-    real, optional, intent(in) :: vol_b
+    real(kind = real_kind), optional, intent(in) :: vol_b
 
     integer :: i, j
-    real :: tol, vol
+    real(kind = real_kind) :: tol, vol
 
     n_tets_c = 1
     tets_c(1) = tet_a
 
     if(present(vol_b)) then
-      tol = 10.0D0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
+      tol = 10.0_real_kind * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
     else
-      tol = 10.0D0 * spacing(tetrahedron_volume(tet_a))
+      tol = 10.0_real_kind * spacing(tetrahedron_volume(tet_a))
     end if
     do i = 1, size(planes_b)
       ! Clip the tet_array against the i'th plane
@@ -189,11 +191,11 @@ contains
     type(plane_type), dimension(:), intent(in)  :: planes_b
     type(tet_type), dimension(:), intent(inout) :: tets_c
     integer, intent(out) :: n_tets_c
-    real, optional, intent(in) :: vol_b
+    real(kind = real_kind), optional, intent(in) :: vol_b
     type(tet_type), dimension(:), target, optional, intent(inout) :: work
 
     integer :: i, j, ntets_new
-    real :: tol, vol
+    real(kind = real_kind) :: tol, vol
     type(tet_type), dimension(:), pointer :: tets_new
     
     if(present(work)) then
@@ -206,9 +208,9 @@ contains
     tets_c(1) = tet_a
 
     if(present(vol_b)) then
-      tol = 10.0D0 * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
+      tol = 10.0_real_kind * min(spacing(tetrahedron_volume(tet_a)), spacing(vol_b))
     else
-      tol = 10.0D0 * spacing(tetrahedron_volume(tet_a))
+      tol = 10.0_real_kind * spacing(tetrahedron_volume(tet_a))
     end if
     do i = 1, size(planes_b)
       ! Clip the tet_array against the i'th plane
@@ -243,12 +245,12 @@ contains
     type(plane_type), intent(in) :: plane
     type(tet_type), intent(in) :: tet
 
-    real, dimension(4) :: dists
+    real(kind = real_kind), dimension(4) :: dists
     integer :: neg_cnt, pos_cnt, zer_cnt
     integer, dimension(4) :: neg_idx, pos_idx, zer_idx
     integer :: i
 
-    real :: invdiff, w0, w1
+    real(kind = real_kind) :: invdiff, w0, w1
     type(tet_type) :: tet_tmp
 
     ! Negative == inside
@@ -260,13 +262,13 @@ contains
 
     dists = distances_to_plane(plane, tet)
     do i=1,4
-      if (abs(dists(i)) < epsilon(0.0D0)) then
+      if (abs(dists(i)) < epsilon(dists(i))) then
         zer_cnt = zer_cnt + 1
         zer_idx(zer_cnt) = i
-      else if (dists(i) < 0.0D0) then
+      else if (dists(i) < 0.0_real_kind) then
         neg_cnt = neg_cnt + 1
         neg_idx(neg_cnt) = i
-      else if (dists(i) > 0.0D0) then
+      else if (dists(i) > 0.0_real_kind) then
         pos_cnt = pos_cnt + 1
         pos_idx(pos_cnt) = i
       end if
@@ -292,7 +294,7 @@ contains
       n_tets_tmp = n_tets_tmp + 1
       tets_tmp_buf(n_tets_tmp) = tet
       do i=1,pos_cnt
-        invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+        invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(i)) * invdiff
         tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) = &
@@ -307,13 +309,13 @@ contains
       case(2)
         ! ++--
         do i=1,pos_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(1))
         end do
         do i=1,neg_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
           w0 = -dists(neg_idx(2)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i+2) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(2))
@@ -350,7 +352,7 @@ contains
         n_tets_tmp = n_tets_tmp + 1
         tets_tmp_buf(n_tets_tmp) = tet
         do i=1,pos_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tets_tmp_buf(n_tets_tmp)%v(:, pos_idx(i)) = &
@@ -364,7 +366,7 @@ contains
       case(3)
         ! +---
         do i=1,neg_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -397,7 +399,7 @@ contains
       case(2)
         ! +--0
         do i=1,neg_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -419,7 +421,7 @@ contains
         tets_tmp_buf(n_tets_tmp)%colours(4) = tet%colours(neg_idx(1))
       case(1)
         ! +-00
-        invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
+        invdiff = 1.0_real_kind / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(1)) * invdiff
 
@@ -439,12 +441,12 @@ contains
     type(tet_type), dimension(:), intent(inout) :: tets_new
     integer, intent(inout) :: ntets_new
 
-    real, dimension(4) :: dists
+    real(kind = real_kind), dimension(4) :: dists
     integer :: neg_cnt, pos_cnt, zer_cnt
     integer, dimension(4) :: neg_idx, pos_idx, zer_idx
     integer :: i
 
-    real :: invdiff, w0, w1
+    real(kind = real_kind) :: invdiff, w0, w1
     type(tet_type) :: tet_tmp
 
     ! Negative == inside
@@ -456,13 +458,13 @@ contains
 
     dists = distances_to_plane(plane, tet)
     do i=1,4
-      if (abs(dists(i)) < epsilon(0.0D0)) then
+      if (abs(dists(i)) < epsilon(dists(i))) then
         zer_cnt = zer_cnt + 1
         zer_idx(zer_cnt) = i
-      else if (dists(i) < 0.0D0) then
+      else if (dists(i) < 0.0_real_kind) then
         neg_cnt = neg_cnt + 1
         neg_idx(neg_cnt) = i
-      else if (dists(i) > 0.0D0) then
+      else if (dists(i) > 0.0_real_kind) then
         pos_cnt = pos_cnt + 1
         pos_idx(pos_cnt) = i
       end if
@@ -488,7 +490,7 @@ contains
       ntets_new = ntets_new + 1
       tets_new(ntets_new) = tet
       do i=1,pos_cnt
-        invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+        invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(i)) * invdiff
         tets_new(ntets_new)%v(:, pos_idx(i)) = &
@@ -503,13 +505,13 @@ contains
       case(2)
         ! ++--
         do i=1,pos_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(1))
         end do
         do i=1,neg_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(2)) )
           w0 = -dists(neg_idx(2)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tet_tmp%v(:, i+2) = w0 * tet%v(:, pos_idx(i)) + w1 * tet%v(:, neg_idx(2))
@@ -546,7 +548,7 @@ contains
         ntets_new = ntets_new + 1
         tets_new(ntets_new) = tet
         do i=1,pos_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(i)) - dists(neg_idx(1)) )
           w0 = -dists(neg_idx(1)) * invdiff
           w1 =  dists(pos_idx(i)) * invdiff
           tets_new(ntets_new)%v(:, pos_idx(i)) = &
@@ -560,7 +562,7 @@ contains
       case(3)
         ! +---
         do i=1,neg_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -593,7 +595,7 @@ contains
       case(2)
         ! +--0
         do i=1,neg_cnt
-          invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
+          invdiff = 1.0_real_kind / ( dists(pos_idx(1)) - dists(neg_idx(i)) )
           w0 = -dists(neg_idx(i)) * invdiff
           w1 =  dists(pos_idx(1)) * invdiff
           tet_tmp%v(:, i) = w0 * tet%v(:, pos_idx(1)) + w1 * tet%v(:, neg_idx(i))
@@ -615,7 +617,7 @@ contains
         tets_new(ntets_new)%colours(4) = tet%colours(neg_idx(1))
       case(1)
         ! +-00
-        invdiff = 1.0D0 / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
+        invdiff = 1.0_real_kind / ( dists(pos_idx(1)) - dists(neg_idx(1)) )
         w0 = -dists(neg_idx(1)) * invdiff
         w1 =  dists(pos_idx(1)) * invdiff
 
@@ -632,8 +634,9 @@ contains
     type(tet_type), intent(in) :: tet
     type(plane_type), dimension(4) :: planes
 
-    real, dimension(3) :: edge10, edge20, edge30, edge21, edge31
-    real :: det
+    real(kind = real_kind), dimension(3) :: edge10, edge20, edge30, edge21, &
+      & edge31
+    real(kind = real_kind) :: det
     integer :: i
 
     edge10 = tet%v(:, 2) - tet%v(:, 1);
@@ -663,8 +666,8 @@ contains
   end function get_planes_tet
 
   pure function unit_cross(vec_a, vec_b) result(cross)
-    real, dimension(3), intent(in) :: vec_a, vec_b
-    real, dimension(3) :: cross
+    real(kind = real_kind), dimension(3), intent(in) :: vec_a, vec_b
+    real(kind = real_kind), dimension(3) :: cross
     cross(1) = vec_a(2) * vec_b(3) - vec_a(3) * vec_b(2)
     cross(2) = vec_a(3) * vec_b(1) - vec_a(1) * vec_b(3)
     cross(3) = vec_a(1) * vec_b(2) - vec_a(2) * vec_b(1)
@@ -675,7 +678,7 @@ contains
   pure function distances_to_plane(plane, tet) result(dists)
     type(plane_type), intent(in) :: plane
     type(tet_type), intent(in) :: tet
-    real, dimension(4) :: dists
+    real(kind = real_kind), dimension(4) :: dists
     integer :: i
 
     forall(i=1:4)
@@ -684,28 +687,29 @@ contains
   end function distances_to_plane
 
   pure function tetrahedron_volume_real(tet) result(volume)
-    real, dimension(3, 4), intent(in) :: tet
+    real(kind = real_kind), dimension(3, 4), intent(in) :: tet
 
-    real :: volume
+    real(kind = real_kind) :: volume
 
-    real, dimension(3) :: e1, e2, e3
+    real(kind = real_kind), dimension(3) :: e1, e2, e3
 
     e1 = tet(:, 2) - tet(:, 1)
     e2 = tet(:, 3) - tet(:, 1)
     e3 = tet(:, 4) - tet(:, 1)
 
-    volume = (1.0D0 / 6.0D0) * abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
-                               & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
-                               & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
+    volume = (1.0_real_kind / 6.0_real_kind) * &
+      & abs(e1(1) * (e2(2) * e3(3) - e2(3) * e3(2)) &
+        & + e1(2) * (e2(3) * e3(1) - e2(1) * e3(3)) &
+        & + e1(3) * (e2(1) * e3(2) - e2(2) * e3(1)))
 
   end function tetrahedron_volume_real
 
   pure elemental function tetrahedron_volume_tet(tet) result(volume)
     type(tet_type), intent(in) :: tet
 
-    real :: volume
+    real(kind = real_kind) :: volume
 
-    real, dimension(3) :: cross, vec_a, vec_b, vec_c
+    real(kind = real_kind), dimension(3) :: cross, vec_a, vec_b, vec_c
 
     vec_a = tet%v(:, 1) - tet%v(:, 4)
     vec_b = tet%v(:, 2) - tet%v(:, 4)
@@ -715,7 +719,7 @@ contains
     cross(2) = vec_b(3) * vec_c(1) - vec_b(1) * vec_c(3)
     cross(3) = vec_b(1) * vec_c(2) - vec_b(2) * vec_c(1)
 
-    volume = abs(dot_product(vec_a, cross)) / 6.0D0
+    volume = abs(dot_product(vec_a, cross)) / 6.0_real_kind
     
   end function tetrahedron_volume_tet
 

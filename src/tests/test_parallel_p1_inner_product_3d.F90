@@ -27,6 +27,8 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_halo_ownership, only : element_ownership
   use libsupermesh_parallel_supermesh, only : parallel_supermesh
+  use libsupermesh_precision, only : mpi_real_kind, real_format, real_kind, &
+    & compensated_sum, initialise, add, sum
   use libsupermesh_read_halos, only : halo_type, deallocate, read_halo
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_supermesh, only : tetrahedron_volume
@@ -37,33 +39,56 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   ! Input Triangle mesh base names
   character(len = *), parameter :: basename_a = "data/pyramid_0_05", &
                                  & basename_b = "data/cube_0_05"
-  real, parameter :: volume_ref = 3.3333333333333331D+02 / 1.0D3, integral_ref = 1.2499999999999989D+04 / 1.0D5
+  real(kind = real_kind), parameter :: &
+    & volume_ref = 3.3333333333333331e2_real_kind / 1.0e3_real_kind, &
+    & integral_ref = 1.2499999999999989e4_real_kind / 1.0e5_real_kind
 
-  character(len = int(log10(real(huge(0)))) + 2) :: rank_chr, nprocs_chr
   integer :: ierr, integer_extent, nprocs, rank, real_extent
  
   integer :: nelements_a, nelements_b, nnodes_a, nnodes_b
   integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
-  real, dimension(:), allocatable :: field_a
-  real, dimension(:), allocatable, target :: field_b
-  real, dimension(:, :), allocatable :: positions_a, positions_b
+  real(kind = real_kind), dimension(:), allocatable :: field_a
+  real(kind = real_kind), dimension(:), allocatable, target :: field_b
+  real(kind = real_kind), dimension(:, :), allocatable :: positions_a, &
+    & positions_b
   type(halo_type) :: halo_a, halo_b
   
   integer :: data_nnodes_b
-  real, dimension(:), allocatable, target :: data_field_b
+  real(kind = real_kind), dimension(:), allocatable, target :: data_field_b
   
   ! Quadrature rule from "Approximate Calculation of Multiple Integrals",
   ! A. H. Stroud, Prentice-Hall, Inc., 1971, section 8.8, T_n: 2-1 upper sign.
   ! See also P. C. Hammer and A. H. Stroud, "Numerical integration over
   ! simplexes", Mathematical Tables and Other Aids to Computation, 10,
   ! pp. 137--139, 1956.
-  real, dimension(4), parameter :: quad_weights = (/1.0D0, 1.0D0, 1.0D0, 1.0D0/) / 4.0D0
-  real, dimension(4, 4), parameter :: quad_points = reshape((/5.8541019662496852D-01, 1.3819660112501050D-01, 1.3819660112501050D-01, 1.3819660112501050D-01, &
-                                                            & 1.3819660112501050D-01, 5.8541019662496852D-01, 1.3819660112501050D-01, 1.3819660112501050D-01, &
-                                                            & 1.3819660112501050D-01, 1.3819660112501050D-01, 5.8541019662496852D-01, 1.3819660112501050D-01, &
-                                                            & 1.3819660112501050D-01, 1.3819660112501050D-01, 1.3819660112501050D-01, 5.8541019662496852D-01/), (/4, 4/))
-  real :: volume_parallel, integral_parallel
+  real(kind = real_kind), dimension(4), parameter :: quad_weights = &
+    & (/1.0_real_kind, 1.0_real_kind, 1.0_real_kind, 1.0_real_kind/) &
+      & / 4.0_real_kind
+  real(kind = real_kind), dimension(4, 4), parameter :: quad_points = &
+    & reshape((/5.8541019662496852e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+              & 1.3819660112501050e-1_real_kind, &
+                & 5.8541019662496852e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+              & 1.3819660112501050e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+                & 5.8541019662496852e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+              & 1.3819660112501050e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+                & 1.3819660112501050e-1_real_kind, &
+                & 5.8541019662496852e-1_real_kind/), &
+    & (/4, 4/))
+  
+  real(kind = real_kind) :: global_volume_parallel, global_integral_parallel
+  type(compensated_sum) :: local_volume_parallel, local_integral_parallel
+  
+  character(len = int(log10(real(huge(rank)))) + 2) :: rank_chr
+  character(len = int(log10(real(huge(nprocs)))) + 2) :: nprocs_chr
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
@@ -72,7 +97,7 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   rank_chr = adjustl(rank_chr)
   nprocs_chr = adjustl(nprocs_chr)
   call MPI_Type_extent(MPI_INTEGER, integer_extent, ierr);  assert(ierr == MPI_SUCCESS)
-  call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Type_extent(mpi_real_kind, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
 
   ! Read the donor mesh partition
   call read_node(trim(basename_a) // "_" // trim(nprocs_chr) // "_" // trim(rank_chr) // ".node", dim = 3, positions = positions_a)
@@ -103,8 +128,8 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   field_b = positions_b(2, :)
 
   ! Perform multi-mesh integration
-  volume_parallel = 0.0D0
-  integral_parallel = 0.0D0
+  call initialise(local_volume_parallel)
+  call initialise(local_integral_parallel)
   call parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
                         & positions_b, enlist_b, ele_owner_b, &
                         & pack_data_b, unpack_data_b, intersection_calculation, &
@@ -113,20 +138,24 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   call cleanup_unpack_data_b()
 
   ! Sum all process contributions to the multi-mesh integrals
-  call MPI_Allreduce(MPI_IN_PLACE, volume_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
-  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  global_volume_parallel = sum(local_volume_parallel)
+  global_integral_parallel = sum(local_integral_parallel)
+  call MPI_Allreduce(MPI_IN_PLACE, global_volume_parallel, 1, mpi_real_kind, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, global_integral_parallel, 1, mpi_real_kind, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   flush(output_unit)
   flush(error_unit)
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if(rank == 0) then
     ! Display the multi-mesh integrals on rank 0
-    print "(a,e26.18e3,a,e26.18e3,a)", "Volume   = ", volume_parallel, " (error = ", abs(volume_parallel - volume_ref), ")"
-    print "(a,e26.18e3,a,e26.18e3,a)", "Integral = ", integral_parallel, " (error = ", abs(integral_parallel - integral_ref), ")"
+    write(output_unit, "(a,"//real_format//",a,"//real_format//",a)") &
+      & "Volume   = ", global_volume_parallel, " (error = ", abs(global_volume_parallel - volume_ref), ")"
+    write(output_unit, "(a,"//real_format//",a,"//real_format//",a)") &
+      & "Integral = ", global_integral_parallel, " (error = ", abs(global_integral_parallel - integral_ref), ")"
     
     ! Test the multi-mesh integrals against the reference values
-    call report_test("[test_parallel_p1_inner_product_3d volume]", volume_parallel .fne. volume_ref, .false., "Incorrect area")
-    call report_test("[test_parallel_p1_inner_product_3d integral]", integral_parallel .fne. integral_ref, .false., "Incorrect integral")
+    call report_test("[test_parallel_p1_inner_product_3d volume]", global_volume_parallel .fne. volume_ref, .false., "Incorrect area")
+    call report_test("[test_parallel_p1_inner_product_3d integral]", global_integral_parallel .fne. integral_ref, .false., "Incorrect integral")
   end if
   flush(output_unit)
   flush(error_unit)
@@ -149,7 +178,7 @@ contains
     integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
     
     integer :: ndata_b, position
-    real, dimension(:), allocatable :: data_field_b
+    real(kind = real_kind), dimension(:), allocatable :: data_field_b
     
     ! Gather P1 field values for communication
     allocate(data_field_b(size(nodes_b)))
@@ -160,7 +189,7 @@ contains
     ndata_b = size(data_field_b) * real_extent
     allocate(data_b(ndata_b))
     position = 0
-    call MPI_Pack(data_field_b, size(data_field_b), MPI_DOUBLE_PRECISION, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Pack(data_field_b, size(data_field_b), mpi_real_kind, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     
     deallocate(data_field_b)
     
@@ -184,7 +213,7 @@ contains
     data_nnodes_b = nnodes_b
     ! Unpack the P1 field values
     allocate(data_field_b(data_nnodes_b))
-    call MPI_Unpack(data_b, size(data_b), position, data_field_b, data_nnodes_b, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Unpack(data_b, size(data_b), position, data_field_b, data_nnodes_b, mpi_real_kind, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
     
   end subroutine unpack_data_b
   
@@ -197,16 +226,16 @@ contains
   pure function basis_functions_p1(cell_coords, coord) result(fns)
     ! Tetrahedron vertex coordinates
     ! Shape: dim x loc_p1
-    real, dimension(3, 4), intent(in) :: cell_coords
+    real(kind = real_kind), dimension(3, 4), intent(in) :: cell_coords
     ! Coordinate at which to evaluate the basis functions
     ! Shape: dim
-    real, dimension(3), intent(in) :: coord
+    real(kind = real_kind), dimension(3), intent(in) :: coord
 
-    real, dimension(4) :: fns
+    real(kind = real_kind), dimension(4) :: fns
 
     integer :: i, j
-    real, dimension(4) :: tmp
-    real, dimension(3, 4) :: mat
+    real(kind = real_kind), dimension(4) :: tmp
+    real(kind = real_kind), dimension(3, 4) :: mat
     
     mat(:, 1:3) = cell_coords(:, 2:4) - spread(cell_coords(:, 1), 2, 3)
     mat(:, 4) = coord - cell_coords(:, 1)
@@ -230,7 +259,7 @@ contains
     end do
     
     fns(2:4) = mat(:, 4)
-    fns(1) = 1.0D0 - fns(2) - fns(3) - fns(4)
+    fns(1) = 1.0_real_kind - fns(2) - fns(3) - fns(4)
 
   end function basis_functions_p1
 
@@ -238,15 +267,15 @@ contains
   pure function interpolate_p1(cell_coords_d, cell_x_d, coord_s) result(x_s)
     ! Tetrahedron vertex coordinates
     ! Shape: dim x loc_p1
-    real, dimension(3, 4), intent(in) :: cell_coords_d
+    real(kind = real_kind), dimension(3, 4), intent(in) :: cell_coords_d
     ! P1 nodal values
     ! Shape: loc_p1
-    real, dimension(4), intent(in) :: cell_x_d
+    real(kind = real_kind), dimension(4), intent(in) :: cell_x_d
     ! Coordinate at which to evaluate the P1 function
     ! Shape: dim
-    real, dimension(3), intent(in) :: coord_s
+    real(kind = real_kind), dimension(3), intent(in) :: coord_s
 
-    real :: x_s
+    real(kind = real_kind) :: x_s
 
     x_s = dot_product(basis_functions_p1(cell_coords_d, coord_s), cell_x_d)
 
@@ -256,13 +285,13 @@ contains
   subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
     ! Target mesh element vertex coordinates
     ! Shape: dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     ! Donor mesh element vertex coordinates
     ! Shape: dim x loc_b
-    real, dimension(:, :), intent(in) :: element_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_b
     ! Supermesh element vertex coordinates
     ! Shape: dim x loc_c x nelements_c
-    real, dimension(:, :, :), intent(in) :: elements_c
+    real(kind = real_kind), dimension(:, :, :), intent(in) :: elements_c
     ! Donor mesh vertex indices
     ! Shape: loc_b
     integer, dimension(:), intent(in) :: nodes_b
@@ -275,9 +304,9 @@ contains
     logical, intent(in) :: local
     
     integer :: ele_c, i
-    real :: volume
-    real, dimension(3) :: quad_point
-    real, dimension(:), pointer :: lfield_b
+    real(kind = real_kind) :: volume
+    real(kind = real_kind), dimension(3) :: quad_point
+    real(kind = real_kind), dimension(:), pointer :: lfield_b
     
     if(local) then
       ! If this is a local calculation, use the local P1 field data
@@ -291,16 +320,16 @@ contains
       ! Compute the supermesh tetrahedron volume
       volume = tetrahedron_volume(elements_c(:, :, ele_c))
       ! Local contribution to the intersection volume
-      volume_parallel = volume_parallel + volume
+      call add(local_volume_parallel, volume)
       ! Local contribution to the multi-mesh inner product, evaluated using
       ! degree 2 quadrature
       do i = 1, size(quad_weights)
         quad_point(1) = dot_product(quad_points(:, i), elements_c(1, :, ele_c))
         quad_point(2) = dot_product(quad_points(:, i), elements_c(2, :, ele_c))
         quad_point(3) = dot_product(quad_points(:, i), elements_c(3, :, ele_c))
-        integral_parallel = integral_parallel + quad_weights(i) * volume &
-                                              & * interpolate_p1(element_b, lfield_b(nodes_b), quad_point) &
-                                              & * interpolate_p1(element_a, field_a(enlist_a(:, ele_a)), quad_point)
+        call add(local_integral_parallel, quad_weights(i) * volume &
+                                        & * interpolate_p1(element_b, lfield_b(nodes_b), quad_point) &
+                                        & * interpolate_p1(element_a, field_a(enlist_a(:, ele_a)), quad_point))
       end do
     end do
         

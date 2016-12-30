@@ -64,6 +64,7 @@ module libsupermesh_intersection_finder
     & intersections_to_csr_sparsity
   use libsupermesh_octree_intersection_finder, only : octree_node, &
     & octree_type, deallocate, octree_intersection_finder, allocate, query
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_quadtree_intersection_finder, only : quadtree_node, &
     & quadtree_type, deallocate, quadtree_intersection_finder, allocate, query
 
@@ -195,9 +196,9 @@ contains
 
   pure function bbox(coords)
     ! dim x loc
-    real, dimension(:, :), intent(in) :: coords
+    real(kind = real_kind), dimension(:, :), intent(in) :: coords
 
-    real, dimension(2, size(coords, 1)) :: bbox
+    real(kind = real_kind), dimension(2, size(coords, 1)) :: bbox
 
     integer :: i, j
 
@@ -214,11 +215,11 @@ contains
 
   subroutine intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
@@ -237,11 +238,11 @@ contains
   
   subroutine intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
@@ -267,11 +268,11 @@ contains
   ! 200, pp. 89--100, 2011
   subroutine advancing_front_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
@@ -280,8 +281,8 @@ contains
     integer :: i, j
     integer :: dim, nnodes_b, nnodes_a, nelements_b, nelements_a
 
-    real, dimension(2, size(positions_a, 1)) :: bbox_a
-    real, dimension(:, :, :), allocatable :: bboxes_b
+    real(kind = real_kind), dimension(2, size(positions_a, 1)) :: bbox_a
+    real(kind = real_kind), dimension(:, :, :), allocatable :: bboxes_b
     type(eelist_type) :: eelist_b, eelist_a
 
     integer :: clue_a, ele_b, ele_a, loc_b, loc_a, neigh_b, neigh_a, seed_a
@@ -429,9 +430,9 @@ contains
 
     pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
       ! 2 x dim
-      real, dimension(:, :), intent(in) :: bbox_1
+      real(kind = real_kind), dimension(:, :), intent(in) :: bbox_1
       ! 2 x dim
-      real, dimension(:, :), intent(in) :: bbox_2
+      real(kind = real_kind), dimension(:, :), intent(in) :: bbox_2
 
       logical :: intersect
 
@@ -453,11 +454,11 @@ contains
 
   subroutine advancing_front_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
@@ -479,7 +480,7 @@ contains
   subroutine allocate_rtree(rtree, positions, enlist)
     type(rtree_type), intent(out) :: rtree
     ! dim x nnodes
-    real, dimension(:, :), intent(in) :: positions
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
     
@@ -493,14 +494,14 @@ contains
     loc = size(enlist, 1)
     nelements = size(enlist, 2)
     
-    call cbuild_rtree(rtree%rtree, dim, nnodes, positions, loc, nelements, enlist)
+    call cbuild_rtree(rtree%rtree, dim, nnodes, real(positions, kind = c_double), loc, nelements, enlist)
   
   end subroutine allocate_rtree
   
   subroutine query_rtree_allocatable(rtree, element_a, eles_b)
     type(rtree_type), intent(inout) :: rtree
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
     
     integer(kind = c_int) :: dim, loc_a, neles_b
@@ -508,7 +509,7 @@ contains
     dim = size(element_a, 1)
     loc_a = size(element_a, 2)    
     
-    call cquery_rtree(rtree%rtree, dim, loc_a, element_a, neles_b)
+    call cquery_rtree(rtree%rtree, dim, loc_a, real(element_a, kind = c_double), neles_b)
     allocate(eles_b(neles_b))
     call cquery_rtree_intersections(rtree%rtree, eles_b)
   
@@ -517,7 +518,7 @@ contains
   subroutine query_rtree_pointer(rtree, element_a, eles_b)
     type(rtree_type), intent(inout) :: rtree
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
     
     integer(kind = c_int) :: dim, loc_a, neles_b
@@ -525,7 +526,7 @@ contains
     dim = size(element_a, 1)
     loc_a = size(element_a, 2)    
     
-    call cquery_rtree(rtree%rtree, dim, loc_a, element_a, neles_b)
+    call cquery_rtree(rtree%rtree, dim, loc_a, real(element_a, kind = c_double), neles_b)
     allocate(eles_b(neles_b))
     call cquery_rtree_intersections(rtree%rtree, eles_b)
   
@@ -540,7 +541,7 @@ contains
 
   subroutine rtree_intersection_finder_set_input(positions, enlist)
     ! dim x nnodes
-    real, dimension(:, :), intent(in) :: positions
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
 
@@ -552,7 +553,7 @@ contains
 
   subroutine rtree_intersection_finder_find(element_a)
     ! dim x loc
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
 
     assert(rtree_allocated)
     if(allocated(rtree_eles)) deallocate(rtree_eles)
@@ -588,11 +589,11 @@ contains
 
   subroutine rtree_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
@@ -607,7 +608,7 @@ contains
     
     call allocate(rtree, positions_b, enlist_b)
     do ele_a = 1, nelements_a
-      call cquery_rtree(rtree%rtree, dim, loc_a, positions_a(:, enlist_a(:, ele_a)), map_ab(ele_a)%n)
+      call cquery_rtree(rtree%rtree, dim, loc_a, real(positions_a(:, enlist_a(:, ele_a)), kind = c_double), map_ab(ele_a)%n)
       allocate(map_ab(ele_a)%v(map_ab(ele_a)%n))
       call cquery_rtree_intersections(rtree%rtree, map_ab(ele_a)%v)   
     end do
@@ -617,11 +618,11 @@ contains
 
   subroutine rtree_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
@@ -643,7 +644,7 @@ contains
   subroutine allocate_tree(tree, positions, enlist)
     type(tree_type), intent(out) :: tree
     ! dim x nnodes
-    real, dimension(:, :), intent(in) :: positions
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
 
@@ -664,7 +665,7 @@ contains
   subroutine query_tree_allocatable(tree, element_a, eles_b)
     type(tree_type), intent(inout) :: tree
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
         
     select case(tree%dim)
@@ -681,7 +682,7 @@ contains
   subroutine query_tree_pointer(tree, element_a, eles_b)
     type(tree_type), intent(inout) :: tree
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
         
     select case(tree%dim)
@@ -711,7 +712,7 @@ contains
 
   subroutine tree_intersection_finder_set_input(positions, enlist)
     ! dim x nnodes
-    real, dimension(:, :), intent(in) :: positions
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
     
@@ -723,7 +724,7 @@ contains
 
   subroutine tree_intersection_finder_find(element_a)
     ! dim x loc
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     
     assert(tree_allocated)
     if(allocated(tree_eles)) deallocate(tree_eles)
@@ -759,11 +760,11 @@ contains
 
   subroutine tree_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
@@ -782,11 +783,11 @@ contains
 
   subroutine tree_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
@@ -808,11 +809,11 @@ contains
   
   pure subroutine sort_intersection_finder_rank_1_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! nnodes_a
-    real, dimension(:), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:), intent(in) :: positions_a
     ! 2 x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! nnodes_b
-    real, dimension(:), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:), intent(in) :: positions_b
     ! 2 x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
@@ -820,8 +821,9 @@ contains
     
     integer :: ele_a, ele_b, i, j, nelements_a, nelements_b, nints
     integer, dimension(:), allocatable :: indices_a, indices_b, ints, work
-    real, dimension(2) :: interval_a, interval_b
-    real, dimension(:), allocatable :: left_positions_a, left_positions_b
+    real(kind = real_kind), dimension(2) :: interval_a, interval_b
+    real(kind = real_kind), dimension(:), allocatable :: left_positions_a, &
+      & left_positions_b
     
     nelements_a = size(enlist_a, 2)
     nelements_b = size(enlist_b, 2)
@@ -870,7 +872,7 @@ contains
   
     ! A very basic merge sort implementation
     pure recursive subroutine merge_sort(v, indices, work)
-      real, dimension(:), intent(in) :: v
+      real(kind = real_kind), dimension(:), intent(in) :: v
       integer, dimension(:), intent(inout) :: indices
       integer, dimension(:), intent(out) :: work
       
@@ -919,11 +921,11 @@ contains
   
   pure subroutine sort_intersection_finder_rank_2_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! 1 x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! 2 x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! 1 x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! 2 x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
@@ -935,11 +937,11 @@ contains
 
   pure subroutine sort_intersection_finder_rank_1_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! nnodes_a
-    real, dimension(:), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:), intent(in) :: positions_a
     ! 2 x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! nnodes_b
-    real, dimension(:), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:), intent(in) :: positions_b
     ! 2 x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
@@ -960,11 +962,11 @@ contains
 
   pure subroutine sort_intersection_finder_rank_2_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! 1 x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! 2 x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! 1 x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! 2 x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
@@ -986,18 +988,19 @@ contains
   ! Brute force intersection finder.
   pure subroutine brute_force_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
     type(intersections), dimension(:), intent(out) :: map_ab
 
     integer :: ele_a, ele_b, nelements_a, nelements_b
-    real, dimension(2, size(positions_a, 1)) :: bbox_a, bbox_b
+    real(kind = real_kind), dimension(2, size(positions_a, 1)) :: bbox_a, &
+      & bbox_b
 
     integer, dimension(:), allocatable :: ints
     integer :: nints
@@ -1027,9 +1030,9 @@ contains
 
     pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
       ! 2 x dim
-      real, dimension(:, :), intent(in) :: bbox_1
+      real(kind = real_kind), dimension(:, :), intent(in) :: bbox_1
       ! 2 x dim
-      real, dimension(:, :), intent(in) :: bbox_2
+      real(kind = real_kind), dimension(:, :), intent(in) :: bbox_2
 
       logical :: intersect
 
@@ -1049,11 +1052,11 @@ contains
 
   pure subroutine brute_force_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:

@@ -58,6 +58,7 @@ subroutine test_intersection_finder_completeness_3d() bind(c)
     & intersection_finder, advancing_front_intersection_finder, &
     & octree_intersection_finder, tree_intersection_finder, &
     & rtree_intersection_finder, brute_force_intersection_finder
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_supermesh, only : tetrahedron_volume
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_tet_intersection, only : intersect_tets, tet_buf_size
@@ -66,11 +67,12 @@ subroutine test_intersection_finder_completeness_3d() bind(c)
   implicit none
 
   integer :: ele_a, ele_b, ele_c, i, n_tets_c
-  real :: volume_b, volume_c
+  real(kind = real_kind) :: volume_b, volume_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   logical :: fail
-  real, dimension(3, 4, tet_buf_size) ::  tets_c
-  real, dimension(:, :), allocatable :: positions_a, positions_b
+  real(kind = real_kind), dimension(3, 4, tet_buf_size) ::  tets_c
+  real(kind = real_kind), dimension(:, :), allocatable :: positions_a, &
+    & positions_b
   type(intersections), dimension(:), allocatable :: map_ba
 
   integer, parameter :: dim = 3
@@ -116,7 +118,7 @@ contains
     do ele_b = 1, size(enlist_b, 2)
       volume_b = tetrahedron_volume(positions_b(:, enlist_b(:, ele_b)))
 
-      volume_c = 0.0D0
+      volume_c = 0.0_real_kind
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
         call intersect_tets(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), tets_c, n_tets_c)

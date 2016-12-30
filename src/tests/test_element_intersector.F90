@@ -56,6 +56,7 @@ subroutine test_element_intersector() bind(c)
 
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_supermesh, only : max_n_simplices_c, intersect_elements, &
     & simplex_volume
   use libsupermesh_read_triangle, only : read_ele, read_node
@@ -65,9 +66,10 @@ subroutine test_element_intersector() bind(c)
 
   integer :: ele_a, ele_b, ele_c, i, n_elements_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
-  real :: volume_c
-  real, dimension(:, :), allocatable :: element_a, positions_a, positions_b
-  real, dimension(:, :, :), allocatable :: elements_c
+  real(kind = real_kind) :: volume_c
+  real(kind = real_kind), dimension(:, :), allocatable :: element_a, &
+    & positions_a, positions_b
+  real(kind = real_kind), dimension(:, :, :), allocatable :: elements_c
   type(intersections), dimension(:), allocatable :: map_ab
   
   ! Interval-interval
@@ -83,7 +85,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -94,7 +96,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 1.0D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 1.0_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -112,7 +114,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -123,7 +125,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 1.0D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 1.0_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -141,7 +143,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -152,7 +154,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 1.0D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 1.0_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -170,7 +172,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -181,7 +183,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 1.0D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 1.0_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -199,7 +201,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -210,7 +212,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 1.0D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 1.0_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -228,7 +230,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -239,7 +241,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 1.0D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 1.0_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -257,7 +259,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -268,7 +270,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 0.5D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 0.5_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -286,7 +288,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -297,7 +299,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 0.5D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 0.5_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)
@@ -315,7 +317,7 @@ subroutine test_element_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  volume_c = 0.0D0
+  volume_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     element_a = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -326,7 +328,7 @@ subroutine test_element_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", volume_c .fne. 0.5D0, .false., "Incorrect intersection volume")
+  call report_test("[intersect_elements]", volume_c .fne. 0.5_real_kind, .false., "Incorrect intersection volume")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b, element_a, elements_c)

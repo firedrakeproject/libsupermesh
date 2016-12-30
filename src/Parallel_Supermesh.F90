@@ -31,6 +31,7 @@ module libsupermesh_parallel_supermesh
     & insert, key_count, fetch
   use libsupermesh_intersection_finder, only : rtree_type, allocate, query, &
     & deallocate
+  use libsupermesh_precision, only : mpi_real_kind, real_format, real_kind
   use libsupermesh_supermesh, only : max_n_simplices_c, intersect_elements
 
   implicit none
@@ -46,9 +47,9 @@ module libsupermesh_parallel_supermesh
 
   logical, save :: parallel_supermesh_allocated = .false.
   
-  real, dimension(:, :), allocatable, save :: bbox_a, bbox_b
-  real, dimension(:, :, :), allocatable, save :: parallel_bbox_a, &
-    & parallel_bbox_b
+  real(kind = real_kind), dimension(:, :), allocatable, save :: bbox_a, bbox_b
+  real(kind = real_kind), dimension(:, :, :), allocatable, save :: &
+    & parallel_bbox_a, parallel_bbox_b
 
   integer :: nsends
   integer, dimension(:), allocatable, save :: send_requests
@@ -57,9 +58,10 @@ module libsupermesh_parallel_supermesh
 
   integer, save :: libsupermesh_mpi_comm, nprocs, rank
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-  real :: t_0, all_to_all_time, local_compute_time, remote_compute_time
+  real(kind = real_kind) :: t_0, all_to_all_time, local_compute_time, &
+    & remote_compute_time
 #ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
-  real :: point_to_point_time
+  real(kind = real_kind) :: point_to_point_time
 #endif
 #endif
 
@@ -70,13 +72,13 @@ contains
                              &  pack_data_b, unpack_data_b, intersection_calculation, &
                              &  comm)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! elements_a
     integer, dimension(:), intent(in) :: ele_owner_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! elements_b
@@ -101,13 +103,14 @@ contains
       
       subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
         use iso_c_binding, only : c_int8_t
+        use libsupermesh_precision, only : real_kind
         implicit none
         ! dim x loc_a
-        real, dimension(:, :), intent(in) :: element_a
+        real(kind = real_kind), dimension(:, :), intent(in) :: element_a
         ! dim x loc_b
-        real, dimension(:, :), intent(in) :: element_b
+        real(kind = real_kind), dimension(:, :), intent(in) :: element_b
         ! dim x loc_c x nelements_c
-        real, dimension(:, :, :), intent(in) :: elements_c
+        real(kind = real_kind), dimension(:, :, :), intent(in) :: elements_c
         ! loc_b
         integer, dimension(:), intent(in) :: nodes_b
         integer, intent(in) :: ele_a
@@ -138,13 +141,13 @@ contains
   subroutine step_1(positions_a, enlist_a, ele_owner_a, &
                   & positions_b, enlist_b, ele_owner_b)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! elements_a
     integer, dimension(:), intent(in) :: ele_owner_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! elements_b
@@ -152,7 +155,7 @@ contains
 
     integer :: dim, ierr
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    real :: t_1
+    real(kind = real_kind) :: t_1
 #endif
 
     dim = size(positions_a, 1)
@@ -167,24 +170,24 @@ contains
     allocate(parallel_bbox_b(2, dim, nprocs))
 
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    t_1 = mpi_wtime()
+    t_1 = real(mpi_wtime(), kind = real_kind)
 #endif
-    call MPI_Allgather(bbox_a, 2 * dim, MPI_DOUBLE_PRECISION, &
-      & parallel_bbox_a, 2 * dim, MPI_DOUBLE_PRECISION, &
+    call MPI_Allgather(bbox_a, 2 * dim, mpi_real_kind, &
+      & parallel_bbox_a, 2 * dim, mpi_real_kind, &
       & libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
 
-    call MPI_Allgather(bbox_b, 2 * dim, MPI_DOUBLE_PRECISION, &
-      & parallel_bbox_b, 2 * dim, MPI_DOUBLE_PRECISION, &
+    call MPI_Allgather(bbox_b, 2 * dim, mpi_real_kind, &
+      & parallel_bbox_b, 2 * dim, mpi_real_kind, &
       & libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    all_to_all_time = mpi_wtime() - t_1
+    all_to_all_time = real(mpi_wtime(), kind = real_kind) - t_1
 #endif
 
   end subroutine step_1
 
   subroutine step_2(positions_b, enlist_b, ele_owner_b, pack_data_b)
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! elements_b
@@ -200,24 +203,24 @@ contains
       end subroutine pack_data_b
     end interface
 
-    integer :: buffer_size, dim, dp_extent, ele_b, i, ierr, int_extent, j, k, &
-      & loc_b, nelements_b, nelements_send, nnodes_send, node, position
+    integer :: buffer_size, dim, ele_b, i, ierr, int_extent, j, k, loc_b, &
+      & nelements_b, nelements_send, nnodes_send, node, position, real_extent
     integer, dimension(:), allocatable :: elements_send, send_enlist, &
       & send_nodes_array
     integer(kind = c_int8_t), dimension(:), allocatable :: data
-    real, dimension(:), allocatable :: send_positions
+    real(kind = real_kind), dimension(:), allocatable :: send_positions
     type(integer_map) :: node_map
     type(integer_set) :: nodes_send
 
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    t_0 = -1.0D0
+    t_0 = -1.0_real_kind
 #endif
 
     dim = size(positions_b, 1)
     loc_b = size(enlist_b, 1)
     nelements_b = size(enlist_b, 2)
 
-    call MPI_Type_extent(MPI_DOUBLE_PRECISION, dp_extent, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Type_extent(mpi_real_kind, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
     call MPI_Type_extent(MPI_INTEGER, int_extent, ierr);  assert(ierr == MPI_SUCCESS)
 
     allocate(elements_send(nelements_b))
@@ -279,7 +282,7 @@ contains
 
           buffer_size = int_extent + int_extent + &
                       & (size(send_enlist) * int_extent) + &
-                      & (size(send_positions) * dp_extent) + &
+                      & (size(send_positions) * real_extent) + &
                       & int_extent + size(data)
           allocate(send_buffer(i + 1)%v(buffer_size))
           position = 0
@@ -289,7 +292,7 @@ contains
             & send_buffer(i + 1)%v, buffer_size, position, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
           call MPI_Pack(send_enlist, size(send_enlist), MPI_INTEGER, &
             & send_buffer(i + 1)%v, buffer_size, position, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
-          call MPI_Pack(send_positions, size(send_positions), MPI_DOUBLE_PRECISION, &
+          call MPI_Pack(send_positions, size(send_positions), mpi_real_kind, &
             & send_buffer(i + 1)%v, buffer_size, position, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
           call MPI_Pack(size(data), 1, MPI_INTEGER, &
             & send_buffer(i + 1)%v, buffer_size, position, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
@@ -309,7 +312,7 @@ contains
         deallocate(send_enlist, send_nodes_array, send_positions)
 
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-        if(t_0 < 0.0D0) t_0 = mpi_wtime()
+        if(t_0 < 0.0_real_kind) t_0 = real(mpi_wtime(), kind = real_kind)
 #endif
 
         nsends = nsends + 1
@@ -325,13 +328,13 @@ contains
                   & positions_b, enlist_b, ele_owner_b, &
                   & unpack_data_b, intersection_calculation)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! elements_a
     integer, dimension(:), intent(in) :: ele_owner_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_a x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! elements_b
@@ -348,13 +351,14 @@ contains
 
       subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
         use iso_c_binding, only : c_int8_t
+        use libsupermesh_precision, only : real_kind
         implicit none
         ! dim x loc_a
-        real, dimension(:, :), intent(in) :: element_a
+        real(kind = real_kind), dimension(:, :), intent(in) :: element_a
         ! dim x loc_b
-        real, dimension(:, :), intent(in) :: element_b
+        real(kind = real_kind), dimension(:, :), intent(in) :: element_b
         ! dim x loc_c x nelements_c
-        real, dimension(:, :, :), intent(in) :: elements_c
+        real(kind = real_kind), dimension(:, :, :), intent(in) :: elements_c
         ! loc_b
         integer, dimension(:), intent(in) :: nodes_b
         integer, intent(in) :: ele_a
@@ -369,9 +373,9 @@ contains
     integer, dimension(:), allocatable :: eles_a, recv_enlist
     integer, dimension(:, :), allocatable :: statuses
     integer(kind = c_int8_t), dimension(:), allocatable :: data
-    real, dimension(:), allocatable :: recv_positions
-    real, dimension(:, :), allocatable :: nodes_a, nodes_b
-    real, dimension(:, :, :), allocatable :: positions_c
+    real(kind = real_kind), dimension(:), allocatable :: recv_positions
+    real(kind = real_kind), dimension(:, :), allocatable :: nodes_a, nodes_b
+    real(kind = real_kind), dimension(:, :, :), allocatable :: positions_c
     type(rtree_type) :: rtree
 #ifdef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
     integer(kind = c_int8_t), dimension(:), allocatable :: recv_buffer
@@ -380,7 +384,7 @@ contains
     type(buffer), dimension(:), allocatable :: recv_buffers
 #endif
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    real :: t_1
+    real(kind = real_kind) :: t_1
 #endif
 
 #ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
@@ -406,10 +410,10 @@ contains
       end if
     end do
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    if(t_0 >= 0.0D0) then
-      point_to_point_time = mpi_wtime() - t_0
+    if(t_0 >= 0.0_real_kind) then
+      point_to_point_time = real(mpi_wtime(), kind = real_kind) - t_0
     else
-      point_to_point_time = 0.0D0
+      point_to_point_time = 0.0_real_kind
     end if
 #endif
 #endif
@@ -426,7 +430,7 @@ contains
     !!! Self-self integration !!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    t_1 = mpi_wtime()
+    t_1 = real(mpi_wtime(), kind = real_kind)
 #endif
     call allocate(rtree, positions_a, enlist_a)
     do ele_b = 1, nelements_b
@@ -447,7 +451,7 @@ contains
       deallocate(eles_a)
     end do
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    local_compute_time = mpi_wtime() - t_1
+    local_compute_time = real(mpi_wtime(), kind = real_kind) - t_1
 #endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -489,7 +493,7 @@ contains
       call MPI_Unpack(recv_buffer, buffer_size, position, recv_enlist, &
         & size(recv_enlist), MPI_INTEGER, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
       call MPI_Unpack(recv_buffer, buffer_size, position, recv_positions, &
-        & size(recv_positions), MPI_DOUBLE_PRECISION, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
+        & size(recv_positions), mpi_real_kind, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
       call MPI_Unpack(recv_buffer, buffer_size, position, ndata, &
         & 1, MPI_INTEGER, libsupermesh_mpi_comm, ierr);  assert(ierr == MPI_SUCCESS)
       allocate(data(ndata))
@@ -506,7 +510,7 @@ contains
       call unpack_data_b(nnodes, nelements, data)
 
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-      t_1 = mpi_wtime()
+      t_1 = real(mpi_wtime(), kind = real_kind)
 #endif
       do ele_b = 1, nelements
         do k = 1, loc_b
@@ -531,7 +535,7 @@ contains
         deallocate(eles_a)
       end do
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-      remote_compute_time = mpi_wtime() - t_1
+      remote_compute_time = real(mpi_wtime(), kind = real_kind) - t_1
 #endif
 
       deallocate(recv_enlist, recv_positions, data)
@@ -579,13 +583,13 @@ contains
     send_requests = MPI_REQUEST_NULL
     
 #ifdef LIBSUPERMESH_ENABLE_TIMERS
-    t_0 = -1.0D0
-    all_to_all_time = 0.0D0
+    t_0 = -1.0_real_kind
+    all_to_all_time = 0.0_real_kind
 #ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
-    point_to_point_time = 0.0D0
+    point_to_point_time = 0.0_real_kind
 #endif
-    local_compute_time = 0.0D0
-    remote_compute_time = 0.0D0
+    local_compute_time = 0.0_real_kind
+    remote_compute_time = 0.0_real_kind
 #endif
     
     parallel_supermesh_allocated = .true.
@@ -615,12 +619,15 @@ contains
     integer :: lcomm, lunit
   
     integer :: ierr, nprocs, rank
-    real :: all_to_all_max, all_to_all_min, all_to_all_sum
+    real(kind = real_kind) :: all_to_all_max, all_to_all_min, all_to_all_sum
 #ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
-    real :: point_to_point_max, point_to_point_min, point_to_point_sum
+    real(kind = real_kind) :: point_to_point_max, point_to_point_min, &
+      & point_to_point_sum
 #endif
-    real :: local_compute_max, local_compute_min, local_compute_sum
-    real :: remote_compute_max, remote_compute_min, remote_compute_sum
+    real(kind = real_kind) :: local_compute_max, local_compute_min, &
+      & local_compute_sum
+    real(kind = real_kind) :: remote_compute_max, remote_compute_min, &
+      & remote_compute_sum
     
     if(present(comm)) then
       lcomm = comm
@@ -652,12 +659,16 @@ contains
     call MPI_Allreduce(remote_compute_time, remote_compute_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, lcomm, ierr);  assert(ierr == MPI_SUCCESS)
 
     if(rank == 0) then
-      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "All to all time, min, max, mean     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
+      write(lunit, "(a,"//real_format//",a,"//real_format//",a,"//real_format//")") &
+        & "All to all time, min, max, mean     = ", all_to_all_min,     ", ", all_to_all_max,     ", ", all_to_all_sum     / nprocs
 #ifndef LIBSUPERMESH_OVERLAP_COMPUTE_COMMS
-      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Point to point time, min, max, mean = ", point_to_point_min, ", ", point_to_point_max, ", ", point_to_point_sum / nprocs
+      write(lunit, "(a,"//real_format//",a,"//real_format//",a,"//real_format//")") &
+        & "Point to point time, min, max, mean = ", point_to_point_min, ", ", point_to_point_max, ", ", point_to_point_sum / nprocs
 #endif
-      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Local compute time, min, max, mean  = ", local_compute_min,  ", ", local_compute_max,  ", ", local_compute_sum  / nprocs
-      write(lunit, "(a,e26.18e3,a,e26.18e3,a,e26.18e3)") "Remote compute time, min, max, mean = ", remote_compute_min, ", ", remote_compute_max, ", ", remote_compute_sum / nprocs
+      write(lunit, "(a,"//real_format//",a,"//real_format//",a,"//real_format//")") &
+        & "Local compute time, min, max, mean  = ", local_compute_min,  ", ", local_compute_max,  ", ", local_compute_sum  / nprocs
+      write(lunit, "(a,"//real_format//",a,"//real_format//",a,"//real_format//")") &
+        & "Remote compute time, min, max, mean = ", remote_compute_min, ", ", remote_compute_max, ", ", remote_compute_sum / nprocs
     end if
 #endif
 
@@ -665,9 +676,9 @@ contains
 
   pure function bbox(coords)
     ! dim x loc
-    real, dimension(:, :), intent(in) :: coords
+    real(kind = real_kind), dimension(:, :), intent(in) :: coords
 
-    real, dimension(2, size(coords, 1)) :: bbox
+    real(kind = real_kind), dimension(2, size(coords, 1)) :: bbox
 
     integer :: i, j
 
@@ -684,17 +695,18 @@ contains
 
   pure function partition_bbox(positions, enlist, ele_owner, rank) result(bbox)
     ! dim x nnodes
-    real, dimension(:, :), intent(in) :: positions
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
     ! nelements
     integer, dimension(:), intent(in) :: ele_owner
     integer, intent(in) :: rank
     
-    real, dimension(2, size(positions, 1)) :: bbox
+    real(kind = real_kind), dimension(2, size(positions, 1)) :: bbox
 
     integer :: dim, ele, ele_0, i, nelements
-    real, dimension(size(positions, 1), size(enlist, 1)) :: element
+    real(kind = real_kind), dimension(size(positions, 1), size(enlist, 1)) :: &
+      & element
     
     dim = size(positions, 1)
     nelements = size(enlist, 2)    
@@ -730,9 +742,9 @@ contains
 
   pure function partition_bboxes_intersect(bbox_1, bbox_2) result(intersect)
     ! 2 x dim
-    real, dimension(:, :), intent(in) :: bbox_1
+    real(kind = real_kind), dimension(:, :), intent(in) :: bbox_1
     ! 2 x dim
-    real, dimension(:, :), intent(in) :: bbox_2
+    real(kind = real_kind), dimension(:, :), intent(in) :: bbox_2
 
     logical :: intersect
 

@@ -56,20 +56,22 @@
 
 module libsupermesh_tri_intersection
 
+  use libsupermesh_precision, only : real_kind
+
   implicit none
 
   private
 
-  public :: tri_type, line_type, max_n_tris_c, intersect_tris, intersect_polys, &
-    & get_lines, triangle_area
+  public :: tri_type, line_type, max_n_tris_c, intersect_tris, &
+    & intersect_polys, get_lines, triangle_area
 
   type tri_type
-    real, dimension(2, 3) :: v
+    real(kind = real_kind), dimension(2, 3) :: v
   end type tri_type
 
   type line_type
-    real, dimension(2) :: normal
-    real, dimension(2) :: point
+    real(kind = real_kind), dimension(2) :: normal
+    real(kind = real_kind), dimension(2) :: point
   end type line_type
   
   interface max_n_tris_c
@@ -95,7 +97,7 @@ module libsupermesh_tri_intersection
 
   integer, parameter, public :: tri_buf_size = BUF_SIZE
 
-  real, dimension(2, BUF_SIZE + 2), save :: points_tmp
+  real(kind = real_kind), dimension(2, BUF_SIZE + 2), save :: points_tmp
   integer, save :: n_points_tmp
 
 contains
@@ -120,9 +122,9 @@ contains
   end function max_n_tris_c_poly
 
   subroutine intersect_tris_real(tri_a, tri_b, tris_c, n_tris_c)
-    real, dimension(2, 3), intent(in) :: tri_a
-    real, dimension(2, 3), intent(in) :: tri_b
-    real, dimension(2, 3, BUF_SIZE), intent(out) :: tris_c
+    real(kind = real_kind), dimension(2, 3), intent(in) :: tri_a
+    real(kind = real_kind), dimension(2, 3), intent(in) :: tri_b
+    real(kind = real_kind), dimension(2, 3, BUF_SIZE), intent(out) :: tris_c
     integer, intent(out) :: n_tris_c
 
     integer :: i
@@ -145,10 +147,10 @@ contains
     integer, intent(out) :: n_tris_c
 
     integer :: i
-    real :: tol
+    real(kind = real_kind) :: tol
     type(line_type), dimension(3) :: lines_b
 
-    real, dimension(2, BUF_SIZE + 2), save :: points
+    real(kind = real_kind), dimension(2, BUF_SIZE + 2), save :: points
     integer :: n_points
 
     lines_b = get_lines(tri_b)
@@ -168,7 +170,7 @@ contains
     call clip_buf(lines_b(3), points, n_points)
     if(n_points_tmp < 3) return
 
-    tol = 10.0D0 * min(spacing(triangle_area(tri_a)), spacing(triangle_area(tri_b)))
+    tol = 10.0_real_kind * min(spacing(triangle_area(tri_a)), spacing(triangle_area(tri_b)))
     do i = 1, n_points_tmp - 2
       n_tris_c = n_tris_c + 1
       tris_c(n_tris_c)%v(:, 1) = points_tmp(:, 1)
@@ -186,8 +188,9 @@ contains
     type(line_type), dimension(:), intent(in) :: lines_b
     type(tri_type), dimension(:), intent(out) :: tris_c
     integer, intent(out) :: n_tris_c
-    real, optional, intent(in) :: area_b
-    real, dimension(:, :, :), target, optional, intent(out) :: work
+    real(kind = real_kind), optional, intent(in) :: area_b
+    real(kind = real_kind), dimension(:, :, :), target, optional, intent(out) :: &
+      & work
 
     call intersect_polys(tri_a%v, lines_b, tris_c, n_tris_c, area_a = triangle_area(tri_a), area_b = area_b, work = work)
 
@@ -195,14 +198,15 @@ contains
   
   pure subroutine intersect_polys_real(poly_a, poly_b, tris_c, n_tris_c, area_a, area_b, work)
     ! 2 x loc_a
-    real, dimension(:, :), intent(in) :: poly_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: poly_a
     ! 2 x loc_b
-    real, dimension(:, :), intent(in) :: poly_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: poly_b
     type(tri_type), dimension(:), intent(out) :: tris_c
     integer, intent(out) :: n_tris_c
-    real, optional, intent(in) :: area_a
-    real, optional, intent(in) :: area_b
-    real, dimension(:, :, :), target, optional, intent(out) :: work
+    real(kind = real_kind), optional, intent(in) :: area_a
+    real(kind = real_kind), optional, intent(in) :: area_b
+    real(kind = real_kind), dimension(:, :, :), target, optional, intent(out) :: &
+      & work
     
     call intersect_polys(poly_a, get_lines(poly_b), tris_c, n_tris_c, area_a = area_a, area_b = area_b, work = work)
   
@@ -210,19 +214,20 @@ contains
 
   pure subroutine intersect_polys_lines(poly_a, lines_b, tris_c, n_tris_c, area_a, area_b, work)
     ! 2 x loc_a
-    real, dimension(:, :), intent(in) :: poly_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: poly_a
     ! loc_b
     type(line_type), dimension(:), intent(in) :: lines_b
     type(tri_type), dimension(:), intent(out) :: tris_c
     integer, intent(out) :: n_tris_c
-    real, optional, intent(in) :: area_a
-    real, optional, intent(in) :: area_b
-    real, dimension(:, :, :), target, optional, intent(out) :: work
+    real(kind = real_kind), optional, intent(in) :: area_a
+    real(kind = real_kind), optional, intent(in) :: area_b
+    real(kind = real_kind), dimension(:, :, :), target, optional, intent(out) :: &
+      & work
 
     integer :: i
-    real :: tol
+    real(kind = real_kind) :: tol
 
-    real, dimension(:, :), pointer :: points, points_new
+    real(kind = real_kind), dimension(:, :), pointer :: points, points_new
     integer :: n_points, n_points_new
     
     if(present(work)) then
@@ -246,14 +251,14 @@ contains
 
     if(present(area_b)) then
       if(present(area_a)) then
-        tol = 10.0D0 * min(spacing(area_a), spacing(area_b))
+        tol = 10.0_real_kind * min(spacing(area_a), spacing(area_b))
       else
-        tol = 10.0D0 * spacing(area_b)
+        tol = 10.0_real_kind * spacing(area_b)
       end if
     else if(present(area_a)) then
-      tol = 10.0D0 * spacing(area_a)
+      tol = 10.0_real_kind * spacing(area_a)
     else
-      tol = 10.0D0 * tiny(tol)
+      tol = 10.0_real_kind * tiny(tol)
     end if
     do i = 1, n_points_new - 2
       n_tris_c = n_tris_c + 1
@@ -275,13 +280,13 @@ contains
   ! Note that the role of the "initial" and "terminal" is swapped here
   subroutine clip_buf(line, points, n_points)
     type(line_type), intent(in) :: line
-    real, dimension(2, BUF_SIZE + 2), intent(in) :: points
+    real(kind = real_kind), dimension(2, BUF_SIZE + 2), intent(in) :: points
     integer, intent(in) :: n_points
 
     integer :: i
-    real :: d1, d2, f
-    real, dimension(2) :: p1, p2
-    real, dimension(BUF_SIZE + 2), save :: d
+    real(kind = real_kind) :: d1, d2, f
+    real(kind = real_kind), dimension(2) :: p1, p2
+    real(kind = real_kind), dimension(BUF_SIZE + 2), save :: d
 
     do i = 1, n_points
       d(i) = dot_product(line%normal, points(:, i) - line%point)
@@ -299,8 +304,8 @@ contains
         d2 = d(i + 1)
       end if
 
-      if(d1 < 0.0D0) then
-        if(d2 <= 0.0D0) then
+      if(d1 < 0.0_real_kind) then
+        if(d2 <= 0.0_real_kind) then
           ! No clip
           n_points_tmp = n_points_tmp + 1
           points_tmp(:, n_points_tmp) = p1
@@ -309,17 +314,17 @@ contains
           n_points_tmp = n_points_tmp + 1
           points_tmp(:, n_points_tmp) = p1
           n_points_tmp = n_points_tmp + 1
-          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
+          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0_real_kind), 0.0_real_kind)
           points_tmp(:, n_points_tmp) = p1 + f * (p2 - p1)
         end if
-      else if(d1 == 0.0D0) then
+      else if(d1 == 0.0_real_kind) then
         ! No clip
         n_points_tmp = n_points_tmp + 1
         points_tmp(:, n_points_tmp) = p1
-      else if(d2 < 0.0D0) then
+      else if(d2 < 0.0_real_kind) then
         ! Move point
         n_points_tmp = n_points_tmp + 1
-        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
+        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0_real_kind), 0.0_real_kind)
         points_tmp(:, n_points_tmp) = p1 + f * (p2 - p1)
       !else
         ! Full clip
@@ -334,14 +339,14 @@ contains
   ! Note that the role of the "initial" and "terminal" is swapped here
   pure subroutine clip(line, points, n_points, points_new, n_points_new)
     type(line_type), intent(in) :: line
-    real, dimension(:, :), intent(in) :: points
+    real(kind = real_kind), dimension(:, :), intent(in) :: points
     integer, intent(in) :: n_points
-    real, dimension(:, :), intent(out) :: points_new
+    real(kind = real_kind), dimension(:, :), intent(out) :: points_new
     integer, intent(out) :: n_points_new
 
     integer :: i
-    real :: d0, d1, d2, f
-    real, dimension(2) :: p1, p2
+    real(kind = real_kind) :: d0, d1, d2, f
+    real(kind = real_kind), dimension(2) :: p1, p2
 
     d0 = dot_product(line%normal, points(:, 1) - line%point)
     d2 = d0
@@ -357,8 +362,8 @@ contains
         d2 = dot_product(line%normal, points(:, i + 1) - line%point)
       end if
 
-      if(d1 < 0.0D0) then
-        if(d2 <= 0.0D0) then
+      if(d1 < 0.0_real_kind) then
+        if(d2 <= 0.0_real_kind) then
           ! No clip
           n_points_new = n_points_new + 1
           points_new(:, n_points_new) = p1
@@ -367,17 +372,17 @@ contains
           n_points_new = n_points_new + 1
           points_new(:, n_points_new) = p1
           n_points_new = n_points_new + 1
-          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
+          f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0_real_kind), 0.0_real_kind)
           points_new(:, n_points_new) = p1 + f * (p2 - p1)
         end if
-      else if(d1 == 0.0D0) then
+      else if(d1 == 0.0_real_kind) then
         ! No clip
         n_points_new = n_points_new + 1
         points_new(:, n_points_new) = p1
-      else if(d2 < 0.0D0) then
+      else if(d2 < 0.0_real_kind) then
         ! Move point
         n_points_new = n_points_new + 1
-        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0D0), 0.0D0)
+        f = max(min((abs(d1) / (abs(d1) + abs(d2))), 1.0_real_kind), 0.0_real_kind)
         points_new(:, n_points_new) = p1 + f * (p2 - p1)
       !else
         ! Full clip
@@ -405,7 +410,7 @@ contains
     lines(3)%normal(2) =  (tri%v(1, 1) - tri%v(1, 3))
     lines(3)%point = tri%v(:, 3)
 
-    if(dot_product(tri%v(:, 2) - tri%v(:, 1), lines(3)%normal) > 0.0D0) then
+    if(dot_product(tri%v(:, 2) - tri%v(:, 1), lines(3)%normal) > 0.0_real_kind) then
       lines(1)%normal = -lines(1)%normal
       lines(2)%normal = -lines(2)%normal
       lines(3)%normal = -lines(3)%normal
@@ -415,7 +420,7 @@ contains
 
   pure function get_lines_poly(poly) result(lines)
     ! 2 x loc
-    real, dimension(:, :), intent(in) :: poly
+    real(kind = real_kind), dimension(:, :), intent(in) :: poly
     
     type(line_type), dimension(size(poly, 2)) :: lines
 
@@ -436,7 +441,7 @@ contains
     lines(loc)%normal(2) = -(poly(1, 1) - poly(1, loc))
     lines(loc)%point = poly(:, loc)
     
-    if(dot_product(poly(:, 1) - lines(2)%point, lines(2)%normal) > 0.0D0) then
+    if(dot_product(poly(:, 1) - lines(2)%point, lines(2)%normal) > 0.0_real_kind) then
       do i = 1, loc
         lines(i)%normal = -lines(i)%normal
       end do
@@ -445,28 +450,28 @@ contains
   end function get_lines_poly
 
   pure function triangle_area_real(tri) result(area)
-    real, dimension(2, 3), intent(in) :: tri
+    real(kind = real_kind), dimension(2, 3), intent(in) :: tri
 
-    real :: area
-    real, dimension(2) :: u, v
+    real(kind = real_kind) :: area
+    real(kind = real_kind), dimension(2) :: u, v
 
     u = tri(:, 3) - tri(:, 1)
     v = tri(:, 2) - tri(:, 1)
 
-    area = 0.5D0 * abs(u(2) * v(1) - u(1) * v(2))
+    area = 0.5_real_kind * abs(u(2) * v(1) - u(1) * v(2))
 
   end function triangle_area_real
 
   pure elemental function triangle_area_tri(tri) result(area)
     type(tri_type), intent(in) :: tri
 
-    real :: area
-    real, dimension(2) :: u, v
+    real(kind = real_kind) :: area
+    real(kind = real_kind), dimension(2) :: u, v
 
     u = tri%v(:, 3) - tri%v(:, 1)
     v = tri%v(:, 2) - tri%v(:, 1)
 
-    area = 0.5D0 * abs(u(2) * v(1) - u(1) * v(2))
+    area = 0.5_real_kind * abs(u(2) * v(1) - u(1) * v(2))
 
   end function triangle_area_tri
   

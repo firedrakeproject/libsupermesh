@@ -56,6 +56,8 @@ module libsupermesh_unittest_tools
   ! Utility functions for unit testing
 
   use iso_fortran_env, only : output_unit
+  
+  use libsupermesh_precision, only : real_kind
 
   implicit none
 
@@ -114,8 +116,8 @@ contains
   end subroutine report_test
 
   pure elemental function fequals_op(float1, float2) result(equals)
-    real, intent(in) :: float1
-    real, intent(in) :: float2
+    real(kind = real_kind), intent(in) :: float1
+    real(kind = real_kind), intent(in) :: float2
 
     logical :: equals
 
@@ -124,8 +126,8 @@ contains
   end function fequals_op
 
   pure elemental function fnequals_op(float1, float2) result(nequals)
-    real, intent(in) :: float1
-    real, intent(in) :: float2
+    real(kind = real_kind), intent(in) :: float1
+    real(kind = real_kind), intent(in) :: float2
 
     logical :: nequals
 
@@ -134,8 +136,8 @@ contains
   end function fnequals_op
 
   pure function fequals_array_scalar_op(array1, float2) result(equals)
-    real, dimension(:), intent(in) :: array1
-    real, intent(in) :: float2
+    real(kind = real_kind), dimension(:), intent(in) :: array1
+    real(kind = real_kind), intent(in) :: float2
 
     logical :: equals
 
@@ -144,8 +146,8 @@ contains
   end function fequals_array_scalar_op
 
   pure function fnequals_array_scalar_op(array1, float2) result(nequals)
-    real, dimension(:), intent(in) :: array1
-    real, intent(in) :: float2
+    real(kind = real_kind), dimension(:), intent(in) :: array1
+    real(kind = real_kind), intent(in) :: float2
 
     logical :: nequals
 
@@ -154,8 +156,8 @@ contains
   end function fnequals_array_scalar_op
   
   pure function fequals_matrix_scalar_op(mat1, float2) result(equals)
-    real, dimension(:, :), intent(in) :: mat1
-    real, intent(in) :: float2
+    real(kind = real_kind), dimension(:, :), intent(in) :: mat1
+    real(kind = real_kind), intent(in) :: float2
     
     logical :: equals
 
@@ -164,8 +166,8 @@ contains
   end function fequals_matrix_scalar_op
   
   pure function fnequals_matrix_scalar_op(mat1, float2) result(nequals)
-    real, dimension(:, :), intent(in) :: mat1
-    real, intent(in) :: float2
+    real(kind = real_kind), dimension(:, :), intent(in) :: mat1
+    real(kind = real_kind), intent(in) :: float2
     
     logical :: nequals
 
@@ -174,27 +176,27 @@ contains
   end function fnequals_matrix_scalar_op
 
   pure elemental function fequals(float1, float2, tol) result(equals)
-    real, intent(in) :: float1
-    real, intent(in) :: float2
-    real, intent(in), optional :: tol
+    real(kind = real_kind), intent(in) :: float1
+    real(kind = real_kind), intent(in) :: float2
+    real(kind = real_kind), intent(in), optional :: tol
     
     logical :: equals
 
-    real :: eps
+    real(kind = real_kind) :: eps
     
     if(present(tol)) then
       eps = abs(tol)
     else
-      eps = 1.0D2 * max(epsilon(eps), spacing(float1), spacing(float2))
+      eps = 1.0e2_real_kind * max(epsilon(eps), spacing(float1), spacing(float2))
     end if
     equals = abs(float1 - float2) < eps
 
   end function fequals
 
   pure elemental function fnequals(float1, float2, tol) result(nequals)
-    real, intent(in) :: float1
-    real, intent(in) :: float2
-    real, optional, intent(in) :: tol
+    real(kind = real_kind), intent(in) :: float1
+    real(kind = real_kind), intent(in) :: float2
+    real(kind = real_kind), optional, intent(in) :: tol
 
     logical :: nequals
 
@@ -203,9 +205,9 @@ contains
   end function fnequals
 
   pure function fequals_array_scalar(array1, float2, tol) result(equals)
-    real, dimension(:), intent(in) :: array1
-    real, intent(in) :: float2
-    real, intent(in), optional :: tol
+    real(kind = real_kind), dimension(:), intent(in) :: array1
+    real(kind = real_kind), intent(in) :: float2
+    real(kind = real_kind), intent(in), optional :: tol
 
     logical :: equals
     
@@ -222,9 +224,9 @@ contains
   end function fequals_array_scalar
 
   pure function fnequals_array_scalar(array1, float2, tol) result(nequals)
-    real, dimension(:), intent(in) :: array1
-    real, intent(in) :: float2
-    real, intent(in), optional :: tol
+    real(kind = real_kind), dimension(:), intent(in) :: array1
+    real(kind = real_kind), intent(in) :: float2
+    real(kind = real_kind), intent(in), optional :: tol
 
     logical :: nequals
 
@@ -233,9 +235,9 @@ contains
   end function fnequals_array_scalar
 
   pure function fequals_matrix_scalar(mat1, float2, tol) result(equals)
-    real, dimension(:, :), intent(in) :: mat1
-    real, intent(in) :: float2
-    real, optional, intent(in) :: tol
+    real(kind = real_kind), dimension(:, :), intent(in) :: mat1
+    real(kind = real_kind), intent(in) :: float2
+    real(kind = real_kind), optional, intent(in) :: tol
     
     logical :: equals
 
@@ -252,9 +254,9 @@ contains
   end function fequals_matrix_scalar
   
   pure function fnequals_matrix_scalar(mat1, float2, tol) result(nequals)
-    real, dimension(:, :), intent(in) :: mat1
-    real, intent(in) :: float2
-    real, optional, intent(in) :: tol
+    real(kind = real_kind), dimension(:, :), intent(in) :: mat1
+    real(kind = real_kind), intent(in) :: float2
+    real(kind = real_kind), optional, intent(in) :: tol
     
     logical :: nequals
 

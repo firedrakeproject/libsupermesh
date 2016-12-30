@@ -29,6 +29,7 @@ subroutine test_parallel_supermesh_2d() bind(c)
   use libsupermesh_intersection_finder, only : intersections, deallocate, &
     & intersection_finder
   use libsupermesh_parallel_supermesh, only : parallel_supermesh
+  use libsupermesh_precision, only : mpi_real_kind, real_format, real_kind
   use libsupermesh_read_halos, only : halo_type, deallocate, read_halo
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_supermesh, only : tri_type, intersect_tris, tri_buf_size, &
@@ -37,18 +38,23 @@ subroutine test_parallel_supermesh_2d() bind(c)
 
   implicit none
 
-  character(len = int(log10(real(huge(0)))) + 2) :: nprocs_chr, rank_chr
   integer :: ele_a, ele_b, ele_c, i, ierr, loc_b, n_tris_c, nelements_a, &
     & nelements_b, nprocs, rank, real_extent
   integer, dimension(:), allocatable :: ele_owner_a, ele_owner_b
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
-  real :: area_parallel, area_serial, integral_parallel, integral_serial
-  real, dimension(:), allocatable, target :: data_b_data, vals_b
-  real, dimension(:, :), allocatable :: positions_a, positions_b
+  real(kind = real_kind) :: area_parallel, area_serial, integral_parallel, &
+    & integral_serial
+  real(kind = real_kind), dimension(:), allocatable, target :: data_b_data, &
+    & vals_b
+  real(kind = real_kind), dimension(:, :), allocatable :: positions_a, &
+    & positions_b
   type(halo_type) :: halo
   type(intersections), dimension(:), allocatable :: map_ab
   type(tri_type) :: tri_a, tri_b
   type(tri_type), dimension(tri_buf_size) :: tris_c
+  
+  character(len = int(log10(real(huge(rank)))) + 2) :: rank_chr
+  character(len = int(log10(real(huge(nprocs)))) + 2) :: nprocs_chr
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
@@ -56,7 +62,7 @@ subroutine test_parallel_supermesh_2d() bind(c)
   write(nprocs_chr, "(i0)") nprocs
   rank_chr = adjustl(rank_chr)
   nprocs_chr = adjustl(nprocs_chr)
-  call MPI_Type_extent(MPI_DOUBLE_PRECISION, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Type_extent(mpi_real_kind, real_extent, ierr);  assert(ierr == MPI_SUCCESS)
 
   if(rank == 0) then
     call read_node("data/square_0_01.node", dim = 2, positions = positions_a)
@@ -68,14 +74,14 @@ subroutine test_parallel_supermesh_2d() bind(c)
     nelements_b = size(enlist_b, 2)
     allocate(vals_b(nelements_b))
     do ele_b = 1, nelements_b
-      vals_b(ele_b) = sum(positions_b(1, enlist_b(:, ele_b))) / real(loc_b)
+      vals_b(ele_b) = sum(positions_b(1, enlist_b(:, ele_b))) / real(loc_b, kind = real_kind)
     end do
     
     allocate(map_ab(nelements_a))
     call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
 
-    area_serial = 0.0D0
-    integral_serial = 0.0D0
+    area_serial = 0.0_real_kind
+    integral_serial = 0.0_real_kind
     do ele_a = 1, nelements_a
       tri_a%v = positions_a(:, enlist_a(:, ele_a))
 
@@ -119,17 +125,17 @@ subroutine test_parallel_supermesh_2d() bind(c)
 
   allocate(vals_b(nelements_b))
   do ele_b = 1, nelements_b
-    vals_b(ele_b) = sum(positions_b(1, enlist_b(:, ele_b))) / real(loc_b)
+    vals_b(ele_b) = sum(positions_b(1, enlist_b(:, ele_b))) / real(loc_b, kind = real_kind)
   end do
   
-  area_parallel = 0.0D0
-  integral_parallel = 0.0D0
+  area_parallel = 0.0_real_kind
+  integral_parallel = 0.0_real_kind
   call parallel_supermesh(positions_a, enlist_a, ele_owner_a, &
                         & positions_b, enlist_b, ele_owner_b, &
                         & pack_data_b, unpack_data_b, intersection_calculation)
   call cleanup_data_b()
-  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
-  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, area_parallel, 1, mpi_real_kind, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+  call MPI_Allreduce(MPI_IN_PLACE, integral_parallel, 1, mpi_real_kind, MPI_SUM, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   deallocate(positions_a, enlist_a, ele_owner_a)
   deallocate(positions_b, enlist_b, ele_owner_b, vals_b)
@@ -138,13 +144,13 @@ subroutine test_parallel_supermesh_2d() bind(c)
   flush(error_unit)
   call MPI_Barrier(MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
   if(rank == 0) then
-    print "(a,e26.18e3)", "Area, serial       =", area_serial
-    print "(a,e26.18e3)", "Area, parallel     =", area_parallel
-    print "(a,e26.18e3)", "Integral, serial   =", integral_serial
-    print "(a,e26.18e3)", "Integral, parallel =", integral_parallel
+    write(output_unit, "(a,"//real_format//")") "Area, serial       =", area_serial
+    write(output_unit, "(a,"//real_format//")") "Area, parallel     =", area_parallel
+    write(output_unit, "(a,"//real_format//")") "Integral, serial   =", integral_serial
+    write(output_unit, "(a,"//real_format//")") "Integral, parallel =", integral_parallel
 
     call report_test("[test_parallel_supermesh serial area]", &
-      & area_serial .fne. 0.5D0, .false., "Incorrect serial area")
+      & area_serial .fne. 0.5_real_kind, .false., "Incorrect serial area")
     call report_test("[test_parallel_supermesh areas]", &
       & area_serial .fne. area_parallel, .false., &
       & "Serial and parallel areas differ")
@@ -163,7 +169,7 @@ contains
     integer(kind = c_int8_t), dimension(:), allocatable, intent(out) :: data_b
 
     integer :: ierr, ndata_b, position
-    real, dimension(:), allocatable :: ldata
+    real(kind = real_kind), dimension(:), allocatable :: ldata
 
     allocate(ldata(size(eles_b)))
     ldata = vals_b(eles_b)
@@ -171,7 +177,7 @@ contains
     ndata_b = size(eles_b) * real_extent
     allocate(data_b(ndata_b))
     position = 0
-    call MPI_Pack(ldata, size(eles_b), MPI_DOUBLE_PRECISION, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Pack(ldata, size(eles_b), mpi_real_kind, data_b, ndata_b, position, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
     deallocate(ldata)
 
@@ -188,7 +194,7 @@ contains
 
     allocate(data_b_data(nelements_b))
     position = 0
-    call MPI_Unpack(data_b, size(data_b), position, data_b_data, size(data_b_data), MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
+    call MPI_Unpack(data_b, size(data_b), position, data_b_data, size(data_b_data), mpi_real_kind, MPI_COMM_WORLD, ierr);  assert(ierr == MPI_SUCCESS)
 
   end subroutine unpack_data_b
 
@@ -198,11 +204,11 @@ contains
 
   subroutine intersection_calculation(element_a, element_b, elements_c, nodes_b, ele_a, ele_b, local)
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     ! dim x loc_b
-    real, dimension(:, :), intent(in) :: element_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_b
     ! dim x loc_c x nelements_c
-    real, dimension(:, :, :), intent(in) :: elements_c
+    real(kind = real_kind), dimension(:, :, :), intent(in) :: elements_c
     ! loc_b
     integer, dimension(:), intent(in) :: nodes_b
     integer, intent(in) :: ele_a
@@ -210,7 +216,7 @@ contains
     logical, intent(in) :: local
 
     integer :: ele_c, nelements_c
-    real, dimension(:), pointer :: data_b
+    real(kind = real_kind), dimension(:), pointer :: data_b
     
     if(local) then
       data_b => vals_b

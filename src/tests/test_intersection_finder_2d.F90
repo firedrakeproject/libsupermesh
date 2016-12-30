@@ -57,6 +57,7 @@ subroutine test_intersection_finder_2d() bind(c)
   use libsupermesh_intersection_finder, only : intersections, deallocate
   use libsupermesh_intersection_finder, only : &
     & advancing_front_intersection_finder
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_unittest_tools, only : report_test
 
@@ -65,7 +66,8 @@ subroutine test_intersection_finder_2d() bind(c)
   integer :: i
   logical :: fail
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
-  real, dimension(:, :), allocatable :: positions_a, positions_b
+  real(kind = real_kind), dimension(:, :), allocatable :: positions_a, &
+    & positions_b
   type(intersections), dimension(1) :: map_ab
   type(intersections), dimension(3) :: bigger_map_ab
 

@@ -57,6 +57,7 @@ module libsupermesh_supermesh
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_interval_intersection, only : intersect_intervals, &
     & interval_buf_size, interval_size
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_tri_intersection, only : tri_type, line_type, max_n_tris_c, &
     & intersect_tris, tri_buf_size, intersect_polys, get_lines, triangle_area
   use libsupermesh_tet_intersection, only : tet_type, plane_type, &
@@ -138,10 +139,10 @@ contains
 
   subroutine intersect_simplices(simplex_a, simplex_b, simplices_c, n_simplices_c)
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: simplex_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: simplex_a
     ! dim x loc_b
-    real, dimension(:, :), intent(in) :: simplex_b
-    real, dimension(:, :, :), intent(inout) :: simplices_c
+    real(kind = real_kind), dimension(:, :), intent(in) :: simplex_b
+    real(kind = real_kind), dimension(:, :, :), intent(inout) :: simplices_c
     integer, intent(out) :: n_simplices_c
     
     select case(size(simplex_a, 1))
@@ -159,10 +160,10 @@ contains
 
   subroutine intersect_elements(element_a, element_b, elements_c, nelements_c)
     ! dim x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     ! dim x loc_b
-    real, dimension(:, :), intent(in) :: element_b
-    real, dimension(:, :, :), intent(inout) :: elements_c
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_b
+    real(kind = real_kind), dimension(:, :, :), intent(inout) :: elements_c
     integer, intent(out) :: nelements_c
 
     integer :: dim, loc_a, loc_b
@@ -208,14 +209,14 @@ contains
   
   subroutine intersect_tri_quad(tri_a, quad_b, tris_c, n_tris_c)
     ! 2 x 3
-    real, dimension(:, :), intent(in) :: tri_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: tri_a
     ! 2 x 4
-    real, dimension(:, :), intent(in) :: quad_b
-    real, dimension(:, :, :), intent(inout) :: tris_c
+    real(kind = real_kind), dimension(:, :), intent(in) :: quad_b
+    real(kind = real_kind), dimension(:, :, :), intent(inout) :: tris_c
     integer, intent(out) :: n_tris_c
     
     integer :: i
-    real, dimension(2, 3 * (2 ** 4), 2), save :: work
+    real(kind = real_kind), dimension(2, 3 * (2 ** 4), 2), save :: work
     type(tri_type) :: ltri_a
     type(tri_type), dimension(3 * (2 ** 4) - 2), save :: ltris_c
     
@@ -229,14 +230,14 @@ contains
 
   subroutine intersect_quads(quad_a, quad_b, tris_c, n_tris_c)
     ! 2 x 4
-    real, dimension(:, :), intent(in) :: quad_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: quad_a
     ! 2 x 4
-    real, dimension(:, :), intent(in) :: quad_b
-    real, dimension(:, :, :), intent(inout) :: tris_c
+    real(kind = real_kind), dimension(:, :), intent(in) :: quad_b
+    real(kind = real_kind), dimension(:, :, :), intent(inout) :: tris_c
     integer, intent(out) :: n_tris_c
     
     integer :: i
-    real, dimension(2, 4 * (2 ** 4), 2), save :: work
+    real(kind = real_kind), dimension(2, 4 * (2 ** 4), 2), save :: work
     type(tri_type), dimension(4 * (2 ** 4) - 2), save :: ltris_c
 
     call intersect_polys(quad_a, quad_b, ltris_c, n_tris_c, work = work)
@@ -248,10 +249,10 @@ contains
 
   subroutine intersect_tet_hex(tet_a, hex_b, tets_c, n_tets_c)
     ! 3 x 4
-    real, dimension(:, :), intent(in) :: tet_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: tet_a
     ! 4 x 8
-    real, dimension(:, :), intent(in) :: hex_b
-    real, dimension(:, :, :), intent(inout) :: tets_c
+    real(kind = real_kind), dimension(:, :), intent(in) :: hex_b
+    real(kind = real_kind), dimension(:, :, :), intent(inout) :: tets_c
     integer, intent(out) :: n_tets_c
     
     integer :: i, ln_tets_c
@@ -285,9 +286,9 @@ contains
   contains
 
     pure function unit_cross(vec_a, vec_b) result(cross)
-      real, dimension(3), intent(in) :: vec_a, vec_b
+      real(kind = real_kind), dimension(3), intent(in) :: vec_a, vec_b
       
-      real, dimension(3) :: cross
+      real(kind = real_kind), dimension(3) :: cross
       
       cross(1) = vec_a(2) * vec_b(3) - vec_a(3) * vec_b(2)
       cross(2) = vec_a(3) * vec_b(1) - vec_a(1) * vec_b(3)
@@ -300,10 +301,10 @@ contains
 
   subroutine intersect_hexes(hex_a, hex_b, tets_c, n_tets_c)
     ! 3 x 8
-    real, dimension(:, :), intent(in) :: hex_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: hex_a
     ! 3 x 8
-    real, dimension(:, :), intent(in) :: hex_b
-    real, dimension(:, :, :), intent(inout) :: tets_c
+    real(kind = real_kind), dimension(:, :), intent(in) :: hex_b
+    real(kind = real_kind), dimension(:, :, :), intent(inout) :: tets_c
     integer, intent(out) :: n_tets_c
     
     integer :: ln_tets_c
@@ -333,9 +334,9 @@ contains
 
   pure function simplex_volume(simplex) result(volume)
     ! dim x loc
-    real, dimension(:, :), intent(in) :: simplex
+    real(kind = real_kind), dimension(:, :), intent(in) :: simplex
 
-    real :: volume
+    real(kind = real_kind) :: volume
 
     select case(size(simplex, 1))
       case(1)
@@ -352,7 +353,7 @@ contains
   
   pure function divide_polygon(poly) result(tris)
     ! 2 x loc
-    real, dimension(:, :), intent(in) :: poly
+    real(kind = real_kind), dimension(:, :), intent(in) :: poly
     
     type(tri_type), dimension(size(poly, 2) - 2) :: tris
   
@@ -369,7 +370,7 @@ contains
   end function divide_polygon
   
   pure function divide_hex(hex) result(tets)
-    real, dimension(3, 8), intent(in) :: hex
+    real(kind = real_kind), dimension(3, 8), intent(in) :: hex
     
     type(tet_type), dimension(5) :: tets
     
@@ -392,7 +393,7 @@ contains
   end function divide_hex
   
   pure function divide_prism(prism) result(tets)
-    real, dimension(3, 6), intent(in) :: prism
+    real(kind = real_kind), dimension(3, 6), intent(in) :: prism
     
     type(tet_type), dimension(3) :: tets
     
@@ -406,7 +407,7 @@ contains
   end function divide_prism
   
   pure function divide_pyramid(pyramid) result(tets)
-    real, dimension(3, 5), intent(in) :: pyramid
+    real(kind = real_kind), dimension(3, 5), intent(in) :: pyramid
     
     type(tet_type), dimension(2) :: tets
     

@@ -26,6 +26,7 @@ module libsupermesh_quadtree_intersection_finder
   use libsupermesh_debug, only : abort_pinpoint
   use libsupermesh_intersections, only : intersections, deallocate, &
     & intersections_to_csr_sparsity
+  use libsupermesh_precision, only : real_kind
 
   implicit none
 
@@ -41,7 +42,7 @@ module libsupermesh_quadtree_intersection_finder
     ! Maximum number of stored elements
     integer :: max_n  
     ! Node bounding box
-    real, dimension(2, TREE_DIM) :: bbox
+    real(kind = real_kind), dimension(2, TREE_DIM) :: bbox
     ! If this is a leaf node, elements stored by this node
     type(quadtree_element), dimension(:), pointer :: elements
     ! Otherwise, children of this node
@@ -51,7 +52,7 @@ module libsupermesh_quadtree_intersection_finder
   ! Quadtree stored elements
   type quadtree_element
     ! Element bounding box
-    real, dimension(2, TREE_DIM) :: bbox
+    real(kind = real_kind), dimension(2, TREE_DIM) :: bbox
     ! Element index
     integer :: ele
   end type quadtree_element
@@ -107,11 +108,11 @@ contains
 
   subroutine quadtree_intersection_finder_intersections(positions_a, enlist_a, positions_b, enlist_b, map_ab, max_size)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! nelements_a
@@ -145,11 +146,11 @@ contains
   
   subroutine quadtree_intersection_finder_csr_sparsity(positions_a, enlist_a, positions_b, enlist_b, map_ab_indices, map_ab_indptr, max_size)
     ! dim x nnodes_a
-    real, dimension(:, :), intent(in) :: positions_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_a
     ! loc_a x nelements_a
     integer, dimension(:, :), intent(in) :: enlist_a
     ! dim x nnodes_b
-    real, dimension(:, :), intent(in) :: positions_b
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions_b
     ! loc_b x nelements_b
     integer, dimension(:, :), intent(in) :: enlist_b
     ! Compressed Sparse Row (CSR) sparsity pattern, as described in:
@@ -172,7 +173,7 @@ contains
   subroutine allocate_node(root_node, positions, enlist, max_size)
     type(quadtree_node), intent(out) :: root_node
     ! TREE_DIM x nnodes
-    real, dimension(:, :), intent(in) :: positions
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
     integer, optional, intent(in) :: max_size    
@@ -222,7 +223,7 @@ contains
   subroutine allocate_quadtree(quadtree, positions, enlist, max_size)
     type(quadtree_type), intent(out) :: quadtree
     ! TREE_DIM x nnodes
-    real, dimension(:, :), intent(in) :: positions
+    real(kind = real_kind), dimension(:, :), intent(in) :: positions
     ! loc x nelements
     integer, dimension(:, :), intent(in) :: enlist
     integer, optional, intent(in) :: max_size  
@@ -269,10 +270,10 @@ contains
   pure recursive subroutine add_element(node, ele, bbox)
     type(quadtree_node), intent(inout) :: node
     integer, intent(in) :: ele
-    real, dimension(2, TREE_DIM), intent(in) :: bbox
+    real(kind = real_kind), dimension(2, TREE_DIM), intent(in) :: bbox
   
     integer :: i, j
-    real, dimension(TREE_DIM) :: mid_point
+    real(kind = real_kind), dimension(TREE_DIM) :: mid_point
   
     if(.not. bboxes_intersect(node%bbox, bbox)) return
     
@@ -287,7 +288,7 @@ contains
     
       ! Create new child leaf nodes
       allocate(node%children(TREE_NCHILDREN))
-      mid_point = 0.5D0 * (node%bbox(1, :) + node%bbox(2, :))
+      mid_point = 0.5_real_kind * (node%bbox(1, :) + node%bbox(2, :))
       node%children(1)%bbox(1, :) = (/node%bbox(1, 1), node%bbox(1, 2)/)
       node%children(1)%bbox(2, :) = (/mid_point(1),    mid_point(2)/)      
       node%children(2)%bbox(1, :) = (/node%bbox(1, 1), mid_point(2)/)
@@ -313,7 +314,7 @@ contains
       end do
       
       ! Mark the parent as not a leaf node
-      node%n = huge(0)
+      node%n = huge(node%n)
       deallocate(node%elements)
       nullify(node%elements)
     else
@@ -327,7 +328,7 @@ contains
   
   pure recursive subroutine query_node_internal(node, bbox_a, eles_b, neles_b, seen_ele_b)
     type(quadtree_node), intent(in) :: node
-    real, dimension(2, TREE_DIM), intent(in) :: bbox_a
+    real(kind = real_kind), dimension(2, TREE_DIM), intent(in) :: bbox_a
     integer, dimension(:), intent(inout) :: eles_b
     integer, intent(inout) :: neles_b
     logical, dimension(:), intent(inout) :: seen_ele_b
@@ -362,7 +363,7 @@ contains
   pure subroutine query_quadtree_allocatable(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
     ! TREE_DIM x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     integer, dimension(:), allocatable, intent(out) :: eles_b
     
     quadtree%seen_ele_b(quadtree%eles_b(:quadtree%neles_b)) = .false.
@@ -376,7 +377,7 @@ contains
   pure subroutine query_quadtree_pointer(quadtree, element_a, eles_b)
     type(quadtree_type), intent(inout) :: quadtree
     ! TREE_DIM x loc_a
-    real, dimension(:, :), intent(in) :: element_a
+    real(kind = real_kind), dimension(:, :), intent(in) :: element_a
     integer, dimension(:), pointer, intent(out) :: eles_b
     
     quadtree%seen_ele_b(quadtree%eles_b(:quadtree%neles_b)) = .false.
@@ -389,9 +390,9 @@ contains
 
   pure function bbox(coords)
     ! TREE_DIM x loc
-    real, dimension(:, :), intent(in) :: coords
+    real(kind = real_kind), dimension(:, :), intent(in) :: coords
 
-    real, dimension(2, TREE_DIM) :: bbox
+    real(kind = real_kind), dimension(2, TREE_DIM) :: bbox
 
     integer :: i
 
@@ -407,8 +408,8 @@ contains
   end function bbox
 
   pure function bboxes_intersect(bbox_1, bbox_2) result(intersect)
-    real, dimension(2, TREE_DIM), intent(in) :: bbox_1
-    real, dimension(2, TREE_DIM), intent(in) :: bbox_2
+    real(kind = real_kind), dimension(2, TREE_DIM), intent(in) :: bbox_1
+    real(kind = real_kind), dimension(2, TREE_DIM), intent(in) :: bbox_2
 
     logical :: intersect
 

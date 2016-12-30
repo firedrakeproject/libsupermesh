@@ -68,7 +68,7 @@ contains
     call MPI_Comm_rank(halo%comm, process, ierr)
     assert(ierr == MPI_SUCCESS)
     node_owner(:halo%npnodes) = process
-    node_owner(halo%npnodes + 1:) = huge(0)
+    if(size(node_owner) > halo%npnodes) node_owner(halo%npnodes + 1:) = huge(node_owner(halo%npnodes + 1))
 
     do i = 1, halo%nprocs
       if(size(halo%recv(i)%v) > 0) then

@@ -127,7 +127,8 @@ contains
     integer, optional, intent(in) :: level
     integer, optional, intent(in) :: comm
 
-    character(len = len_trim(basename) + int(log10(real(huge(halo%nprocs)))) + 8) :: filename
+    character(len = len_trim(basename) + int(log10(real(huge(halo%process)))) + 8) :: &
+      & filename
     integer :: i, ierr, index
     integer(kind = c_int) :: nprocs, process
     integer(kind = c_int), dimension(:), allocatable :: nsends, nreceives, &

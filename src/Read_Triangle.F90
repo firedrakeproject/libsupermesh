@@ -54,6 +54,7 @@
 module libsupermesh_read_triangle
 
   use libsupermesh_debug, only : abort_pinpoint
+  use libsupermesh_precision, only : real_kind
 
   implicit none
 
@@ -91,16 +92,19 @@ contains
     character(len = *), intent(in) :: filename
     integer, intent(in) :: dim
     ! dim x nnodes
-    real, dimension(:, :), allocatable, intent(out) :: positions
+    real(kind = real_kind), dimension(:, :), allocatable, intent(out) :: &
+      & positions
     ! nattrs x nnodes
-    real, dimension(:, :), allocatable, optional, intent(out) :: attributes
+    real(kind = real_kind), dimension(:, :), allocatable, optional, intent(out) :: &
+      & attributes
     ! nbm x nnodes
-    integer, dimension(:, :), allocatable, optional, intent(out) :: boundary_markers
+    integer, dimension(:, :), allocatable, optional, intent(out) :: &
+      & boundary_markers
 
     integer :: i, ind, nnodes, ldim, nattrs, nbm, unit
     integer, dimension(:), allocatable :: boundary_marker
-    real, dimension(dim) :: coord
-    real, dimension(:), allocatable :: attribute
+    real(kind = real_kind), dimension(dim) :: coord
+    real(kind = real_kind), dimension(:), allocatable :: attribute
 
 #if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
     unit = free_unit()
@@ -166,12 +170,13 @@ contains
     ! loc x nelements
     integer, dimension(:, :), allocatable, intent(out) :: enlist
     ! nattrs x nelements
-    real, dimension(:, :), allocatable, optional, intent(out) :: attributes
+    real(kind = real_kind), dimension(:, :), allocatable, optional, intent(out) :: &
+      & attributes
     integer, optional, intent(in) :: nnodes
 
     integer :: i, ind, ncell_nodes, nelements, nattrs, unit
     integer, dimension(:), allocatable :: cell_nodes
-    real, dimension(:), allocatable :: attribute
+    real(kind = real_kind), dimension(:), allocatable :: attribute
 
 #if defined __GFORTRAN__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9
     unit = free_unit()

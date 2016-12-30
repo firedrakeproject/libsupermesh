@@ -58,6 +58,7 @@ subroutine test_interval_intersector() bind(c)
     & intersection_finder
   use libsupermesh_interval_intersection, only : intersect_intervals, &
     & interval_buf_size, interval_size
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_supermesh, only : intersect_elements, intersect_simplices
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
@@ -66,10 +67,11 @@ subroutine test_interval_intersector() bind(c)
 
   integer :: ele_a, ele_b, ele_c, i, n_intervals_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
-  real :: size_c
-  real, dimension(1, 2) :: intervalA
-  real, dimension(1, 2, interval_buf_size) :: intervals_c_real
-  real, dimension(:, :), allocatable :: positions_a, positions_b  
+  real(kind = real_kind) :: size_c
+  real(kind = real_kind), dimension(1, 2) :: intervalA
+  real(kind = real_kind), dimension(1, 2, interval_buf_size) :: intervals_c_real
+  real(kind = real_kind), dimension(:, :), allocatable :: positions_a, &
+    & positions_b  
   type(intersections), dimension(:), allocatable :: map_ab
 
   integer, parameter :: dim = 1
@@ -82,7 +84,7 @@ subroutine test_interval_intersector() bind(c)
   allocate(map_ab(size(enlist_a, 2)))
   call intersection_finder(positions_a, enlist_a, positions_b, enlist_b, map_ab)
   
-  size_c = 0.0D0
+  size_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -93,9 +95,9 @@ subroutine test_interval_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_intervals]", size_c .fne. 1.0D0, .false., "Incorrect intersection size")
+  call report_test("[intersect_intervals]", size_c .fne. 1.0_real_kind, .false., "Incorrect intersection size")
   
-  size_c = 0.0D0
+  size_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -106,9 +108,9 @@ subroutine test_interval_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_intervals]", size_c .fne. 1.0D0, .false., "Incorrect intersection size")
+  call report_test("[intersect_intervals]", size_c .fne. 1.0_real_kind, .false., "Incorrect intersection size")
   
-  size_c = 0.0D0
+  size_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -119,9 +121,9 @@ subroutine test_interval_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_intervals]", size_c .fne. 1.0D0, .false., "Incorrect intersection size")
+  call report_test("[intersect_intervals]", size_c .fne. 1.0_real_kind, .false., "Incorrect intersection size")
   
-  size_c = 0.0D0
+  size_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -132,9 +134,9 @@ subroutine test_interval_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_simplices]", size_c .fne. 1.0D0, .false., "Incorrect intersection size")
+  call report_test("[intersect_simplices]", size_c .fne. 1.0_real_kind, .false., "Incorrect intersection size")
   
-  size_c = 0.0D0
+  size_c = 0.0_real_kind
   do ele_a = 1, size(enlist_a, 2)
     intervalA = positions_a(:, enlist_a(:, ele_a))
     do i = 1, map_ab(ele_a)%n
@@ -145,7 +147,7 @@ subroutine test_interval_intersector() bind(c)
       end do
     end do    
   end do
-  call report_test("[intersect_elements]", size_c .fne. 1.0D0, .false., "Incorrect intersection size")
+  call report_test("[intersect_elements]", size_c .fne. 1.0_real_kind, .false., "Incorrect intersection size")
   
   call deallocate(map_ab)
   deallocate(map_ab, positions_a, enlist_a, positions_b, enlist_b)

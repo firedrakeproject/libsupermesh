@@ -59,17 +59,19 @@ subroutine test_intersection_finder_completeness_1d() bind(c)
     & sort_intersection_finder, brute_force_intersection_finder
   use libsupermesh_interval_intersection, only : interval_buf_size, &
     & intersect_intervals, interval_size
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_read_triangle, only : read_ele, read_node
   use libsupermesh_unittest_tools, only : report_test, operator(.fne.)
 
   implicit none
 
   integer :: ele_a, ele_b, ele_c, i, n_intervals_c
-  real :: size_b, size_c
+  real(kind = real_kind) :: size_b, size_c
   integer, dimension(:, :), allocatable :: enlist_a, enlist_b
   logical :: fail
-  real, dimension(1, 2, interval_buf_size) :: intervals_c
-  real, dimension(:, :), allocatable :: positions_a, positions_b
+  real(kind = real_kind), dimension(1, 2, interval_buf_size) :: intervals_c
+  real(kind = real_kind), dimension(:, :), allocatable :: positions_a, &
+    & positions_b
   type(intersections), dimension(:), allocatable :: map_ba
 
   integer, parameter :: dim = 1
@@ -107,7 +109,7 @@ contains
     do ele_b = 1, size(enlist_b, 2)
       size_b = interval_size(positions_b(:, enlist_b(:, ele_b)))
 
-      size_c = 0.0D0
+      size_c = 0.0_real_kind
       do i = 1, map_ba(ele_b)%n
         ele_a = map_ba(ele_b)%v(i)
         call intersect_intervals(positions_a(:, enlist_a(:, ele_a)), positions_b(:, enlist_b(:, ele_b)), intervals_c, n_intervals_c)

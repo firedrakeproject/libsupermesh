@@ -22,6 +22,7 @@ module libsupermesh
 
   use libsupermesh_intersection_finder
   use libsupermesh_parallel_supermesh, only : parallel_supermesh
+  use libsupermesh_precision, only : real_kind
   use libsupermesh_supermesh
 
   implicit none
