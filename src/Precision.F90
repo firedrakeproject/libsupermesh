@@ -74,11 +74,11 @@ contains
     
     real(kind = real_kind) :: compensated_summand, sum
     
-    ! Kahan summation. See:
+    ! Kahan summation from page 9-4 of:
     !   Implementation of algorithms, Part I, Technical Report 20, W. Kahan,
     !   Lecture notes by W. S. Haugeland and D. Hough, Department of Computer
     !   Science, University of California, Berkeley, 1973
-    ! and also:
+    ! See also:
     !   Pracniques: Further remarks on reducing truncation errors, W. Kahan,
     !   Communications of the ACM vol. 8, 1965, p. 40
     !
