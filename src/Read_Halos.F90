@@ -55,6 +55,7 @@
 module libsupermesh_read_halos
 
   use iso_c_binding, only : c_char, c_int, c_null_char, c_ptr
+  use iso_fortran_env, only : real64
   use mpi
 
   use libsupermesh_debug, only : abort_pinpoint
@@ -127,7 +128,7 @@ contains
     integer, optional, intent(in) :: level
     integer, optional, intent(in) :: comm
 
-    character(len = len_trim(basename) + int(log10(real(huge(halo%process)))) + 8) :: &
+    character(len = len_trim(basename) + int(log10(real(huge(halo%process), kind = real64))) + 8) :: &
       & filename
     integer :: i, ierr, index
     integer(kind = c_int) :: nprocs, process

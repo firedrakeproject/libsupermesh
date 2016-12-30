@@ -21,7 +21,7 @@
 subroutine test_parallel_p1_inner_product_3d() bind(c)
 
   use iso_c_binding, only : c_int8_t
-  use iso_fortran_env, only : error_unit, output_unit
+  use iso_fortran_env, only : error_unit, output_unit, real64
   use mpi
 
   use libsupermesh_debug, only : abort_pinpoint
@@ -87,8 +87,8 @@ subroutine test_parallel_p1_inner_product_3d() bind(c)
   real(kind = real_kind) :: global_volume_parallel, global_integral_parallel
   type(compensated_sum) :: local_volume_parallel, local_integral_parallel
   
-  character(len = int(log10(real(huge(rank)))) + 2) :: rank_chr
-  character(len = int(log10(real(huge(nprocs)))) + 2) :: nprocs_chr
+  character(len = int(log10(real(huge(rank), kind = real64))) + 2) :: rank_chr
+  character(len = int(log10(real(huge(nprocs), kind = real64))) + 2) :: nprocs_chr
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr);  assert(ierr == MPI_SUCCESS)
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr);  assert(ierr == MPI_SUCCESS)
