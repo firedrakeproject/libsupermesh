@@ -1,4 +1,4 @@
-!  Copyright (C) 2016 The University of Edinburgh
+!  Copyright (C) 2016-2017 The University of Edinburgh
 !
 !  The file is part of libsupermesh
 !    
