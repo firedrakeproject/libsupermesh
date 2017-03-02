@@ -28,7 +28,7 @@
  */
  
 // Fluidity copyright information (note that AUTHORS mentioned in the following
-// has been renamed to fluidity_AUTHORS):
+// has been renamed to Fluidity_AUTHORS):
 
 /*
   Copyright (C) 2006 Imperial College London and others.

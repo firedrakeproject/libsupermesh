@@ -21,7 +21,7 @@
 ! 4e6c1d2b022df3a519cdec120fad28e60d1b08d9 (dated 2015-02-25)
 !
 ! Fluidity copyright information (note that AUTHORS mentioned in the following
-! has been renamed to fluidity_AUTHORS):
+! has been renamed to Fluidity_AUTHORS):
 !
 !  Copyright (C) 2006 Imperial College London and others.
 !  
