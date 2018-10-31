@@ -235,6 +235,10 @@ configure_file (
   "${LIBSUPERMESH_BINARY_DIR}/include/libsupermesh.h"
   )
 configure_file (
+  "${LIBSUPERMESH_SOURCE_DIR}/include/libsupermesh-c.h"
+  "${LIBSUPERMESH_BINARY_DIR}/include/libsupermesh-c.h"
+  )
+configure_file (
   "${LIBSUPERMESH_SOURCE_DIR}/include/libsupermesh_configuration.h.in"
   "${LIBSUPERMESH_BINARY_DIR}/include_local/libsupermesh_configuration.h"
   )
