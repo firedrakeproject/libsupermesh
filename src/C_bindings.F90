@@ -2,7 +2,7 @@
 
 module libsupermesh_c_interface
 
-  use iso_c_binding, only : c_double, c_long, c_int
+  use iso_c_binding, only : c_double, c_long, c_int, c_float
   use libsupermesh_graphs, only : eelist_type, mesh_nelist, mesh_eelist, &
     & deallocate
   use libsupermesh_integer_set, only : integer_set, allocate, deallocate, &
