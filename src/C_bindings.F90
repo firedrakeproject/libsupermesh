@@ -12,6 +12,7 @@ module libsupermesh_c_interface
   use libsupermesh_tet_intersection, only : tet_buf_size, intersect_tets, tetrahedron_volume
   use libsupermesh_interval_intersection, only : intersect_intervals, interval_size
   use libsupermesh_supermesh, only : intersect_tri_quad, intersect_tet_hex
+  use libsupermesh_precision, only : real_kind
 
   implicit none
 
@@ -80,7 +81,7 @@ contains
     integer(kind = c_long), dimension(loc_b, nelements_b), intent(in) :: enlist_b
 
     allocate(map_ab_indptr(nelements_a + 1))
-    call sort_intersection_finder_rank_2_csr_sparsity(real(positions_a), int(enlist_a + 1), real(positions_b), int(enlist_b + 1), map_ab_indices, map_ab_indptr)
+    call sort_intersection_finder(real(positions_a, kind = real_kind), int(enlist_a + 1), real(positions_b, kind = real_kind), int(enlist_b + 1), map_ab_indices, map_ab_indptr)
 
   end subroutine sort_intersection_finder_set_input_c
 
@@ -360,7 +361,7 @@ contains
     integer(kind = c_long), dimension(loc_b, nelements_b), intent(in) :: enlist_b
 
     allocate(map_ab_indptr(nelements_a + 1))
-    call tree_intersection_finder_csr_sparsity(real(positions_a), int(enlist_a + 1), real(positions_b), int(enlist_b + 1), map_ab_indices, map_ab_indptr)
+    call tree_intersection_finder(real(positions_a, kind = real_kind), int(enlist_a + 1), real(positions_b, kind = real_kind), int(enlist_b + 1), map_ab_indices, map_ab_indptr)
 
   end subroutine tree_intersection_finder_set_input_c
 

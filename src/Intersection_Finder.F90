@@ -129,9 +129,6 @@ module libsupermesh_intersection_finder
     & tree_intersection_finder_find, tree_intersection_finder_query_output, &
     & tree_intersection_finder_get_output, tree_intersection_finder_reset
 
-  ! Sadly these have to be public for the C API; a gfortran bug?
-  public :: tree_intersection_finder_csr_sparsity, sort_intersection_finder_rank_2_csr_sparsity
-
   interface intersection_finder
     module procedure intersection_finder_intersections, &
       & intersection_finder_csr_sparsity
