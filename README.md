@@ -26,3 +26,4 @@ libsupermesh is available under the [GNU Lesser General Public License version 2
 * Mr. Iakovos Panourgias, EPCC, University of Edinburgh, UK
 * Dr. Patrick E. Farrell, Mathematical Institute, University of Oxford, UK,
   and Center for Biomedical Computing, Simula Research Laboratory, Oslo, Norway
+* Mr. Matteo Croci, Mathematical Institute, University of Oxford, UK
