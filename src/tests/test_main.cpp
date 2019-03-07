@@ -68,11 +68,11 @@ extern "C" {
 
 int main(int argc, char **argv) 
 {
-  MPI::Init(argc, argv);
+  MPI_Init(&argc, &argv);
 
   TESTNAME();
 
-  MPI::Finalize();
+  MPI_Finalize();
 
   return 0;
 }
