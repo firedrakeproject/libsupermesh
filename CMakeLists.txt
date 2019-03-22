@@ -243,8 +243,14 @@ configure_file (
   "${LIBSUPERMESH_BINARY_DIR}/include_local/libsupermesh_configuration.h"
   )
 
-find_package(LATEX)
-if(LATEX_FOUND AND LATEX_PDFLATEX_FOUND AND LATEX_BIBTEX_FOUND)
+option(ENABLE_DOCS "Enable building of documentation" OFF)
+if(ENABLE_DOCS)
+  find_package(ImageMagick COMPONENTS convert REQUIRED)
+  find_package(LATEX)
+  if(NOT LATEX_FOUND OR NOT LATEX_PDFLATEX_FOUND OR NOT LATEX_BIBTEX_FOUND)
+    message(SEND_ERROR "Required LaTeX components not found")
+  endif()
+  
   include(${LIBSUPERMESH_SOURCE_DIR}/cmake/UseLATEX.cmake)
   set(LATEX_OUTPUT_PATH ${LIBSUPERMESH_BINARY_DIR}/doc)
   add_latex_document(doc/manual.tex INPUTS doc/version.tex
