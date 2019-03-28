@@ -84,9 +84,8 @@ distribution.
 libsupermesh previously included a modified version of libspatialindex 1.8.5.
 libsupermesh additionally uses modified versions of code from libspatialindex --
 see comments in include/R-Tree_Intersection_Finder_C++.h and
-src/R-Tree_Intersection_Finder_C++.cpp. Further information regarding
-libspatialindex can be found in spatialindex-1.8.5/. libspatialindex 1.8.5
-license information:
+src/R-Tree_Intersection_Finder_C++.cpp. libspatialindex 1.8.5 license
+information:
 
 License (MIT)
 ------------------------------------------------------------------------------
