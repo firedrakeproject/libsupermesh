@@ -17,10 +17,8 @@
 \begin{document}
 
 \title{libsupermesh version \version}
-\date{January 2017}
-\author{James R. Maddison \\ School of Mathematics and Maxwell Institute for Mathematical Sciences, \\ University of Edinburgh, UK\footnote{E-mail: \href{mailto:j.r.maddison@ed.ac.uk}{j.r.maddison@ed.ac.uk}} \\
-   \and Iakovos Panourgias \\ EPCC, University of Edinburgh, UK, \\
-   \and Patrick E. Farrell \\ Mathematical Institute, University of Oxford, UK, \\ Center for Biomedical Computing, Simula Research Laboratory, Oslo, Norway}
+\date{}
+\author{}
 
 \maketitle
 
@@ -55,7 +53,8 @@ directory. Note that libsupermesh cannot be built in the source directory.
 \begin{description}[font=\ttfamily\bfseries]
   \item[CMAKE\_BUILD\_TYPE] Build type. Valid options are ``Release'' and
     ``Debug''. Default ``Release''.
-  \item[BUILD\_SHARED\_LIBS] Build a shared library. Default disabled. 
+  \item[BUILD\_SHARED\_LIBS] Build a shared library. Default disabled.
+  \item[ENABLE\_DOCS] Enable building of this manual.
   \item[LIBSUPERMESH\_DOUBLE\_PRECISION] Use double precision Fortran reals.
     If disabled then single precision Fortran reals are used. Default enabled.
   \item[LIBSUPERMESH\_AUTO\_COMPILER\_FLAGS] Choose compiler flags
@@ -77,7 +76,7 @@ directory. Note that libsupermesh cannot be built in the source directory.
 \begin{description}[font=\ttfamily\bfseries]
   \item[make] Default build. Builds the library and unit tests.
   \item[make test] Runs the unit tests.
-  \item[make doc] Builds this manual.
+  \item[make doc] Builds this manual. Requires ENABLE\_DOCS to be enabled.
 \end{description}
 
 \section{Using libsupermesh}
@@ -2913,6 +2912,8 @@ found at \url{https://www.archer.ac.uk/community/eCSE/eCSE03-08/eCSE03-08.php}.
 
 This work used the ARCHER UK National Supercomputing Service
 (\url{http://www.archer.ac.uk}).
+
+For a list of authors see AUTHORS in the libsupermesh root directory.
 
 libsupermesh is derived from Fluidity git revision
 4e6c1d2b022df3a519cdec120fad28e60d1b08d9, and additionally uses code from
