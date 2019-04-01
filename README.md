@@ -10,7 +10,7 @@ Documentation can be found in the libsupermesh manual. This can be built using:
 #!sh
 
 cd build
-cmake ..
+cmake .. -DENABLE_DOCS=1
 make doc
 ```
 
