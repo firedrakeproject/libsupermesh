@@ -1,5 +1,6 @@
 /*
-  Copyright (C) 2016-2017 The University of Edinburgh
+  For libsupermesh copyright information see COPYING in the libsupermesh root
+  directory
 
   The file is part of libsupermesh
     
