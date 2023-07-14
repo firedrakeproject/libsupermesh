@@ -24,7 +24,10 @@ jobs:
         run: |
           cd build
           cmake .. -DLIBSUPERMESH_AUTO_COMPILER_FLAGS=OFF \
-            -DBUILD_SHARED_LIBS=ON
+            -DBUILD_SHARED_LIBS=ON -DMPI_C_COMPILER=mpicc \
+            -DMPI_CXX_COMPILER=mpicxx -DMPI_Fortran_COMPILER=mpif90 \
+            -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+            -DCMAKE_Fortran_COMPILER=mpif90
       
       - name: Build
         run: |
