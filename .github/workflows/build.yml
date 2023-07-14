@@ -1,0 +1,37 @@
+name: Install and test libsupermesh
+
+on:
+  # Push to master or PR
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: "Build libsupermesh"
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+    # The docker container to use.
+    container:
+      image: firedrakeproject/firedrake-env:latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: CMake
+        run: |
+          cd build
+          cmake .. -DLIBSUPERMESH_AUTO_COMPILER_FLAGS=OFF \
+            -DBUILD_SHARED_LIBS=ON
+      
+      - name: Build
+        run: |
+          make
+
+      - name: Test
+        run: |
+          make test
+
+
+      
