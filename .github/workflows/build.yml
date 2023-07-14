@@ -18,19 +18,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: mpi4py/setup-mpi@v1
+        with:
+            mpi: openmpi
 
       - name: CMake
         run: |
           cd build
           cmake .. -DLIBSUPERMESH_AUTO_COMPILER_FLAGS=OFF \
-            -DBUILD_SHARED_LIBS=ON
+            -DBUILD_SHARED_LIBS=ON -DMPI_C_COMPILER=mpicc \
+            -DMPI_CXX_COMPILER=mpicxx -DMPI_Fortran_COMPILER=mpif90 \
+            -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+            -DCMAKE_Fortran_COMPILER=mpif90 \
+            -DCMAKE_Fortran_FLAGS=-fallow-argument-mismatch
       
       - name: Build
         run: |
+          cd build
           make
 
       - name: Test
         run: |
+          cd build
           make test
 
 
