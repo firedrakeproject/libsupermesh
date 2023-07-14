@@ -19,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: mpi4py/setup-mpi@v1
+        with:
+            mpi: openmpi
 
       - name: CMake
         run: |
