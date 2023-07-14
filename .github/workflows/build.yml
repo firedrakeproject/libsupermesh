@@ -7,7 +7,6 @@ on:
       - master
   pull_request:
 
-
 jobs:
   build:
     name: "Build libsupermesh"
@@ -29,10 +28,12 @@ jobs:
       
       - name: Build
         run: |
+          cd build
           make
 
       - name: Test
         run: |
+          cd build
           make test
 
 
