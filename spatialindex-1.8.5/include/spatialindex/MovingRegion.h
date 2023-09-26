@@ -157,7 +157,7 @@ namespace libsupermesh { namespace SpatialIndex
 			uint32_t m_boundary;
 			const MovingRegion* m_to;
 
-			struct ascending: public std::binary_function<CrossPoint&, CrossPoint&, bool>
+			struct ascending: public std::__binary_function<CrossPoint&, CrossPoint&, bool>
 			{
 				bool operator()(const CrossPoint& __x, const CrossPoint& __y) const { return __x.m_t > __y.m_t; }
 			};

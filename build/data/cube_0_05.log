@@ -1,0 +1,76 @@
+Info    : Running 'gmsh -3 -bin cube_0_05.geo' [Gmsh 2.8.3, 1 node, max. 24 threads]
+Info    : Started on Tue Mar  8 22:18:04 2016
+Info    : Reading 'cube_0_05.geo'...
+Info    : Done reading 'cube_0_05.geo'
+Info    : Meshing 1D...
+Info    : Meshing curve 1 (Line)
+Info    : Meshing curve 2 (Line)
+Info    : Meshing curve 3 (Line)
+Info    : Meshing curve 4 (Line)
+Info    : Meshing curve 5 (Line)
+Info    : Meshing curve 6 (Line)
+Info    : Meshing curve 7 (Line)
+Info    : Meshing curve 8 (Line)
+Info    : Meshing curve 9 (Line)
+Info    : Meshing curve 10 (Line)
+Info    : Meshing curve 11 (Line)
+Info    : Meshing curve 12 (Line)
+Info    : Done meshing 1D (0.00085 s)
+Info    : Meshing 2D...
+Info    : Meshing surface 16 (Plane, Delaunay)
+Info    : Meshing surface 14 (Plane, Delaunay)
+Info    : Meshing surface 18 (Plane, Delaunay)
+Info    : Meshing surface 22 (Plane, Delaunay)
+Info    : Meshing surface 24 (Plane, Delaunay)
+Info    : Meshing surface 20 (Plane, Delaunay)
+Info    : Done meshing 2D (0.030962 s)
+Info    : Meshing 3D...
+Info    : Meshing volume 26 (Frontal)
+Info    : Region 26 Face 14, 1 intersect
+Info    : Region 26 Face 16, 1 intersect
+Info    : Region 26 Face 18, 1 intersect
+Info    : Region 26 Face 20, 0 intersect
+Info    : Region 26 Face 22, 1 intersect
+Info    : Region 26 Face 24, 0 intersect
+Info    : CalcLocalH: 3135 Points 0 Elements 6266 Surface Elements 
+Info    : Check subdomain 1 / 1 
+Info    : 6266 open elements 
+Info    : Meshing subdomain 1 of 1 
+Info    : 6266 open elements 
+Info    : Use internal rules 
+Info    : 6266 open elements 
+Info    : Delaunay meshing 
+Info    : number of points: 3135 
+Info    : blockfill local h 
+Info    : number of points: 7966 
+Info    : Points: 7966 
+Info    : Elements: 47559 
+Info    : 12 open elements 
+Info    : Num open: 12 
+Info    : free: 169, fixed: 47390 
+Info    : SwapImprove  
+Info    : 18 swaps performed 
+Info    : 0 open elements 
+Info    : Num open: 0 
+Info    : free: 0, fixed: 47551 
+Info    : SwapImprove  
+Info    : 0 swaps performed 
+Info    : 0 degenerated elements removed 
+Info    : Remove intersecting 
+Info    : Remove outer 
+Info    : tables filled 
+Info    : outer removed 
+Info    : 6266 open elements 
+Info    : 7966 points, 41063 elements 
+Info    : 0 open elements 
+Info    : 0 open faces 
+Info    : start tetmeshing 
+Info    : Use internal rules 
+Info    : 0 open elements 
+Info    : Success ! 
+Info    : 7966 points, 41063 elements 
+Info    : Done meshing 3D (0.826192 s)
+Info    : 7966 vertices 47577 elements
+Info    : Writing 'cube_0_05.msh'...
+Info    : Done writing 'cube_0_05.msh'
+Info    : Stopped on Tue Mar  8 22:18:05 2016

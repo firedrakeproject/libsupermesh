@@ -1,0 +1,8 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     a.out
+relocations:
+  - { offsetInCU: 0x1A0, offset: 0x1A0, size: 0x8, addend: 0x0, symName: _MAIN__, symObjAddr: 0x0, symBinAddr: 0x1000034F4, symSize: 0x5EC }
+  - { offsetInCU: 0x3E, offset: 0x3E, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0xA14, symBinAddr: 0x100003AE0, symSize: 0x2C }
+  - { offsetInCU: 0xA9, offset: 0xA9, size: 0x8, addend: 0x0, symName: _MAIN__, symObjAddr: 0x0, symBinAddr: 0x1000034F4, symSize: 0x5EC }
+...

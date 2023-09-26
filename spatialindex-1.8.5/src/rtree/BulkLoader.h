@@ -51,7 +51,7 @@ namespace libsupermesh { namespace SpatialIndex
 				void storeToFile(libsupermesh::Tools::TemporaryFile& f);
 				void loadFromFile(libsupermesh::Tools::TemporaryFile& f);
 
-				struct SortAscending : public std::binary_function<Record* const, Record* const, bool>
+				struct SortAscending : public std::__binary_function<Record* const, Record* const, bool>
 				{
 					bool operator()(Record* const r1, Record* const r2)
 					{
@@ -83,7 +83,7 @@ namespace libsupermesh { namespace SpatialIndex
 			public:
 				PQEntry(Record* r, uint32_t u32Index) : m_r(r), m_u32Index(u32Index) {}
 
-				struct SortAscending : public std::binary_function<const PQEntry&, const PQEntry&, bool>
+				struct SortAscending : public std::__binary_function<const PQEntry&, const PQEntry&, bool>
 				{
 					bool operator()(const PQEntry& e1, const PQEntry& e2)
 					{
