@@ -81,14 +81,12 @@ namespace libsupermesh { namespace SpatialIndex
 			public:
 				PQEntry(Record* r, uint32_t u32Index) : m_r(r), m_u32Index(u32Index) {}
 
-				struct SortAscending : public std::binary_function<const PQEntry&, const PQEntry&, bool>
-				{
-					bool operator()(const PQEntry& e1, const PQEntry& e2)
-					{
-						if (*(e1.m_r) < *(e2.m_r)) return true;
-						else return false;
+				struct SortAscending {
+					bool operator()(const PQEntry& e1, const PQEntry& e2) const {
+						return *(e1.m_r) < *(e2.m_r);
 					}
 				};
+
 
 				Record* m_r;
 				uint32_t m_u32Index;
