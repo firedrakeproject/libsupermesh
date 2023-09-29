@@ -21,6 +21,11 @@ jobs:
       - uses: mpi4py/setup-mpi@v1
         with:
             mpi: openmpi
+      - name: Install spatialindex
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install libspatialindex-dev
 
       - name: CMake
         run: |

@@ -115,15 +115,21 @@
 
 #include "libsupermesh_configuration.h"
 #include "spatialindex/SpatialIndex.h"
-#include "rtree/RTree.h"
-#include "rtree/BulkLoader.h"
+#include "spatialindex/RTree.h"
+#include "spatialindex/tools/Tools.h"
+
+// FIXME:
+// Previously had:
+// #include "rtree/RTree.h"
+// #include "rtree/BulkLoader.h"
+// Now we need to use the spatialindex public interface!
 
 #include <cmath>
 
 #include "R-Tree_Intersection_Finder_C++.h"
 
 using namespace libsupermesh;
-using namespace libsupermesh::SpatialIndex;
+using namespace SpatialIndex;
 
 // Modified version of code from rtree/gispyspatialindex.h
 // (GISPySpatialIndex), rtree/gispyspatialindex.cc (GISPySpatialIndex), and
@@ -137,7 +143,10 @@ libsupermesh::RTree::RTree(const int &dim, const double *positions,
   : dim(dim), visitor(nelements) {
   this->memory = StorageManager::createNewMemoryStorageManager();
   this->buffer = StorageManager::createNewRandomEvictionsBuffer(*this->memory, capacity, bWriteThrough);
-    
+  
+  // FIXME:
+  // Here is where parts of the private interface to spatialindex/rtree are used
+  /*  
   // Modified version of code from createAndBulkLoadNewRTree in
   // src/rtree/RTree.cc in libspatialindex 1.8.5. Added 2016-02-24.     
   id_type indexIdentifier = 0;  // ??
@@ -152,6 +161,7 @@ libsupermesh::RTree::RTree(const int &dim, const double *positions,
   bl.bulkLoadUsingSTR(static_cast<SpatialIndex::RTree::RTree*>(this->tree), stream, bindex, bleaf, pageSize, numberOfPages); 
   // End of modified code from createAndBulkLoadNewRTree in
   // src/rtree/RTree.cc in libspatialindex 1.8.5
+  */
 }
 // End of modified code from rtree/gispyspatialindex.h,
 // rtree/gispyspatialindex.cc, and rtree/wrapper.cc
