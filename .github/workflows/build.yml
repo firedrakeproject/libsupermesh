@@ -24,8 +24,8 @@ jobs:
       - name: Install spatialindex
         shell: bash
         run: |
-          sudo apt update
-          sudo apt install libspatialindex-dev
+          sudo apt-get -y update
+          sudo apt-get -y install libspatialindex-dev
 
       - name: CMake
         run: |
