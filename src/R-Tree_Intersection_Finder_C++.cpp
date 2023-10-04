@@ -1,6 +1,6 @@
 /*
-  For libsupermesh copyright information see COPYING in the libsupermesh root
-  directory
+  For copyright information see COPYING in the libsupermesh root directory. For
+  authors see AUTHORS in the libsupermesh root directory.
 
   The file is part of libsupermesh
     
@@ -115,14 +115,6 @@
 
 #include "libsupermesh_configuration.h"
 #include "spatialindex/SpatialIndex.h"
-#include "spatialindex/RTree.h"
-#include "spatialindex/tools/Tools.h"
-
-// FIXME:
-// Previously had:
-// #include "rtree/RTree.h"
-// #include "rtree/BulkLoader.h"
-// Now we need to use the spatialindex public interface!
 
 #include <cmath>
 
@@ -144,24 +136,49 @@ libsupermesh::RTree::RTree(const int &dim, const double *positions,
   this->memory = StorageManager::createNewMemoryStorageManager();
   this->buffer = StorageManager::createNewRandomEvictionsBuffer(*this->memory, capacity, bWriteThrough);
   
-  // FIXME:
-  // Here is where parts of the private interface to spatialindex/rtree are used
-  /*  
-  // Modified version of code from createAndBulkLoadNewRTree in
-  // src/rtree/RTree.cc in libspatialindex 1.8.5. Added 2016-02-24.     
-  id_type indexIdentifier = 0;  // ??
-  this->tree = SpatialIndex::RTree::createNewRTree(*this->buffer, fillFactor,
-    indexCapacity, leafCapacity, this->dim, SpatialIndex::RTree::RV_RSTAR,
-    indexIdentifier);
-  uint32_t bindex = static_cast<uint32_t>(std::floor(static_cast<double>(indexCapacity * fillFactor)));
-  uint32_t bleaf = static_cast<uint32_t>(std::floor(static_cast<double>(leafCapacity * fillFactor)));
+  // Properties as used in PropertySet version of createAndBulkLoadNewRTree in
+  // src/rtree/RTree.cc, libspatialindex 1.8.5
+  Tools::PropertySet properties;
+    
+  Tools::Variant treeVariant;
+  treeVariant.m_varType = Tools::VT_LONG;
+  treeVariant.m_val.lVal = SpatialIndex::RTree::RV_RSTAR; 
+  properties.setProperty("TreeVariant", treeVariant);
+  
+  Tools::Variant v_fillFactor;
+  v_fillFactor.m_varType = Tools::VT_DOUBLE;
+  v_fillFactor.m_val.dblVal = fillFactor;
+  properties.setProperty("FillFactor", v_fillFactor);
+  
+  Tools::Variant v_indexCapacity;
+  v_indexCapacity.m_varType = Tools::VT_ULONG;
+  v_indexCapacity.m_val.ulVal = indexCapacity;
+  properties.setProperty("IndexCapacity", v_indexCapacity);
+  
+  Tools::Variant v_leafCapacity;
+  v_leafCapacity.m_varType = Tools::VT_ULONG;
+  v_leafCapacity.m_val.ulVal = leafCapacity;
+  properties.setProperty("LeafCapacity", v_leafCapacity);
+  
+  Tools::Variant dimension;
+  dimension.m_varType = Tools::VT_ULONG;
+  dimension.m_val.ulVal = dim;
+  properties.setProperty("Dimension", dimension);
+  
+  Tools::Variant pageSize;
+  pageSize.m_varType = Tools::VT_ULONG;
+  pageSize.m_val.ulVal = std::numeric_limits<uint32_t>::max() / 2;
+  properties.setProperty("ExternalSortBufferPageSize", pageSize);
+  
+  Tools::Variant numberOfPages;
+  numberOfPages.m_varType = Tools::VT_ULONG;
+  numberOfPages.m_val.ulVal = 2;
+  properties.setProperty("ExternalSortBufferTotalPages", numberOfPages);
+      
   MeshDataStream stream(dim, positions, loc, nelements, enlist);
-  uint32_t pageSize = std::numeric_limits<uint32_t>::max(), numberOfPages = 1;  // Never cache on disk
-  SpatialIndex::RTree::BulkLoader bl;
-  bl.bulkLoadUsingSTR(static_cast<SpatialIndex::RTree::RTree*>(this->tree), stream, bindex, bleaf, pageSize, numberOfPages); 
-  // End of modified code from createAndBulkLoadNewRTree in
-  // src/rtree/RTree.cc in libspatialindex 1.8.5
-  */
+  id_type indexIdentifier = 0;
+  this->tree = SpatialIndex::RTree::createAndBulkLoadNewRTree(
+    SpatialIndex::RTree::BLM_STR, stream, *this->buffer, properties, indexIdentifier);
 }
 // End of modified code from rtree/gispyspatialindex.h,
 // rtree/gispyspatialindex.cc, and rtree/wrapper.cc
