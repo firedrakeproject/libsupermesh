@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: "Build libsupermesh"
+    name: "Build libsupermesh with Ubuntu spatialindex"
     # The type of runner that the job will run on
     runs-on: self-hosted
     # The docker container to use.
@@ -17,7 +17,7 @@ jobs:
       image: firedrakeproject/firedrake-env:latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: mpi4py/setup-mpi@v1
         with:
             mpi: openmpi
@@ -36,7 +36,7 @@ jobs:
             -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
             -DCMAKE_Fortran_COMPILER=mpif90 \
             -DCMAKE_Fortran_FLAGS=-fallow-argument-mismatch
-      
+
       - name: Build
         run: |
           cd build
@@ -47,5 +47,65 @@ jobs:
           cd build
           make test
 
+  build_rtree:
+    name: "Build libsupermesh with Rtree spatialindex"
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+    # The docker container to use.
+    container:
+      image: firedrakeproject/firedrake-env:latest
 
-      
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: JDBetteridge/rtree
+          ref: JDBetteridge/include_headers
+          path: rtree
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install unzip
+        shell: bash
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install unzip
+      - name: Install Rtree
+        # In future replace with Rtree wheel
+        shell: bash
+        run: |
+          cd ..
+          python -m venv test
+          source test/bin/activate
+          pip install build
+          cd libsupermesh/rtree
+          ./ci/install_libspatialindex.bash
+          python -m build --wheel
+          pip install $(ls dist/Rtree*.whl)
+
+      - name: CMake
+        shell: bash
+        run: |
+          source ../test/bin/activate
+          cd build
+          cmake .. \
+            -DLIBSUPERMESH_AUTO_COMPILER_FLAGS=OFF \
+            -DBUILD_SHARED_LIBS=ON \
+            -DMPI_C_COMPILER=$MPICH_DIR/mpicc \
+            -DMPI_CXX_COMPILER=$MPICH_DIR/mpicxx \
+            -DMPI_Fortran_COMPILER=$MPICH_DIR/mpif90 \
+            -DCMAKE_C_COMPILER=$MPICH_DIR/mpicc \
+            -DCMAKE_CXX_COMPILER=$MPICH_DIR/mpicxx \
+            -DCMAKE_Fortran_COMPILER=$MPICH_DIR/mpif90 \
+            -DCMAKE_Fortran_FLAGS=-fallow-argument-mismatch \
+            -DMPIEXEC_EXECUTABLE=$MPICH_DIR/mpiexec
+
+      - name: Build
+        run: |
+          cd build
+          make
+
+      - name: Test
+        run: |
+          cd build
+          make test

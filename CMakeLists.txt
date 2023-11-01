@@ -180,12 +180,40 @@ endif()
 # Find the spatialindex library
 find_library(spatialindexlib
              NAMES spatialindex
-             REQUIRED
-             PATHS /usr/local/lib /usr/lib $ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/lib
-             )
+             PATHS "/usr/local/lib"
+              "/usr/lib"
+              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/Rtree.libs"
+              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/lib"
+            )
+
+if((NOT spatialindexlib) AND (Python_FOUND))
+  message(STATUS "Spatialindex not found, attempting to use the shared library provided by the Rtree Python package")
+  execute_process(COMMAND ${Python_EXECUTABLE} -c "import os, rtree; print(os.path.join(rtree.core.get_libraries(), rtree.core.get_library_name()), end='')"
+                  OUTPUT_VARIABLE spatialindexlib
+                  RESULT_VARIABLE PythonCommandReturnCode
+                  )
+  if(PythonCommandReturnCode)
+    # Forces build to fail if we still cannot find spatialindex
+    unset(spatialindexlib)
+    find_library(spatialindexlib NAMES spatialindex REQUIRED)
+  endif()
+endif()
+
 if(spatialindexlib)
   message(STATUS "Found libspatialindex shared library: " ${spatialindexlib})
   set(link_libraries ${link_libraries} ${spatialindexlib})
+  if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    # Check whether C++11 strings are in use, I only know how to do this on Linux
+    execute_process(COMMAND objdump -T ${spatialindexlib}
+                    COMMAND grep -i setproperty
+                    OUTPUT_VARIABLE setpropertystring
+                    )
+    message(STATUS "Set property object signature: " ${setpropertystring})
+    if(NOT ${setpropertystring} MATCHES .*__cxx1112basic_string.*)
+      message(STATUS "libspatialindex shared library does not use C++11 strings. Adding -D_GLIBCXX_USE_CXX11_ABI=0 to CMAKE_CXX_FLAGS")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+    endif()
+  endif()
 endif()
 
 # Find the spatialindex headers
