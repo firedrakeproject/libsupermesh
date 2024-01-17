@@ -188,7 +188,7 @@ find_library(spatialindexlib
 
 if((NOT spatialindexlib) AND (Python_FOUND))
   message(STATUS "Spatialindex not found, attempting to use the shared library provided by the Rtree Python package")
-  execute_process(COMMAND ${Python_EXECUTABLE} -c "import os, rtree; print(os.path.join(rtree.core.get_libraries(), rtree.core.get_library_name()), end='')"
+  execute_process(COMMAND ${Python_EXECUTABLE} -c "import rtree; print(rtree.core.rt._name, end='')"
                   OUTPUT_VARIABLE spatialindexlib
                   RESULT_VARIABLE PythonCommandReturnCode
                   )
