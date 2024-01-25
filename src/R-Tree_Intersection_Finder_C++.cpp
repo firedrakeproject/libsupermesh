@@ -121,7 +121,6 @@
 #include "R-Tree_Intersection_Finder_C++.h"
 
 using namespace libsupermesh;
-using namespace SpatialIndex;
 
 // Modified version of code from rtree/gispyspatialindex.h
 // (GISPySpatialIndex), rtree/gispyspatialindex.cc (GISPySpatialIndex), and
@@ -133,8 +132,8 @@ using namespace SpatialIndex;
 libsupermesh::RTree::RTree(const int &dim, const double *positions,
   const int &loc, const int &nelements, const int *enlist)
   : dim(dim), visitor(nelements) {
-  this->memory = StorageManager::createNewMemoryStorageManager();
-  this->buffer = StorageManager::createNewRandomEvictionsBuffer(*this->memory, capacity, bWriteThrough);
+  this->memory = SpatialIndex::StorageManager::createNewMemoryStorageManager();
+  this->buffer = SpatialIndex::StorageManager::createNewRandomEvictionsBuffer(*this->memory, capacity, bWriteThrough);
   
   // Properties as used in PropertySet version of createAndBulkLoadNewRTree in
   // src/rtree/RTree.cc, libspatialindex 1.8.5
@@ -167,6 +166,8 @@ libsupermesh::RTree::RTree(const int &dim, const double *positions,
   
   Tools::Variant pageSize;
   pageSize.m_varType = Tools::VT_ULONG;
+  // James R. Maddison note: this is as large as possible to attempt to avoid disk swapping.
+  // This value is later multiplied by the ExternalSortBufferTotalPages property, which must be at least 2, hence the divide.
   pageSize.m_val.ulVal = std::numeric_limits<uint32_t>::max() / 2;
   properties.setProperty("ExternalSortBufferPageSize", pageSize);
   
@@ -176,7 +177,7 @@ libsupermesh::RTree::RTree(const int &dim, const double *positions,
   properties.setProperty("ExternalSortBufferTotalPages", numberOfPages);
       
   MeshDataStream stream(dim, positions, loc, nelements, enlist);
-  id_type indexIdentifier = 0;
+  SpatialIndex::id_type indexIdentifier = 0;
   this->tree = SpatialIndex::RTree::createAndBulkLoadNewRTree(
     SpatialIndex::RTree::BLM_STR, stream, *this->buffer, properties, indexIdentifier);
 }
