@@ -33,15 +33,13 @@ jobs:
         run: |
           cd build
           cmake .. \
-            -DLIBSUPERMESH_AUTO_COMPILER_FLAGS=OFF \
             -DBUILD_SHARED_LIBS=ON \
             -DMPI_C_COMPILER=mpicc \
             -DMPI_CXX_COMPILER=mpicxx \
             -DMPI_Fortran_COMPILER=mpif90 \
             -DCMAKE_C_COMPILER=mpicc \
             -DCMAKE_CXX_COMPILER=mpicxx \
-            -DCMAKE_Fortran_COMPILER=mpif90 \
-            -DCMAKE_Fortran_FLAGS=-fallow-argument-mismatch
+            -DCMAKE_Fortran_COMPILER=mpif90
 
       - name: Build
         run: |
@@ -82,7 +80,6 @@ jobs:
           source ../test/bin/activate
           cd build
           cmake .. \
-            -DLIBSUPERMESH_AUTO_COMPILER_FLAGS=OFF \
             -DBUILD_SHARED_LIBS=ON \
             -DMPI_C_COMPILER=$MPICH_DIR/mpicc \
             -DMPI_CXX_COMPILER=$MPICH_DIR/mpicxx \
@@ -90,7 +87,6 @@ jobs:
             -DCMAKE_C_COMPILER=$MPICH_DIR/mpicc \
             -DCMAKE_CXX_COMPILER=$MPICH_DIR/mpicxx \
             -DCMAKE_Fortran_COMPILER=$MPICH_DIR/mpif90 \
-            -DCMAKE_Fortran_FLAGS=-fallow-argument-mismatch \
             -DMPIEXEC_EXECUTABLE=$MPICH_DIR/mpiexec
 
       - name: Build

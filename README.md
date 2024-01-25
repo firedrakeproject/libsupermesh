@@ -4,7 +4,7 @@ libsupermesh parallel supermeshing library.
 
 ## Getting started ##
 
-Required [spatialindex](https://github.com/libspatialindex/libspatialindex) to be installed.
+Requires [spatialindex](https://github.com/libspatialindex/libspatialindex) to be installed.
 
 Documentation can be found in the libsupermesh manual. This can be built using:
 
