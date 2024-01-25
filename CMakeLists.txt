@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.18)
 
 if(DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Build type. Valid values are \"Debug\" and \"Release\".")
@@ -73,134 +73,117 @@ option(LIBSUPERMESH_ENABLE_TIMERS "Enable internal timers" OFF)
 option(LIBSUPERMESH_OVERLAP_COMPUTE_COMMS "Overlap computation and communication. Efficiency of this depends upon the specific MPI implementation." OFF)
 
 option(LIBSUPERMESH_DOUBLE_PRECISION "Build with double precision Fortran reals" ON)
-option(LIBSUPERMESH_AUTO_COMPILER_FLAGS "Choose compiler flags automatically. This overrides any other compiler flags defined via CMake variables." ON)
-if(LIBSUPERMESH_AUTO_COMPILER_FLAGS)
-  if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_Fortran_FLAGS "-ffree-line-length-none -pipe -std=f2008")
-    if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
-    endif()
-    if(BUILD_SHARED_LIBS)
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fPIC")
-    endif()
-    set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -finit-integer=-66666 -finit-real=nan -fimplicit-none")
-    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize -DNDEBUG")
-  elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Cray")
-    set(CMAKE_Fortran_FLAGS "-s -fpic")
-    set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")
-    set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
+if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -std=f2008")
+  if(BUILD_SHARED_LIBS)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fPIC")
   endif()
-
-  if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_C_FLAGS "-pipe -std=c99")
-    if(BUILD_SHARED_LIBS)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    endif()
-    set(CMAKE_C_FLAGS_DEBUG "-O0 -g -Wall")
-    set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize -DNDEBUG")
-  elseif(CMAKE_C_COMPILER_ID MATCHES "Cray")
-    set(CMAKE_C_FLAGS "-fpic")
-    set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
-    set(CMAKE_C_FLAGS_RELEASE "-O2")
-  endif()
-
-  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_CXX_FLAGS "-pipe -std=c++03")
-    if(BUILD_SHARED_LIBS)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-    endif()
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -Wall")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ftree-vectorize -DNDEBUG")
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Cray")
-    set(CMAKE_CXX_FLAGS "-fpic")
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2")
-  endif()
-else()
-  if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -std=f2008")
-    if(BUILD_SHARED_LIBS)
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fPIC")
-    endif()
-  elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Cray")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -s -fpic")
-  endif()
-
-  if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-    if(BUILD_SHARED_LIBS)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    endif()
-  elseif(CMAKE_C_COMPILER_ID MATCHES "Cray")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
-  endif()
-
-  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++03")
-    if(BUILD_SHARED_LIBS)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-    endif()
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Cray")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
-  endif()
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Cray")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -s -fpic")
 endif()
 
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+  if(BUILD_SHARED_LIBS)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+  endif()
+elseif(CMAKE_C_COMPILER_ID MATCHES "Cray")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  if(BUILD_SHARED_LIBS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Cray")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
+endif()
+
+# Use the MPI compilers to compile
+set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
+set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
+set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
+
+# Print out all the MPI configuration info
+message(STATUS "")
+message(STATUS "MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER}")
 message(STATUS "CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}")
 message(STATUS "CMAKE_Fortran_FLAGS_DEBUG=${CMAKE_Fortran_FLAGS_DEBUG}")
 message(STATUS "CMAKE_Fortran_FLAGS_RELEASE=${CMAKE_Fortran_FLAGS_RELEASE}")
+message(STATUS "")
+message(STATUS "MPI_C_COMPILER=${MPI_C_COMPILER}")
 message(STATUS "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 message(STATUS "CMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}")
 message(STATUS "CMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}")
+message(STATUS "")
+message(STATUS "MPI_CXX_COMPILER=${MPI_CXX_COMPILER}")
 message(STATUS "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "")
+message(STATUS "MPIEXEC_EXECUTABLE=${MPIEXEC_EXECUTABLE}")
+message(STATUS "")
 
-include_directories(${LIBSUPERMESH_SOURCE_DIR}/spatialindex-1.8.5/include/)
-include_directories(${LIBSUPERMESH_SOURCE_DIR}/spatialindex-1.8.5/src/)
-add_subdirectory(spatialindex-1.8.5 EXCLUDE_FROM_ALL)
-set(spatialindex_object_files
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/TPRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tprtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/MemoryStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/RandomEvictionsBuffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/Buffer.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/storagemanager/DiskStorageManager.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/MVRTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/mvrtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/SpatialIndexImpl.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Point.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/MovingPoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimeRegion.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/Region.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/LineSegment.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/spatialindex/TimePoint.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/Tools.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Index.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Leaf.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/RTree.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Statistics.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/BulkLoader.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-  ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/rtree/Node.cc${CMAKE_CXX_OUTPUT_EXTENSION}
-)
-check_function_exists(srand48 HAVE_SRAND48)
-if(NOT HAVE_SRAND48)
-  list(APPEND spatialindex_object_files
-    ${LIBSUPERMESH_BINARY_DIR}/spatialindex-1.8.5/src/CMakeFiles/spatialindex.dir/tools/rand48.cc${CMAKE_CXX_OUTPUT_EXTENSION})
+# Python is not required, but we want to add pip packages to spatialindex search path
+find_package(Python)
+if(Python_FOUND)
+    message(STATUS "Python_VERSION_MAJOR " ${Python_VERSION_MAJOR})
+    message(STATUS "Python_VERSION_MINOR " ${Python_VERSION_MINOR})
 endif()
-foreach(spatialindex_object_file ${spatialindex_object_files})
-  set_source_files_properties(${spatialindex_object_file} PROPERTIES GENERATED 1)
-endforeach()
+
+# Find the spatialindex library
+find_library(spatialindexlib
+             NAMES spatialindex
+             PATHS "/usr/local/lib"
+              "/usr/lib"
+              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/Rtree.libs"
+              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/lib"
+            )
+
+if((NOT spatialindexlib) AND (Python_FOUND))
+  message(STATUS "Spatialindex not found, attempting to use the shared library provided by the Rtree Python package")
+  execute_process(COMMAND ${Python_EXECUTABLE} -c "import rtree; print(rtree.core.rt._name, end='')"
+                  OUTPUT_VARIABLE spatialindexlib
+                  RESULT_VARIABLE PythonCommandReturnCode
+                  )
+  if(PythonCommandReturnCode)
+    # Forces build to fail if we still cannot find spatialindex
+    unset(spatialindexlib)
+    find_library(spatialindexlib NAMES spatialindex REQUIRED)
+  endif()
+endif()
+
+if(spatialindexlib)
+  message(STATUS "Found libspatialindex shared library: " ${spatialindexlib})
+  set(link_libraries ${link_libraries} ${spatialindexlib})
+  if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    # Check whether C++11 strings are in use, I only know how to do this on Linux
+    execute_process(COMMAND objdump -T ${spatialindexlib}
+                    COMMAND grep -i setproperty
+                    OUTPUT_VARIABLE setpropertystring
+                    )
+    message(STATUS "Set property object signature: " ${setpropertystring})
+    if(NOT ${setpropertystring} MATCHES .*__cxx1112basic_string.*)
+      message(STATUS "libspatialindex shared library does not use C++11 strings. Adding -D_GLIBCXX_USE_CXX11_ABI=0 to CMAKE_CXX_FLAGS")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+    endif()
+  endif()
+endif()
+
+# Find the spatialindex headers
+find_path(spatialindexheaders
+          NAMES spatialindex/SpatialIndex.h
+          REQUIRED
+          PATHS /usr/local/include /usr/include $ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/include
+          )
+if(spatialindexheaders)
+  message(STATUS "Found libspatialindex headers: " ${spatialindexheaders})
+  include_directories(${spatialindexheaders})
+endif()
 
 file(GLOB source_files ${LIBSUPERMESH_SOURCE_DIR}/src/*.F90 ${LIBSUPERMESH_SOURCE_DIR}/src/*.c ${LIBSUPERMESH_SOURCE_DIR}/src/*.cpp)
-add_library(supermesh ${source_files} ${spatialindex_object_files})
-add_dependencies(supermesh spatialindex)
+add_library(supermesh ${source_files})
 
 set(test_main ${LIBSUPERMESH_SOURCE_DIR}/src/tests/test_main.cpp)
 file(GLOB unittest_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/*.F90)
@@ -211,7 +194,7 @@ foreach(unittest_file ${unittest_files})
   list(APPEND unittests ${unittest})
   set_property(TARGET ${unittest} PROPERTY COMPILE_DEFINITIONS "TESTNAME=${unittest}")
   if(unittest MATCHES parallel)
-    add_test(${unittest} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ${unittest} ${MPIEXEC_POSTFLAGS})
+    add_test(${unittest} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ./${unittest} ${MPIEXEC_POSTFLAGS})
   else()
     add_test(${unittest} ${unittest})
   endif()
@@ -220,6 +203,7 @@ endforeach()
 
 set(test_link_libraries supermesh ${link_libraries} ${MPI_CXX_LIBRARIES})
 target_link_libraries(supermesh ${link_libraries})
+set_target_properties(supermesh PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 foreach(test ${unittests})
   target_link_libraries(${test} ${test_link_libraries})
 endforeach()
@@ -253,7 +237,7 @@ if(ENABLE_DOCS)
   if(NOT LATEX_FOUND OR NOT LATEX_PDFLATEX_FOUND OR NOT LATEX_BIBTEX_FOUND)
     message(SEND_ERROR "Required LaTeX components not found")
   endif()
-  
+
   include(${LIBSUPERMESH_SOURCE_DIR}/cmake/UseLATEX.cmake)
   set(LATEX_OUTPUT_PATH ${LIBSUPERMESH_BINARY_DIR}/doc)
   add_latex_document(doc/manual.tex INPUTS doc/version.tex
