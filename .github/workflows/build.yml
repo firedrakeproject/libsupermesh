@@ -72,7 +72,7 @@ jobs:
           cd ..
           python -m venv test
           source test/bin/activate
-          pip install rtree>=1.2
+          pip install "rtree>=1.2"
 
       - name: CMake
         shell: bash
