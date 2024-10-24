@@ -63,14 +63,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
+        id: python311
         with:
           python-version: '3.11'
+          update-environment: false
 
       - name: Install Rtree
         shell: bash
         run: |
           cd ..
-          python -m venv test
+          ${{ steps.python311.outputs.python-path }} -m venv test
           source test/bin/activate
           pip install "rtree>=1.2"
 
@@ -79,7 +81,7 @@ jobs:
         run: |
           source ../test/bin/activate
           cd build
-          env Python3_ROOT_DIR="" Python3_ROOT_DIR="" cmake .. \
+          cmake .. \
             -DBUILD_SHARED_LIBS=ON \
             -DMPI_C_COMPILER=$MPICH_DIR/mpicc \
             -DMPI_CXX_COMPILER=$MPICH_DIR/mpicxx \
