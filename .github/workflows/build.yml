@@ -79,7 +79,7 @@ jobs:
         run: |
           source ../test/bin/activate
           cd build
-          cmake .. \
+          env Python3_ROOT_DIR="" Python3_ROOT_DIR="" cmake .. \
             -DBUILD_SHARED_LIBS=ON \
             -DMPI_C_COMPILER=$MPICH_DIR/mpicc \
             -DMPI_CXX_COMPILER=$MPICH_DIR/mpicxx \
