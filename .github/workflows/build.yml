@@ -60,6 +60,13 @@ jobs:
       image: firedrakeproject/firedrake-env:latest
 
     steps:
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+          timeout-minutes: 20
+          limit-access-to-actor: true
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
