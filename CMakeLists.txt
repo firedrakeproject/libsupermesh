@@ -126,6 +126,7 @@ message(STATUS "MPIEXEC_EXECUTABLE=${MPIEXEC_EXECUTABLE}")
 message(STATUS "")
 
 # Python is not required, but we want to add pip packages to spatialindex search path
+set(Python_FIND_VIRTUALENV "FIRST")
 find_package(Python)
 if(Python_FOUND)
     message(STATUS "Python_VERSION_MAJOR " ${Python_VERSION_MAJOR})

@@ -72,13 +72,17 @@ jobs:
           cd ..
           python -m venv test
           source test/bin/activate
-          pip install rtree>=1.2
+          pip install "rtree>=1.2"
 
       - name: CMake
         shell: bash
         run: |
           source ../test/bin/activate
           cd build
+          unset pythonLocation
+          unset Python_ROOT_DIR
+          unset Python2_ROOT_DIR
+          unset Python3_ROOT_DIR
           cmake .. \
             -DBUILD_SHARED_LIBS=ON \
             -DMPI_C_COMPILER=$MPICH_DIR/mpicc \
