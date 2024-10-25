@@ -1,0 +1,32 @@
+[project]
+name = "libsupermesh"
+version = "1.0.1"
+description = "A parallel supermeshing library"
+readme = "README.md"
+authors = [
+  {name = "James R. Maddison", email = "j.r.maddison@ed.ac.uk"},
+  {name = "Iakovos Panourgias", email = ""},
+  {name = "Patrick E. Farrell", email = ""},
+  {name = "Matteo Croci", email = ""},
+  {name = "Jack Betteridge", email = "J.Betteridge@imperial.ac.uk"},
+]
+maintainers = [
+  {name = "Jack Betteridge", email = "J.Betteridge@imperial.ac.uk"},
+]
+dependencies = [
+  "rtree>=1.2",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
+  "Programming Language :: Python",
+  "Operating System :: OS Independent"
+]
+
+[project.urls]
+Repository = "https://github.com/firedrakeproject/libsupermesh"
+
+[build-system]
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
