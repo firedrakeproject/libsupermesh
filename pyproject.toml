@@ -27,6 +27,6 @@ classifiers = [
 Repository = "https://github.com/firedrakeproject/libsupermesh"
 
 [build-system]
-requires = ["scikit-build-core"]
+requires = ["scikit-build-core", "rtree>=1.2"]
 build-backend = "scikit_build_core.build"
 
