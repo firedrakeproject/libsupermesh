@@ -156,6 +156,11 @@ if((NOT spatialindexlib) AND (Python_FOUND))
     # Forces build to fail if we still cannot find spatialindex
     unset(spatialindexlib)
     find_library(spatialindexlib NAMES spatialindex REQUIRED)
+  else()
+    # Get the headers
+    execute_process(COMMAND ${Python_EXECUTABLE} -c "import rtree; print(rtree.finder.get_include(), end='')"
+                  OUTPUT_VARIABLE spatialindexheaders
+                  )
   endif()
 endif()
 
@@ -180,7 +185,7 @@ endif()
 find_path(spatialindexheaders
           NAMES spatialindex/SpatialIndex.h
           REQUIRED
-          PATHS /usr/local/include /usr/include $ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/include
+          PATHS /usr/local/include /usr/include $ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/include spatialindexheaders
           )
 if(spatialindexheaders)
   message(STATUS "Found libspatialindex headers: " ${spatialindexheaders})
