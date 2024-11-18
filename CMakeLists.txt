@@ -200,7 +200,6 @@ else()
 endif()
 
 target_link_libraries(supermesh PUBLIC ${link_libraries})
-#~ set_target_properties(supermesh PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 set_target_properties(supermesh PROPERTIES INSTALL_RPATH "$ORIGIN/../Rtree.libs")
 set_target_properties(supermesh PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
 if("${SKBUILD}" STREQUAL 2)
