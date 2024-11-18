@@ -122,9 +122,8 @@ jobs:
 
       - name: Install libsupermesh
         shell: bash
-        env:
-          MPI_HOME: ${{ env.MPICH_DIR }}
         run: |
           python -m venv ../test_env
           source ../test_env/bin/activate
+          export MPI_HOME=$MPICH_DIR
           pip install .
