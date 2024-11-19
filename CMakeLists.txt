@@ -278,7 +278,7 @@ if(ENABLE_DOCS)
 endif()
 
 if("${SKBUILD}" STREQUAL 2)
-  set_target_properties(supermesh PROPERTIES PREFIX "lib")
+  #  set_target_properties(supermesh PROPERTIES PREFIX "lib")
 
   install(TARGETS supermesh DESTINATION supermesh)
   install(DIRECTORY ${LIBSUPERMESH_BINARY_DIR}/include DESTINATION supermesh)
