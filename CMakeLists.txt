@@ -194,7 +194,7 @@ endif()
 
 file(GLOB source_files ${LIBSUPERMESH_SOURCE_DIR}/src/*.F90 ${LIBSUPERMESH_SOURCE_DIR}/src/*.c ${LIBSUPERMESH_SOURCE_DIR}/src/*.cpp)
 if("${SKBUILD}" STREQUAL 2)
-  python_add_library(supermesh MODULE WITH_SOABI ${source_files})
+  python_add_library(supermesh SHARED WITH_SOABI ${source_files})
 else()
   add_library(supermesh ${source_files})
 endif()
