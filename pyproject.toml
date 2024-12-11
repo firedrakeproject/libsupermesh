@@ -1,3 +1,7 @@
+[build-system]
+build-backend = "scikit_build_core.build"
+requires = ["scikit-build-core", "rtree>=1.2"]
+
 [project]
 name = "libsupermesh"
 version = "1.0.1"
@@ -5,12 +9,9 @@ description = "A parallel supermeshing library"
 readme = "README.md"
 authors = [
   {name = "James R. Maddison", email = "j.r.maddison@ed.ac.uk"},
-  {name = "Iakovos Panourgias", email = ""},
-  {name = "Patrick E. Farrell", email = ""},
-  {name = "Matteo Croci", email = ""},
-  {name = "Jack Betteridge", email = "J.Betteridge@imperial.ac.uk"},
-]
-maintainers = [
+  {name = "Iakovos Panourgias"},
+  {name = "Patrick E. Farrell"},
+  {name = "Matteo Croci"},
   {name = "Jack Betteridge", email = "J.Betteridge@imperial.ac.uk"},
 ]
 dependencies = [
@@ -26,7 +27,5 @@ classifiers = [
 [project.urls]
 Repository = "https://github.com/firedrakeproject/libsupermesh"
 
-[build-system]
-requires = ["scikit-build-core", "rtree>=1.2"]
-build-backend = "scikit_build_core.build"
-
+[tool.scikit-build]
+wheel.install-dir = "libsupermesh"
