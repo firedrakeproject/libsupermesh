@@ -157,16 +157,16 @@ if((NOT spatialindexlib) AND (Python_FOUND))
   if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     execute_process(
       COMMAND ${Python_EXECUTABLE} -c "
-        import rtree
-        print(rtree.core.rt._name, end='')"
+import rtree
+print(rtree.core.rt._name, end='')"
       OUTPUT_VARIABLE spatialindexlib
       RESULT_VARIABLE PythonCommandReturnCode)
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     execute_process(
       COMMAND ${Python_EXECUTABLE} -c "
-        import pathlib, rtree
-        libdir = pathlib.Path(rtree.core.rt._name).parent
-        print(libdir.joinpath('libspatialindex.dylib'), end='')"
+import pathlib, rtree
+libdir = pathlib.Path(rtree.core.rt._name).parent
+print(libdir.joinpath('libspatialindex.dylib'), end='')"
       OUTPUT_VARIABLE spatialindexlib
       RESULT_VARIABLE PythonCommandReturnCode)
   else()
