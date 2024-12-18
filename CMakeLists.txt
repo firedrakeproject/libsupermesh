@@ -214,7 +214,12 @@ if(spatialindexheaders)
 endif()
 
 file(GLOB source_files ${LIBSUPERMESH_SOURCE_DIR}/src/*.F90 ${LIBSUPERMESH_SOURCE_DIR}/src/*.c ${LIBSUPERMESH_SOURCE_DIR}/src/*.cpp)
-add_library(supermesh ${source_files})
+if("${SKBUILD}" STREQUAL 2)
+  file(GLOB python_source_files ${LIBSUPERMESH_SOURCE_DIR}/src/supermesh/*.py)
+  add_library(supermesh SHARED ${source_files} ${python_source_files})
+else()
+  add_library(supermesh ${source_files})
+endif()
 
 target_link_libraries(supermesh PUBLIC ${link_libraries})
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -301,6 +306,9 @@ endif()
 install(TARGETS supermesh DESTINATION lib)
 install(DIRECTORY ${LIBSUPERMESH_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${LIBSUPERMESH_BINARY_DIR}/config/libsupermesh.pc DESTINATION lib/pkgconfig)
+if("${SKBUILD}" STREQUAL 2)
+  install(FILES ${python_source_files} DESTINATION .)
+endif()
 
 file(GLOB data_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/data/*.ele
                      ${LIBSUPERMESH_SOURCE_DIR}/src/tests/data/*.node)
