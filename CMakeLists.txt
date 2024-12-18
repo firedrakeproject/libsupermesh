@@ -217,7 +217,11 @@ file(GLOB source_files ${LIBSUPERMESH_SOURCE_DIR}/src/*.F90 ${LIBSUPERMESH_SOURC
 add_library(supermesh ${source_files})
 
 target_link_libraries(supermesh PUBLIC ${link_libraries})
-set_target_properties(supermesh PROPERTIES INSTALL_RPATH "$ORIGIN/../Rtree.libs")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set_target_properties(supermesh PROPERTIES INSTALL_RPATH "$ORIGIN/../../Rtree.libs")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  set_target_properties(supermesh PROPERTIES INSTALL_RPATH "@loader_path/../../Rtree.libs")
+endif()
 set_target_properties(supermesh PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
 if("${SKBUILD}" STREQUAL 2)
   # use, i.e. don't skip the full RPATH for the build tree
