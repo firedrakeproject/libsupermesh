@@ -142,16 +142,37 @@ find_library(spatialindexlib
              NAMES spatialindex
              PATHS "/usr/local/lib"
               "/usr/lib"
-              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/Rtree.libs"
-              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/lib"
             )
 
 if((NOT spatialindexlib) AND (Python_FOUND))
   message(STATUS "Spatialindex not found, attempting to use the shared library provided by the Rtree Python package")
-  execute_process(COMMAND ${Python_EXECUTABLE} -c "import rtree; print(rtree.core.rt._name, end='')"
-                  OUTPUT_VARIABLE spatialindexlib
-                  RESULT_VARIABLE PythonCommandReturnCode
-                  )
+
+  # Rtree stores its shared libraries in very different ways on Mac and Linux.
+  # On Linux we want .../site-packages/Rtree.libs/libspatialindex-XXXXXXXX.so
+  # (which is what is returned by rtree.core.rt._name), whereas on Mac we have
+  # *two* shared libraries called libspatialindex.dylib and libspatialindex_c.dylib
+  # and these are stored in .../site-packages/rtree/lib/. Since rtree.core.rt._name
+  # returns the libspatialindex_c.dylib file while we want the libspatialindex.dylib
+  # file we have to replace the path.
+  if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    execute_process(
+      COMMAND ${Python_EXECUTABLE} -c "
+        import rtree
+        print(rtree.core.rt._name, end='')"
+      OUTPUT_VARIABLE spatialindexlib
+      RESULT_VARIABLE PythonCommandReturnCode)
+  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+    execute_process(
+      COMMAND ${Python_EXECUTABLE} -c "
+        import pathlib, rtree
+        libdir = pathlib.Path(rtree.core.rt._name).parent
+        print(libdir.joinpath('libspatialindex.dylib'), end='')"
+      OUTPUT_VARIABLE spatialindexlib
+      RESULT_VARIABLE PythonCommandReturnCode)
+  else()
+    message(FATAL_ERROR "Operating system not recognised, aborting.")
+  endif()
+
   if(PythonCommandReturnCode)
     # Forces build to fail if we still cannot find spatialindex
     unset(spatialindexlib)
