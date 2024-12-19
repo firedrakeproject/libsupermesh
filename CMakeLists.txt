@@ -206,7 +206,7 @@ endif()
 find_path(spatialindexheaders
           NAMES spatialindex/SpatialIndex.h
           REQUIRED
-          PATHS /usr/local/include /usr/include $ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/include spatialindexheaders
+          PATHS /usr/local/include /usr/include $ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/include
           )
 if(spatialindexheaders)
   message(STATUS "Found libspatialindex headers: " ${spatialindexheaders})
