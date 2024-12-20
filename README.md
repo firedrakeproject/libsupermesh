@@ -29,3 +29,4 @@ libsupermesh is available under the [GNU Lesser General Public License version 2
 * Dr. Patrick E. Farrell, Mathematical Institute, University of Oxford, UK,
   and Center for Biomedical Computing, Simula Research Laboratory, Oslo, Norway
 * Mr. Matteo Croci, Mathematical Institute, University of Oxford, UK
+* Dr. Jack Betteridge, Department of Mathematics, Imperial College London, UK

@@ -102,3 +102,28 @@ jobs:
         run: |
           cd build
           make test
+
+  # NOTE: The pip-installed version of libsupermesh does not include any tests, so only check
+  # that it builds.
+  build_pip:
+    name: "Build libsupermesh with pip"
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+    # The docker container to use.
+    container:
+      image: firedrakeproject/firedrake-env:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install libsupermesh
+        shell: bash
+        run: |
+          python -m venv ../test_env
+          source ../test_env/bin/activate
+          export MPI_HOME=$MPICH_DIR
+          pip install .

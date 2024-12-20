@@ -42,7 +42,11 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${LIBSUPERMESH_BINARY_DIR}/include)
 include_directories(${LIBSUPERMESH_SOURCE_DIR}/include)
 include_directories(${LIBSUPERMESH_BINARY_DIR}/include)
 include_directories(${LIBSUPERMESH_BINARY_DIR}/include_local)
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+if("${SKBUILD}" STREQUAL 2)
+  option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+else()
+  option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+endif()
 
 find_package(MPI REQUIRED)
 set(link_libraries ${MPI_Fortran_LIBRARIES})
@@ -127,7 +131,7 @@ message(STATUS "")
 
 # Python is not required, but we want to add pip packages to spatialindex search path
 set(Python_FIND_VIRTUALENV "FIRST")
-find_package(Python)
+find_package(Python COMPONENTS Interpreter Development.Module)
 if(Python_FOUND)
     message(STATUS "Python_VERSION_MAJOR " ${Python_VERSION_MAJOR})
     message(STATUS "Python_VERSION_MINOR " ${Python_VERSION_MINOR})
@@ -138,20 +142,46 @@ find_library(spatialindexlib
              NAMES spatialindex
              PATHS "/usr/local/lib"
               "/usr/lib"
-              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/Rtree.libs"
-              "$ENV{VIRTUAL_ENV}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/rtree/lib"
             )
 
 if((NOT spatialindexlib) AND (Python_FOUND))
   message(STATUS "Spatialindex not found, attempting to use the shared library provided by the Rtree Python package")
-  execute_process(COMMAND ${Python_EXECUTABLE} -c "import rtree; print(rtree.core.rt._name, end='')"
-                  OUTPUT_VARIABLE spatialindexlib
-                  RESULT_VARIABLE PythonCommandReturnCode
-                  )
+
+  # Rtree stores its shared libraries in very different ways on Mac and Linux.
+  # On Linux we want .../site-packages/Rtree.libs/libspatialindex-XXXXXXXX.so
+  # (which is what is returned by rtree.core.rt._name), whereas on Mac we have
+  # *two* shared libraries called libspatialindex.dylib and libspatialindex_c.dylib
+  # and these are stored in .../site-packages/rtree/lib/. Since rtree.core.rt._name
+  # returns the libspatialindex_c.dylib file while we want the libspatialindex.dylib
+  # file we have to replace the path.
+  if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    execute_process(
+      COMMAND ${Python_EXECUTABLE} -c "
+import rtree
+print(rtree.core.rt._name, end='')"
+      OUTPUT_VARIABLE spatialindexlib
+      RESULT_VARIABLE PythonCommandReturnCode)
+  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+    execute_process(
+      COMMAND ${Python_EXECUTABLE} -c "
+import pathlib, rtree
+libdir = pathlib.Path(rtree.core.rt._name).parent
+print(libdir.joinpath('libspatialindex.dylib'), end='')"
+      OUTPUT_VARIABLE spatialindexlib
+      RESULT_VARIABLE PythonCommandReturnCode)
+  else()
+    message(FATAL_ERROR "Operating system not recognised, aborting.")
+  endif()
+
   if(PythonCommandReturnCode)
     # Forces build to fail if we still cannot find spatialindex
     unset(spatialindexlib)
     find_library(spatialindexlib NAMES spatialindex REQUIRED)
+  else()
+    # Get the headers
+    execute_process(COMMAND ${Python_EXECUTABLE} -c "import rtree; print(rtree.finder.get_include(), end='')"
+                  OUTPUT_VARIABLE spatialindexheaders
+                  )
   endif()
 endif()
 
@@ -184,35 +214,62 @@ if(spatialindexheaders)
 endif()
 
 file(GLOB source_files ${LIBSUPERMESH_SOURCE_DIR}/src/*.F90 ${LIBSUPERMESH_SOURCE_DIR}/src/*.c ${LIBSUPERMESH_SOURCE_DIR}/src/*.cpp)
-add_library(supermesh ${source_files})
+if("${SKBUILD}" STREQUAL 2)
+  file(GLOB python_source_files ${LIBSUPERMESH_SOURCE_DIR}/src/supermesh/*.py)
+  add_library(supermesh SHARED ${source_files} ${python_source_files})
+else()
+  add_library(supermesh ${source_files})
+endif()
 
-set(test_main ${LIBSUPERMESH_SOURCE_DIR}/src/tests/test_main.cpp)
-file(GLOB unittest_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/*.F90)
-set(unittests "")
-foreach(unittest_file ${unittest_files})
-  get_filename_component(unittest ${unittest_file} NAME_WE)
-  add_executable(${unittest} ${unittest_file} ${test_main})
-  list(APPEND unittests ${unittest})
-  set_property(TARGET ${unittest} PROPERTY COMPILE_DEFINITIONS "TESTNAME=${unittest}")
-  if(unittest MATCHES parallel)
-    add_test(${unittest} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ./${unittest} ${MPIEXEC_POSTFLAGS})
-  else()
-    add_test(${unittest} ${unittest})
-  endif()
-  set_tests_properties(${unittest} PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
-endforeach()
-
-set(test_link_libraries supermesh ${link_libraries} ${MPI_CXX_LIBRARIES})
-target_link_libraries(supermesh ${link_libraries})
-set_target_properties(supermesh PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
-foreach(test ${unittests})
-  target_link_libraries(${test} ${test_link_libraries})
-endforeach()
-
+target_link_libraries(supermesh PUBLIC ${link_libraries})
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set_target_properties(supermesh PROPERTIES INSTALL_RPATH "$ORIGIN/../../Rtree.libs")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  set_target_properties(supermesh PROPERTIES INSTALL_RPATH "@loader_path/../../rtree/lib")
+endif()
 set_target_properties(supermesh PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
-foreach(unittest ${unittests})
-  set_target_properties(${unittest} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-endforeach()
+if("${SKBUILD}" STREQUAL 2)
+  # use, i.e. don't skip the full RPATH for the build tree
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+  # when building, don't use the install RPATH already
+  # (but later on when installing)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+  # add the automatically determined parts of the RPATH
+  # which point to directories outside the build tree to the install RPATH
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
+
+# Only build tests if not built by scikit-build-core
+if(NOT "${SKBUILD}" STREQUAL 2)
+  set(test_main ${LIBSUPERMESH_SOURCE_DIR}/src/tests/test_main.cpp)
+  file(GLOB unittest_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/*.F90)
+  set(unittests "")
+  foreach(unittest_file ${unittest_files})
+    get_filename_component(unittest ${unittest_file} NAME_WE)
+    add_executable(${unittest} ${unittest_file} ${test_main})
+    list(APPEND unittests ${unittest})
+    set_property(TARGET ${unittest} PROPERTY COMPILE_DEFINITIONS "TESTNAME=${unittest}")
+    if(unittest MATCHES parallel)
+      add_test(${unittest} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ./${unittest} ${MPIEXEC_POSTFLAGS})
+    else()
+      add_test(${unittest} ${unittest})
+    endif()
+    set_tests_properties(${unittest} PROPERTIES FAIL_REGULAR_EXPRESSION "Fail:")
+  endforeach()
+
+  set(test_link_libraries supermesh ${link_libraries} ${MPI_CXX_LIBRARIES})
+  foreach(test ${unittests})
+    target_link_libraries(${test} ${test_link_libraries})
+  endforeach()
+
+  foreach(unittest ${unittests})
+    set_target_properties(${unittest} PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+  endforeach()
+endif()
 
 configure_file (
   "${LIBSUPERMESH_SOURCE_DIR}/config/libsupermesh.pc.in"
@@ -249,6 +306,9 @@ endif()
 install(TARGETS supermesh DESTINATION lib)
 install(DIRECTORY ${LIBSUPERMESH_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${LIBSUPERMESH_BINARY_DIR}/config/libsupermesh.pc DESTINATION lib/pkgconfig)
+if("${SKBUILD}" STREQUAL 2)
+  install(FILES ${python_source_files} DESTINATION .)
+endif()
 
 file(GLOB data_files ${LIBSUPERMESH_SOURCE_DIR}/src/tests/data/*.ele
                      ${LIBSUPERMESH_SOURCE_DIR}/src/tests/data/*.node)
