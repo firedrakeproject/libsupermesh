@@ -54,15 +54,17 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      - name: Create virtual environment
+        run: python3 -m venv --system-site-packages venv-libsupermesh
 
       - name: Install Rtree
-        run: python3 -m pip install --break-system-packages "rtree>=1.2"
+        run: |
+          . venv-libsupermesh/bin/activate
+          pip install 'rtree>=1.2'
 
       - name: Install libsupermesh
         run: |
+          . venv-libsupermesh/bin/activate
           cd build
           cmake .. \
             -DBUILD_SHARED_LIBS=ON \
@@ -76,7 +78,9 @@ jobs:
           make
 
       - name: Run tests
-        run: make -C build test
+        run: |
+          . venv-libsupermesh/bin/activate
+          make -C build test
 
   # NOTE: The pip-installed version of libsupermesh does not include any tests, so only check
   # that it builds.
