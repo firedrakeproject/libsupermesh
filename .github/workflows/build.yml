@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create virtual environment
-        run: python3 -m venv --system-site-packages venv-libsupermesh
+        run: python3 -m venv venv-libsupermesh
 
       - name: Install Rtree
         run: |
