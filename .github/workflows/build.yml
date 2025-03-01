@@ -22,7 +22,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install cmake libspatialindex-dev
+          sudo apt-get -y install build-essential cmake libspatialindex-dev
 
       - name: Install libsupermesh
         run: |
@@ -50,7 +50,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install cmake
+          sudo apt-get -y install build-essential cmake libopenmpi-dev
 
       - uses: actions/checkout@v4
 
@@ -89,7 +89,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install cmake
+          sudo apt-get -y install build-essential cmake libopenmpi-dev
 
       - uses: actions/checkout@v4
 
