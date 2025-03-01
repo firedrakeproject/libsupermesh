@@ -69,22 +69,24 @@ jobs:
       - name: Install libsupermesh
         run: |
           . venv-libsupermesh/bin/activate
+          unset pythonLocation
+          unset Python_ROOT_DIR
+          unset Python2_ROOT_DIR
+          unset Python3_ROOT_DIR
           cd build
           cmake .. \
             -DBUILD_SHARED_LIBS=ON \
-            -DMPI_C_COMPILER=mpicc \
-            -DMPI_CXX_COMPILER=mpicxx \
-            -DMPI_Fortran_COMPILER=mpif90 \
-            -DCMAKE_C_COMPILER=mpicc \
-            -DCMAKE_CXX_COMPILER=mpicxx \
-            -DCMAKE_Fortran_COMPILER=mpif90 \
-            -DMPIEXEC_EXECUTABLE=mpiexec
+            -DMPI_C_COMPILER=/usr/bin/mpicc \
+            -DMPI_CXX_COMPILER=/usr/bin/mpicxx \
+            -DMPI_Fortran_COMPILER=/usr/bin/mpif90 \
+            -DCMAKE_C_COMPILER=/usr/bin/mpicc \
+            -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx \
+            -DCMAKE_Fortran_COMPILER=/usr/bin/mpif90 \
+            -DMPIEXEC_EXECUTABLE=/usr/bin/mpiexec
           make
 
       - name: Run tests
-        run: |
-          . venv-libsupermesh/bin/activate
-          make -C build test
+        run: make -C build test
 
   # NOTE: The pip-installed version of libsupermesh does not include any tests, so only check
   # that it builds.
