@@ -34,12 +34,12 @@ void libsupermesh_intersect_tri_quad(c_kind* tri_a, c_kind* quad_b, c_kind* tris
 }
 #endif
 
-int libsupermesh_max_n_tris_c(int n_lines_b, int n_lines_a){
+static int libsupermesh_max_n_tris_c(int n_lines_b, int n_lines_a){
    int out = n_lines_a*pow(2, n_lines_b) - 2;
    return out;
 }
 
-int libsupermesh_max_n_tets_c(int n_planes_b){
+static int libsupermesh_max_n_tets_c(int n_planes_b){
    int out = pow(3, n_planes_b);
    return out;
 }
