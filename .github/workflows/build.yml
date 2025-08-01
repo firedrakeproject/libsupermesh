@@ -3,7 +3,7 @@ name: Install and test libsupermesh
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 jobs:
