@@ -11,7 +11,10 @@ jobs:
     name: Build libsupermesh with Ubuntu spatialindex
     runs-on: [self-hosted, Linux]
     container:
-      image: firedrakeproject/firedrake-env:latest
+      image: ubuntu:latest
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -21,8 +24,8 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install build-essential cmake libspatialindex-dev
+          apt-get -y update
+          apt-get -y install build-essential cmake libspatialindex-dev
 
       - name: Install libsupermesh
         run: |
@@ -44,13 +47,15 @@ jobs:
     name: Build libsupermesh with Rtree spatialindex
     runs-on: [self-hosted, Linux]
     container:
-      image: firedrakeproject/firedrake-env:latest
-
+      image: ubuntu:latest
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
     steps:
       - name: Install build dependencies
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install build-essential cmake libopenmpi-dev
+          apt-get -y update
+          apt-get -y install build-essential cmake libopenmpi-dev
 
       - uses: actions/setup-python@v4
         with:
@@ -94,12 +99,15 @@ jobs:
     name: Build libsupermesh with pip
     runs-on: [self-hosted, Linux]
     container:
-      image: firedrakeproject/firedrake-env:latest
+      image: ubuntu:latest
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
     steps:
       - name: Install build dependencies
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install build-essential cmake libopenmpi-dev
+          apt-get -y update
+          apt-get -y install build-essential cmake libopenmpi-dev
 
       - uses: actions/checkout@v4
 
