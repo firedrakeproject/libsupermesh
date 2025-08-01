@@ -12,6 +12,9 @@ jobs:
     runs-on: [self-hosted, Linux]
     container:
       image: ubuntu:latest
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +48,9 @@ jobs:
     runs-on: [self-hosted, Linux]
     container:
       image: ubuntu:latest
-
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
     steps:
       - name: Install build dependencies
         run: |
@@ -95,6 +100,9 @@ jobs:
     runs-on: [self-hosted, Linux]
     container:
       image: ubuntu:latest
+    env:
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
     steps:
       - name: Install build dependencies
         run: |
