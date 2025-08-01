@@ -11,7 +11,7 @@ jobs:
     name: Build libsupermesh with Ubuntu spatialindex
     runs-on: [self-hosted, Linux]
     container:
-      image: firedrakeproject/firedrake-env:latest
+      image: ubuntu:latest
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +44,7 @@ jobs:
     name: Build libsupermesh with Rtree spatialindex
     runs-on: [self-hosted, Linux]
     container:
-      image: firedrakeproject/firedrake-env:latest
+      image: ubuntu:latest
 
     steps:
       - name: Install build dependencies
@@ -94,7 +94,7 @@ jobs:
     name: Build libsupermesh with pip
     runs-on: [self-hosted, Linux]
     container:
-      image: firedrakeproject/firedrake-env:latest
+      image: ubuntu:latest
     steps:
       - name: Install build dependencies
         run: |
