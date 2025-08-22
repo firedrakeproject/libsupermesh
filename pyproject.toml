@@ -5,7 +5,7 @@ requires = ["scikit-build-core", "rtree>=1.2"]
 [project]
 name = "libsupermesh"
 # <year.month.patch>
-version = "2025.5.dev0"
+version = "2025.4"
 description = "A parallel supermeshing library"
 readme = "README.md"
 authors = [
