@@ -16,7 +16,7 @@ authors = [
   {name = "Jack Betteridge", email = "J.Betteridge@imperial.ac.uk"},
 ]
 dependencies = [
-  "rtree>=1.2",
+  "rtree>=1.4.1",
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
