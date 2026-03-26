@@ -145,10 +145,10 @@ find_library(spatialindexlib
             )
 
 if((NOT spatialindexlib) AND (Python_FOUND))
-  message(STATUS "Spatialindex not found, attempting to use the shared library provided by the Rtree Python package")
+  message(STATUS "Spatialindex not found, attempting to use the shared library provided by the rtree Python package")
 
-  # Rtree stores its shared libraries in very different ways on Mac and Linux.
-  # On Linux we want .../site-packages/Rtree.libs/libspatialindex-XXXXXXXX.so
+  # rtree stores its shared libraries in very different ways on Mac and Linux.
+  # On Linux we want .../site-packages/rtree.libs/libspatialindex-XXXXXXXX.so
   # (which is what is returned by rtree.core.rt._name), whereas on Mac we have
   # *two* shared libraries called libspatialindex.dylib and libspatialindex_c.dylib
   # and these are stored in .../site-packages/rtree/lib/. Since rtree.core.rt._name
@@ -223,7 +223,7 @@ endif()
 
 target_link_libraries(supermesh PUBLIC ${link_libraries})
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set_target_properties(supermesh PROPERTIES INSTALL_RPATH "$ORIGIN/../../Rtree.libs")
+  set_target_properties(supermesh PROPERTIES INSTALL_RPATH "$ORIGIN/../../rtree.libs")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set_target_properties(supermesh PROPERTIES INSTALL_RPATH "@loader_path/../../rtree/lib")
 endif()
