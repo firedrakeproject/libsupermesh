@@ -216,12 +216,12 @@ endif()
 file(GLOB source_files ${LIBSUPERMESH_SOURCE_DIR}/src/*.F90 ${LIBSUPERMESH_SOURCE_DIR}/src/*.c ${LIBSUPERMESH_SOURCE_DIR}/src/*.cpp)
 if("${SKBUILD}" STREQUAL 2)
   file(GLOB python_source_files ${LIBSUPERMESH_SOURCE_DIR}/src/supermesh/*.py)
-  # There appears to be a bug with gfortran 16.2.1 (observed on macOS and Arch Linux)
+  # There appears to be a bug with gfortran 16.2.0+ (observed on macOS and Arch Linux)
   # where some symbols do not appear in the shared library. Building a static library
   # resolves this. I am pretty confident that the issue is with gfortran because that
   # is the only shared component between the systems.
-  if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "16.2.1")
-    message(STATUS "Building static library to workaround bug in gfortran >=16.2.1")
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "16.2.0")
+    message(STATUS "Building static library to workaround bug in gfortran >=16.2.0")
     add_library(supermesh STATIC ${source_files} ${python_source_files})
   else()
     add_library(supermesh SHARED ${source_files} ${python_source_files})
